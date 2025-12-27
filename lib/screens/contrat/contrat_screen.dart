@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/index.dart';
+import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
 
@@ -19,18 +21,26 @@ class _ContratScreenState extends State<ContratScreen> {
     Contrat(
       contratId: 1,
       clientId: 1,
+      referenceContrat: 'REF-001',
+      dateContrat: DateTime(2024, 1, 15),
       dateDebut: DateTime(2024, 2, 1),
       dateFin: DateTime(2024, 12, 31),
-      prix: 5000.0,
-      etat: 'Actif',
+      statutContrat: 'Actif',
+      dureeContrat: 12,
+      duree: 10,
+      categorie: 'PC',
     ),
     Contrat(
       contratId: 2,
       clientId: 1,
+      referenceContrat: 'REF-002',
+      dateContrat: DateTime(2024, 6, 20),
       dateDebut: DateTime(2024, 7, 1),
       dateFin: DateTime(2025, 6, 30),
-      prix: 6000.0,
-      etat: 'Actif',
+      statutContrat: 'Actif',
+      dureeContrat: 12,
+      duree: 6,
+      categorie: 'NI',
     ),
   ];
 
@@ -72,18 +82,241 @@ class _ContratScreenState extends State<ContratScreen> {
   }
 
   void _showAddContratDialog() {
+    final referenceContrat = TextEditingController();
+    final dateContrat = TextEditingController();
+    final dateDebut = TextEditingController();
+    final dateFin = TextEditingController();
+    final categorie = TextEditingController(text: 'PC');
+    final statutContrat = TextEditingController(text: 'Actif');
+
     showDialog(
       context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Ajouter un contrat'),
-        content: const Text('Fonctionnalité à implémenter'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
+      builder: (BuildContext ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Récupérer le client pour afficher ses infos
+            final clientRepository = context.read<ClientRepository>();
+            final clients = clientRepository.clients;
+            Client? selectedClient;
+
+            if (widget.clientId != null) {
+              try {
+                selectedClient = clients.firstWhere(
+                  (c) => c.clientId == widget.clientId,
+                );
+              } catch (e) {
+                selectedClient = clients.isNotEmpty ? clients.first : null;
+              }
+            } else if (clients.isNotEmpty) {
+              selectedClient = clients.first;
+            }
+
+            final isSociete = selectedClient?.categorie == 'Société';
+
+            return AlertDialog(
+              title: const Text('Ajouter un contrat'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Affichage des infos client
+                    if (selectedClient != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Client: ${selectedClient.nom} ${selectedClient.prenom}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Catégorie: ${selectedClient.categorie}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            if (isSociete) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'NIF: ${selectedClient.nif}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'STAT: ${selectedClient.stat}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    // Référence contrat
+                    TextField(
+                      controller: referenceContrat,
+                      decoration: const InputDecoration(
+                        labelText: 'Référence',
+                        hintText: 'Auto-générée',
+                      ),
+                      readOnly: true,
+                    ),
+                    const SizedBox(height: 12),
+                    // Date du contrat
+                    TextField(
+                      controller: dateContrat,
+                      decoration: const InputDecoration(
+                        labelText: 'Date du contrat',
+                        hintText: 'dd/MM/yyyy',
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) {
+                          dateContrat.text = DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(date);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Date de début
+                    TextField(
+                      controller: dateDebut,
+                      decoration: const InputDecoration(
+                        labelText: 'Date de début',
+                        hintText: 'dd/MM/yyyy',
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) {
+                          dateDebut.text = DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(date);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Date de fin
+                    TextField(
+                      controller: dateFin,
+                      decoration: const InputDecoration(
+                        labelText: 'Date de fin',
+                        hintText: 'dd/MM/yyyy',
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) {
+                          dateFin.text = DateFormat('dd/MM/yyyy').format(date);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Catégorie
+                    TextField(
+                      controller: categorie,
+                      decoration: const InputDecoration(labelText: 'Catégorie'),
+                    ),
+                    const SizedBox(height: 12),
+                    // Statut
+                    DropdownButtonFormField<String>(
+                      initialValue: statutContrat.text,
+                      decoration: const InputDecoration(labelText: 'Statut'),
+                      items: ['Actif', 'Inactif', 'Terminé']
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          statutContrat.text = value ?? 'Actif';
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (dateDebut.text.isEmpty ||
+                        dateFin.text.isEmpty ||
+                        dateContrat.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Veuillez remplir tous les champs'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final dateContratParsed = DateFormat(
+                      'dd/MM/yyyy',
+                    ).parse(dateContrat.text);
+                    final dateDebutParsed = DateFormat(
+                      'dd/MM/yyyy',
+                    ).parse(dateDebut.text);
+                    final dateFinParsed = DateFormat(
+                      'dd/MM/yyyy',
+                    ).parse(dateFin.text);
+                    final duree =
+                        dateFinParsed.month -
+                        dateDebutParsed.month +
+                        12 * (dateFinParsed.year - dateDebutParsed.year);
+
+                    context.read<ContratRepository>().createContrat(
+                      clientId: widget.clientId ?? 1,
+                      referenceContrat:
+                          'REF-${DateTime.now().millisecondsSinceEpoch}',
+                      dateContrat: dateContratParsed,
+                      dateDebut: dateDebutParsed,
+                      dateFin: dateFinParsed,
+                      statutContrat: statutContrat.text,
+                      duree: duree,
+                      categorie: categorie.text,
+                    );
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Contrat créé')),
+                    );
+                  },
+                  child: const Text('Créer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -117,11 +350,7 @@ class _ContratScreenState extends State<ContratScreen> {
                         ),
                         onTap: () {
                           Navigator.of(ctx).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Édition - À implémenter'),
-                            ),
-                          );
+                          _showEditContratDialog(contrat);
                         },
                       ),
                       PopupMenuItem(
@@ -148,21 +377,21 @@ class _ContratScreenState extends State<ContratScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              _buildDetailRow('Prix', '${contrat.prix} Ar'),
-              _buildDetailRow('État', contrat.etat),
+              _buildDetailRow('Catégorie', contrat.categorie),
+              _buildDetailRow('État', contrat.statutContrat),
               _buildDetailRow('Début', dateFormat.format(contrat.dateDebut)),
               _buildDetailRow('Fin', dateFormat.format(contrat.dateFin)),
-              _buildDetailRow('Durée', '${contrat.durationInMonths} mois'),
+              _buildDetailRow('Durée', '${contrat.dureeContrat} mois'),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Voir factures - À implémenter'),
-                      ),
+                    Navigator.pushNamed(
+                      context,
+                      '/factures',
+                      arguments: {'contratId': contrat.contratId},
                     );
                   },
                   child: const Text('Voir factures du contrat'),
@@ -183,6 +412,122 @@ class _ContratScreenState extends State<ContratScreen> {
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(value),
+        ],
+      ),
+    );
+  }
+
+  void _showEditContratDialog(Contrat contrat) {
+    final referenceContrat = TextEditingController(
+      text: contrat.referenceContrat,
+    );
+    final dateContrat = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(contrat.dateContrat),
+    );
+    final dateDebut = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(contrat.dateDebut),
+    );
+    final dateFin = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(contrat.dateFin),
+    );
+    final duree = TextEditingController(text: contrat.duree.toString());
+    final categorie = TextEditingController(text: contrat.categorie);
+    final statutContrat = TextEditingController(text: contrat.statutContrat);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Éditer le contrat'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: referenceContrat,
+                decoration: const InputDecoration(labelText: 'Référence'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dateContrat,
+                decoration: const InputDecoration(
+                  labelText: 'Date du contrat',
+                  hintText: 'dd/MM/yyyy',
+                ),
+                readOnly: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dateDebut,
+                decoration: const InputDecoration(
+                  labelText: 'Date de début',
+                  hintText: 'dd/MM/yyyy',
+                ),
+                readOnly: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dateFin,
+                decoration: const InputDecoration(
+                  labelText: 'Date de fin',
+                  hintText: 'dd/MM/yyyy',
+                ),
+                readOnly: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: duree,
+                decoration: const InputDecoration(
+                  labelText: 'Durée restante (mois)',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: categorie,
+                decoration: const InputDecoration(labelText: 'Catégorie'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: statutContrat.text,
+                decoration: const InputDecoration(labelText: 'Statut'),
+                items: ['Actif', 'Inactif', 'Terminé']
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (value) {
+                  statutContrat.text = value ?? contrat.statutContrat;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final updatedContrat = Contrat(
+                contratId: contrat.contratId,
+                clientId: contrat.clientId,
+                referenceContrat: referenceContrat.text,
+                dateContrat: DateFormat('dd/MM/yyyy').parse(dateContrat.text),
+                dateDebut: contrat.dateDebut,
+                dateFin: contrat.dateFin,
+                statutContrat: statutContrat.text,
+                dureeContrat: contrat.dureeContrat,
+                duree: int.tryParse(duree.text) ?? contrat.duree,
+                categorie: categorie.text,
+              );
+
+              context.read<ContratRepository>().updateContrat(updatedContrat);
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Contrat mis à jour')),
+              );
+            },
+            child: const Text('Enregistrer'),
+          ),
         ],
       ),
     );
@@ -237,7 +582,7 @@ class _ContratCard extends StatelessWidget {
             ),
           ],
         ),
-        trailing: Text('${contrat.durationInMonths}M'),
+        trailing: Text('${contrat.dureeContrat}M'),
         onTap: onTap,
       ),
     );

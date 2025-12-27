@@ -5,8 +5,15 @@ import 'services/index.dart';
 import 'repositories/index.dart';
 import 'config/database_config.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/setup/database_config_screen.dart';
+import 'screens/client/client_list_screen.dart';
+import 'screens/contrat/contrat_screen.dart';
+import 'screens/facture/facture_list_screen.dart';
+import 'screens/planning/planning_screen.dart';
+import 'screens/historique/historique_screen.dart';
+import 'screens/settings/settings_screen.dart';
 import 'core/theme.dart';
 
 final logger = Logger();
@@ -24,8 +31,8 @@ void main() async {
     db.updateConnectionSettings(
       host: config.host ?? 'localhost',
       port: config.port ?? 3306,
-      user: config.user ?? 'sudoted',
-      password: config.password ?? '100805Josh',
+      user: config.user ?? '',
+      password: config.password ?? '',
       database: config.database ?? 'Planificator',
     );
 
@@ -76,8 +83,8 @@ class _MyAppState extends State<MyApp> {
     db.updateConnectionSettings(
       host: config.host ?? 'localhost',
       port: config.port ?? 3306,
-      user: config.user ?? 'sudoted',
-      password: config.password ?? '100805Josh',
+      user: config.user ?? '',
+      password: config.password ?? '',
       database: config.database ?? 'Planificator',
     );
   }
@@ -102,7 +109,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => HistoriqueRepository()),
       ],
       child: MaterialApp(
-        title: 'Planificator 1.1.0',
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: _isConfigured
             ? Consumer<AuthRepository>(
@@ -116,7 +123,14 @@ class _MyAppState extends State<MyApp> {
             : DatabaseConfigScreen(onConfigured: _onConfigured),
         routes: {
           '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
+          '/clients': (context) => const ClientListScreen(),
+          '/contrats': (context) => const ContratScreen(),
+          '/factures': (context) => const FactureListScreen(),
+          '/planning': (context) => const PlanningScreen(),
+          '/historique': (context) => const HistoriqueScreen(),
+          '/settings': (context) => const SettingsScreen(),
         },
       ),
     );

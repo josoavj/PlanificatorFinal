@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/index.dart';
+import '../../models/client.dart';
+import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 
 class ClientListScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     _searchController = TextEditingController();
     // Charger les clients
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClientService>().loadClients();
+      context.read<ClientRepository>().loadClients();
     });
   }
 
@@ -36,23 +37,23 @@ class _ClientListScreenState extends State<ClientListScreen> {
           ),
         ],
       ),
-      body: Consumer<ClientService>(
-        builder: (context, service, _) {
+      body: Consumer<ClientRepository>(
+        builder: (context, repository, _) {
           // État de chargement
-          if (service.isLoading) {
+          if (repository.isLoading) {
             return const LoadingWidget(message: 'Chargement des clients...');
           }
 
           // État d'erreur
-          if (service.errorMessage != null) {
+          if (repository.errorMessage != null) {
             return ErrorDisplayWidget(
-              message: service.errorMessage!,
-              onRetry: () => service.loadClients(),
+              message: repository.errorMessage!,
+              onRetry: () => repository.loadClients(),
             );
           }
 
           // État vide
-          if (service.clients.isEmpty) {
+          if (repository.clients.isEmpty) {
             return const EmptyStateWidget(
               title: 'Aucun client',
               message: 'Aucun client trouvé. Commencez par créer un client.',
@@ -76,7 +77,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
-                              service.loadClients();
+                              repository.loadClients();
                             },
                           )
                         : null,
@@ -89,9 +90,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   onChanged: (query) {
                     setState(() {}); // Mettre à jour le suffixIcon
                     if (query.isEmpty) {
-                      service.loadClients();
+                      repository.loadClients();
                     } else {
-                      service.searchClients(query);
+                      repository.searchClients(query);
                     }
                   },
                 ),
@@ -103,7 +104,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '${service.clients.length} client(s) trouvé(s)',
+                    '${repository.clients.length} client(s) trouvé(s)',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -112,9 +113,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
               // Liste des clients
               Expanded(
                 child: ListView.builder(
-                  itemCount: service.clients.length,
+                  itemCount: repository.clients.length,
                   itemBuilder: (context, index) {
-                    final client = service.clients[index];
+                    final client = repository.clients[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 8.0,
@@ -181,7 +182,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                               onTap: () {
                                 _showDeleteConfirmation(
                                   context,
-                                  service,
+                                  repository,
                                   client.clientId,
                                 );
                               },
@@ -204,15 +205,70 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   void _showAddClientDialog(BuildContext context) {
+    final nomController = TextEditingController();
+    final prenomController = TextEditingController();
+    final emailController = TextEditingController();
+    final telephoneController = TextEditingController();
+    final adresseController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Ajouter un client'),
-        content: const Text('Fonctionnalité à implémenter'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nomController,
+                decoration: const InputDecoration(labelText: 'Nom'),
+              ),
+              TextField(
+                controller: prenomController,
+                decoration: const InputDecoration(labelText: 'Prénom'),
+              ),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              TextField(
+                controller: telephoneController,
+                decoration: const InputDecoration(labelText: 'Téléphone'),
+              ),
+              TextField(
+                controller: adresseController,
+                decoration: const InputDecoration(labelText: 'Adresse'),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nomController.text.isNotEmpty &&
+                  prenomController.text.isNotEmpty) {
+                final newClient = Client(
+                  clientId: 0,
+                  nom: nomController.text,
+                  prenom: prenomController.text,
+                  email: emailController.text,
+                  telephone: telephoneController.text,
+                  adresse: adresseController.text,
+                  categorie: '',
+                  nif: '',
+                  stat: '',
+                  axe: '',
+                );
+
+                await context.read<ClientRepository>().createClient(newClient);
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text('Ajouter'),
           ),
         ],
       ),
@@ -220,15 +276,72 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   void _showEditClientDialog(BuildContext context, client) {
+    final nomController = TextEditingController(text: client.nom);
+    final prenomController = TextEditingController(text: client.prenom);
+    final emailController = TextEditingController(text: client.email);
+    final telephoneController = TextEditingController(text: client.telephone);
+    final adresseController = TextEditingController(text: client.adresse);
+
     showDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Éditer un client'),
-        content: const Text('Fonctionnalité à implémenter'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nomController,
+                decoration: const InputDecoration(labelText: 'Nom'),
+              ),
+              TextField(
+                controller: prenomController,
+                decoration: const InputDecoration(labelText: 'Prénom'),
+              ),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              TextField(
+                controller: telephoneController,
+                decoration: const InputDecoration(labelText: 'Téléphone'),
+              ),
+              TextField(
+                controller: adresseController,
+                decoration: const InputDecoration(labelText: 'Adresse'),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nomController.text.isNotEmpty &&
+                  prenomController.text.isNotEmpty) {
+                final updatedClient = Client(
+                  clientId: client.clientId,
+                  nom: nomController.text,
+                  prenom: prenomController.text,
+                  email: emailController.text,
+                  telephone: telephoneController.text,
+                  adresse: adresseController.text,
+                  categorie: client.categorie,
+                  nif: client.nif,
+                  stat: client.stat,
+                  axe: client.axe,
+                );
+
+                await context.read<ClientRepository>().updateClient(
+                  updatedClient,
+                );
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text('Modifier'),
           ),
         ],
       ),
@@ -285,7 +398,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   void _showDeleteConfirmation(
     BuildContext context,
-    ClientService service,
+    ClientRepository repository,
     int clientId,
   ) {
     showDialog(
@@ -300,7 +413,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
           ),
           TextButton(
             onPressed: () {
-              service.deleteClient(clientId);
+              repository.deleteClient(clientId);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(
                 context,

@@ -2,44 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 
-/// Écran de connexion
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+/// Écran d'inscription
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _nomController = TextEditingController();
+  final _prenomController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _usernameController.dispose();
+    _emailController.dispose();
+    _nomController.dispose();
+    _prenomController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() async {
+  void _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Les mots de passe ne correspondent pas'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final authRepository = context.read<AuthRepository>();
-    final success = await authRepository.login(
+    final success = await authRepository.register(
       _usernameController.text.trim(),
+      _emailController.text.trim(),
+      _nomController.text.trim(),
+      _prenomController.text.trim(),
       _passwordController.text,
     );
 
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      // Afficher une notification de succès
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Compte créé avec succès! Connectez-vous maintenant.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      // Attendre un peu puis rediriger vers login
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/login');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authRepository.errorMessage ?? 'Erreur de connexion'),
+          content: Text(authRepository.errorMessage ?? 'Erreur d\'inscription'),
           backgroundColor: Colors.red,
         ),
       );
@@ -73,9 +106,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   // Titre
                   Text(
-                    'Planificator',
+                    'Inscription',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.blue.shade800,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                     ),
@@ -83,14 +116,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Version 1.1.0 - Flutter',
+                    'Créer un nouveau compte',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.blue.shade600,
+                      color: Colors.white70,
                       fontSize: 12,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // Conteneur avec largeur max
                   SizedBox(
@@ -118,6 +151,94 @@ class _LoginScreenState extends State<LoginScreen> {
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Nom d\'utilisateur requis';
+                            }
+                            if (value.length < 3) {
+                              return 'Au minimum 3 caractères';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Email Field
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            hintText: 'Email',
+                            hintStyle: const TextStyle(fontSize: 13),
+                            prefixIcon: const Icon(Icons.email, size: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 14,
+                            ),
+                          ),
+                          style: const TextStyle(fontSize: 13),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Email requis';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Email invalide';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Nom Field
+                        TextFormField(
+                          controller: _nomController,
+                          decoration: InputDecoration(
+                            hintText: 'Nom',
+                            hintStyle: const TextStyle(fontSize: 13),
+                            prefixIcon: const Icon(Icons.badge, size: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 14,
+                            ),
+                          ),
+                          style: const TextStyle(fontSize: 13),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Nom requis';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Prenom Field
+                        TextFormField(
+                          controller: _prenomController,
+                          decoration: InputDecoration(
+                            hintText: 'Prénom',
+                            hintStyle: const TextStyle(fontSize: 13),
+                            prefixIcon: const Icon(Icons.badge, size: 18),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 14,
+                            ),
+                          ),
+                          style: const TextStyle(fontSize: 13),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Prénom requis';
                             }
                             return null;
                           },
@@ -166,9 +287,51 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 10),
+
+                        // Confirm Password Field
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          decoration: InputDecoration(
+                            hintText: 'Confirmer mot de passe',
+                            hintStyle: const TextStyle(fontSize: 13),
+                            prefixIcon: const Icon(Icons.lock, size: 18),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 14,
+                            ),
+                          ),
+                          style: const TextStyle(fontSize: 13),
+                          obscureText: _obscureConfirmPassword,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Confirmer le mot de passe';
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 16),
 
-                        // Login Button
+                        // Register Button
                         Consumer<AuthRepository>(
                           builder: (context, authRepository, _) {
                             return SizedBox(
@@ -177,7 +340,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: ElevatedButton(
                                 onPressed: authRepository.isLoading
                                     ? null
-                                    : _handleLogin,
+                                    : _handleRegister,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade800,
                                   shape: RoundedRectangleBorder(
@@ -197,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       )
                                     : const Text(
-                                        'Connexion',
+                                        'Inscription',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -210,13 +373,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 10),
 
-                        // Register Link
+                        // Login Link
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context).pushNamed('/register');
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed('/login');
                           },
                           child: Text(
-                            'Pas de compte? S\'inscrire',
+                            'Déjà inscrit? Se connecter',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: Colors.blue.shade800,

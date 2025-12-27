@@ -26,7 +26,7 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          clientId, nom, prenom, email, telephone, adresse, 
+          client_id, nom, prenom, email, telephone, adresse, 
           categorie, nif, stat, axe
         FROM Client
         ORDER BY nom ASC
@@ -54,10 +54,10 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          clientId, nom, prenom, email, telephone, adresse,
+          client_id, nom, prenom, email, telephone, adresse,
           categorie, nif, stat, axe
         FROM Client
-        WHERE clientId = ?
+        WHERE client_id = ?
       ''';
 
       final row = await _db.queryOne(sql, [clientId]);
@@ -127,7 +127,7 @@ class ClientRepository extends ChangeNotifier {
         UPDATE Client
         SET nom = ?, prenom = ?, email = ?, telephone = ?, adresse = ?,
             categorie = ?, nif = ?, stat = ?, axe = ?
-        WHERE clientId = ?
+        WHERE client_id = ?
       ''';
 
       await _db.execute(sql, [
@@ -163,16 +163,91 @@ class ClientRepository extends ChangeNotifier {
     }
   }
 
-  /// Supprime un client
+  /// Supprime un client avec cascade: contrats → planning → planning_details → factures → remarques
+  /// Conforme à Kivy delete_client() (lignes 915-950)
   Future<void> deleteClient(int clientId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Client WHERE clientId = ?';
+      // ✅ 1. Récupérer tous les contrats du client
+      const getContratsSQL = '''
+        SELECT contrat_id
+        FROM Contrat
+        WHERE client_id = ?
+      ''';
 
-      await _db.execute(sql, [clientId]);
+      final contrats = await _db.query(getContratsSQL, [clientId]);
+      logger.i('📋 Trouvé ${contrats.length} contrats pour client $clientId');
+
+      // ✅ 2. Pour chaque contrat, supprimer en cascade
+      for (final contrat in contrats) {
+        final contratId = contrat['contrat_id'] as int;
+
+        // Supprimer tous les planning du contrat
+        const getPlanningSQL = '''
+          SELECT planning_id
+          FROM Planning
+          WHERE traitement_id IN (SELECT traitement_id FROM Traitement WHERE contrat_id = ?)
+        ''';
+
+        final plannings = await _db.query(getPlanningSQL, [contratId]);
+
+        for (final planning in plannings) {
+          final planningId = planning['planning_id'] as int;
+
+          // Supprimer les remarques de tous les planning details
+          const getRemarquesSQL = '''
+            SELECT r.remarque_id
+            FROM Remarque r
+            JOIN PlanningDetails pd ON r.planning_details_id = pd.planning_detail_id
+            WHERE pd.planning_id = ?
+          ''';
+
+          final remarques = await _db.query(getRemarquesSQL, [planningId]);
+          for (final remarque in remarques) {
+            await _db.execute('DELETE FROM Remarque WHERE remarque_id = ?', [
+              remarque['remarque_id'],
+            ]);
+          }
+
+          // Supprimer les signalements
+          await _db.execute(
+            'DELETE FROM Signalement WHERE planning_details_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
+            [planningId],
+          );
+
+          // Supprimer les factures
+          await _db.execute(
+            'DELETE FROM Facture WHERE planning_details_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
+            [planningId],
+          );
+
+          // Supprimer les planning details
+          await _db.execute(
+            'DELETE FROM PlanningDetails WHERE planning_id = ?',
+            [planningId],
+          );
+
+          // Supprimer le planning
+          await _db.execute('DELETE FROM Planning WHERE planning_id = ?', [
+            planningId,
+          ]);
+
+          logger.i('  ✅ Planning $planningId supprimé (avec cascade)');
+        }
+
+        // Supprimer le contrat
+        await _db.execute('DELETE FROM Contrat WHERE contrat_id = ?', [
+          contratId,
+        ]);
+
+        logger.i('  ✅ Contrat $contratId supprimé');
+      }
+
+      // ✅ 3. Supprimer le client
+      await _db.execute('DELETE FROM Client WHERE client_id = ?', [clientId]);
 
       _clients.removeWhere((c) => c.clientId == clientId);
 
@@ -180,7 +255,9 @@ class ClientRepository extends ChangeNotifier {
         _currentClient = null;
       }
 
-      logger.i('Client $clientId supprimé');
+      logger.i(
+        '✅ Client $clientId supprimé (avec tous les contrats et données associées)',
+      );
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors de la suppression: $e');
@@ -199,7 +276,7 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          clientId, nom, prenom, email, telephone, adresse,
+          client_id, nom, prenom, email, telephone, adresse,
           categorie, nif, stat, axe
         FROM Client
         WHERE nom LIKE ? OR prenom LIKE ? OR email LIKE ?
@@ -229,7 +306,7 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          clientId, nom, prenom, email, telephone, adresse,
+          client_id, nom, prenom, email, telephone, adresse,
           categorie, nif, stat, axe
         FROM Client
         WHERE categorie = ?
@@ -277,7 +354,7 @@ class ClientRepository extends ChangeNotifier {
   /// Vérifie si un email existe
   Future<bool> emailExists(String email) async {
     try {
-      const sql = 'SELECT clientId FROM Client WHERE email = ?';
+      const sql = 'SELECT client_id FROM Client WHERE email = ?';
       final row = await _db.queryOne(sql, [email]);
       return row != null;
     } catch (e) {

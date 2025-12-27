@@ -31,7 +31,7 @@ class Client {
   /// Factory constructor pour créer un Client à partir d'une Map (base de données)
   factory Client.fromMap(Map<String, dynamic> map) {
     return Client(
-      clientId: map['clientId'] as int,
+      clientId: map['client_id'] as int,
       nom: map['nom'] as String? ?? '',
       prenom: map['prenom'] as String? ?? '',
       email: map['email'] as String? ?? '',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/index.dart';
-import '../../services/index.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
@@ -53,7 +52,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
 
   void _loadClient() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClientService>().loadClient(widget.clientId);
+      context.read<ClientRepository>().loadClient(widget.clientId);
     });
   }
 
@@ -121,17 +120,17 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
               ),
           ],
         ),
-        body: Consumer<ClientService>(
-          builder: (context, service, _) {
-            _client = service.currentClient;
+        body: Consumer<ClientRepository>(
+          builder: (context, repository, _) {
+            _client = repository.currentClient;
 
-            if (service.isLoading) {
+            if (repository.isLoading) {
               return const LoadingWidget();
             }
 
-            if (service.errorMessage != null) {
+            if (repository.errorMessage != null) {
               return ErrorDisplayWidget(
-                message: service.errorMessage!,
+                message: repository.errorMessage!,
                 onRetry: _loadClient,
               );
             }
@@ -452,15 +451,13 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   }
 
   void _navigateToFactures(BuildContext context, int clientId) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Factures du client - À implémenter')),
-    );
+    context.read<FactureRepository>().loadFacturesForClient(clientId);
+    Navigator.of(context).pushNamed('/factures');
   }
 
   void _navigateToContrats(BuildContext context, int clientId) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Contrats du client - À implémenter')),
-    );
+    context.read<ContratRepository>().loadContratsForClient(clientId);
+    Navigator.of(context).pushNamed('/contrats');
   }
 
   @override

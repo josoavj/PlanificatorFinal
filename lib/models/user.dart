@@ -30,9 +30,7 @@ class User {
       prenom: json['prenom'] as String? ?? '',
       isAdmin: (json['is_admin'] as int?) == 1,
       token: json['token'] as String? ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : null,
+      createdAt: _parseDateTime(json['createdAt']),
     );
   }
 
@@ -45,10 +43,16 @@ class User {
       isAdmin:
           (map['isAdmin'] as int?) == 1 || (map['isAdmin'] as bool?) == true,
       token: map['password'] as String? ?? '',
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'] as String)
-          : null,
+      createdAt: _parseDateTime(map['createdAt']),
     );
+  }
+
+  /// Aide à parser les dates qui peuvent être String ou DateTime
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.parse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() => {

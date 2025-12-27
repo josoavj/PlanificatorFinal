@@ -1,6 +1,5 @@
 import 'package:logger/logger.dart';
 import 'package:mysql1/mysql1.dart';
-import '../core/constants.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -71,7 +70,6 @@ class DatabaseService {
       return true;
     } catch (e) {
       logger.e('❌ Erreur de connexion: $e');
-      return false;
       _isConnected = false;
       rethrow;
     }

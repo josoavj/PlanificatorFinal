@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:planificator/models/index.dart';
 import 'package:planificator/repositories/remarque_repository.dart';
+import 'package:planificator/utils/date_helper.dart';
 
 class RemarqueDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -19,12 +21,9 @@ class RemarqueDialog extends StatefulWidget {
 }
 
 class _RemarqueDialogState extends State<RemarqueDialog> {
-  final _remarqueRepo = RemarqueRepository();
-
   late TextEditingController _contenuCtrl;
   late TextEditingController _problemeCtrl;
   late TextEditingController _actionCtrl;
-  late TextEditingController _nomFactureCtrl;
   late TextEditingController _datePayementCtrl;
   late TextEditingController _etablissementCtrl;
   late TextEditingController _numeroChequeCtrl;
@@ -39,7 +38,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     _contenuCtrl = TextEditingController();
     _problemeCtrl = TextEditingController();
     _actionCtrl = TextEditingController();
-    _nomFactureCtrl = TextEditingController();
     _datePayementCtrl = TextEditingController();
     _etablissementCtrl = TextEditingController();
     _numeroChequeCtrl = TextEditingController();
@@ -50,7 +48,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     _contenuCtrl.dispose();
     _problemeCtrl.dispose();
     _actionCtrl.dispose();
-    _nomFactureCtrl.dispose();
     _datePayementCtrl.dispose();
     _etablissementCtrl.dispose();
     _numeroChequeCtrl.dispose();
@@ -68,16 +65,16 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
         );
         return;
       }
-      if (_nomFactureCtrl.text.isEmpty || _datePayementCtrl.text.isEmpty) {
+      if (_datePayementCtrl.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veuillez remplir les infos paiement')),
+          const SnackBar(content: Text('Veuillez remplir la date de paiement')),
         );
         return;
       }
       if (_modePaiement == 'Cheque' &&
           (_etablissementCtrl.text.isEmpty || _numeroChequeCtrl.text.isEmpty)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veuillez remplir info chèque')),
+          const SnackBar(content: Text('Veuillez remplir les infos chèque')),
         );
         return;
       }
@@ -86,19 +83,22 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     setState(() => _isLoading = true);
 
     try {
-      await _remarqueRepo.createRemarque(
-        planningDetailId: widget.planningDetail.id!,
+      final repo = context.read<RemarqueRepository>();
+
+      await repo.createRemarque(
+        planningDetailsId: widget.planningDetail.planningDetailId,
         factureId: widget.facture.factureId,
         contenu: _contenuCtrl.text.isEmpty ? null : _contenuCtrl.text,
         probleme: _problemeCtrl.text.isEmpty ? null : _problemeCtrl.text,
         action: _actionCtrl.text.isEmpty ? null : _actionCtrl.text,
         modePaiement: _estPayee ? _modePaiement : null,
-        nomFacture: _estPayee ? _nomFactureCtrl.text : null,
-        datePayement: _estPayee ? _datePayementCtrl.text : null,
-        etablissement: _modePaiement == 'Cheque'
+        datePayement: _estPayee
+            ? DateHelper.format(DateHelper.parseAny(_datePayementCtrl.text))
+            : null,
+        etablissement: _modePaiement == 'Chèque'
             ? _etablissementCtrl.text
             : null,
-        numeroCheque: _modePaiement == 'Cheque' ? _numeroChequeCtrl.text : null,
+        numeroCheque: _modePaiement == 'Chèque' ? _numeroChequeCtrl.text : null,
         estPayee: _estPayee,
       );
 
@@ -120,6 +120,18 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     }
   }
 
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2099),
+    );
+    if (picked != null) {
+      setState(() => _datePayementCtrl.text = DateHelper.format(picked));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -130,89 +142,109 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Remarque pour ${widget.planningDetail.datePlanification}',
+                'Remarque - ${DateHelper.format(widget.planningDetail.datePlanification)}',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
+
+              // Contenu remarque
               TextField(
                 controller: _contenuCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Remarque',
+                  labelText: 'Remarque (optionnelle)',
                   border: OutlineInputBorder(),
+                  hintText: 'Notes sur la visite...',
                 ),
                 maxLines: 2,
               ),
               const SizedBox(height: 12),
+
+              // Problème identifié
               TextField(
                 controller: _problemeCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Problème',
+                  labelText: 'Problème identifié (optionnel)',
                   border: OutlineInputBorder(),
+                  hintText: 'Problème rencontré...',
                 ),
               ),
               const SizedBox(height: 12),
+
+              // Action corrective
               TextField(
                 controller: _actionCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Action',
+                  labelText: 'Action corrective (optionnelle)',
                   border: OutlineInputBorder(),
+                  hintText: 'Action à prendre...',
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Paiement
               CheckboxListTile(
-                title: const Text('Payée'),
+                title: const Text('Marquer comme payée'),
                 value: _estPayee,
                 onChanged: (val) => setState(() => _estPayee = val ?? false),
               ),
+
               if (_estPayee) ...[
                 const SizedBox(height: 12),
+
+                // Mode de paiement
                 DropdownButtonFormField(
                   value: _modePaiement,
                   decoration: const InputDecoration(
-                    labelText: 'Mode paiement',
+                    labelText: 'Mode de paiement',
                     border: OutlineInputBorder(),
                   ),
-                  items: ['Cheque', 'Espece', 'Virement', 'Mobile Money']
+                  items: ['Chèque', 'Espèce', 'Virement', 'Mobile Money']
                       .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                       .toList(),
                   onChanged: (val) => setState(() => _modePaiement = val),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _nomFactureCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Numéro facture',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
+
+                // Date de paiement
                 TextField(
                   controller: _datePayementCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Date paiement',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Date de paiement',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: _selectDate,
+                    ),
                   ),
+                  readOnly: true,
                 ),
-                if (_modePaiement == 'Cheque') ...[
+
+                // Champs spécifiques pour chèque
+                if (_modePaiement == 'Chèque') ...[
                   const SizedBox(height: 12),
                   TextField(
                     controller: _etablissementCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Établissement',
+                      labelText: 'Établissement bancaire',
                       border: OutlineInputBorder(),
+                      hintText: 'Nom de la banque...',
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _numeroChequeCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Numéro chèque',
+                      labelText: 'Numéro de chèque',
                       border: OutlineInputBorder(),
+                      hintText: 'Ex: 123456',
                     ),
                   ),
                 ],
               ],
-              const SizedBox(height: 16),
+
+              const SizedBox(height: 24),
+
+              // Boutons
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [

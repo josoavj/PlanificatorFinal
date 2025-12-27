@@ -26,9 +26,10 @@ class ContratRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          contratId, clientId, dateDebut, dateFin, prix, etat
+          contrat_id, client_id, reference_contrat, date_contrat, date_debut, date_fin, 
+          statut_contrat, duree_contrat, duree, categorie
         FROM Contrat
-        ORDER BY dateDebut DESC
+        ORDER BY date_debut DESC
       ''';
 
       final rows = await _db.query(sql);
@@ -53,10 +54,11 @@ class ContratRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          contratId, clientId, dateDebut, dateFin, prix, etat
+          contrat_id, client_id, reference_contrat, date_contrat, date_debut, date_fin, 
+          statut_contrat, duree_contrat, duree, categorie
         FROM Contrat
-        WHERE clientId = ?
-        ORDER BY dateDebut DESC
+        WHERE client_id = ?
+        ORDER BY date_debut DESC
       ''';
 
       final rows = await _db.query(sql, [clientId]);
@@ -81,9 +83,10 @@ class ContratRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          contratId, clientId, dateDebut, dateFin, prix, etat
+          contrat_id, client_id, reference_contrat, date_contrat, date_debut, date_fin, 
+          statut_contrat, duree_contrat, duree, categorie
         FROM Contrat
-        WHERE contratId = ?
+        WHERE contrat_id = ?
       ''';
 
       final row = await _db.queryOne(sql, [contratId]);
@@ -103,38 +106,56 @@ class ContratRepository extends ChangeNotifier {
   }
 
   /// Crée un nouveau contrat
-  Future<int> createContrat(
-    int clientId,
-    DateTime dateDebut,
-    DateTime dateFin,
-    double prix,
-  ) async {
+  Future<int> createContrat({
+    required int clientId,
+    required String referenceContrat,
+    required DateTime dateContrat,
+    required DateTime dateDebut,
+    required DateTime dateFin,
+    required String statutContrat,
+    required int duree,
+    required String categorie,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // Calculer la durée du contrat en mois
+      final dureeContrat =
+          dateFin.month -
+          dateDebut.month +
+          12 * (dateFin.year - dateDebut.year);
+
       const sql = '''
-        INSERT INTO Contrat (clientId, dateDebut, dateFin, prix, etat)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO Contrat (client_id, reference_contrat, date_contrat, date_debut, date_fin, statut_contrat, duree_contrat, duree, categorie)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''';
 
       final id = await _db.insert(sql, [
         clientId,
+        referenceContrat,
+        dateContrat.toIso8601String(),
         dateDebut.toIso8601String(),
         dateFin.toIso8601String(),
-        prix,
-        'Actif',
+        statutContrat,
+        dureeContrat,
+        duree,
+        categorie,
       ]);
 
       // Ajouter le nouveau contrat à la liste
       final newContrat = Contrat(
         contratId: id,
         clientId: clientId,
+        referenceContrat: referenceContrat,
+        dateContrat: dateContrat,
         dateDebut: dateDebut,
         dateFin: dateFin,
-        prix: prix,
-        etat: 'Actif',
+        statutContrat: statutContrat,
+        dureeContrat: dureeContrat,
+        duree: duree,
+        categorie: categorie,
       );
       _contrats.add(newContrat);
 
@@ -157,18 +178,28 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Calculer la durée du contrat en mois
+      final dureeContrat =
+          contrat.dateFin.month -
+          contrat.dateDebut.month +
+          12 * (contrat.dateFin.year - contrat.dateDebut.year);
+
       const sql = '''
         UPDATE Contrat 
-        SET clientId = ?, dateDebut = ?, dateFin = ?, prix = ?, etat = ?
-        WHERE contratId = ?
+        SET client_id = ?, reference_contrat = ?, date_contrat = ?, date_debut = ?, date_fin = ?, statut_contrat = ?, duree_contrat = ?, duree = ?, categorie = ?
+        WHERE contrat_id = ?
       ''';
 
       await _db.execute(sql, [
         contrat.clientId,
+        contrat.referenceContrat,
+        contrat.dateContrat.toIso8601String(),
         contrat.dateDebut.toIso8601String(),
         contrat.dateFin.toIso8601String(),
-        contrat.prix,
-        contrat.etat,
+        contrat.statutContrat,
+        dureeContrat,
+        contrat.duree,
+        contrat.categorie,
         contrat.contratId,
       ]);
 
@@ -201,7 +232,7 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Contrat WHERE contratId = ?';
+      const sql = 'DELETE FROM Contrat WHERE contrat_id = ?';
 
       await _db.execute(sql, [contratId]);
 
@@ -245,11 +276,11 @@ class ContratRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          c.contratId, c.clientId, c.dateDebut, c.dateFin, c.prix, c.etat
+          c.contrat_id, c.client_id, c.reference_contrat, c.date_contrat, c.date_debut, c.date_fin, c.statut_contrat, c.duree_contrat, c.duree, c.categorie
         FROM Contrat c
-        JOIN Client cli ON c.clientId = cli.clientId
+        JOIN Client cli ON c.client_id = cli.client_id
         WHERE cli.nom LIKE ? OR cli.prenom LIKE ?
-        ORDER BY c.dateDebut DESC
+        ORDER BY c.date_debut DESC
       ''';
 
       final searchTerm = '%$query%';

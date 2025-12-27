@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../services/index.dart';
+import '../../repositories/index.dart';
 import '../../models/index.dart';
 import '../../widgets/index.dart';
 
@@ -15,18 +15,18 @@ class FactureListScreen extends StatefulWidget {
 }
 
 class _FactureListScreenState extends State<FactureListScreen> {
-  late FactureService _factureService;
+  late FactureRepository _factureRepository;
   String _filterState = 'all'; // 'all', 'paid', 'unpaid'
 
   @override
   void initState() {
     super.initState();
-    _factureService = context.read<FactureService>();
+    _factureRepository = context.read<FactureRepository>();
 
     // Charger les factures
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.clientId != null) {
-        _factureService.loadFacturesForClient(widget.clientId!);
+        _factureRepository.loadFacturesForClient(widget.clientId!);
       }
     });
   }
@@ -41,33 +41,33 @@ class _FactureListScreenState extends State<FactureListScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               if (widget.clientId != null) {
-                _factureService.loadFacturesForClient(widget.clientId!);
+                _factureRepository.loadFacturesForClient(widget.clientId!);
               }
             },
           ),
         ],
       ),
-      body: Consumer<FactureService>(
-        builder: (context, service, _) {
+      body: Consumer<FactureRepository>(
+        builder: (context, repository, _) {
           // État de chargement
-          if (service.isLoading) {
+          if (repository.isLoading) {
             return const LoadingWidget(message: 'Chargement des factures...');
           }
 
           // État d'erreur
-          if (service.errorMessage != null) {
+          if (repository.errorMessage != null) {
             return ErrorDisplayWidget(
-              message: service.errorMessage!,
+              message: repository.errorMessage!,
               onRetry: () {
                 if (widget.clientId != null) {
-                  service.loadFacturesForClient(widget.clientId!);
+                  repository.loadFacturesForClient(widget.clientId!);
                 }
               },
             );
           }
 
           // Récupérer et filtrer les factures
-          final factures = service.factures;
+          final factures = repository.factures;
           final filteredFactures = _filterFactures(factures);
 
           // État vide
@@ -118,7 +118,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
               ),
 
               // Statistiques
-              _buildStatisticsBar(service, filteredFactures),
+              _buildStatisticsBar(repository, filteredFactures),
 
               // Liste des factures
               Expanded(
@@ -129,7 +129,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
                     return _FactureCard(
                       facture: facture,
                       onTap: () =>
-                          _showFactureDetails(context, facture, service),
+                          _showFactureDetails(context, facture, repository),
                     );
                   },
                 ),
@@ -151,7 +151,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
   }
 
   Widget _buildStatisticsBar(
-    FactureService service,
+    FactureRepository repository,
     List<Facture> filteredFactures,
   ) {
     final paidAmount = filteredFactures
@@ -191,7 +191,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
   void _showFactureDetails(
     BuildContext context,
     Facture facture,
-    FactureService service,
+    FactureRepository repository,
   ) {
     showModalBottomSheet(
       context: context,
@@ -217,9 +217,47 @@ class _FactureListScreenState extends State<FactureListScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              _buildDetailRow('Date', _formatDate(facture.date)),
-              _buildDetailRow('Montant', facture.montantFormatted),
-              _buildDetailRow('Statut', facture.isPaid ? 'Payée' : 'Non payée'),
+
+              // Client
+              if (facture.clientFullName != 'N/A')
+                _buildDetailRow('Client', facture.clientFullName),
+
+              // Type de traitement
+              if (facture.typeTreatment != null)
+                _buildDetailRow('Traitement', facture.typeTreatment!),
+
+              // Date de planification
+              if (facture.datePlanification != null)
+                _buildDetailRow(
+                  'Date planification',
+                  _formatDate(facture.datePlanification!),
+                ),
+
+              // État du planning
+              if (facture.etatPlanning != null)
+                _buildDetailRow('État planning', facture.etatPlanning!),
+
+              const SizedBox(height: 12),
+
+              // Facture details
+              _buildDetailRow(
+                'Date facture',
+                _formatDate(facture.dateTraitement),
+              ),
+              _buildDetailRow(
+                'Montant',
+                facture.montantFormatted,
+                isBold: true,
+              ),
+
+              // Mode de paiement si payée
+              if (facture.isPaid && facture.mode != null)
+                _buildDetailRow('Mode paiement', facture.mode!),
+
+              // Numéro chèque si applicable
+              if (facture.numeroCheque != null)
+                _buildDetailRow('Chèque #', facture.numeroCheque!),
+
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -227,7 +265,11 @@ class _FactureListScreenState extends State<FactureListScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        _showPriceModificationDialog(context, facture, service);
+                        _showPriceModificationDialog(
+                          context,
+                          facture,
+                          repository,
+                        );
                       },
                       child: const Text('Modifier le prix'),
                     ),
@@ -241,7 +283,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
                       onPressed: facture.isPaid
                           ? null
                           : () {
-                              service.markAsPaid(facture.factureId);
+                              repository.markAsPaid(facture.factureId);
                               Navigator.of(ctx).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -264,7 +306,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
   void _showPriceModificationDialog(
     BuildContext context,
     Facture facture,
-    FactureService service,
+    FactureRepository repository,
   ) {
     final priceController = TextEditingController(
       text: facture.montant.toStringAsFixed(2),
@@ -292,7 +334,10 @@ class _FactureListScreenState extends State<FactureListScreen> {
             onPressed: () {
               final newPrice = double.tryParse(priceController.text);
               if (newPrice != null && newPrice > 0) {
-                service.updateFacturePrice(facture.factureId, newPrice);
+                repository.updateFacturePrice(
+                  facture.factureId,
+                  newPrice.toInt(),
+                );
                 Navigator.of(ctx).pop();
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -311,14 +356,19 @@ class _FactureListScreenState extends State<FactureListScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
+          Text(
+            value,
+            style: isBold
+                ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                : null,
+          ),
         ],
       ),
     );
@@ -346,7 +396,7 @@ class _FactureCard extends StatelessWidget {
           color: facture.isPaid ? Colors.green : Colors.orange,
         ),
         title: Text('Facture #${facture.factureId}'),
-        subtitle: Text(DateFormat('dd/MM/yyyy').format(facture.date)),
+        subtitle: Text(DateFormat('dd/MM/yyyy').format(facture.dateTraitement)),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,

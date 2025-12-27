@@ -8,23 +8,23 @@ class PlanningDetailsRepository {
   Future<PlanningDetails?> createPlanningDetails(
     int planningId,
     DateTime datePlanification, {
-    String etat = 'À venir',
+    String statut = 'À venir',
   }) async {
     try {
       final result = await _db.query(
-        'INSERT INTO PlanningDetails (planning_id, date_planification, etat) VALUES (?, ?, ?)',
-        [planningId, datePlanification.toIso8601String().split('T')[0], etat],
+        'INSERT INTO PlanningDetails (planning_id, date_planification, statut) VALUES (?, ?, ?)',
+        [planningId, datePlanification.toIso8601String().split('T')[0], statut],
       );
 
       if (result.isNotEmpty) {
-        int insertId = result[0]['id_planning_details'] as int? ?? 0;
+        int insertId = result[0]['planning_detail_id'] as int? ?? 0;
         if (insertId == 0) return null;
 
         return PlanningDetails(
-          id: insertId,
+          planningDetailId: insertId,
           planningId: planningId,
           datePlanification: datePlanification,
-          etat: etat,
+          statut: statut,
         );
       }
       return null;
@@ -42,9 +42,7 @@ class PlanningDetailsRepository {
         [planningId],
       );
 
-      return results
-          .map((row) => PlanningDetails.fromJson(row as Map<String, dynamic>))
-          .toList();
+      return results.map((row) => PlanningDetails.fromJson(row)).toList();
     } catch (e) {
       print('❌ Erreur récupérer planning_details: $e');
       return [];
@@ -52,14 +50,14 @@ class PlanningDetailsRepository {
   }
 
   /// Mettre à jour l'état d'un détail
-  Future<bool> updatePlanningDetailsEtat(
-    int planningDetailsId,
-    String newEtat,
+  Future<bool> updatePlanningDetailsStatut(
+    int planningDetailId,
+    String newStatut,
   ) async {
     try {
       final result = await _db.query(
-        'UPDATE PlanningDetails SET etat = ? WHERE id_planning_details = ?',
-        [newEtat, planningDetailsId],
+        'UPDATE PlanningDetails SET statut = ? WHERE planning_detail_id = ?',
+        [newStatut, planningDetailId],
       );
 
       return result.isNotEmpty;
@@ -73,7 +71,7 @@ class PlanningDetailsRepository {
   Future<bool> deletePlanningDetails(int planningDetailsId) async {
     try {
       final result = await _db.query(
-        'DELETE FROM PlanningDetails WHERE id_planning_details = ?',
+        'DELETE FROM PlanningDetails WHERE planning_detail_id = ?',
         [planningDetailsId],
       );
 

@@ -15,7 +15,8 @@ class HistoriqueRepository extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// Charge tous les événements d'historique
+  /// Charge tous les événements d'historique avec données de factures
+  /// Utilise la vraie table Historique pour les données complètes
   Future<void> loadAllEvents() async {
     _isLoading = true;
     _errorMessage = null;
@@ -24,13 +25,29 @@ class HistoriqueRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          historiqueId, type, description, date, details
-        FROM Historique
-        ORDER BY date DESC
+          h.historique_id,
+          h.date_historique as date,
+          f.facture_id,
+          pd.date_planification,
+          h.contenu as description,
+          h.issue,
+          h.action
+        FROM Historique h
+        LEFT JOIN Facture f ON h.facture_id = f.facture_id
+        LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
+        ORDER BY h.date_historique DESC
       ''';
 
       final rows = await _db.query(sql);
-      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
+      _events = rows.map((row) {
+        return HistoriqueEvent(
+          historiqueId: row['historique_id'] as int? ?? 0,
+          type: 'historique',
+          description: row['description'] ?? 'Événement',
+          date: DateTime.tryParse(row['date'].toString()) ?? DateTime.now(),
+          details: '${row['issue'] ?? ''} | Action: ${row['action'] ?? ''}',
+        );
+      }).toList();
 
       logger.i('${_events.length} événements d\'historique chargés');
     } catch (e) {
@@ -42,8 +59,8 @@ class HistoriqueRepository extends ChangeNotifier {
     }
   }
 
-  /// Charge les événements d'historique filtrés par type
-  Future<void> loadEventsByType(String type) async {
+  /// Charge les événements d'historique filtrés par type/catégorie
+  Future<void> loadEventsByCategory(String categorie) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -51,16 +68,29 @@ class HistoriqueRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          historiqueId, type, description, date, details
-        FROM Historique
-        WHERE type = ?
-        ORDER BY date DESC
+          h.historique_id,
+          h.date_historique as date,
+          h.contenu as description,
+          h.issue,
+          h.action
+        FROM Historique h
+        LEFT JOIN Facture f ON h.facture_id = f.facture_id
+        WHERE f.axe = ?
+        ORDER BY h.date_historique DESC
       ''';
 
-      final rows = await _db.query(sql, [type]);
-      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
+      final rows = await _db.query(sql, [categorie]);
+      _events = rows.map((row) {
+        return HistoriqueEvent(
+          historiqueId: row['historique_id'] as int? ?? 0,
+          type: 'historique_categorie',
+          description: row['description'] ?? 'Événement',
+          date: DateTime.tryParse(row['date'].toString()) ?? DateTime.now(),
+          details: '${row['issue'] ?? ''} | Action: ${row['action'] ?? ''}',
+        );
+      }).toList();
 
-      logger.i('${_events.length} événements du type $type chargés');
+      logger.i('${_events.length} événements de catégorie $categorie chargés');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors du chargement de l\'historique: $e');
@@ -79,15 +109,33 @@ class HistoriqueRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          h.historiqueId, h.type, h.description, h.date, h.details
+          h.historique_id,
+          h.date_historique as date,
+          h.contenu as description,
+          h.issue,
+          h.action
         FROM Historique h
-        JOIN Client c ON h.details LIKE CONCAT('%clientId:', c.clientId, '%')
-        WHERE c.clientId = ?
-        ORDER BY h.date DESC
+        LEFT JOIN Facture f ON h.facture_id = f.facture_id
+        LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
+        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
+        LEFT JOIN Traitement t ON p.planning_id IN (
+          SELECT DISTINCT planning_id FROM PlanningDetails WHERE planning_detail_id = pd.planning_detail_id
+        )
+        LEFT JOIN Contrat c ON t.contrat_id = c.contrat_id
+        WHERE c.client_id = ?
+        ORDER BY h.date_historique DESC
       ''';
 
       final rows = await _db.query(sql, [clientId]);
-      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
+      _events = rows.map((row) {
+        return HistoriqueEvent(
+          historiqueId: row['historique_id'] as int? ?? 0,
+          type: 'historique_client',
+          description: row['description'] ?? 'Événement',
+          date: DateTime.tryParse(row['date'].toString()) ?? DateTime.now(),
+          details: '${row['issue'] ?? ''} | Action: ${row['action'] ?? ''}',
+        );
+      }).toList();
 
       logger.i('${_events.length} événements du client $clientId chargés');
     } catch (e) {

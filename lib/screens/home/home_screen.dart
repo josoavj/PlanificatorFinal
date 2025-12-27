@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../services/index.dart';
-import '../../models/index.dart';
+import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
 import '../client/client_list_screen.dart';
@@ -25,9 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Load initial data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClientService>().loadClients();
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Additional initialization can be added here
+    // });
   }
 
   @override
@@ -40,42 +39,67 @@ class _HomeScreenState extends State<HomeScreen> {
           elevation: 0,
           centerTitle: true,
         ),
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: const [
-            _DashboardTab(),
-            ClientListScreen(),
-            FactureListScreen(),
-            ContratScreen(),
-            PlanningScreen(),
-            HistoriqueScreen(),
-            SettingsScreen(),
-          ],
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-          selectedItemColor: AppTheme.primaryBlue,
-          unselectedItemColor: Colors.grey,
-          onTap: (index) {
-            setState(() => _selectedIndex = index);
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-            BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Clients'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt),
-              label: 'Factures',
+        body: Row(
+          children: [
+            // Navigation Rail Latérale
+            NavigationRail(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (int index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              labelType: NavigationRailLabelType.all,
+              backgroundColor: Colors.blue.shade50,
+              selectedIconTheme: IconThemeData(
+                color: AppTheme.primaryBlue,
+                size: 24,
+              ),
+              unselectedIconTheme: const IconThemeData(
+                color: Colors.grey,
+                size: 24,
+              ),
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home),
+                  label: Text('Accueil'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.people),
+                  label: Text('Clients'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.receipt),
+                  label: Text('Factures'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.description),
+                  label: Text('Contrats'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.event),
+                  label: Text('Planning'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.history),
+                  label: Text('Historique'),
+                ),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.description),
-              label: 'Contrats',
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Planning'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'Historique',
+            // Contenu principal
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: const [
+                  _DashboardTab(),
+                  ClientListScreen(),
+                  FactureListScreen(),
+                  ContratScreen(),
+                  PlanningScreen(),
+                  HistoriqueScreen(),
+                  SettingsScreen(),
+                ],
+              ),
             ),
           ],
         ),
@@ -85,9 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDrawer(BuildContext context) {
-    return Consumer<AuthService>(
-      builder: (context, authService, _) {
-        final user = authService.currentUser;
+    return Consumer<AuthRepository>(
+      builder: (context, authRepository, _) {
+        final user = authRepository.currentUser;
         return Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -206,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
       cancelText: 'Annuler',
     ).then((confirmed) {
       if (confirmed == true) {
-        context.read<AuthService>().logout();
+        context.read<AuthRepository>().logout();
       }
     });
   }
@@ -217,8 +241,8 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AuthService, ClientService>(
-      builder: (context, authService, clientService, _) {
+    return Consumer<AuthRepository>(
+      builder: (context, authRepository, _) {
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -226,8 +250,8 @@ class _DashboardTab extends StatelessWidget {
             children: [
               // Welcome Card
               _WelcomeCard(
-                userName: authService.currentUser?.fullName ?? 'Utilisateur',
-                isAdmin: authService.currentUser?.isAdmin ?? false,
+                userName: authRepository.currentUser?.fullName ?? 'Utilisateur',
+                isAdmin: authRepository.currentUser?.isAdmin ?? false,
               ),
               const SizedBox(height: 24),
 
@@ -237,7 +261,7 @@ class _DashboardTab extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 12),
-              _buildStatisticsCards(clientService),
+              _buildStatisticsCards(),
               const SizedBox(height: 24),
 
               // Quick Actions
@@ -254,15 +278,13 @@ class _DashboardTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatisticsCards(ClientService clientService) {
-    final clientCount = clientService.clients.length;
-
+  Widget _buildStatisticsCards() {
     return Row(
       children: [
         Expanded(
           child: _StatisticCard(
             title: 'Clients',
-            value: clientCount.toString(),
+            value: '0',
             icon: Icons.people,
             color: Colors.blue,
           ),
@@ -271,7 +293,7 @@ class _DashboardTab extends StatelessWidget {
         Expanded(
           child: _StatisticCard(
             title: 'Factures',
-            value: '12', // À implémenter
+            value: '0',
             icon: Icons.receipt,
             color: Colors.green,
           ),
@@ -286,11 +308,9 @@ class _DashboardTab extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Liste des clients - À implémenter'),
-              ),
-            ),
+            onPressed: () {
+              Navigator.of(context).pushNamed('/clients');
+            },
             icon: const Icon(Icons.people),
             label: const Text('Voir tous les clients'),
           ),
@@ -299,13 +319,11 @@ class _DashboardTab extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ajouter un client - À implémenter'),
-              ),
-            ),
-            icon: const Icon(Icons.person_add),
-            label: const Text('Ajouter un client'),
+            onPressed: () {
+              Navigator.of(context).pushNamed('/contrats');
+            },
+            icon: const Icon(Icons.description),
+            label: const Text('Gérer les contrats'),
           ),
         ),
       ],
@@ -380,42 +398,4 @@ class _StatisticCard extends StatelessWidget {
   }
 }
 
-// Placeholder tabs à implémenter
-class _ClientsTabStub extends StatelessWidget {
-  const _ClientsTabStub({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const EmptyStateWidget(
-      title: 'Clients',
-      message: 'La gestion des clients sera bientôt disponible',
-      icon: Icons.people_outline,
-    );
-  }
-}
-
-class _FacturesTabStub extends StatelessWidget {
-  const _FacturesTabStub({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const EmptyStateWidget(
-      title: 'Factures',
-      message: 'La gestion des factures sera bientôt disponible',
-      icon: Icons.receipt_outlined,
-    );
-  }
-}
-
-class _SettingsTabStub extends StatelessWidget {
-  const _SettingsTabStub({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const EmptyStateWidget(
-      title: 'Paramètres',
-      message: 'Les paramètres seront bientôt disponibles',
-      icon: Icons.settings_outlined,
-    );
-  }
-}
+// End of HomeScreen

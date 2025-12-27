@@ -358,8 +358,8 @@ class PlanningRepository extends ChangeNotifier {
       // ✅ 1. Créer le planning dans la BD
       const createPlanningSQL = '''
         INSERT INTO Planning 
-        (id_traitement, date_debut, mois_debut, mois_fin, redondance, date_fin)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (traitement_id, date_debut_planification, mois_debut, mois_fin, duree_traitement, redondance, date_fin_planification)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       ''';
 
       final planning = await _db.query(createPlanningSQL, [
@@ -367,6 +367,7 @@ class PlanningRepository extends ChangeNotifier {
         debut.toIso8601String().split('T')[0],
         mois_debut,
         mois_fin ?? 0,
+        12,
         redondance,
         dateFinContrat.toIso8601String().split('T')[0],
       ]);
@@ -375,8 +376,7 @@ class PlanningRepository extends ChangeNotifier {
         throw Exception('Erreur création planning');
       }
 
-      int planningId =
-          planning[0]['id_planning'] ?? planning[0]['planning_id'] ?? 0;
+      int planningId = planning[0]['planning_id'] ?? 0;
       if (planningId == 0) throw Exception('Planning ID non défini');
 
       logger.i('✅ Planning créé: ID $planningId');
@@ -384,7 +384,7 @@ class PlanningRepository extends ChangeNotifier {
       // ✅ 2. Créer planning_details pour chaque date
       const createDetailsSQL = '''
         INSERT INTO PlanningDetails 
-        (planning_id, date_planification, etat)
+        (planning_id, date_planification, statut)
         VALUES (?, ?, ?)
       ''';
 
@@ -399,7 +399,7 @@ class PlanningRepository extends ChangeNotifier {
             'À venir',
           ]);
 
-          int detailId = details[0]['id_planning_details'] ?? 0;
+          int detailId = details[0]['planning_detail_id'] ?? 0;
           if (detailId == 0) {
             logger.w(
               '⚠️ Impossible de créer planning_detail pour $planningDate',
@@ -410,16 +410,15 @@ class PlanningRepository extends ChangeNotifier {
           // ✅ 3. Créer facture pour chaque détail
           const createFactureSQL = '''
             INSERT INTO Facture 
-            (planning_details_id, montant, date_facture, mode_paiement, etat_paiement, axe)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (planning_detail_id, montant, date_traitement, etat, axe)
+            VALUES (?, ?, ?, ?, ?)
           ''';
 
           await _db.execute(createFactureSQL, [
             detailId,
             montant.toInt(), // Convertir double en int
             planningDate.toIso8601String().split('T')[0],
-            'Non spécifié',
-            'Non payée',
+            'Non payé',
             axe_client,
           ]);
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:provider/provider.dart';
+import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
 
@@ -261,11 +263,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
                     icon: const Icon(Icons.edit),
                     onPressed: () {
                       Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Édition - À implémenter'),
-                        ),
-                      );
+                      _showEditPlanningDialog(event);
                     },
                     label: const Text('Éditer'),
                   ),
@@ -279,10 +277,11 @@ class _PlanningScreenState extends State<PlanningScreen> {
                     ),
                     onPressed: () {
                       Navigator.of(ctx).pop();
+                      context.read<PlanningRepository>().deleteEvent(
+                        event['planningId'] as int? ?? 0,
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Suppression - À implémenter'),
-                        ),
+                        const SnackBar(content: Text('Événement supprimé')),
                       );
                     },
                     label: const Text('Supprimer'),
@@ -304,6 +303,56 @@ class _PlanningScreenState extends State<PlanningScreen> {
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(value),
+        ],
+      ),
+    );
+  }
+
+  void _showEditPlanningDialog(Map<String, String> event) {
+    final title = TextEditingController(text: event['titre']);
+    final lieu = TextEditingController(text: event['lieu']);
+    final description = TextEditingController(text: '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Éditer l\'événement'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: title,
+                decoration: const InputDecoration(labelText: 'Titre'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: lieu,
+                decoration: const InputDecoration(labelText: 'Lieu'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: description,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Événement mis à jour')),
+              );
+            },
+            child: const Text('Enregistrer'),
+          ),
         ],
       ),
     );

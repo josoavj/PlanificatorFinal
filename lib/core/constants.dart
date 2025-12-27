@@ -1,10 +1,6 @@
 class AppConstants {
-  // API Configuration
-  static const String apiBaseUrl = 'http://localhost:8000/api';
-  static const int apiTimeoutSeconds = 30;
-  static const String apiVersion = 'v1';
-
-  // App Info
+  // Database Configuration
+  // Configuration stockée dans database_config.dart
   static const String appName = 'Planificator';
   static const String appVersion = '1.1.0';
   static const String appBuild = '1';
@@ -18,7 +14,7 @@ class AppConstants {
   static const String msgValidationError = 'Veuillez corriger les erreurs';
 
   // Validation
-  static const int minPasswordLength = 8;
+  static const int minPasswordLength = 6;
   static const int maxNameLength = 100;
   static const int maxEmailLength = 100;
 
@@ -33,6 +29,7 @@ class AppConstants {
 
   // Routes
   static const String routeLogin = '/login';
+  static const String routeRegister = '/register';
   static const String routeHome = '/home';
   static const String routeClients = '/clients';
   static const String routeClient = '/client';

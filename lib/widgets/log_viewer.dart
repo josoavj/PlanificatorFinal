@@ -48,7 +48,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   }
 
   void _exportLogs() {
-    final exported = log.exportLogs(minLevel: _filterLevel);
+    log.exportLogs(minLevel: _filterLevel);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Logs exportés (${log.allLogs.length} entrées)')),
     );

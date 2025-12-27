@@ -1,51 +1,35 @@
 class PlanningDetails {
-  final int? id;
+  final int planningDetailId;
   final int planningId;
   final DateTime datePlanification;
-  final String etat; // 'À venir', 'Effectué', 'Décalé'
-  final DateTime? dateEffective;
-  final int? facturId;
-  final DateTime? createdAt;
+  final String statut; // 'À venir', 'Effectué'
 
   PlanningDetails({
-    this.id,
+    required this.planningDetailId,
     required this.planningId,
     required this.datePlanification,
-    this.etat = 'À venir',
-    this.dateEffective,
-    this.facturId,
-    this.createdAt,
+    this.statut = 'À venir',
   });
 
   // Serialization from JSON (MySQL result)
   factory PlanningDetails.fromJson(Map<String, dynamic> json) {
     return PlanningDetails(
-      id: json['id_planning_details'] ?? json['planning_details_id'],
-      planningId: json['planning_id'] ?? json['id_planning'] ?? 0,
+      planningDetailId: json['planning_detail_id'] as int? ?? 0,
+      planningId: json['planning_id'] as int? ?? 0,
       datePlanification: json['date_planification'] != null
           ? DateTime.parse(json['date_planification'].toString())
           : DateTime.now(),
-      etat: json['etat'] ?? json['status'] ?? 'À venir',
-      dateEffective: json['date_effective'] != null
-          ? DateTime.parse(json['date_effective'].toString())
-          : null,
-      facturId: json['factur_id'] ?? json['facture_id'],
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'].toString())
-          : null,
+      statut: json['statut'] as String? ?? 'À venir',
     );
   }
 
   // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
-      'id_planning_details': id,
+      'planning_detail_id': planningDetailId,
       'planning_id': planningId,
       'date_planification': datePlanification.toIso8601String().split('T')[0],
-      'etat': etat,
-      'date_effective': dateEffective?.toIso8601String().split('T')[0],
-      'factur_id': facturId,
-      'created_at': createdAt?.toIso8601String(),
+      'statut': statut,
     };
   }
 
@@ -62,9 +46,24 @@ class PlanningDetails {
 
   // Check if overdue
   bool get isOverdue =>
-      etat == 'À venir' && datePlanification.isBefore(DateTime.now());
+      statut == 'À venir' && datePlanification.isBefore(DateTime.now());
+
+  // Copy with modifications
+  PlanningDetails copyWith({
+    int? planningDetailId,
+    int? planningId,
+    DateTime? datePlanification,
+    String? statut,
+  }) {
+    return PlanningDetails(
+      planningDetailId: planningDetailId ?? this.planningDetailId,
+      planningId: planningId ?? this.planningId,
+      datePlanification: datePlanification ?? this.datePlanification,
+      statut: statut ?? this.statut,
+    );
+  }
 
   @override
   String toString() =>
-      'PlanningDetails(id: $id, planning: $planningId, date: $datePlanification, etat: $etat)';
+      'PlanningDetails(planningDetailId: $planningDetailId, planning: $planningId, date: $datePlanification, statut: $statut)';
 }

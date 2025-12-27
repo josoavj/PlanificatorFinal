@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../repositories/index.dart';
 import '../../services/index.dart';
 import '../../config/database_config.dart';
 import '../../core/theme.dart';
@@ -22,8 +23,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Paramètres')),
-      body: Consumer<AuthService>(
-        builder: (context, authService, _) {
+      body: Consumer<AuthRepository>(
+        builder: (context, authRepository, _) {
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -31,11 +32,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSection(
                   title: 'Profil',
                   children: [
-                    _buildProfileHeader(authService),
+                    _buildProfileHeader(authRepository),
                     ListTile(
                       leading: const Icon(Icons.person),
                       title: const Text('Voir mon profil'),
-                      onTap: () => _showProfileDialog(context, authService),
+                      onTap: () => _showProfileDialog(context, authRepository),
                     ),
                     ListTile(
                       leading: const Icon(Icons.vpn_key),
@@ -256,8 +257,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProfileHeader(AuthService authService) {
-    final user = authService.currentUser;
+  Widget _buildProfileHeader(AuthRepository authRepository) {
+    final user = authRepository.currentUser;
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppTheme.primaryBlue,
@@ -283,8 +284,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showProfileDialog(BuildContext context, AuthService authService) {
-    final user = authService.currentUser;
+  void _showProfileDialog(BuildContext context, AuthRepository authRepository) {
+    final user = authRepository.currentUser;
     if (user == null) return;
 
     showDialog(
@@ -328,10 +329,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showChangePasswordDialog(BuildContext context) {
-    AppDialogs.info(
-      context,
-      title: 'Changer le mot de passe',
-      message: 'Fonctionnalité à implémenter',
+    final oldPassword = TextEditingController();
+    final newPassword = TextEditingController();
+    final confirmPassword = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Changer le mot de passe'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: oldPassword,
+                decoration: const InputDecoration(
+                  labelText: 'Ancien mot de passe',
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newPassword,
+                decoration: const InputDecoration(
+                  labelText: 'Nouveau mot de passe',
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmPassword,
+                decoration: const InputDecoration(
+                  labelText: 'Confirmer le mot de passe',
+                ),
+                obscureText: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (newPassword.text != confirmPassword.text) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Les mots de passe ne correspondent pas'),
+                  ),
+                );
+                return;
+              }
+
+              context.read<AuthRepository>().changePassword(
+                oldPassword.text,
+                newPassword.text,
+              );
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Mot de passe changé')),
+              );
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -554,7 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       cancelText: 'Annuler',
     ).then((confirmed) {
       if (confirmed == true) {
-        context.read<AuthService>().logout();
+        context.read<AuthRepository>().logout();
       }
     });
   }
@@ -575,7 +639,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: 'Compte supprimé',
           message: 'Votre compte a été supprimé.',
         ).then((_) {
-          context.read<AuthService>().logout();
+          context.read<AuthRepository>().logout();
         });
       }
     });
