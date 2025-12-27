@@ -1,11 +1,16 @@
 import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 import '../models/index.dart';
 import '../services/index.dart';
 
 class AuthRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final logger = Logger();
+
+  // Clé secrète pour le salt (en production, utiliser une vraie clé d'environnement)
+  static const String _salt = 'planificator_secret_salt_key';
 
   User? _currentUser;
   bool _isLoading = false;
@@ -18,33 +23,50 @@ class AuthRepository extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
 
+  /// Hache un mot de passe avec SHA-256
+  String _hashPassword(String password) {
+    return sha256.convert(utf8.encode('$password$_salt')).toString();
+  }
+
   /// Connexion utilisateur
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String username, String password) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // Vérifier que la base de données est connectée
+      if (!_db.isConnected) {
+        final connected = await _db.connect();
+        if (!connected) {
+          _errorMessage = 'Erreur de connexion à la base de données';
+          logger.e('Base de données non connectée');
+          return false;
+        }
+      }
+
       const sql = '''
         SELECT 
-          userId, email, nom, prenom, password, isAdmin, createdAt
-        FROM User
-        WHERE email = ?
+          id_compte as userId, email, nom, prenom, password, type_compte, date_creation as createdAt
+        FROM Account
+        WHERE username = ?
       ''';
 
-      final row = await _db.queryOne(sql, [email]);
+      final row = await _db.queryOne(sql, [username]);
 
       if (row == null) {
-        _errorMessage = 'Email ou mot de passe incorrect';
-        logger.w('Tentative de connexion avec un email inexistant: $email');
+        _errorMessage = 'Nom d\'utilisateur ou mot de passe incorrect';
+        logger.w(
+          'Tentative de connexion avec un username inexistant: $username',
+        );
         return false;
       }
 
-      // Vérifier le mot de passe (comparaison simple)
-      // En production, utiliser bcrypt ou un autre algorithme sécurisé
-      if (row['password'] != password) {
-        _errorMessage = 'Email ou mot de passe incorrect';
-        logger.w('Tentative de connexion échouée pour: $email');
+      // Vérifier le mot de passe avec hachage
+      final hashedPassword = _hashPassword(password);
+      if (row['password'] != hashedPassword) {
+        _errorMessage = 'Nom d\'utilisateur ou mot de passe incorrect';
+        logger.w('Tentative de connexion échouée pour: $username');
         return false;
       }
 
@@ -65,6 +87,7 @@ class AuthRepository extends ChangeNotifier {
 
   /// Inscription utilisateur
   Future<bool> register(
+    String username,
     String email,
     String nom,
     String prenom,
@@ -75,28 +98,32 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Vérifier si l'email existe déjà
-      const checkSql = 'SELECT userId FROM User WHERE email = ?';
-      final existing = await _db.queryOne(checkSql, [email]);
+      // Vérifier si le username existe déjà
+      const checkSql = 'SELECT id_compte FROM Account WHERE username = ?';
+      final existing = await _db.queryOne(checkSql, [username]);
 
       if (existing != null) {
-        _errorMessage = 'Cet email est déjà utilisé';
-        logger.w('Tentative d\'inscription avec un email existant: $email');
+        _errorMessage = 'Ce nom d\'utilisateur est déjà utilisé';
+        logger.w(
+          'Tentative d\'inscription avec un username existant: $username',
+        );
         return false;
       }
 
       // Créer le nouvel utilisateur
       const insertSql = '''
-        INSERT INTO User (email, nom, prenom, password, isAdmin, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO Account (username, email, nom, prenom, password, type_compte, date_creation)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       ''';
 
+      final hashedPassword = _hashPassword(password);
       final userId = await _db.insert(insertSql, [
+        username,
         email,
         nom,
         prenom,
-        password, // En production, utiliser bcrypt
-        false,
+        hashedPassword,
+        'Utilisateur',
         DateTime.now().toIso8601String(),
       ]);
 
@@ -110,7 +137,7 @@ class AuthRepository extends ChangeNotifier {
       );
       _isAuthenticated = true;
 
-      logger.i('Nouvel utilisateur créé: $email');
+      logger.i('Nouvel utilisateur créé: $username');
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -140,9 +167,9 @@ class AuthRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          userId, email, nom, prenom, password, isAdmin, createdAt
-        FROM User
-        WHERE userId = ?
+          id_compte as userId, email, nom, prenom, password, type_comte, date_creation as createdAt
+        FROM Account
+        WHERE id_compte = ?
       ''';
 
       final row = await _db.queryOne(sql, [userId]);
@@ -179,9 +206,9 @@ class AuthRepository extends ChangeNotifier {
 
     try {
       const sql = '''
-        UPDATE User
+        UPDATE Account
         SET nom = ?, prenom = ?
-        WHERE userId = ?
+        WHERE id_compte = ?
       ''';
 
       await _db.execute(sql, [nom, prenom, _currentUser!.userId]);
@@ -213,12 +240,13 @@ class AuthRepository extends ChangeNotifier {
 
     try {
       const sql = '''
-        UPDATE User
+        UPDATE Account
         SET password = ?
-        WHERE userId = ?
+        WHERE id_compte = ?
       ''';
 
-      await _db.execute(sql, [newPassword, _currentUser!.userId]);
+      final hashedPassword = _hashPassword(newPassword);
+      await _db.execute(sql, [hashedPassword, _currentUser!.userId]);
 
       logger.i('Mot de passe de l\'utilisateur ${_currentUser!.userId} changé');
       return true;
@@ -244,7 +272,7 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM User WHERE userId = ?';
+      const sql = 'DELETE FROM Account WHERE id_compte = ?';
 
       await _db.execute(sql, [_currentUser!.userId]);
 
@@ -264,14 +292,14 @@ class AuthRepository extends ChangeNotifier {
     }
   }
 
-  /// Vérifie si l'email existe
-  Future<bool> emailExists(String email) async {
+  /// Vérifie si le username existe
+  Future<bool> usernameExists(String username) async {
     try {
-      const sql = 'SELECT userId FROM User WHERE email = ?';
-      final row = await _db.queryOne(sql, [email]);
+      const sql = 'SELECT id_compte FROM Account WHERE username = ?';
+      final row = await _db.queryOne(sql, [username]);
       return row != null;
     } catch (e) {
-      logger.e('Erreur lors de la vérification de l\'email: $e');
+      logger.e('Erreur lors de la vérification du username: $e');
       return false;
     }
   }
