@@ -2,46 +2,115 @@
 /// Représente une facture pour un traitement
 class Facture {
   final int factureId;
-  final DateTime date;
-  final double montant;
-  final String etat; // 'Payé' ou 'Non payé'
+  final int planningDetailsId;
+  final String? referenceFacture;
+  final int montant; // Montant en Ar (entier)
+  final String? mode; // 'Chèque', 'Espèce', 'Mobile Money', 'Virement'
+  final String? etablissementPayeur;
+  final DateTime? dateCheque;
+  final String? numeroCheque;
+  final DateTime dateTraitement;
+  final String etat; // 'Payé', 'Non payé', 'À venir'
+  final String axe; // 'Nord (N)', 'Sud (S)', etc.
+
+  // Données jointes pour affichage
+  final int? clientId;
+  final String? clientNom;
+  final String? clientPrenom;
+  final String? typeTreatment;
+  final DateTime? datePlanification;
+  final String? etatPlanning;
 
   Facture({
     required this.factureId,
-    required this.date,
+    required this.planningDetailsId,
+    this.referenceFacture,
     required this.montant,
+    this.mode,
+    this.etablissementPayeur,
+    this.dateCheque,
+    this.numeroCheque,
+    required this.dateTraitement,
     required this.etat,
+    required this.axe,
+    this.clientId,
+    this.clientNom,
+    this.clientPrenom,
+    this.typeTreatment,
+    this.datePlanification,
+    this.etatPlanning,
   });
 
   factory Facture.fromJson(Map<String, dynamic> json) {
     return Facture(
       factureId: json['facture_id'] as int,
-      date: DateTime.parse(json['date'] as String),
-      montant: (json['montant'] as num).toDouble(),
+      planningDetailsId: json['planning_detail_id'] as int,
+      referenceFacture: json['reference_facture'] as String?,
+      montant: json['montant'] as int,
+      mode: json['mode'] as String?,
+      etablissementPayeur: json['etablissement_payeur'] as String?,
+      dateCheque: json['date_cheque'] != null
+          ? DateTime.tryParse(json['date_cheque'].toString())
+          : null,
+      numeroCheque: json['numero_cheque'] as String?,
+      dateTraitement: DateTime.parse(json['date_traitement'] as String),
       etat: json['etat'] as String? ?? 'Non payé',
+      axe: json['axe'] as String,
     );
   }
 
   factory Facture.fromMap(Map<String, dynamic> map) {
     return Facture(
-      factureId: map['factureId'] as int,
-      date: DateTime.parse(map['date'] as String),
-      montant: (map['montant'] as num).toDouble(),
+      factureId: map['facture_id'] as int,
+      planningDetailsId: map['planning_detail_id'] as int,
+      referenceFacture: map['reference_facture'] as String?,
+      montant: map['montant'] as int,
+      mode: map['mode'] as String?,
+      etablissementPayeur: map['etablissement_payeur'] as String?,
+      dateCheque: map['date_cheque'] != null
+          ? DateTime.tryParse(map['date_cheque'].toString())
+          : null,
+      numeroCheque: map['numero_cheque'] as String?,
+      dateTraitement: DateTime.parse(map['date_traitement'] as String),
       etat: map['etat'] as String? ?? 'Non payé',
+      axe: map['axe'] as String,
+      clientId: map['client_id'] as int?,
+      clientNom: map['clientNom'] as String?,
+      clientPrenom: map['clientPrenom'] as String?,
+      typeTreatment: map['typeTreatment'] as String?,
+      datePlanification: map['datePlanification'] != null
+          ? DateTime.tryParse(map['datePlanification'].toString())
+          : null,
+      etatPlanning: map['etatPlanning'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'facture_id': factureId,
-    'date': date.toIso8601String(),
+    'planning_detail_id': planningDetailsId,
+    'reference_facture': referenceFacture,
     'montant': montant,
+    'mode': mode,
+    'etablissement_payeur': etablissementPayeur,
+    'date_cheque': dateCheque?.toIso8601String(),
+    'numero_cheque': numeroCheque,
+    'date_traitement': dateTraitement.toIso8601String(),
     'etat': etat,
+    'axe': axe,
   };
 
   /// Format montant avec séparateur de milliers
   String get montantFormatted {
     final formatter = _NumberFormatter();
-    return '${formatter.format(montant.toInt())} Ar';
+    return '${formatter.format(montant)} Ar';
+  }
+
+  /// Nom complet du client
+  String get clientFullName {
+    if (clientPrenom != null || clientNom != null) {
+      return '${clientPrenom ?? ''} ${clientNom ?? ''}'.trim();
+    }
+    return 'N/A';
   }
 
   /// Est payée ?
@@ -49,21 +118,47 @@ class Facture {
 
   Facture copyWith({
     int? factureId,
-    DateTime? date,
-    double? montant,
+    int? planningDetailsId,
+    String? referenceFacture,
+    int? montant,
+    String? mode,
+    String? etablissementPayeur,
+    DateTime? dateCheque,
+    String? numeroCheque,
+    DateTime? dateTraitement,
     String? etat,
+    String? axe,
+    int? clientId,
+    String? clientNom,
+    String? clientPrenom,
+    String? typeTreatment,
+    DateTime? datePlanification,
+    String? etatPlanning,
   }) {
     return Facture(
       factureId: factureId ?? this.factureId,
-      date: date ?? this.date,
+      planningDetailsId: planningDetailsId ?? this.planningDetailsId,
+      referenceFacture: referenceFacture ?? this.referenceFacture,
       montant: montant ?? this.montant,
+      mode: mode ?? this.mode,
+      etablissementPayeur: etablissementPayeur ?? this.etablissementPayeur,
+      dateCheque: dateCheque ?? this.dateCheque,
+      numeroCheque: numeroCheque ?? this.numeroCheque,
+      dateTraitement: dateTraitement ?? this.dateTraitement,
       etat: etat ?? this.etat,
+      axe: axe ?? this.axe,
+      clientId: clientId ?? this.clientId,
+      clientNom: clientNom ?? this.clientNom,
+      clientPrenom: clientPrenom ?? this.clientPrenom,
+      typeTreatment: typeTreatment ?? this.typeTreatment,
+      datePlanification: datePlanification ?? this.datePlanification,
+      etatPlanning: etatPlanning ?? this.etatPlanning,
     );
   }
 
   @override
   String toString() =>
-      'Facture(id: $factureId, montant: $montantFormatted, etat: $etat)';
+      'Facture(id: $factureId, montant: $montantFormatted, client: $clientFullName)';
 }
 
 /// Utilitaire pour formatter les nombres
