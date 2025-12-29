@@ -18,13 +18,6 @@ class RemarqueRepository extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// ✅ CLÉE: Crée une remarque COMPLÈTE
-  /// Conforme à Kivy create_remarque() (lignes 866-925)
-  ///
-  /// Étapes:
-  /// 1. Créer la remarque
-  /// 2. Marquer le planning detail comme "Effectué"
-  /// 3. Mettre à jour l'état de la facture si payée
   Future<bool> createRemarque({
     required int planningDetailsId,
     required int factureId,

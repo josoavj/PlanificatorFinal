@@ -41,13 +41,27 @@ class Contrat {
   }
 
   factory Contrat.fromMap(Map<String, dynamic> map) {
+    // Fonction helper pour convertir des dates de différents formats
+    DateTime _parseDate(dynamic value) {
+      if (value is DateTime) {
+        return value;
+      } else if (value is String) {
+        return DateTime.parse(value);
+      } else if (value is int) {
+        // Si c'est un timestamp en millisecondes
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      } else {
+        throw Exception('Format de date invalide: $value');
+      }
+    }
+
     return Contrat(
       contratId: map['contrat_id'] as int,
       clientId: map['client_id'] as int,
       referenceContrat: map['reference_contrat'] as String,
-      dateContrat: DateTime.parse(map['date_contrat'] as String),
-      dateDebut: DateTime.parse(map['date_debut'] as String),
-      dateFin: DateTime.parse(map['date_fin'] as String),
+      dateContrat: _parseDate(map['date_contrat']),
+      dateDebut: _parseDate(map['date_debut']),
+      dateFin: _parseDate(map['date_fin']),
       statutContrat: map['statut_contrat'] as String? ?? 'Actif',
       dureeContrat: map['duree_contrat'] as int? ?? 0,
       duree: map['duree'] as int? ?? 0,

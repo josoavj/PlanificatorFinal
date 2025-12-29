@@ -447,6 +447,55 @@ class PlanningRepository extends ChangeNotifier {
   /// "1 mois" → 1
   /// "2 mois" → 2
   /// "3 mois" → 3, etc.
+  /// Créer un planning pour un traitement avec génération automatique des détails
+  ///
+  /// Paramètres:
+  /// - traitementId: ID du traitement
+  /// - dateDebutPlanification: Date de début de la planification
+  /// - moisDebut: Mois de début (1-12)
+  /// - dureeTraitement: Durée totale du traitement en mois
+  /// - redondance: Fréquence d'exécution en mois
+  ///
+  /// Retourne l'ID du planning créé, ou -1 en cas d'erreur
+  Future<int> createPlanning({
+    required int traitementId,
+    required DateTime dateDebutPlanification,
+    required int moisDebut,
+    required int dureeTraitement,
+    required int redondance,
+  }) async {
+    try {
+      // Calculer les dates de fin en fonction de la durée
+      final dateFinPlanification = DateTime(
+        dateDebutPlanification.year + (dureeTraitement ~/ 12),
+        dateDebutPlanification.month + (dureeTraitement % 12),
+        dateDebutPlanification.day,
+      );
+
+      const sql = '''
+        INSERT INTO Planning 
+        (traitement_id, date_debut_planification, mois_debut, mois_fin, duree_traitement, redondance, date_fin_planification)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''';
+
+      final planningId = await _db.insert(sql, [
+        traitementId,
+        dateDebutPlanification.toIso8601String().split('T')[0],
+        moisDebut,
+        moisDebut + dureeTraitement - 1, // mois_fin
+        dureeTraitement,
+        redondance,
+        dateFinPlanification.toIso8601String().split('T')[0],
+      ]);
+
+      logger.i('✅ Planning créé: ID $planningId pour traitement $traitementId');
+      return planningId;
+    } catch (e) {
+      logger.e('❌ Erreur création planning: $e');
+      return -1;
+    }
+  }
+
   static int extractRedondanceFromFrequency(String frequence) {
     if (frequence.toLowerCase() == 'une seule fois') {
       return 0;

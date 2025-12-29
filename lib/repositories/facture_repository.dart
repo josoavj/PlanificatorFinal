@@ -215,6 +215,50 @@ class FactureRepository extends ChangeNotifier {
     }
   }
 
+  /// Version complète pour créer une facture avec tous les paramètres
+  Future<int> createFactureComplete({
+    required int planningDetailId,
+    required String referenceFacture,
+    required int montant,
+    required String mode,
+    required String etat,
+    required String axe,
+    required DateTime dateTraitement,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      const sql = '''
+        INSERT INTO Facture (planning_detail_id, reference_facture, montant, mode, date_traitement, etat, axe)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''';
+
+      final id = await _db.insert(sql, [
+        planningDetailId,
+        referenceFacture.isEmpty ? null : referenceFacture,
+        montant,
+        mode,
+        dateTraitement.toIso8601String().split('T')[0],
+        etat,
+        axe,
+      ]);
+
+      logger.i(
+        'Facture créée avec l\'ID: $id (planning_detail_id: $planningDetailId, montant: $montant)',
+      );
+      return id;
+    } catch (e) {
+      _errorMessage = e.toString();
+      logger.e('Erreur lors de la création facture: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Supprime une facture
   Future<void> deleteFacture(int factureId) async {
     _isLoading = true;

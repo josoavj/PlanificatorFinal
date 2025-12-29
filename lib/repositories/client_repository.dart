@@ -26,10 +26,13 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          client_id, nom, prenom, email, telephone, adresse, 
-          categorie, nif, stat, axe
-        FROM Client
-        ORDER BY nom ASC
+          c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse, 
+          c.categorie, c.nif, c.stat, c.axe,
+          COALESCE(COUNT(p.planning_id), 0) as treatment_count
+        FROM Client c
+        LEFT JOIN Planning p ON c.client_id = p.client_id
+        GROUP BY c.client_id
+        ORDER BY c.nom ASC
       ''';
 
       final rows = await _db.query(sql);
@@ -276,11 +279,14 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          client_id, nom, prenom, email, telephone, adresse,
-          categorie, nif, stat, axe
-        FROM Client
-        WHERE nom LIKE ? OR prenom LIKE ? OR email LIKE ?
-        ORDER BY nom ASC
+          c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
+          c.categorie, c.nif, c.stat, c.axe,
+          COALESCE(COUNT(p.planning_id), 0) as treatment_count
+        FROM Client c
+        LEFT JOIN Planning p ON c.client_id = p.client_id
+        WHERE c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ?
+        GROUP BY c.client_id
+        ORDER BY c.nom ASC
       ''';
 
       final searchTerm = '%$query%';

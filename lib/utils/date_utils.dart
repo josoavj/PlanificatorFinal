@@ -173,4 +173,59 @@ class DateUtils {
 
     return DateTime(year, newMonth, day);
   }
+
+  /// Génère les détails du planning en fonction de la redondance
+  ///
+  /// Paramètres:
+  /// - dateDebut: Date de début du traitement
+  /// - dureeTraitement: Durée totale du traitement en mois
+  /// - redondance: Fréquence d'exécution en mois (1 = chaque mois, 2 = tous les 2 mois, etc.)
+  ///
+  /// Retourne une liste de dates planifiées, en ajustant si nécessaire pour les weekends/jours fériés
+  static List<DateTime> generatePlanningDates({
+    required DateTime dateDebut,
+    required int dureeTraitement,
+    required int redondance,
+  }) {
+    final dates = <DateTime>[];
+
+    // Vérifier les paramètres
+    if (dureeTraitement <= 0 || redondance <= 0) {
+      return dates;
+    }
+
+    // Calculer la date de fin basée sur la durée du traitement
+    final dateFin = _addMonths(dateDebut, dureeTraitement);
+
+    // Générer les dates de planification selon la redondance
+    DateTime currentDate = dateDebut;
+
+    while (currentDate.isBefore(dateFin) ||
+        currentDate.isAtSameMomentAs(dateFin)) {
+      // Ajuster si weekend (dimanche)
+      var plannedDate = adjustIfWeekend(currentDate);
+
+      // Vérifier si jour férié et décaler si nécessaire
+      final holidays = getHolidaysForYear(plannedDate.year);
+      while (holidays.values.any(
+        (h) =>
+            h.year == plannedDate.year &&
+            h.month == plannedDate.month &&
+            h.day == plannedDate.day,
+      )) {
+        plannedDate = plannedDate.add(const Duration(days: 1));
+        // Vérifier à nouveau le weekend après le décalage
+        if (plannedDate.weekday == 7) {
+          plannedDate = plannedDate.add(const Duration(days: 1));
+        }
+      }
+
+      dates.add(plannedDate);
+
+      // Passer à la prochaine date en fonction de la redondance
+      currentDate = _addMonths(currentDate, redondance);
+    }
+
+    return dates;
+  }
 }

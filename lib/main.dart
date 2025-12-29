@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'services/index.dart';
 import 'repositories/index.dart';
 import 'config/database_config.dart';
@@ -14,12 +16,19 @@ import 'screens/facture/facture_list_screen.dart';
 import 'screens/planning/planning_screen.dart';
 import 'screens/historique/historique_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/about/about_screen.dart';
 import 'core/theme.dart';
 
 final logger = Logger();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialiser les données de locale pour intl
+  await initializeDateFormatting('fr_FR', null);
+
+  // Définir la locale par défaut pour intl (DateFormat)
+  Intl.defaultLocale = 'fr_FR';
 
   // Initialiser la configuration de la base de données
   final config = DatabaseConfig();
@@ -106,7 +115,9 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => FactureRepository()),
         ChangeNotifierProvider(create: (_) => ContratRepository()),
         ChangeNotifierProvider(create: (_) => PlanningRepository()),
+        ChangeNotifierProvider(create: (_) => PlanningDetailsRepository()),
         ChangeNotifierProvider(create: (_) => HistoriqueRepository()),
+        ChangeNotifierProvider(create: (_) => TypeTraitementRepository()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -130,6 +141,7 @@ class _MyAppState extends State<MyApp> {
           '/factures': (context) => const FactureListScreen(),
           '/planning': (context) => const PlanningScreen(),
           '/historique': (context) => const HistoriqueScreen(),
+          '/about': (context) => const AboutScreen(),
           '/settings': (context) => const SettingsScreen(),
         },
       ),

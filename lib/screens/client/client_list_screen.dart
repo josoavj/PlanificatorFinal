@@ -118,80 +118,197 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     final client = repository.clients[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 4.0,
+                        horizontal: 12.0,
+                        vertical: 8.0,
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(
-                            client.fullName.isNotEmpty
-                                ? client.fullName[0].toUpperCase()
-                                : '?',
-                          ),
-                        ),
-                        title: Text(client.fullName),
-                        subtitle: Column(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(client.email),
+                            // En-tête avec nom et avatar
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Colors.blue[100],
+                                  child: Text(
+                                    client.fullName.isNotEmpty
+                                        ? client.fullName[0].toUpperCase()
+                                        : '?',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue[700],
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        client.fullName,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      if (client.email.isNotEmpty)
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.email_outlined,
+                                              size: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                client.email,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[50],
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.event_available,
+                                              size: 14,
+                                              color: Colors.blue[700],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${client.treatmentCount} traitement(s)',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.blue[700],
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Informations de contact
                             if (client.telephone.isNotEmpty)
-                              Text(client.telephone),
-                          ],
-                        ),
-                        trailing: PopupMenuButton(
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.visibility, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Voir'),
-                                ],
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.phone_outlined,
+                                      size: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      client.telephone,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: Colors.grey[700]),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              onTap: () {
-                                _showClientDetails(context, client);
-                              },
-                            ),
-                            PopupMenuItem(
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.edit, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Éditer'),
-                                ],
-                              ),
-                              onTap: () {
-                                _showEditClientDialog(context, client);
-                              },
-                            ),
-                            PopupMenuItem(
-                              child: const Row(
-                                children: [
-                                  Icon(
+                            // Boutons d'action
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.visibility, size: 18),
+                                  label: const Text('Voir'),
+                                  onPressed: () {
+                                    _showClientDetails(context, client);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.edit, size: 18),
+                                  label: const Text('Éditer'),
+                                  onPressed: () {
+                                    _showEditClientDialog(context, client);
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  icon: const Icon(
                                     Icons.delete,
                                     size: 18,
                                     color: Colors.red,
                                   ),
-                                  SizedBox(width: 8),
-                                  Text(
+                                  label: const Text(
                                     'Supprimer',
                                     style: TextStyle(color: Colors.red),
                                   ),
-                                ],
-                              ),
-                              onTap: () {
-                                _showDeleteConfirmation(
-                                  context,
-                                  repository,
-                                  client.clientId,
-                                );
-                              },
+                                  onPressed: () {
+                                    _showDeleteConfirmation(
+                                      context,
+                                      repository,
+                                      client.clientId,
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        onTap: () {
-                          _showClientDetails(context, client);
-                        },
                       ),
                     );
                   },

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
-import '../../core/theme.dart';
 import '../client/client_list_screen.dart';
 import '../facture/facture_list_screen.dart';
 import '../contrat/contrat_screen.dart';
 import '../planning/planning_screen.dart';
 import '../historique/historique_screen.dart';
 import '../settings/settings_screen.dart';
+import '../about/about_screen.dart';
+
+final logger = Logger();
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -19,6 +22,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  final List<String> _pageTitles = [
+    'Accueil',
+    'Planning',
+    'Clients',
+    'Contrats',
+    'Factures',
+    'Historique',
+    'À propos',
+    'Paramètres',
+  ];
 
   @override
   void initState() {
@@ -35,367 +49,381 @@ class _HomeScreenState extends State<HomeScreen> {
       onWillPop: () async => false,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Planificator 1.1.0'),
-          elevation: 0,
+          title: Text(_pageTitles[_selectedIndex]),
           centerTitle: true,
+          elevation: 2,
         ),
-        body: Row(
-          children: [
-            // Navigation Rail Latérale
-            NavigationRail(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (int index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
-              labelType: NavigationRailLabelType.all,
-              backgroundColor: Colors.blue.shade50,
-              selectedIconTheme: IconThemeData(
-                color: AppTheme.primaryBlue,
-                size: 24,
-              ),
-              unselectedIconTheme: const IconThemeData(
-                color: Colors.grey,
-                size: 24,
-              ),
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Accueil'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.people),
-                  label: Text('Clients'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.receipt),
-                  label: Text('Factures'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.description),
-                  label: Text('Contrats'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.event),
-                  label: Text('Planning'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.history),
-                  label: Text('Historique'),
-                ),
-              ],
-            ),
-            // Contenu principal
-            Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: const [
-                  _DashboardTab(),
-                  ClientListScreen(),
-                  FactureListScreen(),
-                  ContratScreen(),
-                  PlanningScreen(),
-                  HistoriqueScreen(),
-                  SettingsScreen(),
-                ],
-              ),
-            ),
+        drawer: SidebarNavigation(
+          selectedIndex: _selectedIndex,
+          onItemSelected: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+        ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: const [
+            _DashboardTab(),
+            PlanningScreen(),
+            ClientListScreen(),
+            ContratScreen(),
+            FactureListScreen(),
+            HistoriqueScreen(),
+            AboutScreen(),
+            SettingsScreen(),
           ],
         ),
-        drawer: _buildDrawer(context),
       ),
     );
   }
-
-  Widget _buildDrawer(BuildContext context) {
-    return Consumer<AuthRepository>(
-      builder: (context, authRepository, _) {
-        final user = authRepository.currentUser;
-        return Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                ),
-                accountName: Text(user?.fullName ?? 'Utilisateur'),
-                accountEmail: Text(user?.email ?? ''),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    user?.fullName.isNotEmpty == true
-                        ? user!.fullName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              _buildDrawerItem(
-                icon: Icons.home,
-                title: 'Accueil',
-                onTap: () {
-                  setState(() => _selectedIndex = 0);
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.people,
-                title: 'Clients',
-                onTap: () {
-                  setState(() => _selectedIndex = 1);
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.receipt,
-                title: 'Factures',
-                onTap: () {
-                  setState(() => _selectedIndex = 2);
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.description,
-                title: 'Contrats',
-                onTap: () {
-                  setState(() => _selectedIndex = 3);
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.event,
-                title: 'Planning',
-                onTap: () {
-                  setState(() => _selectedIndex = 4);
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.history,
-                title: 'Historique',
-                onTap: () {
-                  setState(() => _selectedIndex = 5);
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(),
-              _buildDrawerItem(
-                icon: Icons.settings,
-                title: 'Paramètres',
-                onTap: () {
-                  setState(() => _selectedIndex = 6);
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.logout,
-                title: 'Déconnexion',
-                textColor: AppTheme.errorRed,
-                onTap: () {
-                  Navigator.pop(context);
-                  _logout(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  ListTile _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color textColor = Colors.black,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: textColor),
-      title: Text(title, style: TextStyle(color: textColor)),
-      onTap: onTap,
-    );
-  }
-
-  void _logout(BuildContext context) {
-    AppDialogs.confirm(
-      context,
-      title: 'Déconnexion',
-      message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
-      confirmText: 'Déconnexion',
-      cancelText: 'Annuler',
-    ).then((confirmed) {
-      if (confirmed == true) {
-        context.read<AuthRepository>().logout();
-      }
-    });
-  }
 }
 
-class _DashboardTab extends StatelessWidget {
+class _DashboardTab extends StatefulWidget {
   const _DashboardTab({Key? key}) : super(key: key);
 
   @override
+  State<_DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<_DashboardTab> {
+  late PlanningDetailsRepository _planningDetailsRepo;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _planningDetailsRepo = context.read<PlanningDetailsRepository>();
+    logger.i('📱 _DashboardTabState mounted, loading data...');
+    _loadData();
+  }
+
+  void _loadData() {
+    logger.i('🔄 Démarrage du chargement des données complètes...');
+    _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
+    _planningDetailsRepo.loadUpcomingTreatmentsComplete();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<AuthRepository>(
-      builder: (context, authRepository, _) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Text(
+            'BIENVENUE DANS PLANIFICATOR',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 25),
+
+          // Two columns layout for current and next treatments
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Card
-              _WelcomeCard(
-                userName: authRepository.currentUser?.fullName ?? 'Utilisateur',
-                isAdmin: authRepository.currentUser?.isAdmin ?? false,
-              ),
-              const SizedBox(height: 24),
+              // LEFT: A venir (mois prochain) - sans redondance 1 mois
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'A venir',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      constraints: const BoxConstraints(minHeight: 400),
+                      child: Consumer<PlanningDetailsRepository>(
+                        builder: (context, planningDetailsRepo, _) {
+                          // Filtrer pour exclure les traitements avec redondance "1 mois"
+                          // Trier pour afficher d'abord "en cours" puis "à venir"
+                          final filteredTreatments = planningDetailsRepo
+                              .upcomingTreatmentsComplete
+                              .where((treatment) {
+                                final redondance = _convertToString(
+                                  treatment['redondance'],
+                                ).toLowerCase();
+                                return redondance != '1 mois';
+                              })
+                              .toList();
 
-              // Statistics Section
-              Text(
-                'Statistiques',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 12),
-              _buildStatisticsCards(),
-              const SizedBox(height: 24),
+                          // Trier: "en cours" en premier, puis "à venir"
+                          filteredTreatments.sort((a, b) {
+                            final etatA = _convertToString(
+                              a['etat'],
+                            ).toLowerCase();
+                            final etatB = _convertToString(
+                              b['etat'],
+                            ).toLowerCase();
 
-              // Quick Actions
-              Text(
-                'Actions rapides',
-                style: Theme.of(context).textTheme.headlineSmall,
+                            // "en cours" avant "à venir"
+                            if (etatA == 'en cours' && etatB != 'en cours')
+                              return -1;
+                            if (etatA != 'en cours' && etatB == 'en cours')
+                              return 1;
+                            return 0;
+                          });
+
+                          logger.d(
+                            '🔄 Rebuilding upcoming table with ${filteredTreatments.length} items (filtered out 1 mois)',
+                          );
+                          return _buildTreatmentTable(
+                            title: 'Prochains traitements',
+                            isLoading: planningDetailsRepo.isLoading,
+                            errorMessage: planningDetailsRepo.errorMessage,
+                            treatments: filteredTreatments
+                                .map(
+                                  (data) => {
+                                    'date': _formatDate(data['date']),
+                                    'nom': _convertToString(data['traitement']),
+                                    'etat': _convertToString(data['etat']),
+                                    'axe': _convertToString(data['axe']),
+                                  },
+                                )
+                                .toList(),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              _buildQuickActions(context),
+              const SizedBox(width: 24),
+
+              // RIGHT: En cours (mois actuel) - affiche à venir ET effectué
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'En cours',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      constraints: const BoxConstraints(minHeight: 400),
+                      child: Consumer<PlanningDetailsRepository>(
+                        builder: (context, planningDetailsRepo, _) {
+                          // Filtrer pour afficher les traitements "à venir" ET "effectué" du mois actuel
+                          final filteredTreatments = planningDetailsRepo
+                              .currentMonthTreatmentsComplete
+                              .where((treatment) {
+                                final etat = _convertToString(
+                                  treatment['etat'],
+                                ).toLowerCase().trim();
+                                // Inclure "à venir" et "effectué" (avec variantes possibles)
+                                return etat.contains('à venir') ||
+                                    etat.contains('avenir') ||
+                                    etat.contains('effectué') ||
+                                    etat.contains('effectue');
+                              })
+                              .toList();
+
+                          logger.d(
+                            '🔄 Rebuilding current month table with ${filteredTreatments.length} items (à venir + effectué)',
+                          );
+                          return _buildTreatmentTable(
+                            title: 'Traitements en cours',
+                            isLoading: planningDetailsRepo.isLoading,
+                            errorMessage: planningDetailsRepo.errorMessage,
+                            treatments: filteredTreatments
+                                .map(
+                                  (data) => {
+                                    'date': _formatDate(data['date']),
+                                    'nom': _convertToString(data['traitement']),
+                                    'etat': _convertToString(data['etat']),
+                                    'axe': _convertToString(data['axe']),
+                                  },
+                                )
+                                .toList(),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatisticsCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatisticCard(
-            title: 'Clients',
-            value: '0',
-            icon: Icons.people,
-            color: Colors.blue,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatisticCard(
-            title: 'Factures',
-            value: '0',
-            icon: Icons.receipt,
-            color: Colors.green,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed('/clients');
-            },
-            icon: const Icon(Icons.people),
-            label: const Text('Voir tous les clients'),
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).pushNamed('/contrats');
-            },
-            icon: const Icon(Icons.description),
-            label: const Text('Gérer les contrats'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WelcomeCard extends StatelessWidget {
-  final String userName;
-  final bool isAdmin;
-
-  const _WelcomeCard({Key? key, required this.userName, required this.isAdmin})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bienvenue, $userName!',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isAdmin ? 'Administrateur' : 'Utilisateur standard',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
-}
 
-class _StatisticCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
+  Widget _buildTreatmentTable({
+    required String title,
+    required bool isLoading,
+    required List<Map<String, dynamic>> treatments,
+    String? errorMessage,
+  }) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  const _StatisticCard({
-    Key? key,
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 12),
-            Text(value, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(title, style: Theme.of(context).textTheme.bodySmall),
-          ],
+    if (errorMessage != null && errorMessage.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Erreur: $errorMessage',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
+      );
+    }
+
+    if (treatments.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            'Aucun traitement',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('Date')),
+          DataColumn(label: Text('Nom')),
+          DataColumn(label: Text('État')),
+          DataColumn(label: Text('Axe')),
+        ],
+        rows: treatments.map((treatment) {
+          final etat = treatment['etat'] ?? '';
+          final bgColor = etat == 'Effectué'
+              ? Colors.green.shade50
+              : etat == 'À venir'
+              ? Colors.red.shade50
+              : Colors.white;
+          final textColor = etat == 'Effectué'
+              ? Colors.green.shade700
+              : etat == 'À venir'
+              ? Colors.red.shade700
+              : Colors.black;
+
+          return DataRow(
+            color: MaterialStateProperty.all(bgColor),
+            cells: [
+              DataCell(
+                Text(
+                  treatment['date'] ?? '',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  treatment['nom'] ?? '',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  treatment['etat'] ?? '',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  treatment['axe'] ?? '',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
-}
 
-// End of HomeScreen
+  /// ✅ Helper pour convertir une valeur en String (gère Blob, DateTime, String)
+  String _convertToString(dynamic value) {
+    if (value == null) return 'N/A';
+
+    // Si c'est déjà une String
+    if (value is String) return value;
+
+    // Si c'est un DateTime
+    if (value is DateTime) {
+      return value.toIso8601String().split('T')[0];
+    }
+
+    // Si c'est un Blob, le convertir en bytes puis en String
+    if (value.runtimeType.toString().contains('Blob')) {
+      try {
+        // Convertir Blob en String
+        return value.toString();
+      } catch (e) {
+        logger.e('Erreur conversion Blob: $e');
+        return 'N/A';
+      }
+    }
+
+    // Fallback: convertir en String
+    return value.toString();
+  }
+
+  /// ✅ Helper pour formater les dates (gère DateTime et String)
+  String _formatDate(dynamic dateInput) {
+    if (dateInput == null) return 'N/A';
+
+    String dateStr;
+
+    // Gérer les deux cas: DateTime ou String
+    if (dateInput is DateTime) {
+      dateStr = dateInput.toIso8601String().split('T')[0]; // YYYY-MM-DD
+    } else if (dateInput is String) {
+      dateStr = dateInput;
+    } else {
+      return 'N/A';
+    }
+
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        return '${parts[2]}-${parts[1]}-${parts[0]}'; // YYYY-MM-DD → DD-MM-YYYY
+      }
+    } catch (e) {
+      logger.e('Erreur formatage date: $e');
+    }
+    return dateStr;
+  }
+}

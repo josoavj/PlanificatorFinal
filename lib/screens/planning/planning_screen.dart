@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
-import '../../widgets/index.dart';
 import '../../core/theme.dart';
 
 class PlanningScreen extends StatefulWidget {
@@ -17,25 +16,6 @@ class _PlanningScreenState extends State<PlanningScreen> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
 
-  // Données fictives pour la démo
-  final Map<DateTime, List<Map<String, String>>> _events = {
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day): [
-      {'titre': 'Rendez-vous client A', 'heure': '10:00', 'lieu': 'Bureau'},
-      {
-        'titre': 'Présentation contrat',
-        'heure': '14:30',
-        'lieu': 'Site client',
-      },
-    ],
-    DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day + 1,
-    ): [
-      {'titre': 'Visite site', 'heure': '09:00', 'lieu': 'Projet X'},
-    ],
-  };
-
   @override
   void initState() {
     super.initState();
@@ -43,91 +23,154 @@ class _PlanningScreenState extends State<PlanningScreen> {
     _selectedDay = DateTime.now();
   }
 
-  List<Map<String, String>> _getEventsForDay(DateTime day) {
-    final normalizedDay = DateTime(day.year, day.month, day.day);
-    return _events[normalizedDay] ?? [];
+  /// Convertir une valeur dynamique en String
+  String _convertToString(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    if (value is int || value is double) return value.toString();
+    if (value is DateTime) return value.toIso8601String();
+
+    // Gérer les Blob (MySql driver)
+    if (value.runtimeType.toString() == 'Blob') {
+      try {
+        if (value is List<int>) {
+          return String.fromCharCodes(value);
+        }
+        return value.toString();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    return value.toString();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Charger les traitements planifiés depuis la base de données
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<PlanningDetailsRepository>()
+          .loadUpcomingTreatmentsComplete();
+    });
+  }
+
+  List<String> _getEventsMarkers(
+    DateTime day,
+    List<Map<String, dynamic>> treatments,
+  ) {
+    final treatmentsForDay = _getTreatmentsForDay(day, treatments);
+    // Retourner une liste de marqueurs (un par traitement)
+    return List.generate(treatmentsForDay.length, (index) => 'event_$index');
+  }
+
+  List<Map<String, dynamic>> _getTreatmentsForDay(
+    DateTime day,
+    List<Map<String, dynamic>> treatments,
+  ) {
+    return treatments.where((treatment) {
+      try {
+        final dateValue = treatment['date'];
+        final dateStr = _convertToString(dateValue);
+        if (dateStr.isEmpty) return false;
+
+        final parts = dateStr.split('-');
+        if (parts.length != 3) return false;
+
+        final treatmentDate = DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+
+        final normalizedDay = DateTime(day.year, day.month, day.day);
+        return isSameDay(treatmentDate, normalizedDay);
+      } catch (e) {
+        return false;
+      }
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final eventsForSelected = _getEventsForDay(_selectedDay);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Planning'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Ajouter un événement',
-            onPressed: () => _showAddEventDialog(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.today),
-            tooltip: 'Aujourd\'hui',
-            onPressed: () {
-              setState(() {
-                _focusedDay = DateTime.now();
-                _selectedDay = DateTime.now();
-              });
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Calendrier
-            Container(
-              padding: const EdgeInsets.all(8),
-              child: _buildCalendar(),
-            ),
+      body: Consumer<PlanningDetailsRepository>(
+        builder: (context, detailsRepository, _) {
+          final treatmentsForSelected = _getTreatmentsForDay(
+            _selectedDay,
+            detailsRepository.upcomingTreatmentsComplete,
+          );
 
-            // Événements du jour
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.grey[300]!)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormat(
-                      'EEEE dd MMMM yyyy',
-                      'fr_FR',
-                    ).format(_selectedDay),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Calendrier
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  child: _buildCalendar(
+                    detailsRepository.upcomingTreatmentsComplete,
                   ),
-                  const SizedBox(height: 16),
-                  if (eventsForSelected.isEmpty)
-                    const Center(child: Text('Aucun événement ce jour'))
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: eventsForSelected.length,
-                      itemBuilder: (context, index) {
-                        final event = eventsForSelected[index];
-                        return _EventCard(
-                          titre: event['titre']!,
-                          heure: event['heure']!,
-                          lieu: event['lieu']!,
-                          onTap: () => _showEventDetails(event),
-                        );
-                      },
-                    ),
-                ],
-              ),
+                ),
+
+                // Événements du jour
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat(
+                          'EEEE dd MMMM yyyy',
+                          'fr_FR',
+                        ).format(_selectedDay),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (detailsRepository.isLoading)
+                        const Center(child: CircularProgressIndicator())
+                      else if (detailsRepository.errorMessage != null)
+                        Center(
+                          child: Text(
+                            'Erreur: ${detailsRepository.errorMessage}',
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        )
+                      else if (treatmentsForSelected.isEmpty)
+                        const Center(child: Text('Aucun traitement ce jour'))
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: treatmentsForSelected.length,
+                          itemBuilder: (context, index) {
+                            final treatment = treatmentsForSelected[index];
+                            return _TreatmentCard(
+                              traitement: _convertToString(
+                                treatment['traitement'],
+                              ),
+                              axe: _convertToString(treatment['axe']),
+                              etat: _convertToString(treatment['etat']),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildCalendar() {
+  Widget _buildCalendar(List<Map<String, dynamic>> treatments) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8),
@@ -147,7 +190,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
           onPageChanged: (focusedDay) {
             _focusedDay = focusedDay;
           },
-          eventLoader: _getEventsForDay,
+          eventLoader: (day) => _getEventsMarkers(day, treatments),
           calendarStyle: CalendarStyle(
             selectedDecoration: BoxDecoration(
               color: AppTheme.primaryBlue,
@@ -168,237 +211,58 @@ class _PlanningScreenState extends State<PlanningScreen> {
       ),
     );
   }
-
-  void _showAddEventDialog() {
-    final titleController = TextEditingController();
-    final heureController = TextEditingController();
-    final lieuController = TextEditingController();
-
-    AppDialogs.bottomSheet(
-      context,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Ajouter un événement',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Titre',
-                hintText: 'Ex: Rendez-vous client',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: heureController,
-              decoration: const InputDecoration(
-                labelText: 'Heure',
-                hintText: 'HH:MM',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: lieuController,
-              decoration: const InputDecoration(
-                labelText: 'Lieu',
-                hintText: 'Ex: Bureau, Site client',
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Annuler'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Événement ajouté')),
-                      );
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Ajouter'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showEventDetails(Map<String, String> event) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext ctx) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              event['titre']!,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            _buildDetailRow('Heure', event['heure']!),
-            _buildDetailRow('Lieu', event['lieu']!),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      _showEditPlanningDialog(event);
-                    },
-                    label: const Text('Éditer'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.delete),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.errorRed,
-                    ),
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      context.read<PlanningRepository>().deleteEvent(
-                        event['planningId'] as int? ?? 0,
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Événement supprimé')),
-                      );
-                    },
-                    label: const Text('Supprimer'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  void _showEditPlanningDialog(Map<String, String> event) {
-    final title = TextEditingController(text: event['titre']);
-    final lieu = TextEditingController(text: event['lieu']);
-    final description = TextEditingController(text: '');
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Éditer l\'événement'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: title,
-                decoration: const InputDecoration(labelText: 'Titre'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: lieu,
-                decoration: const InputDecoration(labelText: 'Lieu'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: description,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Événement mis à jour')),
-              );
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class _EventCard extends StatelessWidget {
-  final String titre;
-  final String heure;
-  final String lieu;
-  final VoidCallback onTap;
+class _TreatmentCard extends StatelessWidget {
+  final String traitement;
+  final String axe;
+  final String etat;
 
-  const _EventCard({
+  const _TreatmentCard({
     Key? key,
-    required this.titre,
-    required this.heure,
-    required this.lieu,
-    required this.onTap,
+    required this.traitement,
+    required this.axe,
+    required this.etat,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isEffectue = etat == 'Effectué';
+    final bgColor = isEffectue ? Colors.green[50] : Colors.red[50];
+    final textColor = isEffectue ? Colors.green[900] : Colors.red[900];
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      color: bgColor,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue,
+            color: isEffectue ? Colors.green : Colors.red,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.event, color: Colors.white),
+          child: Icon(
+            isEffectue ? Icons.check_circle : Icons.pending_actions,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
-        title: Text(titre, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(heure, style: const TextStyle(fontSize: 12)),
-            Text(
-              lieu,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+        title: Text(
+          traitement,
+          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+        subtitle: Text(
+          'Axe: $axe',
+          style: TextStyle(color: textColor, fontSize: 12),
+        ),
+        trailing: Text(
+          etat,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }

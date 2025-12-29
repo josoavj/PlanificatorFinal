@@ -11,6 +11,7 @@ class Client {
   final String nif;
   final String stat;
   final String axe;
+  final int treatmentCount;
 
   Client({
     required this.clientId,
@@ -23,6 +24,7 @@ class Client {
     required this.nif,
     required this.stat,
     required this.axe,
+    this.treatmentCount = 0,
   });
 
   /// Nom complet du client
@@ -41,6 +43,7 @@ class Client {
       nif: map['nif'] as String? ?? '',
       stat: map['stat'] as String? ?? '',
       axe: map['axe'] as String? ?? '',
+      treatmentCount: map['treatment_count'] as int? ?? 0,
     );
   }
 
@@ -57,6 +60,7 @@ class Client {
       nif: json['nif'] as String? ?? '',
       stat: json['stat'] as String? ?? '',
       axe: json['axe'] as String? ?? '',
+      treatmentCount: json['treatment_count'] as int? ?? 0,
     );
   }
 
@@ -72,6 +76,7 @@ class Client {
     'nif': nif,
     'stat': stat,
     'axe': axe,
+    'treatment_count': treatmentCount,
   };
 
   /// Copier avec quelques modifications
@@ -86,6 +91,7 @@ class Client {
     String? nif,
     String? stat,
     String? axe,
+    int? treatmentCount,
   }) {
     return Client(
       clientId: clientId ?? this.clientId,
@@ -98,6 +104,7 @@ class Client {
       nif: nif ?? this.nif,
       stat: stat ?? this.stat,
       axe: axe ?? this.axe,
+      treatmentCount: treatmentCount ?? this.treatmentCount,
     );
   }
 
