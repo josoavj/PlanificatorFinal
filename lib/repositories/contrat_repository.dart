@@ -45,35 +45,6 @@ class ContratRepository extends ChangeNotifier {
     }
   }
 
-  /// Charge les contrats d'un client
-  Future<void> loadContratsForClient(int clientId) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      const sql = '''
-        SELECT 
-          contrat_id, client_id, reference_contrat, date_contrat, date_debut, date_fin, 
-          statut_contrat, duree_contrat, duree, categorie
-        FROM Contrat
-        WHERE client_id = ?
-        ORDER BY date_debut DESC
-      ''';
-
-      final rows = await _db.query(sql, [clientId]);
-      _contrats = rows.map((row) => Contrat.fromMap(row)).toList();
-
-      logger.i('${_contrats.length} contrats chargés pour le client $clientId');
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des contrats: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   /// Charge un contrat spécifique
   Future<void> loadContrat(int contratId) async {
     _isLoading = true;
@@ -111,9 +82,9 @@ class ContratRepository extends ChangeNotifier {
     required String referenceContrat,
     required DateTime dateContrat,
     required DateTime dateDebut,
-    required DateTime dateFin,
+    DateTime? dateFin,
     required String statutContrat,
-    required int duree,
+    int? duree,
     required String categorie,
   }) async {
     _isLoading = true;
@@ -121,11 +92,14 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Calculer la durée du contrat en mois
-      final dureeContrat =
-          dateFin.month -
-          dateDebut.month +
-          12 * (dateFin.year - dateDebut.year);
+      // Calculer la durée du contrat en mois si dateFin est défini
+      int? dureeContrat;
+      if (dateFin != null) {
+        dureeContrat =
+            dateFin.month -
+            dateDebut.month +
+            12 * (dateFin.year - dateDebut.year);
+      }
 
       const sql = '''
         INSERT INTO Contrat (client_id, reference_contrat, date_contrat, date_debut, date_fin, statut_contrat, duree_contrat, duree, categorie)
@@ -137,7 +111,7 @@ class ContratRepository extends ChangeNotifier {
         referenceContrat,
         dateContrat.toIso8601String(),
         dateDebut.toIso8601String(),
-        dateFin.toIso8601String(),
+        dateFin?.toIso8601String(),
         statutContrat,
         dureeContrat,
         duree,
@@ -153,7 +127,7 @@ class ContratRepository extends ChangeNotifier {
         dateDebut: dateDebut,
         dateFin: dateFin,
         statutContrat: statutContrat,
-        dureeContrat: dureeContrat,
+        dureeContrat: dureeContrat ?? 0,
         duree: duree,
         categorie: categorie,
       );
@@ -178,11 +152,14 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Calculer la durée du contrat en mois
-      final dureeContrat =
-          contrat.dateFin.month -
-          contrat.dateDebut.month +
-          12 * (contrat.dateFin.year - contrat.dateDebut.year);
+      // Calculer la durée du contrat en mois si dateFin est défini
+      int? dureeContrat;
+      if (contrat.dateFin != null) {
+        dureeContrat =
+            contrat.dateFin!.month -
+            contrat.dateDebut.month +
+            12 * (contrat.dateFin!.year - contrat.dateDebut.year);
+      }
 
       const sql = '''
         UPDATE Contrat 
@@ -195,7 +172,7 @@ class ContratRepository extends ChangeNotifier {
         contrat.referenceContrat,
         contrat.dateContrat.toIso8601String(),
         contrat.dateDebut.toIso8601String(),
-        contrat.dateFin.toIso8601String(),
+        contrat.dateFin?.toIso8601String(),
         contrat.statutContrat,
         dureeContrat,
         contrat.duree,
@@ -256,15 +233,22 @@ class ContratRepository extends ChangeNotifier {
   List<Contrat> getActiveContrats() {
     final now = DateTime.now();
     return _contrats
-        .where((c) => c.dateDebut.isBefore(now) && c.dateFin.isAfter(now))
+        .where(
+          (c) =>
+              c.dateDebut.isBefore(now) &&
+              (c.dateFin == null || c.dateFin!.isAfter(now)),
+        )
         .toList();
   }
 
   /// Récupère la durée en mois d'un contrat
   int getContractDurationInMonths(Contrat contrat) {
-    return contrat.dateFin.month -
+    if (contrat.dateFin == null) {
+      return 0; // Contrat indéterminé
+    }
+    return contrat.dateFin!.month -
         contrat.dateDebut.month +
-        12 * (contrat.dateFin.year - contrat.dateDebut.year);
+        12 * (contrat.dateFin!.year - contrat.dateDebut.year);
   }
 
   /// Recherche des contrats
