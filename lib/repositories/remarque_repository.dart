@@ -43,22 +43,20 @@ class RemarqueRepository extends ChangeNotifier {
         VALUES (?, ?, ?, ?, ?, ?)
       ''';
 
-      // Récupérer clientId depuis la BD si non fourni
-      int? clientId = null;
-      if (clientId == null && factureId != null) {
-        try {
-          final result = await _db.queryOne(
-            'SELECT c.client_id FROM Client c JOIN Contrat ct ON c.client_id = ct.client_id JOIN Traitement t ON ct.contrat_id = t.contrat_id JOIN Planning p ON t.traitement_id = p.traitement_id JOIN PlanningDetails pd ON p.planning_id = pd.planning_id WHERE pd.planning_detail_id = ?',
-            [planningDetailsId],
-          );
-          clientId = result?['client_id'] as int? ?? 0;
-        } catch (e) {
-          clientId = 0;
-        }
+      // Récupérer clientId depuis la BD
+      int clientId = 0;
+      try {
+        final result = await _db.queryOne(
+          'SELECT c.client_id FROM Client c JOIN Contrat ct ON c.client_id = ct.client_id JOIN Traitement t ON ct.contrat_id = t.contrat_id JOIN Planning p ON t.traitement_id = p.traitement_id JOIN PlanningDetails pd ON p.planning_id = pd.planning_id WHERE pd.planning_detail_id = ?',
+          [planningDetailsId],
+        );
+        clientId = result?['client_id'] as int? ?? 0;
+      } catch (e) {
+        clientId = 0;
       }
 
       await _db.execute(createRemarqueSQL, [
-        clientId ?? 0,
+        clientId,
         planningDetailsId,
         factureId,
         contenu,
