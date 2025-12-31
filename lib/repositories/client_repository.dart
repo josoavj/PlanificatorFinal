@@ -30,7 +30,9 @@ class ClientRepository extends ChangeNotifier {
           c.categorie, c.nif, c.stat, c.axe,
           COALESCE(COUNT(p.planning_id), 0) as treatment_count
         FROM Client c
-        LEFT JOIN Planning p ON c.client_id = p.client_id
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
+        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
         GROUP BY c.client_id
         ORDER BY c.nom ASC
       ''';
@@ -88,8 +90,8 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         INSERT INTO Client (nom, prenom, email, telephone, adresse, 
-                           categorie, nif, stat, axe)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           categorie, nif, stat, axe, date_ajout)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''';
 
       final id = await _db.insert(sql, [
@@ -102,6 +104,7 @@ class ClientRepository extends ChangeNotifier {
         client.nif,
         client.stat,
         client.axe,
+        DateTime.now().toIso8601String().split('T')[0],
       ]);
 
       final newClient = client.copyWith(clientId: id);
@@ -283,7 +286,9 @@ class ClientRepository extends ChangeNotifier {
           c.categorie, c.nif, c.stat, c.axe,
           COALESCE(COUNT(p.planning_id), 0) as treatment_count
         FROM Client c
-        LEFT JOIN Planning p ON c.client_id = p.client_id
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
+        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
         WHERE c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ?
         GROUP BY c.client_id
         ORDER BY c.nom ASC
