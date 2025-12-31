@@ -86,6 +86,7 @@ class ContratRepository extends ChangeNotifier {
     required String statutContrat,
     int? duree,
     required String categorie,
+    required String dureeStatus,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -114,7 +115,7 @@ class ContratRepository extends ChangeNotifier {
         dateFin?.toIso8601String(),
         statutContrat,
         dureeContrat,
-        duree,
+        dureeStatus,
         categorie,
       ]);
 
@@ -280,6 +281,28 @@ class ContratRepository extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Créer un enregistrement Traitement dans la base de données
+  /// Retourne l'ID du traitement créé, ou -1 en cas d'erreur
+  Future<int> createTraitement({
+    required int contratId,
+    required int typeTraitementId,
+  }) async {
+    try {
+      const sql = '''
+        INSERT INTO Traitement (contrat_id, id_type_traitement)
+        VALUES (?, ?)
+      ''';
+
+      final id = await _db.insert(sql, [contratId, typeTraitementId]);
+
+      logger.i('Traitement créé avec l\'ID: $id pour contrat $contratId');
+      return id;
+    } catch (e) {
+      logger.e('Erreur lors de la création du traitement: $e');
+      return -1;
     }
   }
 }
