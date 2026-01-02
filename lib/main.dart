@@ -118,6 +118,8 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => PlanningDetailsRepository()),
         ChangeNotifierProvider(create: (_) => HistoriqueRepository()),
         ChangeNotifierProvider(create: (_) => TypeTraitementRepository()),
+        ChangeNotifierProvider(create: (_) => RemarqueRepository()),
+        ChangeNotifierProvider(create: (_) => SignalementRepository()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
