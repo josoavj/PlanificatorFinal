@@ -79,6 +79,16 @@ class _FactureListScreenState extends State<FactureListScreen> {
             );
           }
 
+          // Grouper les factures par client et traitement
+          final Map<String, List<Facture>> groupedByClient = {};
+          for (final facture in filteredFactures) {
+            final clientName = facture.clientNom ?? 'Inconnu';
+            if (!groupedByClient.containsKey(clientName)) {
+              groupedByClient[clientName] = [];
+            }
+            groupedByClient[clientName]!.add(facture);
+          }
+
           return Column(
             children: [
               // Filtres
@@ -116,16 +126,49 @@ class _FactureListScreenState extends State<FactureListScreen> {
               // Statistiques
               _buildStatisticsBar(repository, filteredFactures),
 
-              // Liste des factures
+              // Liste des factures groupées par client
               Expanded(
                 child: ListView.builder(
-                  itemCount: filteredFactures.length,
+                  padding: const EdgeInsets.all(12),
+                  itemCount: groupedByClient.length,
                   itemBuilder: (context, index) {
-                    final facture = filteredFactures[index];
-                    return _FactureCard(
-                      facture: facture,
-                      onTap: () =>
-                          _showFactureDetails(context, facture, repository),
+                    final entry = groupedByClient.entries.elementAt(index);
+                    final clientName = entry.key;
+                    final clientFactures = entry.value;
+
+                    return _ClientFacturesCard(
+                      clientName: clientName,
+                      factureCount: clientFactures.length,
+                      totalAmount: clientFactures.fold<double>(
+                        0.0,
+                        (sum, f) => sum + (f.montant),
+                      ),
+                      paidAmount: clientFactures
+                          .where((f) => f.isPaid)
+                          .fold<double>(0.0, (sum, f) => sum + (f.montant)),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (context, animation, secondaryAnimation) =>
+                                    _FacturesListByClientScreen(
+                                      clientName: clientName,
+                                      factures: clientFactures,
+                                    ),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) => FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -183,112 +226,253 @@ class _FactureListScreenState extends State<FactureListScreen> {
       ),
     );
   }
+}
 
-  void _showFactureDetails(
-    BuildContext context,
-    Facture facture,
-    FactureRepository repository,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext ctx) => Container(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+/// Card pour afficher un client avec ses factures
+class _ClientFacturesCard extends StatelessWidget {
+  final String clientName;
+  final int factureCount;
+  final double totalAmount;
+  final double paidAmount;
+  final VoidCallback onTap;
+
+  const _ClientFacturesCard({
+    required this.clientName,
+    required this.factureCount,
+    required this.totalAmount,
+    required this.paidAmount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final unpaidAmount = totalAmount - paidAmount;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      clientName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$factureCount facture(s)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (paidAmount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Payé: ${NumberFormat.currency(locale: 'fr_FR', symbol: '€').format(paidAmount)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green.shade800,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        if (unpaidAmount > 0) const SizedBox(width: 8),
+                        if (unpaidAmount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Dû: ${NumberFormat.currency(locale: 'fr_FR', symbol: '€').format(unpaidAmount)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange.shade800,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Écran pour afficher les factures d'un client
+class _FacturesListByClientScreen extends StatelessWidget {
+  final String clientName;
+  final List<Facture> factures;
+
+  const _FacturesListByClientScreen({
+    required this.clientName,
+    required this.factures,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(clientName)),
+      body: factures.isEmpty
+          ? const EmptyStateWidget(
+              title: 'Aucune facture',
+              message: 'Aucune facture pour ce client',
+              icon: Icons.receipt_outlined,
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: factures.length,
+              itemBuilder: (context, index) {
+                final facture = factures[index];
+                return _FactureDetailCard(
+                  facture: facture,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            _FactureDetailScreen(facture: facture),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) =>
+                                FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+    );
+  }
+}
+
+/// Card pour afficher une facture
+class _FactureDetailCard extends StatelessWidget {
+  final Facture facture;
+  final VoidCallback onTap;
+
+  const _FactureDetailCard({required this.facture, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Facture #${facture.factureId}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(facture.dateTraitement),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: facture.isPaid
+                            ? Colors.green.shade100
+                            : Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        facture.isPaid ? 'Payée' : 'Non payée',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: facture.isPaid
+                              ? Colors.green.shade800
+                              : Colors.orange.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Facture #${facture.factureId}',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  Chip(
-                    label: Text(facture.isPaid ? 'Payée' : 'Non payée'),
-                    backgroundColor: facture.isPaid
-                        ? Colors.green[100]
-                        : Colors.orange[100],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Client
-              if (facture.clientFullName != 'N/A')
-                _buildDetailRow('Client', facture.clientFullName),
-
-              // Type de traitement
-              if (facture.typeTreatment != null)
-                _buildDetailRow('Traitement', facture.typeTreatment!),
-
-              // Date de planification
-              if (facture.datePlanification != null)
-                _buildDetailRow(
-                  'Date planification',
-                  _formatDate(facture.datePlanification!),
-                ),
-
-              // État du planning
-              if (facture.etatPlanning != null)
-                _buildDetailRow('État planning', facture.etatPlanning!),
-
-              const SizedBox(height: 12),
-
-              // Facture details
-              _buildDetailRow(
-                'Date facture',
-                _formatDate(facture.dateTraitement),
-              ),
-              _buildDetailRow(
-                'Montant',
-                facture.montantFormatted,
-                isBold: true,
-              ),
-
-              // Mode de paiement si payée
-              if (facture.isPaid && facture.mode != null)
-                _buildDetailRow('Mode paiement', facture.mode!),
-
-              // Numéro chèque si applicable
-              if (facture.numeroCheque != null)
-                _buildDetailRow('Chèque #', facture.numeroCheque!),
-
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        _showPriceModificationDialog(
-                          context,
-                          facture,
-                          repository,
-                        );
-                      },
-                      child: const Text('Modifier le prix'),
+                    facture.montantFormatted,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                      ),
-                      onPressed: facture.isPaid
-                          ? null
-                          : () {
-                              repository.markAsPaid(facture.factureId);
-                              Navigator.of(ctx).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Marquée comme payée'),
-                                ),
-                              );
-                            },
-                      child: const Text('Marquer payée'),
-                    ),
+                  const SizedBox(height: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey[600],
                   ),
                 ],
               ),
@@ -298,63 +482,115 @@ class _FactureListScreenState extends State<FactureListScreen> {
       ),
     );
   }
+}
 
-  void _showPriceModificationDialog(
-    BuildContext context,
-    Facture facture,
-    FactureRepository repository,
-  ) {
-    final priceController = TextEditingController(
-      text: facture.montant.toStringAsFixed(2),
-    );
+/// Écran détail d'une facture
+class _FactureDetailScreen extends StatelessWidget {
+  final Facture facture;
 
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Modifier le prix'),
-        content: TextField(
-          controller: priceController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            label: const Text('Nouveau montant'),
-            suffix: const Text('Ar'),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
+  const _FactureDetailScreen({required this.facture});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Facture #${facture.factureId}'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
+          IconButton(
+            icon: const Icon(Icons.print),
             onPressed: () {
-              final newPrice = double.tryParse(priceController.text);
-              if (newPrice != null && newPrice > 0) {
-                repository.updateFacturePrice(
-                  facture.factureId,
-                  newPrice.toInt(),
-                );
-                Navigator.of(ctx).pop();
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Prix mis à jour')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Montant invalide')),
-                );
-              }
+              // TODO: Implémenter l'impression
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Impression en cours...')),
+              );
             },
-            child: const Text('Confirmer'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // TODO: Implémenter l'édition
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Édition en cours...')),
+              );
+            },
           ),
         ],
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Informations générales
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Informations générales',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _DetailRow('Facture', 'Facture #${facture.factureId}'),
+                    _DetailRow(
+                      'Date',
+                      DateFormat('dd/MM/yyyy').format(facture.dateTraitement),
+                    ),
+                    _DetailRow('Client', facture.clientNom ?? 'Inconnu'),
+                    _DetailRow(
+                      'État',
+                      facture.isPaid ? 'Payée' : 'Non payée',
+                      isBold: !facture.isPaid,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Montants
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Montants',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _DetailRow('Total', facture.montantFormatted, isBold: true),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildDetailRow(String label, String value, {bool isBold = false}) {
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isBold;
+
+  const _DetailRow(this.label, this.value, {this.isBold = false});
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -366,51 +602,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
                 : null,
           ),
         ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy').format(date);
-  }
-}
-
-class _FactureCard extends StatelessWidget {
-  final Facture facture;
-  final VoidCallback onTap;
-
-  const _FactureCard({Key? key, required this.facture, required this.onTap})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      child: ListTile(
-        leading: Icon(
-          Icons.receipt,
-          color: facture.isPaid ? Colors.green : Colors.orange,
-        ),
-        title: Text('Facture #${facture.factureId}'),
-        subtitle: Text(DateFormat('dd/MM/yyyy').format(facture.dateTraitement)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              facture.montantFormatted,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              facture.isPaid ? 'Payée' : 'Non payée',
-              style: TextStyle(
-                fontSize: 12,
-                color: facture.isPaid ? Colors.green : Colors.orange,
-              ),
-            ),
-          ],
-        ),
-        onTap: onTap,
       ),
     );
   }
