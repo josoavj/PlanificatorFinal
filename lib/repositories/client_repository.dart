@@ -28,11 +28,10 @@ class ClientRepository extends ChangeNotifier {
         SELECT 
           c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse, 
           c.categorie, c.nif, c.stat, c.axe,
-          COALESCE(COUNT(p.planning_id), 0) as treatment_count
+          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
         FROM Client c
         LEFT JOIN Contrat co ON c.client_id = co.client_id
         LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
-        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
         GROUP BY c.client_id
         ORDER BY c.nom ASC
       ''';

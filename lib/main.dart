@@ -12,7 +12,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/setup/database_config_screen.dart';
 import 'screens/client/client_list_screen.dart';
 import 'screens/contrat/contrat_screen.dart';
-import 'screens/facture/facture_list_screen.dart';
+import 'screens/facture/facture_screen.dart';
 import 'screens/planning/planning_screen.dart';
 import 'screens/historique/historique_screen.dart';
 import 'screens/settings/settings_screen.dart';
@@ -141,7 +141,7 @@ class _MyAppState extends State<MyApp> {
           '/home': (context) => const HomeScreen(),
           '/clients': (context) => const ClientListScreen(),
           '/contrats': (context) => const ContratScreen(),
-          '/factures': (context) => const FactureListScreen(),
+          '/factures': (context) => const FactureScreen(),
           '/planning': (context) => const PlanningScreen(),
           '/historique': (context) => const HistoriqueScreen(),
           '/about': (context) => const AboutScreen(),

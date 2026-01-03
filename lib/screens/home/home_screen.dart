@@ -4,7 +4,7 @@ import 'package:logger/logger.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../client/client_list_screen.dart';
-import '../facture/facture_list_screen.dart';
+import '../facture/facture_screen.dart';
 import '../contrat/contrat_screen.dart';
 import '../planning/planning_screen.dart';
 import '../historique/historique_screen.dart';
@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ContratScreen(),
             ClientListScreen(),
             PlanningScreen(),
-            FactureListScreen(),
+            FactureScreen(),
             HistoriqueScreen(),
             AboutScreen(),
             SettingsScreen(),
@@ -104,169 +104,180 @@ class _DashboardTabState extends State<_DashboardTab> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          Text(
-            'BIENVENUE DANS PLANIFICATOR',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 25),
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: _loadData,
+        tooltip: 'Rafraîchir les données',
+        child: const Icon(Icons.refresh),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title
+            Text(
+              'BIENVENUE DANS PLANIFICATOR',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 25),
 
-          // Two columns layout for current and next treatments
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // LEFT: A venir (mois prochain) - sans redondance 1 mois
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'A venir',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+            // Two columns layout for current and next treatments
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // LEFT: A venir (mois prochain) - sans redondance 1 mois
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'A venir',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(8),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        constraints: const BoxConstraints(minHeight: 400),
+                        child: Consumer<PlanningDetailsRepository>(
+                          builder: (context, planningDetailsRepo, _) {
+                            // Filtrer pour exclure les traitements avec redondance "1 mois"
+                            // Trier pour afficher d'abord "en cours" puis "à venir"
+                            final filteredTreatments = planningDetailsRepo
+                                .upcomingTreatmentsComplete
+                                .where((treatment) {
+                                  final redondance = _convertToString(
+                                    treatment['redondance'],
+                                  ).toLowerCase();
+                                  return redondance != '1 mois';
+                                })
+                                .toList();
+
+                            // Trier: "en cours" en premier, puis "à venir"
+                            filteredTreatments.sort((a, b) {
+                              final etatA = _convertToString(
+                                a['etat'],
+                              ).toLowerCase();
+                              final etatB = _convertToString(
+                                b['etat'],
+                              ).toLowerCase();
+
+                              // "en cours" avant "à venir"
+                              if (etatA == 'en cours' && etatB != 'en cours')
+                                return -1;
+                              if (etatA != 'en cours' && etatB == 'en cours')
+                                return 1;
+                              return 0;
+                            });
+
+                            logger.d(
+                              '🔄 Rebuilding upcoming table with ${filteredTreatments.length} items (filtered out 1 mois)',
+                            );
+                            return _buildTreatmentTable(
+                              title: 'Prochains traitements',
+                              isLoading: planningDetailsRepo.isLoading,
+                              errorMessage: planningDetailsRepo.errorMessage,
+                              treatments: filteredTreatments
+                                  .map(
+                                    (data) => {
+                                      'date': _formatDate(data['date']),
+                                      'nom': _convertToString(
+                                        data['traitement'] ?? '',
+                                      ),
+                                      'etat': _convertToString(
+                                        data['etat'] ?? '',
+                                      ),
+                                      'axe': _convertToString(
+                                        data['axe'] ?? '',
+                                      ),
+                                    },
+                                  )
+                                  .toList(),
+                            );
+                          },
+                        ),
                       ),
-                      constraints: const BoxConstraints(minHeight: 400),
-                      child: Consumer<PlanningDetailsRepository>(
-                        builder: (context, planningDetailsRepo, _) {
-                          // Filtrer pour exclure les traitements avec redondance "1 mois"
-                          // Trier pour afficher d'abord "en cours" puis "à venir"
-                          final filteredTreatments = planningDetailsRepo
-                              .upcomingTreatmentsComplete
-                              .where((treatment) {
-                                final redondance = _convertToString(
-                                  treatment['redondance'],
-                                ).toLowerCase();
-                                return redondance != '1 mois';
-                              })
-                              .toList();
-
-                          // Trier: "en cours" en premier, puis "à venir"
-                          filteredTreatments.sort((a, b) {
-                            final etatA = _convertToString(
-                              a['etat'],
-                            ).toLowerCase();
-                            final etatB = _convertToString(
-                              b['etat'],
-                            ).toLowerCase();
-
-                            // "en cours" avant "à venir"
-                            if (etatA == 'en cours' && etatB != 'en cours')
-                              return -1;
-                            if (etatA != 'en cours' && etatB == 'en cours')
-                              return 1;
-                            return 0;
-                          });
-
-                          logger.d(
-                            '🔄 Rebuilding upcoming table with ${filteredTreatments.length} items (filtered out 1 mois)',
-                          );
-                          return _buildTreatmentTable(
-                            title: 'Prochains traitements',
-                            isLoading: planningDetailsRepo.isLoading,
-                            errorMessage: planningDetailsRepo.errorMessage,
-                            treatments: filteredTreatments
-                                .map(
-                                  (data) => {
-                                    'date': _formatDate(data['date']),
-                                    'nom': _convertToString(
-                                      data['traitement'] ?? '',
-                                    ),
-                                    'etat': _convertToString(
-                                      data['etat'] ?? '',
-                                    ),
-                                    'axe': _convertToString(data['axe'] ?? ''),
-                                  },
-                                )
-                                .toList(),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 24),
+                const SizedBox(width: 24),
 
-              // RIGHT: En cours (mois actuel) - affiche à venir ET effectué
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'En cours',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                // RIGHT: En cours (mois actuel) - affiche à venir ET effectué
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'En cours',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      constraints: const BoxConstraints(minHeight: 400),
-                      child: Consumer<PlanningDetailsRepository>(
-                        builder: (context, planningDetailsRepo, _) {
-                          // Filtrer pour afficher les traitements "à venir" ET "effectué" du mois actuel
-                          final filteredTreatments = planningDetailsRepo
-                              .currentMonthTreatmentsComplete
-                              .where((treatment) {
-                                final etat = _convertToString(
-                                  treatment['etat'],
-                                ).toLowerCase().trim();
-                                // Inclure "à venir" et "effectué" (avec variantes possibles)
-                                return etat.contains('à venir') ||
-                                    etat.contains('avenir') ||
-                                    etat.contains('effectué') ||
-                                    etat.contains('effectue');
-                              })
-                              .toList();
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        constraints: const BoxConstraints(minHeight: 400),
+                        child: Consumer<PlanningDetailsRepository>(
+                          builder: (context, planningDetailsRepo, _) {
+                            // Filtrer pour afficher les traitements "à venir" ET "effectué" du mois actuel
+                            final filteredTreatments = planningDetailsRepo
+                                .currentMonthTreatmentsComplete
+                                .where((treatment) {
+                                  final etat = _convertToString(
+                                    treatment['etat'],
+                                  ).toLowerCase().trim();
+                                  // Inclure "à venir" et "effectué" (avec variantes possibles)
+                                  return etat.contains('à venir') ||
+                                      etat.contains('avenir') ||
+                                      etat.contains('effectué') ||
+                                      etat.contains('effectue');
+                                })
+                                .toList();
 
-                          logger.d(
-                            '🔄 Rebuilding current month table with ${filteredTreatments.length} items (à venir + effectué)',
-                          );
-                          return _buildTreatmentTable(
-                            title: 'Traitements en cours',
-                            isLoading: planningDetailsRepo.isLoading,
-                            errorMessage: planningDetailsRepo.errorMessage,
-                            treatments: filteredTreatments
-                                .map(
-                                  (data) => {
-                                    'date': _formatDate(data['date']),
-                                    'nom': _convertToString(
-                                      data['traitement'] ?? '',
-                                    ),
-                                    'etat': _convertToString(
-                                      data['etat'] ?? '',
-                                    ),
-                                    'axe': _convertToString(data['axe'] ?? ''),
-                                  },
-                                )
-                                .toList(),
-                          );
-                        },
+                            logger.d(
+                              '🔄 Rebuilding current month table with ${filteredTreatments.length} items (à venir + effectué)',
+                            );
+                            return _buildTreatmentTable(
+                              title: 'Traitements en cours',
+                              isLoading: planningDetailsRepo.isLoading,
+                              errorMessage: planningDetailsRepo.errorMessage,
+                              treatments: filteredTreatments
+                                  .map(
+                                    (data) => {
+                                      'date': _formatDate(data['date']),
+                                      'nom': _convertToString(
+                                        data['traitement'] ?? '',
+                                      ),
+                                      'etat': _convertToString(
+                                        data['etat'] ?? '',
+                                      ),
+                                      'axe': _convertToString(
+                                        data['axe'] ?? '',
+                                      ),
+                                    },
+                                  )
+                                  .toList(),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

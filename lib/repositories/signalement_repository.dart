@@ -212,12 +212,29 @@ class SignalementRepository extends ChangeNotifier {
         // Cas normal: recalculer avec nouvelle fréquence
         DateTime newDate = currentDate;
         for (int i = currentIndex + 1; i < allDetails.length; i++) {
-          // Ajouter newRedondance mois
+          // Ajouter newRedondance mois (peut être négatif pour avancement)
+          // Utiliser DateTime pour calculer correctement même avec mois négatifs
           newDate = DateTime(
             newDate.year,
             newDate.month + newRedondance,
             newDate.day,
           );
+
+          // Gérer les débordements de mois (avant mois 1 ou après mois 12)
+          while (newDate.month < 1) {
+            newDate = DateTime(
+              newDate.year - 1,
+              newDate.month + 12,
+              newDate.day,
+            );
+          }
+          while (newDate.month > 12) {
+            newDate = DateTime(
+              newDate.year + 1,
+              newDate.month - 12,
+              newDate.day,
+            );
+          }
 
           await _db.execute(updateDetailsSQL, [
             DateHelper.toDbFormat(newDate),
@@ -277,11 +294,29 @@ class SignalementRepository extends ChangeNotifier {
       if (changerRedondance) {
         // Calculer l'intervalle entre ancienne et nouvelle date
         final difference = dateSignalement.difference(dateCourante);
-        final newRedondance = (difference.inDays / 30)
-            .round(); // Approximation en mois
+        var newRedondance = (difference.inDays / 30).round();
+
+        // ✅ IMPORTANT: Appliquer le type pour influer sur la redondance
+        // - Si "avancement" (date antérieure): la redondance doit diminuer ou devenir négative
+        // - Si "décalage" (date postérieure): la redondance doit augmenter ou rester positive
+        if (type == 'avancement') {
+          // Avancement = on rapproche les dates (redondance diminue)
+          // Si différence est négative (-30 jours), newRedondance = -1 (moins souvent)
+          newRedondance = newRedondance.abs() * -1; // Forcer négatif
+          logger.i(
+            '⏪ AVANCEMENT détecté: intervalle=${difference.inDays} jours ≈ $newRedondance mois (diminue la fréquence)',
+          );
+        } else if (type == 'décalage') {
+          // Décalage = on éloigne les dates (redondance augmente)
+          // Si différence est positive (+30 jours), newRedondance = +1 (plus souvent)
+          newRedondance = newRedondance.abs(); // Forcer positif
+          logger.i(
+            '⏩ DÉCALAGE détecté: intervalle=${difference.inDays} jours ≈ $newRedondance mois (augmente la fréquence)',
+          );
+        }
 
         logger.i(
-          '📊 Changement redondance: intervalle=${difference.inDays} jours ≈ $newRedondance mois',
+          '📊 Changement redondance: type=$type, intervalle=${difference.inDays} jours ≈ $newRedondance mois',
         );
 
         await modifierRedondance(

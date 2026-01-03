@@ -96,6 +96,15 @@ class _PlanningScreenState extends State<PlanningScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context
+              .read<PlanningDetailsRepository>()
+              .loadUpcomingTreatmentsComplete();
+        },
+        tooltip: 'Actualiser',
+        child: const Icon(Icons.refresh),
+      ),
       body: Consumer<PlanningDetailsRepository>(
         builder: (context, detailsRepository, _) {
           final treatmentsForSelected = _getTreatmentsForDay(
@@ -355,7 +364,6 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
   late RemarqueRepository _remarqueRepository;
   final TextEditingController _remarqueController = TextEditingController();
   final TextEditingController _problemeController = TextEditingController();
-  String _selectedModePaiement = 'Chèque';
 
   final List<String> _modePaiements = [
     'Chèque',
@@ -387,95 +395,339 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
 
   void _showRemarqueDialog() {
     final remarqueCtrl = TextEditingController();
-    String selectedMode = _selectedModePaiement;
+    final problemeCtrl = TextEditingController();
+    final actionCtrl = TextEditingController();
+    final numeroFactureCtrl = TextEditingController();
+    final datePayementCtrl = TextEditingController();
+    final numeroChequeCtrl = TextEditingController();
+    final etablissementCtrl = TextEditingController();
+
+    String selectedMode = 'Chèque';
+    bool estPayee = false;
+    final logger = Logger();
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ajouter une Remarque'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: remarqueCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Entrez votre remarque...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Ajouter une Remarque & Facture'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Titre planning
+                Text(
+                  _convertToString(widget.treatment['traitement']),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  contentPadding: const EdgeInsets.all(12),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Mode de Paiement',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: selectedMode,
-                items: _modePaiements
-                    .map(
-                      (mode) =>
-                          DropdownMenuItem(value: mode, child: Text(mode)),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    selectedMode = value;
+                Text(
+                  _convertToString(widget.treatment['date']),
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+
+                // ✅ SECTION REMARQUE
+                const Text(
+                  'Remarque',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: remarqueCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Entrez votre remarque...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Problème et Action
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Problème',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          TextField(
+                            controller: problemeCtrl,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.all(8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Action',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          TextField(
+                            controller: actionCtrl,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.all(8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // ✅ SECTION FACTURE
+                const Text(
+                  'Facture',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+
+                // Payé Checkbox
+                Row(
+                  children: [
+                    Checkbox(
+                      value: estPayee,
+                      onChanged: (value) {
+                        setState(() {
+                          estPayee = value ?? false;
+                        });
+                      },
+                    ),
+                    const Text('Payée'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Modes de paiement (visibles si payée)
+                if (estPayee) ...[
+                  const Text(
+                    'Mode de Paiement',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedMode,
+                    items: _modePaiements
+                        .map(
+                          (mode) =>
+                              DropdownMenuItem(value: mode, child: Text(mode)),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        if (value != null) {
+                          selectedMode = value;
+                        }
+                      });
+                    },
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Numéro facture
+                TextField(
+                  controller: numeroFactureCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Numéro facture',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Date paiement
+                TextField(
+                  controller: datePayementCtrl,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    labelText: 'Date de paiement',
+                    suffixIcon: const Icon(Icons.calendar_today),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (picked != null) {
+                      datePayementCtrl.text = DateFormat(
+                        'yyyy-MM-dd',
+                      ).format(picked);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Chèque fields (si mode Chèque)
+                if (estPayee && selectedMode == 'Chèque') ...[
+                  TextField(
+                    controller: etablissementCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Établissement',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: numeroChequeCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Numéro du chèque',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (remarqueCtrl.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Veuillez entrer une remarque'),
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  final factureRepo = context.read<FactureRepository>();
+                  final pDetailsRepo = context
+                      .read<PlanningDetailsRepository>();
+
+                  // ✅ 1. Créer la remarque
+                  await _remarqueRepository.createRemarque(
+                    planningDetailsId: widget.planningDetailId,
+                    factureId: 0,
+                    contenu: remarqueCtrl.text,
+                    probleme: problemeCtrl.text,
+                    modePaiement: selectedMode,
+                  );
+                  logger.i('✅ Remarque créée');
+
+                  // ✅ 2. Créer la facture (si payée)
+                  if (estPayee) {
+                    final datePayement = datePayementCtrl.text.isNotEmpty
+                        ? datePayementCtrl.text
+                        : DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+                    // Créer facture avec tous les détails
+                    await factureRepo.createFactureComplete(
+                      planningDetailId: widget.planningDetailId,
+                      referenceFacture: numeroFactureCtrl.text,
+                      montant: 0, // À récupérer depuis le contrat/planning
+                      mode: selectedMode,
+                      etat: 'Payé',
+                      axe: _convertToString(widget.treatment['axe']),
+                      dateTraitement: DateTime.parse(datePayement),
+                    );
+                    logger.i('✅ Facture créée');
                   }
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                ),
-              ),
-            ],
-          ),
+
+                  // ✅ 3. Mettre à jour l'état du planning à "Effectué"
+                  await pDetailsRepo.updatePlanningDetailsStatut(
+                    widget.planningDetailId,
+                    'Effectué',
+                  );
+                  logger.i('✅ Planning marqué comme Effectué');
+
+                  if (!mounted) return;
+
+                  // ✅ 4. Fermer le dialog
+                  Navigator.pop(ctx);
+                  await Future.delayed(const Duration(milliseconds: 100));
+
+                  // ✅ 5. Recharger les données
+                  if (mounted) {
+                    context
+                        .read<PlanningDetailsRepository>()
+                        .loadUpcomingTreatmentsComplete();
+                  }
+
+                  // ✅ 6. Afficher succès
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Remarque & Facture ajoutées avec succès',
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+
+                  // ✅ 7. Fermer l'écran
+                  await Future.delayed(const Duration(milliseconds: 1200));
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                  }
+                } catch (e) {
+                  logger.e('Erreur: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Enregistrer'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (remarqueCtrl.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Veuillez entrer une remarque')),
-                );
-                return;
-              }
-
-              await _remarqueRepository.createRemarque(
-                planningDetailsId: widget.planningDetailId,
-                factureId: 0,
-                contenu: remarqueCtrl.text,
-                probleme: '',
-                modePaiement: selectedMode,
-              );
-
-              if (!mounted) return;
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Remarque ajoutée avec succès'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-
-              await Future.delayed(const Duration(milliseconds: 500));
-              if (mounted) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
       ),
     );
   }
@@ -657,39 +909,75 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                   newDate = DateTime.now();
                 }
 
-                if (changerRedondance) {
-                  // Mode CHANGER: modifier tous les futurs
-                  logger.i(
-                    'Signalement CHANGER - motif: ${motifCtrl.text}, date: ${dateCtrl.text}',
-                  );
-                  await signalementRepo.modifierRedondance(
-                    planningId: 1, // À obtenir du widget.treatment
-                    planningDetailsId: widget.planningDetailId,
-                    newRedondance: 1,
-                  );
-                } else {
-                  // Mode GARDER: modifier uniquement cette date
-                  logger.i(
-                    'Signalement GARDER - motif: ${motifCtrl.text}, date: ${dateCtrl.text}',
-                  );
-                  await signalementRepo.modifierDatePlanning(
-                    planningDetailsId: widget.planningDetailId,
-                    newDate: newDate,
+                // Récupérer la date courante et le planning ID
+                DateTime dateCourante = DateTime.now();
+                int planningId = 1;
+
+                try {
+                  // D'abord récupérer la date courante du widget.treatment
+                  final dateStr = widget.treatment['date'];
+                  if (dateStr is String) {
+                    dateCourante = DateFormat('yyyy-MM-dd').parse(dateStr);
+                  }
+
+                  // Récupérer le planningId en cherchant dans les données existantes
+                  // Pour éviter une requête supplémentaire
+                  final detailsRepo = context.read<PlanningDetailsRepository>();
+                  final allDetails = detailsRepo.details;
+
+                  for (var detail in allDetails) {
+                    if (detail.planningDetailId == widget.planningDetailId) {
+                      planningId = detail.planningId;
+                      logger.i('✅ Planning ID trouvé: $planningId');
+                      break;
+                    }
+                  }
+                } catch (e) {
+                  logger.w('Erreur récupération planning ID: $e');
+                }
+
+                // Utiliser la méthode complète qui gère avancement vs décalage
+                await signalementRepo.enregistrerSignalment(
+                  planningDetailsId: widget.planningDetailId,
+                  planningId: planningId,
+                  motif: motifCtrl.text,
+                  type: typeSignalement, // 'avancement' ou 'décalage'
+                  dateCourante: dateCourante,
+                  dateSignalement: newDate,
+                  changerRedondance: changerRedondance,
+                );
+
+                if (!mounted) return;
+
+                // ✅ 1. Fermer le dialog d'abord
+                Navigator.pop(ctx);
+
+                // ✅ 2. Court délai pour que le dialog se ferme
+                await Future.delayed(const Duration(milliseconds: 100));
+
+                // ✅ 3. Recharger les données IMMÉDIATEMENT
+                if (mounted) {
+                  context
+                      .read<PlanningDetailsRepository>()
+                      .loadUpcomingTreatmentsComplete();
+                }
+
+                // ✅ 4. Afficher le succès
+                if (mounted) {
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Signalement enregistré avec succès'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
                   );
                 }
 
-                if (!mounted) return;
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Signalement enregistré avec succès'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-
-                await Future.delayed(const Duration(milliseconds: 500));
+                // ✅ 5. Fermer l'écran de détail APRÈS le rechargement
+                await Future.delayed(const Duration(milliseconds: 1200));
                 if (mounted) {
-                  Navigator.pop(context);
+                  Navigator.of(context).pop();
                 }
               } catch (e) {
                 logger.e('Erreur signalement: $e');

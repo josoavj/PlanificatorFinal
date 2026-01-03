@@ -4,6 +4,7 @@ import 'package:planificator/screens/home/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:collection/collection.dart';
 import 'dart:convert';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
@@ -342,6 +343,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // SECTION: INFORMATIONS CONTRAT
                 // ═════════════════════════════════════════
                 _buildSectionHeader('📋 INFORMATIONS CONTRAT'),
+                _buildDetailRow('Numéro Contrat', '#${contrat.contratId}'),
                 _buildDetailRow('Référence', contrat.referenceContrat),
                 _buildDetailRow(
                   'Date Contrat',
@@ -351,20 +353,16 @@ class _ContratScreenState extends State<ContratScreen> {
                   'Date Début',
                   DateFormat('dd/MM/yyyy').format(contrat.dateDebut),
                 ),
-                _buildDetailRow(
-                  'Date Fin',
-                  contrat.dateFin != null
-                      ? DateFormat('dd/MM/yyyy').format(contrat.dateFin!)
-                      : 'Indéterminée',
-                ),
+                if (contrat.dateFin != null)
+                  _buildDetailRow(
+                    'Date Fin',
+                    DateFormat('dd/MM/yyyy').format(contrat.dateFin!),
+                  ),
                 _buildDetailRow('Catégorie', contrat.categorie),
                 _buildDetailRow('Statut', contrat.statutContrat),
-                _buildDetailRow(
-                  'Durée',
-                  contrat.duree != null
-                      ? '${contrat.duree} mois'
-                      : 'Indéterminée',
-                ),
+                _buildDetailRow('Durée Totale', '${contrat.dureeContrat} mois'),
+                if (contrat.duree != null)
+                  _buildDetailRow('Durée Restante', '${contrat.duree} mois'),
                 const SizedBox(height: 16),
 
                 // ═════════════════════════════════════════
@@ -2476,20 +2474,22 @@ class _ContratCreationFlowScreenState
   }
 
   List<Widget> _buildTreatmentResumes() {
-    final treatments = [
-      {'id': 1, 'name': 'Nettoyage PC'},
-      {'id': 2, 'name': 'Maintenance réseau'},
-      {'id': 3, 'name': 'Support utilisateur'},
-      {'id': 4, 'name': 'Sauvegarde données'},
-      {'id': 5, 'name': 'Antivirus update'},
-    ];
-
+    // Utiliser les vrais traitements chargés depuis la DB au lieu d'une liste en dur
     return _selectedTreatments.asMap().entries.map((entry) {
       final idx = entry.key;
       final treatmentId = entry.value;
-      final treatmentName =
-          treatments.firstWhere((t) => t['id'] == treatmentId)['name']
-              as String;
+
+      // Chercher le traitement réel dans la liste
+      final treatmentFound = _allTreatments.firstWhereOrNull(
+        (t) => t.id == treatmentId,
+      );
+      if (treatmentFound == null) {
+        // Si le traitement n'est pas trouvé, ignorer cette entrée
+        return const SizedBox.shrink();
+      }
+
+      // Utiliser les propriétés réelles du TypeTraitement
+      final treatmentName = treatmentFound.displayName;
       final planning = _treatmentPlanning[treatmentId] ?? {};
       final facture = _treatmentFactures[treatmentId] ?? {};
 
@@ -2998,6 +2998,9 @@ class _ContratCreationFlowScreenState
 
       // Nettoyer les données sauvegardées après succès
       await _clearSavedProgress();
+
+      // Recharger la liste des contrats
+      await context.read<ContratRepository>().loadContrats();
 
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

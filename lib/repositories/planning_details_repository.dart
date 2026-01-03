@@ -159,7 +159,6 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Client c ON ct.client_id = c.client_id
            WHERE YEAR(pd.date_planification) = ?
            AND MONTH(pd.date_planification) = ?
-           AND pd.statut = 'À venir'
            ORDER BY pd.date_planification ASC''',
         [currentYear, currentMonth],
       );
@@ -223,7 +222,6 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
            INNER JOIN Client c ON ct.client_id = c.client_id
            WHERE pd.date_planification > ?
-           AND pd.statut = 'À venir'
            ORDER BY pd.date_planification ASC''',
         [todayStr],
       );
