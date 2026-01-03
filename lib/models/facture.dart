@@ -42,6 +42,17 @@ class Facture {
   });
 
   factory Facture.fromJson(Map<String, dynamic> json) {
+    // Gérer dateTraitement qui peut être DateTime ou String
+    DateTime parsedDateTraitement;
+    final dateValue = json['date_traitement'];
+    if (dateValue is DateTime) {
+      parsedDateTraitement = dateValue;
+    } else if (dateValue is String) {
+      parsedDateTraitement = DateTime.parse(dateValue);
+    } else {
+      parsedDateTraitement = DateTime.now();
+    }
+
     return Facture(
       factureId: json['facture_id'] as int,
       planningDetailsId: json['planning_detail_id'] as int,
@@ -53,13 +64,24 @@ class Facture {
           ? DateTime.tryParse(json['date_cheque'].toString())
           : null,
       numeroCheque: json['numero_cheque'] as String?,
-      dateTraitement: DateTime.parse(json['date_traitement'] as String),
+      dateTraitement: parsedDateTraitement,
       etat: json['etat'] as String? ?? 'Non payé',
       axe: json['axe'] as String,
     );
   }
 
   factory Facture.fromMap(Map<String, dynamic> map) {
+    // Gérer dateTraitement qui peut être DateTime ou String
+    DateTime parsedDateTraitement;
+    final dateValue = map['date_traitement'];
+    if (dateValue is DateTime) {
+      parsedDateTraitement = dateValue;
+    } else if (dateValue is String) {
+      parsedDateTraitement = DateTime.parse(dateValue);
+    } else {
+      parsedDateTraitement = DateTime.now();
+    }
+
     return Facture(
       factureId: map['facture_id'] as int,
       planningDetailsId: map['planning_detail_id'] as int,
@@ -71,7 +93,7 @@ class Facture {
           ? DateTime.tryParse(map['date_cheque'].toString())
           : null,
       numeroCheque: map['numero_cheque'] as String?,
-      dateTraitement: DateTime.parse(map['date_traitement'] as String),
+      dateTraitement: parsedDateTraitement,
       etat: map['etat'] as String? ?? 'Non payé',
       axe: map['axe'] as String,
       clientId: map['client_id'] as int?,
