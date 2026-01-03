@@ -38,19 +38,20 @@ class FactureRepository extends ChangeNotifier {
           f.date_traitement,
           f.etat,
           f.axe,
-          c.client_id,
-          c.nom as clientNom,
-          c.prenom as clientPrenom,
+          cl.client_id,
+          cl.nom as clientNom,
+          cl.prenom as clientPrenom,
           tt.typeTraitement as typeTreatment,
           pd.date_planification as datePlanification,
           pd.statut as etatPlanning
         FROM Facture f
         LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
         LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        LEFT JOIN Traitement t ON p.planning_id IN (SELECT planning_id FROM PlanningDetails WHERE planning_detail_id = pd.planning_detail_id)
+        LEFT JOIN Traitement t ON p.traitement_id = t.traitement_id
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        LEFT JOIN Contrat c ON t.contrat_id = c.contrat_id
-        WHERE c.client_id = ?
+        LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
+        LEFT JOIN Client cl ON co.client_id = cl.client_id
+        WHERE cl.client_id = ?
         ORDER BY f.date_traitement DESC
       ''';
 
@@ -89,18 +90,19 @@ class FactureRepository extends ChangeNotifier {
           f.date_traitement,
           f.etat,
           f.axe,
-          c.client_id,
-          c.nom as clientNom,
-          c.prenom as clientPrenom,
+          cl.client_id,
+          cl.nom as clientNom,
+          cl.prenom as clientPrenom,
           tt.typeTraitement as typeTreatment,
           pd.date_planification as datePlanification,
           pd.statut as etatPlanning
         FROM Facture f
         LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
         LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        LEFT JOIN Traitement t ON p.planning_id IN (SELECT planning_id FROM PlanningDetails WHERE planning_detail_id = pd.planning_detail_id)
+        LEFT JOIN Traitement t ON p.traitement_id = t.traitement_id
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        LEFT JOIN Contrat c ON t.contrat_id = c.contrat_id
+        LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
+        LEFT JOIN Client cl ON co.client_id = cl.client_id
         ORDER BY f.date_traitement DESC
       ''';
 
@@ -173,6 +175,128 @@ class FactureRepository extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('❌ Erreur lors du marquage: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Met à jour le montant d'une facture et applique la différence aux factures postérieures
+  /// du même traitement. Crée aussi des entrées dans l'historique.
+  /// Logique conforme au code Kivy:
+  /// - Récupère l'ID du traitement via la facture
+  /// - Calcule la différence de prix (newPrix - oldPrix)
+  /// - Applique cette différence aux factures du même traitement avec dateTraitement >= date actuelle
+  /// - Crée des entrées historique pour chaque modification
+  Future<bool> majMontantEtHistorique(
+    int factureId,
+    int oldMontant,
+    int newMontant,
+  ) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Étape 1: Récupérer la facture et sa date
+      const getFactureSql = '''
+        SELECT f.facture_id, f.date_traitement, pd.planning_id, p.traitement_id
+        FROM Facture f
+        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
+        WHERE f.facture_id = ?
+      ''';
+
+      final factureRows = await _db.query(getFactureSql, [factureId]);
+      if (factureRows.isEmpty) {
+        throw Exception('Facture non trouvée');
+      }
+
+      final factureRow = factureRows[0];
+      final dateTraitement = factureRow['date_traitement'];
+      final traitementId = factureRow['traitement_id'];
+
+      if (dateTraitement == null || traitementId == null) {
+        throw Exception('Données incomplètes pour la facture');
+      }
+
+      // Étape 2: Calculer la différence
+      final prixDiff = newMontant - oldMontant;
+      logger.i(
+        '📊 Différence de prix: $prixDiff Ar (ancien: $oldMontant, nouveau: $newMontant)',
+      );
+
+      // Étape 3: Récupérer toutes les factures du même traitement avec date >= dateActuelle
+      const getOtherFacturesSql = '''
+        SELECT f.facture_id, f.montant, f.date_traitement
+        FROM Facture f
+        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
+        WHERE p.traitement_id = ? AND f.date_traitement >= ?
+        ORDER BY f.date_traitement ASC
+      ''';
+
+      final otherFactures = await _db.query(getOtherFacturesSql, [
+        traitementId,
+        dateTraitement,
+      ]);
+
+      // Étape 4: Mettre à jour tous les montants et créer l'historique
+      int updatedCount = 0;
+      final now = DateTime.now();
+
+      for (final row in otherFactures) {
+        final fId = row['facture_id'] as int;
+        final ancienMontant = row['montant'] as int;
+        final nouveauMontant = ancienMontant + prixDiff;
+
+        // Mettre à jour le montant
+        const updateSql = 'UPDATE Facture SET montant = ? WHERE facture_id = ?';
+        await _db.execute(updateSql, [nouveauMontant, fId]);
+
+        // Créer une entrée historique
+        const historiqueSql = '''
+          INSERT INTO Historique_prix (facture_id, old_amount, new_amount, change_date)
+          VALUES (?, ?, ?, ?)
+        ''';
+        await _db.execute(historiqueSql, [
+          fId,
+          ancienMontant,
+          nouveauMontant,
+          now.toIso8601String(),
+        ]);
+
+        logger.i(
+          '✅ Facture $fId mise à jour: $ancienMontant → $nouveauMontant Ar',
+        );
+        updatedCount++;
+      }
+
+      // Étape 5: Mettre à jour la liste locale
+      for (final facture in _factures) {
+        if (facture.dateTraitement.compareTo(
+                  DateTime.parse(dateTraitement.toString()),
+                ) >=
+                0 &&
+            facture.montant > 0) {
+          final newMontantLocal = facture.montant + prixDiff;
+          final index = _factures.indexOf(facture);
+          if (index != -1) {
+            _factures[index] = facture.copyWith(montant: newMontantLocal);
+          }
+        }
+      }
+
+      logger.i(
+        '✅ $updatedCount facture(s) mises à jour avec la différence de $prixDiff Ar',
+      );
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      logger.e('❌ Erreur lors de majMontantEtHistorique: $e');
       return false;
     } finally {
       _isLoading = false;
