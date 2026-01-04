@@ -85,7 +85,17 @@ class _SignalementDialogState extends State<SignalementDialog> {
       );
       logger.i('✅ Signalement créé');
 
-      // ✅ ÉTAPE 2: Appliquer la logique DÉCALER vs GARDER
+      // ✅ ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
+      logger.i('📌 Étape 2a: Modifier la date du planning courant');
+      logger.i(
+        '   planningDetailId=${widget.planningDetail.planningDetailId}, oldDate=$oldDate → newDate=$newDate',
+      );
+      await repo.modifierDatePlanning(
+        planningDetailsId: widget.planningDetail.planningDetailId,
+        newDate: newDate,
+      );
+
+      // ✅ ÉTAPE 2B: Appliquer la logique DÉCALER vs GARDER
       if (_changerRedondance) {
         // === MODE 1: DÉCALER TOUTES les dates futures ===
         logger.i(
@@ -102,28 +112,46 @@ class _SignalementDialogState extends State<SignalementDialog> {
           nouvelleDateModifiee: newDate,
         );
       } else {
-        // === MODE 2: GARDER les autres dates (modifie JUSTE celle-ci) ===
-        logger.i('📌 MODE GARDER: modifier JUSTE cette date');
-        logger.i(
-          '   planningDetailId=${widget.planningDetail.planningDetailId}, newDate=$newDate',
-        );
-
-        await repo.modifierDatePlanning(
-          planningDetailsId: widget.planningDetail.planningDetailId,
-          newDate: newDate,
-        );
+        // === MODE 2: GARDER - on a déjà modifié JUSTE cette date en 2A ===
+        logger.i('✅ MODE GARDER: date modifiée (autres dates inchangées)');
       }
 
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
 
+        // Générer un message descriptif avec l'écart
+        final ecart = _calculateEcart();
+        final mois = ecart['mois'] as int;
+        final jours = ecart['jours'] as int;
+        final direction = ecart['direction'] as String;
+
+        String messageEcart = '';
+        if (direction == 'Décalage') {
+          messageEcart = 'Décaler de ';
+        } else if (direction == 'Avancement') {
+          messageEcart = 'Avancer de ';
+        } else {
+          messageEcart = 'Date modifiée: ';
+        }
+
+        if (mois != 0) {
+          messageEcart += '$mois mois';
+          if (jours != 0) {
+            messageEcart += ' et $jours jours';
+          }
+        } else if (jours != 0) {
+          messageEcart += '$jours jours';
+        }
+
         final modeTexte = _changerRedondance
-            ? 'toutes les dates décalées'
-            : 'date modifiée';
+            ? ' (toutes les dates futures)'
+            : ' (cette date uniquement)';
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Signalement de $_type enregistré ($modeTexte)'),
+            content: Text('✅ Signalement: $messageEcart$modeTexte'),
+            backgroundColor: Colors.green,
           ),
         );
       }
@@ -140,33 +168,21 @@ class _SignalementDialogState extends State<SignalementDialog> {
   }
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateHelper.parseAny(_dateCtrl.text),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2099),
-      locale: const Locale('fr', 'FR'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue[700]!,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-            dialogTheme: DialogThemeData(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _dateCtrl.text = DateHelper.format(picked));
+    try {
+      final currentDate = DateHelper.parseAny(_dateCtrl.text) ?? DateTime.now();
+
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: currentDate,
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2099),
+      );
+
+      if (picked != null && mounted) {
+        setState(() => _dateCtrl.text = DateHelper.format(picked));
+      }
+    } catch (e) {
+      logger.e('Erreur sélection date: $e');
     }
   }
 
