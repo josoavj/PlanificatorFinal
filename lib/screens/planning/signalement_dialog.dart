@@ -170,6 +170,71 @@ class _SignalementDialogState extends State<SignalementDialog> {
     }
   }
 
+  /// Calcule l'écart de mois et jours entre deux dates
+  Map<String, dynamic> _calculateEcart() {
+    final oldDate = widget.planningDetail.datePlanification;
+    final newDate = DateHelper.parseAny(_dateCtrl.text);
+
+    if (newDate == null) {
+      return {'mois': 0, 'jours': 0, 'total': 0, 'direction': ''};
+    }
+
+    final difference = newDate.difference(oldDate);
+    final totalJours = difference.inDays;
+
+    // Calculer les mois entiers et les jours restants
+    int mois = 0;
+    int jours = totalJours;
+
+    if (totalJours.abs() >= 28) {
+      // Approximation: 1 mois ≈ 30 jours
+      mois = (totalJours / 30).toInt();
+      jours = totalJours % 30;
+    }
+
+    // Direction: Avancement ou Décalage
+    String direction = '';
+    if (totalJours < 0) {
+      direction = 'Avancement'; // Date antérieure
+      mois = mois.abs();
+      jours = jours.abs();
+    } else if (totalJours > 0) {
+      direction = 'Décalage'; // Date postérieure
+    }
+
+    return {
+      'mois': mois,
+      'jours': jours,
+      'total': totalJours,
+      'direction': direction,
+    };
+  }
+
+  /// Génère un texte formaté pour l'écart
+  String _ecartText() {
+    final ecart = _calculateEcart();
+    final mois = ecart['mois'] as int;
+    final jours = ecart['jours'] as int;
+    final direction = ecart['direction'] as String;
+
+    if (direction.isEmpty) return '';
+
+    String texte = '📊 ';
+
+    if (mois != 0) {
+      texte += '$mois mois';
+      if (jours != 0) {
+        texte += ' et $jours jours';
+      }
+    } else if (jours != 0) {
+      texte += '$jours jours';
+    } else {
+      texte += 'Même date';
+    }
+
+    return texte;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -228,7 +293,43 @@ class _SignalementDialogState extends State<SignalementDialog> {
                   ),
                 ),
                 readOnly: true,
+                onChanged: (_) {
+                  setState(() {
+                    // Auto-détection du type en fonction de l'écart
+                    final ecart = _calculateEcart();
+                    final direction = ecart['direction'] as String;
+                    if (direction.isNotEmpty && direction != 'Même date') {
+                      _type = direction.toLowerCase();
+                    }
+                  });
+                },
               ),
+              const SizedBox(height: 8),
+
+              // 📊 Affichage de l'écart (jours/mois)
+              if (_ecartText().isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    border: Border.all(color: Colors.blue[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _ecartText(),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[700],
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
 
               // Décaler redondance
