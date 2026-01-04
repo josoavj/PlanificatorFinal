@@ -59,6 +59,7 @@ class _FactureScreenState extends State<FactureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        heroTag: 'facture_refresh',
         onPressed: () {
           context.read<FactureRepository>().loadAllFactures();
         },

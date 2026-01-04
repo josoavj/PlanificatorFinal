@@ -196,6 +196,7 @@ class _ContratScreenState extends State<ContratScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'contrat_add',
         onPressed: _showAddContratDialog,
         label: const Text('Ajout'),
         icon: const Icon(Icons.add),
