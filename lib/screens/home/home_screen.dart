@@ -106,6 +106,7 @@ class _DashboardTabState extends State<_DashboardTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        heroTag: 'home_refresh',
         onPressed: _loadData,
         tooltip: 'Rafraîchir les données',
         child: const Icon(Icons.refresh),
@@ -148,37 +149,24 @@ class _DashboardTabState extends State<_DashboardTab> {
                         constraints: const BoxConstraints(minHeight: 400),
                         child: Consumer<PlanningDetailsRepository>(
                           builder: (context, planningDetailsRepo, _) {
-                            // Filtrer pour exclure les traitements avec redondance "1 mois"
-                            // Trier pour afficher d'abord "en cours" puis "à venir"
+                            // ✅ "A venir" = Traitements du MOIS SUIVANT
+                            // MAIS exclure ceux déjà affichés dans "En cours"
+                            final currentMonthIds = planningDetailsRepo
+                                .currentMonthTreatmentsComplete
+                                .map((t) => t['planning_detail_id'] as int?)
+                                .toSet();
+
                             final filteredTreatments = planningDetailsRepo
                                 .upcomingTreatmentsComplete
-                                .where((treatment) {
-                                  final redondance = _convertToString(
-                                    treatment['redondance'],
-                                  ).toLowerCase();
-                                  return redondance != '1 mois';
-                                })
+                                .where(
+                                  (treatment) => !currentMonthIds.contains(
+                                    treatment['planning_detail_id'] as int?,
+                                  ),
+                                )
                                 .toList();
 
-                            // Trier: "en cours" en premier, puis "à venir"
-                            filteredTreatments.sort((a, b) {
-                              final etatA = _convertToString(
-                                a['etat'],
-                              ).toLowerCase();
-                              final etatB = _convertToString(
-                                b['etat'],
-                              ).toLowerCase();
-
-                              // "en cours" avant "à venir"
-                              if (etatA == 'en cours' && etatB != 'en cours')
-                                return -1;
-                              if (etatA != 'en cours' && etatB == 'en cours')
-                                return 1;
-                              return 0;
-                            });
-
                             logger.d(
-                              '🔄 Rebuilding upcoming table with ${filteredTreatments.length} items (filtered out 1 mois)',
+                              '🔄 Rebuilding upcoming table with ${filteredTreatments.length} items (exclu ${currentMonthIds.length} en cours)',
                             );
                             return _buildTreatmentTable(
                               title: 'Prochains traitements',
@@ -229,23 +217,14 @@ class _DashboardTabState extends State<_DashboardTab> {
                         constraints: const BoxConstraints(minHeight: 400),
                         child: Consumer<PlanningDetailsRepository>(
                           builder: (context, planningDetailsRepo, _) {
-                            // Filtrer pour afficher les traitements "à venir" ET "effectué" du mois actuel
+                            // ✅ "En cours" = TOUS les traitements du MOIS ACTUEL
+                            // (affichage complet: à venir, en cours, effectué)
                             final filteredTreatments = planningDetailsRepo
                                 .currentMonthTreatmentsComplete
-                                .where((treatment) {
-                                  final etat = _convertToString(
-                                    treatment['etat'],
-                                  ).toLowerCase().trim();
-                                  // Inclure "à venir" et "effectué" (avec variantes possibles)
-                                  return etat.contains('à venir') ||
-                                      etat.contains('avenir') ||
-                                      etat.contains('effectué') ||
-                                      etat.contains('effectue');
-                                })
                                 .toList();
 
                             logger.d(
-                              '🔄 Rebuilding current month table with ${filteredTreatments.length} items (à venir + effectué)',
+                              '🔄 Rebuilding current month table with ${filteredTreatments.length} items (mois actuel)',
                             );
                             return _buildTreatmentTable(
                               title: 'Traitements en cours',

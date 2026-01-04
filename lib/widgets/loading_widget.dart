@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class LoadingWidget extends StatelessWidget {
   final String message;
 
-  const LoadingWidget({Key? key, this.message = 'Chargement...'})
-    : super(key: key);
+  const LoadingWidget({super.key, this.message = 'Chargement...'});
 
   @override
   Widget build(BuildContext context) {

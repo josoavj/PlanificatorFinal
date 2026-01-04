@@ -210,7 +210,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
       final results = await _db.query(
         '''SELECT 
              pd.planning_detail_id,
+             pd.planning_id,
              DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
+             pd.date_planification,
              CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
              pd.statut as etat,
              c.axe,

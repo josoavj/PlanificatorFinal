@@ -100,7 +100,7 @@ class SignalementRepository extends ChangeNotifier {
       const sql = '''
         UPDATE PlanningDetails 
         SET date_planification = ?
-        WHERE id_planning_details = ?
+        WHERE planning_detail_id = ?
       ''';
 
       await _db.execute(sql, [
@@ -121,50 +121,25 @@ class SignalementRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ LOGIQUE CLÉE: Modifier la redondance (fréquence) pour TOUTES les dates futures
-  /// Conforme à Kivy: decaler.active = modifier TOUTES les dates futures
-  ///
-  /// Paramètres:
-  /// - planningId: ID du planning principal
-  /// - planningDetailsId: ID du planning detail où on est
-  /// - newRedondance: nouvelle fréquence en mois (0='1 jour', 1='1 mois', 2='2 mois', etc.)
   Future<bool> modifierRedondance({
     required int planningId,
     required int planningDetailsId,
-    required int newRedondance,
+    required DateTime ancienneDateModifiee,
+    required DateTime nouvelleDateModifiee,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // ✅ 1. Mettre à jour la redondance du Planning
-      const updatePlanningSQL = '''
-        UPDATE Planning 
-        SET redondance = ?
-        WHERE planning_id = ?
-      ''';
-
-      await _db.execute(updatePlanningSQL, [newRedondance, planningId]);
-      logger.i(
-        '✅ Redondance mise à jour: planning_id=$planningId, redondance=$newRedondance',
+      // ✅ 1. Calculer l'écart de décalage EN MOIS (conforme Kivy relativedelta)
+      final ecartMois = _calculateMonthsDifference(
+        ancienneDateModifiee,
+        nouvelleDateModifiee,
       );
+      logger.i('🔄 Décalage des dates futures de $ecartMois mois');
 
-      // ✅ 2. Récupérer la date actuelle
-      const getDateSQL = '''
-        SELECT date_planification
-        FROM PlanningDetails
-        WHERE planning_detail_id = ?
-      ''';
-
-      final dateRow = await _db.queryOne(getDateSQL, [planningDetailsId]);
-      if (dateRow == null) {
-        throw Exception('Planning detail non trouvé');
-      }
-
-      final currentDate = DateHelper.toDateTime(dateRow['date_planification']);
-
-      // ✅ 3. Récupérer tous les details de ce planning
+      // ✅ 2. Récupérer tous les details de ce planning
       const getAllDetailsSQL = '''
         SELECT planning_detail_id, date_planification
         FROM PlanningDetails
@@ -175,84 +150,45 @@ class SignalementRepository extends ChangeNotifier {
       final allDetails = await _db.query(getAllDetailsSQL, [planningId]);
       logger.i('📋 Trouvé ${allDetails.length} planning details');
 
-      // ✅ 4. Recalculer les dates avec la nouvelle redondance
-      // Trouver l'index de la date actuelle
+      // ✅ 3. Trouver l'index du planning detail actuellement modifié
       int currentIndex = 0;
       for (int i = 0; i < allDetails.length; i++) {
-        final detailDate = DateHelper.toDateTime(
-          allDetails[i]['date_planification'],
-        );
-        if (detailDate.year == currentDate.year &&
-            detailDate.month == currentDate.month &&
-            detailDate.day == currentDate.day) {
+        if (allDetails[i]['planning_detail_id'] == planningDetailsId) {
           currentIndex = i;
           break;
         }
       }
 
-      // ✅ 5. Modifier TOUTES les dates à partir de currentIndex+1
+      // ✅ 4. Décaler TOUTES les dates à partir de currentIndex+1 du même écart EN MOIS
       const updateDetailsSQL = '''
         UPDATE PlanningDetails 
         SET date_planification = ?
         WHERE planning_detail_id = ?
       ''';
 
-      if (newRedondance == 0) {
-        // Cas spécial: "une seule fois" = supprimer toutes les autres dates
-        logger.i(
-          '🔄 Suppression des dates après la date courante (redondance=0)',
+      for (int i = currentIndex + 1; i < allDetails.length; i++) {
+        final oldDate = DateHelper.toDateTime(
+          allDetails[i]['date_planification'],
         );
-        // On garde juste la date actuelle, on supprime les autres
-        for (int i = currentIndex + 1; i < allDetails.length; i++) {
-          const deleteSQL =
-              '''DELETE FROM PlanningDetails WHERE planning_detail_id = ?''';
-          await _db.execute(deleteSQL, [allDetails[i]['planning_detail_id']]);
-        }
-      } else {
-        // Cas normal: recalculer avec nouvelle fréquence
-        DateTime newDate = currentDate;
-        for (int i = currentIndex + 1; i < allDetails.length; i++) {
-          // Ajouter newRedondance mois (peut être négatif pour avancement)
-          // Utiliser DateTime pour calculer correctement même avec mois négatifs
-          newDate = DateTime(
-            newDate.year,
-            newDate.month + newRedondance,
-            newDate.day,
-          );
+        // 🔧 CORRECTION: Ajouter l'écart en MOIS (pas en jours)
+        final newDate = _addMonthsToDate(oldDate, ecartMois);
 
-          // Gérer les débordements de mois (avant mois 1 ou après mois 12)
-          while (newDate.month < 1) {
-            newDate = DateTime(
-              newDate.year - 1,
-              newDate.month + 12,
-              newDate.day,
-            );
-          }
-          while (newDate.month > 12) {
-            newDate = DateTime(
-              newDate.year + 1,
-              newDate.month - 12,
-              newDate.day,
-            );
-          }
+        await _db.execute(updateDetailsSQL, [
+          DateHelper.toDbFormat(newDate),
+          allDetails[i]['planning_detail_id'],
+        ]);
 
-          await _db.execute(updateDetailsSQL, [
-            DateHelper.toDbFormat(newDate),
-            allDetails[i]['planning_detail_id'],
-          ]);
-
-          logger.i(
-            '  📅 Detail ${allDetails[i]['planning_detail_id']} → ${DateHelper.format(newDate)}',
-          );
-        }
+        logger.i(
+          '  📅 Detail ${allDetails[i]['planning_detail_id']}: ${DateHelper.format(oldDate)} → ${DateHelper.format(newDate)} (écart: $ecartMois mois)',
+        );
       }
 
-      logger.i('✅ Redondance modifiée avec succès');
+      logger.i('✅ Dates décalées avec succès (redondance inchangée)');
       await loadAllSignalements();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la modification de redondance: $e');
+      logger.e('Erreur lors du décalage des dates: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -270,7 +206,7 @@ class SignalementRepository extends ChangeNotifier {
     required DateTime dateCourante,
     required DateTime dateSignalement,
     required bool
-    changerRedondance, // true=modifier TOUTES les futures, false=modifier JUSTE celle-ci
+    changerRedondance, // true=décaler TOUTES les futures, false=modifier JUSTE celle-ci
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -290,39 +226,17 @@ class SignalementRepository extends ChangeNotifier {
         newDate: dateSignalement,
       );
 
-      // ✅ 3. Si "changer la redondance" = recalculer intervalle et modifier TOUTES les futures
+      // ✅ 3. Si "changer la redondance" = décaler TOUTES les dates futures du même écart
       if (changerRedondance) {
-        // Calculer l'intervalle entre ancienne et nouvelle date
-        final difference = dateSignalement.difference(dateCourante);
-        var newRedondance = (difference.inDays / 30).round();
-
-        // ✅ IMPORTANT: Appliquer le type pour influer sur la redondance
-        // - Si "avancement" (date antérieure): la redondance doit diminuer ou devenir négative
-        // - Si "décalage" (date postérieure): la redondance doit augmenter ou rester positive
-        if (type == 'avancement') {
-          // Avancement = on rapproche les dates (redondance diminue)
-          // Si différence est négative (-30 jours), newRedondance = -1 (moins souvent)
-          newRedondance = newRedondance.abs() * -1; // Forcer négatif
-          logger.i(
-            '⏪ AVANCEMENT détecté: intervalle=${difference.inDays} jours ≈ $newRedondance mois (diminue la fréquence)',
-          );
-        } else if (type == 'décalage') {
-          // Décalage = on éloigne les dates (redondance augmente)
-          // Si différence est positive (+30 jours), newRedondance = +1 (plus souvent)
-          newRedondance = newRedondance.abs(); // Forcer positif
-          logger.i(
-            '⏩ DÉCALAGE détecté: intervalle=${difference.inDays} jours ≈ $newRedondance mois (augmente la fréquence)',
-          );
-        }
-
         logger.i(
-          '📊 Changement redondance: type=$type, intervalle=${difference.inDays} jours ≈ $newRedondance mois',
+          '🔄 MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
         );
 
         await modifierRedondance(
           planningId: planningId,
           planningDetailsId: planningDetailsId,
-          newRedondance: newRedondance,
+          ancienneDateModifiee: dateCourante,
+          nouvelleDateModifiee: dateSignalement,
         );
       }
 
@@ -393,8 +307,64 @@ class SignalementRepository extends ChangeNotifier {
       );
       return result.isNotEmpty;
     } catch (e) {
-      print('❌ Erreur mettre à jour signalement: $e');
+      logger.e('❌ Erreur mettre à jour signalement: $e');
       return false;
     }
+  }
+
+  /// 🔧 HELPER: Calcule la différence en MOIS entre deux dates (conforme Kivy relativedelta)
+  /// Exemple: 01/01/2026 → 01/03/2026 = 2 mois (pas 59 jours)
+  int _calculateMonthsDifference(DateTime dateStart, DateTime dateEnd) {
+    int mois = 0;
+    DateTime current = dateStart;
+
+    if (dateEnd.isAfter(dateStart)) {
+      // Cas positif (décalage)
+      while (current.month != dateEnd.month || current.year != dateEnd.year) {
+        current = DateTime(current.year, current.month + 1, current.day);
+        mois++;
+
+        // Sécurité: limiter à 12 mois pour éviter les boucles infinies
+        if (mois > 120) break;
+      }
+    } else if (dateStart.isAfter(dateEnd)) {
+      // Cas négatif (avancement)
+      while (current.month != dateEnd.month || current.year != dateEnd.year) {
+        current = DateTime(current.year, current.month - 1, current.day);
+        mois--;
+
+        // Sécurité
+        if (mois < -120) break;
+      }
+    }
+
+    logger.i('📐 Différence mois: $dateStart → $dateEnd = $mois mois');
+    return mois;
+  }
+
+  /// 🔧 HELPER: Ajoute un nombre de mois à une date (gère les débordements)
+  /// Exemple: 01/01/2026 + 2 mois = 01/03/2026
+  DateTime _addMonthsToDate(DateTime date, int mois) {
+    int newMonth = date.month + mois;
+    int newYear = date.year;
+
+    // Gérer les débordements de mois
+    while (newMonth > 12) {
+      newMonth -= 12;
+      newYear++;
+    }
+    while (newMonth < 1) {
+      newMonth += 12;
+      newYear--;
+    }
+
+    // Gérer les jours invalides (ex: 31 février)
+    int newDay = date.day;
+    DateTime lastDayOfMonth = DateTime(newYear, newMonth + 1, 0);
+    if (newDay > lastDayOfMonth.day) {
+      newDay = lastDayOfMonth.day;
+    }
+
+    return DateTime(newYear, newMonth, newDay);
   }
 }

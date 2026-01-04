@@ -22,14 +22,12 @@ class SignalementDialog extends StatefulWidget {
 class _SignalementDialogState extends State<SignalementDialog> {
   late TextEditingController _motifCtrl;
   late TextEditingController _dateCtrl;
-  late TextEditingController _nouvelleRedondanceCtrl;
 
   final logger = Logger();
 
   String _type = 'décalage'; // 'avancement' ou 'décalage'
   bool _changerRedondance =
-      false; // Changer redondance pour tous les futurs (vs garder)
-  int? _nouvelleRedondance; // Pour 'changer redondance'
+      false; // Décaler TOUTES les dates futures (vs garder)
   bool _isLoading = false;
 
   @override
@@ -39,14 +37,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
     _dateCtrl = TextEditingController(
       text: DateHelper.format(widget.planningDetail.datePlanification),
     );
-    _nouvelleRedondanceCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
     _motifCtrl.dispose();
     _dateCtrl.dispose();
-    _nouvelleRedondanceCtrl.dispose();
     super.dispose();
   }
 
@@ -67,20 +63,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
       return;
     }
 
-    if (_changerRedondance && _nouvelleRedondance == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner une nouvelle redondance'),
-        ),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
       final repo = context.read<SignalementRepository>();
       final newDate = DateHelper.parseAny(_dateCtrl.text);
+      final oldDate = widget.planningDetail.datePlanification;
 
       if (newDate == null) {
         ScaffoldMessenger.of(
@@ -97,44 +85,73 @@ class _SignalementDialogState extends State<SignalementDialog> {
       );
       logger.i('✅ Signalement créé');
 
-      // ✅ ÉTAPE 2: Appliquer la logique CHANGER vs GARDER
-      if (_changerRedondance && _nouvelleRedondance != null) {
-        // === MODE 1: CHANGER redondance (modifie TOUTES les dates futures) ===
+      // ✅ ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
+      logger.i('📌 Étape 2a: Modifier la date du planning courant');
+      logger.i(
+        '   planningDetailId=${widget.planningDetail.planningDetailId}, oldDate=$oldDate → newDate=$newDate',
+      );
+      await repo.modifierDatePlanning(
+        planningDetailsId: widget.planningDetail.planningDetailId,
+        newDate: newDate,
+      );
+
+      // ✅ ÉTAPE 2B: Appliquer la logique DÉCALER vs GARDER
+      if (_changerRedondance) {
+        // === MODE 1: DÉCALER TOUTES les dates futures ===
         logger.i(
-          '🔄 MODE CHANGER: modifier redondance pour TOUTES les dates futures',
+          '🔄 MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
         );
         logger.i(
-          '   planningId=${widget.planningDetail.planningId}, redondance=$_nouvelleRedondance',
+          '   ancienneDateModifiee=$oldDate, nouvelleDateModifiee=$newDate',
         );
 
         await repo.modifierRedondance(
           planningId: widget.planningDetail.planningId,
           planningDetailsId: widget.planningDetail.planningDetailId,
-          newRedondance: _nouvelleRedondance!,
+          ancienneDateModifiee: oldDate,
+          nouvelleDateModifiee: newDate,
         );
       } else {
-        // === MODE 2: GARDER redondance (modifie JUSTE cette date) ===
-        logger.i('📌 MODE GARDER: modifier JUSTE cette date');
-        logger.i(
-          '   planningDetailId=${widget.planningDetail.planningDetailId}, newDate=$newDate',
-        );
-
-        await repo.modifierDatePlanning(
-          planningDetailsId: widget.planningDetail.planningDetailId,
-          newDate: newDate,
-        );
+        // === MODE 2: GARDER - on a déjà modifié JUSTE cette date en 2A ===
+        logger.i('✅ MODE GARDER: date modifiée (autres dates inchangées)');
       }
 
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
 
+        // Générer un message descriptif avec l'écart
+        final ecart = _calculateEcart();
+        final mois = ecart['mois'] as int;
+        final jours = ecart['jours'] as int;
+        final direction = ecart['direction'] as String;
+
+        String messageEcart = '';
+        if (direction == 'Décalage') {
+          messageEcart = 'Décaler de ';
+        } else if (direction == 'Avancement') {
+          messageEcart = 'Avancer de ';
+        } else {
+          messageEcart = 'Date modifiée: ';
+        }
+
+        if (mois != 0) {
+          messageEcart += '$mois mois';
+          if (jours != 0) {
+            messageEcart += ' et $jours jours';
+          }
+        } else if (jours != 0) {
+          messageEcart += '$jours jours';
+        }
+
         final modeTexte = _changerRedondance
-            ? 'redondance modifiée'
-            : 'date modifiée';
+            ? ' (toutes les dates futures)'
+            : ' (cette date uniquement)';
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Signalement de $_type enregistré ($modeTexte)'),
+            content: Text('✅ Signalement: $messageEcart$modeTexte'),
+            backgroundColor: Colors.green,
           ),
         );
       }
@@ -151,34 +168,87 @@ class _SignalementDialogState extends State<SignalementDialog> {
   }
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateHelper.parseAny(_dateCtrl.text),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2099),
-      locale: const Locale('fr', 'FR'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue[700]!,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-            dialogTheme: DialogThemeData(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _dateCtrl.text = DateHelper.format(picked));
+    try {
+      final currentDate = DateHelper.parseAny(_dateCtrl.text) ?? DateTime.now();
+
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: currentDate,
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2099),
+      );
+
+      if (picked != null && mounted) {
+        setState(() => _dateCtrl.text = DateHelper.format(picked));
+      }
+    } catch (e) {
+      logger.e('Erreur sélection date: $e');
     }
+  }
+
+  /// Calcule l'écart de mois et jours entre deux dates
+  Map<String, dynamic> _calculateEcart() {
+    final oldDate = widget.planningDetail.datePlanification;
+    final newDate = DateHelper.parseAny(_dateCtrl.text);
+
+    if (newDate == null) {
+      return {'mois': 0, 'jours': 0, 'total': 0, 'direction': ''};
+    }
+
+    final difference = newDate.difference(oldDate);
+    final totalJours = difference.inDays;
+
+    // Calculer les mois entiers et les jours restants
+    int mois = 0;
+    int jours = totalJours;
+
+    if (totalJours.abs() >= 28) {
+      // Approximation: 1 mois ≈ 30 jours
+      mois = (totalJours / 30).toInt();
+      jours = totalJours % 30;
+    }
+
+    // Direction: Avancement ou Décalage
+    String direction = '';
+    if (totalJours < 0) {
+      direction = 'Avancement'; // Date antérieure
+      mois = mois.abs();
+      jours = jours.abs();
+    } else if (totalJours > 0) {
+      direction = 'Décalage'; // Date postérieure
+    }
+
+    return {
+      'mois': mois,
+      'jours': jours,
+      'total': totalJours,
+      'direction': direction,
+    };
+  }
+
+  /// Génère un texte formaté pour l'écart
+  String _ecartText() {
+    final ecart = _calculateEcart();
+    final mois = ecart['mois'] as int;
+    final jours = ecart['jours'] as int;
+    final direction = ecart['direction'] as String;
+
+    if (direction.isEmpty) return '';
+
+    String texte = '📊 ';
+
+    if (mois != 0) {
+      texte += '$mois mois';
+      if (jours != 0) {
+        texte += ' et $jours jours';
+      }
+    } else if (jours != 0) {
+      texte += '$jours jours';
+    } else {
+      texte += 'Même date';
+    }
+
+    return texte;
   }
 
   @override
@@ -239,51 +309,54 @@ class _SignalementDialogState extends State<SignalementDialog> {
                   ),
                 ),
                 readOnly: true,
+                onChanged: (_) {
+                  setState(() {
+                    // Auto-détection du type en fonction de l'écart
+                    final ecart = _calculateEcart();
+                    final direction = ecart['direction'] as String;
+                    if (direction.isNotEmpty && direction != 'Même date') {
+                      _type = direction.toLowerCase();
+                    }
+                  });
+                },
               ),
+              const SizedBox(height: 8),
+
+              // 📊 Affichage de l'écart (jours/mois)
+              if (_ecartText().isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    border: Border.all(color: Colors.blue[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _ecartText(),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[700],
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
 
-              // Changer redondance
+              // Décaler redondance
               CheckboxListTile(
-                title: const Text('Changer la redondance pour tous les futurs'),
+                title: const Text('Décaler TOUTES les dates futures'),
                 subtitle: const Text('(sinon ne modifie que cette date)'),
                 value: _changerRedondance,
                 onChanged: (val) {
                   setState(() => _changerRedondance = val ?? false);
                 },
               ),
-
-              // Nouvelle redondance (si coché)
-              if (_changerRedondance)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nouvelle redondance',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(
-                            value: 0,
-                            label: Text('Une seule fois'),
-                          ),
-                          ButtonSegment(value: 1, label: Text('1 mois')),
-                          ButtonSegment(value: 2, label: Text('2 mois')),
-                          ButtonSegment(value: 3, label: Text('3 mois')),
-                        ],
-                        selected: {_nouvelleRedondance ?? 1},
-                        onSelectionChanged: (newSelection) {
-                          setState(
-                            () => _nouvelleRedondance = newSelection.first,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
 
               const SizedBox(height: 24),
 

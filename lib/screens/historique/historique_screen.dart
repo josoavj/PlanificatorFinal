@@ -63,6 +63,7 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        heroTag: 'historique_refresh',
         onPressed: _loadData,
         tooltip: 'Actualiser',
         child: const Icon(Icons.refresh),

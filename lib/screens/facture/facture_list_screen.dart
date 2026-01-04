@@ -35,6 +35,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        heroTag: 'facture_list_refresh',
         onPressed: () {
           if (widget.clientId != null) {
             _factureRepository.loadFacturesForClient(widget.clientId!);

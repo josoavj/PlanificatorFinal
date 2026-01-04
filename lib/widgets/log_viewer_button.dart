@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:planificator/widgets/log_viewer.dart';
 
 class LogViewerButton extends StatefulWidget {
-  const LogViewerButton({Key? key}) : super(key: key);
+  const LogViewerButton({super.key});
 
   @override
   State<LogViewerButton> createState() => _LogViewerButtonState();

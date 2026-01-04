@@ -4,7 +4,7 @@ import 'package:planificator/services/logging_service.dart';
 class LogViewerDialog extends StatefulWidget {
   final bool isDialog;
 
-  const LogViewerDialog({Key? key, this.isDialog = true}) : super(key: key);
+  const LogViewerDialog({super.key, this.isDialog = true});
 
   @override
   State<LogViewerDialog> createState() => _LogViewerDialogState();

@@ -121,33 +121,19 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
   }
 
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2099),
-      locale: const Locale('fr', 'FR'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue[700]!,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black87,
-            ),
-            dialogTheme: DialogThemeData(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _datePayementCtrl.text = DateHelper.format(picked));
+    try {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2099),
+      );
+
+      if (picked != null && mounted) {
+        setState(() => _datePayementCtrl.text = DateHelper.format(picked));
+      }
+    } catch (e) {
+      // Silencieusement ignorer si le dialog est fermé
     }
   }
 

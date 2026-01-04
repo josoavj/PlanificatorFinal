@@ -1,11 +1,9 @@
 /*
     =====================================================
-    PHASE 2: MIGRATIONS DE BASE DE DONNÉES
+    MIGRATIONS DE BASE DE DONNÉES
     =====================================================
     Date: 22 Décembre 2025
-    Status: PRÊT POUR EXÉCUTION (avec backup avant)
-    
-    ⚠️ IMPORTANT: FAIRE UN BACKUP AVANT D'EXÉCUTER !
+!
     =====================================================
 */
 
