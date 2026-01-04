@@ -22,14 +22,12 @@ class SignalementDialog extends StatefulWidget {
 class _SignalementDialogState extends State<SignalementDialog> {
   late TextEditingController _motifCtrl;
   late TextEditingController _dateCtrl;
-  late TextEditingController _nouvelleRedondanceCtrl;
 
   final logger = Logger();
 
   String _type = 'décalage'; // 'avancement' ou 'décalage'
   bool _changerRedondance =
-      false; // Changer redondance pour tous les futurs (vs garder)
-  int? _nouvelleRedondance; // Pour 'changer redondance'
+      false; // Décaler TOUTES les dates futures (vs garder)
   bool _isLoading = false;
 
   @override
@@ -39,14 +37,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
     _dateCtrl = TextEditingController(
       text: DateHelper.format(widget.planningDetail.datePlanification),
     );
-    _nouvelleRedondanceCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
     _motifCtrl.dispose();
     _dateCtrl.dispose();
-    _nouvelleRedondanceCtrl.dispose();
     super.dispose();
   }
 
@@ -67,20 +63,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
       return;
     }
 
-    if (_changerRedondance && _nouvelleRedondance == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner une nouvelle redondance'),
-        ),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
       final repo = context.read<SignalementRepository>();
       final newDate = DateHelper.parseAny(_dateCtrl.text);
+      final oldDate = widget.planningDetail.datePlanification;
 
       if (newDate == null) {
         ScaffoldMessenger.of(
@@ -97,23 +85,24 @@ class _SignalementDialogState extends State<SignalementDialog> {
       );
       logger.i('✅ Signalement créé');
 
-      // ✅ ÉTAPE 2: Appliquer la logique CHANGER vs GARDER
-      if (_changerRedondance && _nouvelleRedondance != null) {
-        // === MODE 1: CHANGER redondance (modifie TOUTES les dates futures) ===
+      // ✅ ÉTAPE 2: Appliquer la logique DÉCALER vs GARDER
+      if (_changerRedondance) {
+        // === MODE 1: DÉCALER TOUTES les dates futures ===
         logger.i(
-          '🔄 MODE CHANGER: modifier redondance pour TOUTES les dates futures',
+          '🔄 MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
         );
         logger.i(
-          '   planningId=${widget.planningDetail.planningId}, redondance=$_nouvelleRedondance',
+          '   ancienneDateModifiee=$oldDate, nouvelleDateModifiee=$newDate',
         );
 
         await repo.modifierRedondance(
           planningId: widget.planningDetail.planningId,
           planningDetailsId: widget.planningDetail.planningDetailId,
-          newRedondance: _nouvelleRedondance!,
+          ancienneDateModifiee: oldDate,
+          nouvelleDateModifiee: newDate,
         );
       } else {
-        // === MODE 2: GARDER redondance (modifie JUSTE cette date) ===
+        // === MODE 2: GARDER les autres dates (modifie JUSTE celle-ci) ===
         logger.i('📌 MODE GARDER: modifier JUSTE cette date');
         logger.i(
           '   planningDetailId=${widget.planningDetail.planningDetailId}, newDate=$newDate',
@@ -130,7 +119,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
         Navigator.pop(context);
 
         final modeTexte = _changerRedondance
-            ? 'redondance modifiée'
+            ? 'toutes les dates décalées'
             : 'date modifiée';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -242,48 +231,15 @@ class _SignalementDialogState extends State<SignalementDialog> {
               ),
               const SizedBox(height: 16),
 
-              // Changer redondance
+              // Décaler redondance
               CheckboxListTile(
-                title: const Text('Changer la redondance pour tous les futurs'),
+                title: const Text('Décaler TOUTES les dates futures'),
                 subtitle: const Text('(sinon ne modifie que cette date)'),
                 value: _changerRedondance,
                 onChanged: (val) {
                   setState(() => _changerRedondance = val ?? false);
                 },
               ),
-
-              // Nouvelle redondance (si coché)
-              if (_changerRedondance)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nouvelle redondance',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(
-                            value: 0,
-                            label: Text('Une seule fois'),
-                          ),
-                          ButtonSegment(value: 1, label: Text('1 mois')),
-                          ButtonSegment(value: 2, label: Text('2 mois')),
-                          ButtonSegment(value: 3, label: Text('3 mois')),
-                        ],
-                        selected: {_nouvelleRedondance ?? 1},
-                        onSelectionChanged: (newSelection) {
-                          setState(
-                            () => _nouvelleRedondance = newSelection.first,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
 
               const SizedBox(height: 24),
 
