@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:logger/logger.dart' as logger_pkg;
 
 enum LogLevel { debug, info, warning, error, critical }
 
@@ -45,7 +46,23 @@ class LogEntry {
   String toString() => formatted;
 }
 
+/// Custom Output pour rediriger les logs du package logger
+class _CaptureLogOutput extends logger_pkg.LogOutput {
+  final LoggingService _loggingService;
+
+  _CaptureLogOutput(this._loggingService);
+
+  @override
+  void output(logger_pkg.OutputEvent event) {
+    // Rediriger les logs du package logger vers notre système
+    for (var line in event.lines) {
+      _loggingService._captureLogLine(line);
+    }
+  }
+}
+
 /// Service centralisé de logging
+/// Capture les logs du package logger ET les logs personnalisés
 class LoggingService {
   static final LoggingService _instance = LoggingService._internal();
 
@@ -53,17 +70,30 @@ class LoggingService {
     return _instance;
   }
 
-  LoggingService._internal();
+  LoggingService._internal() {
+    // Initialiser le logger package avec notre output personnalisé
+    _initializeLoggerPackage();
+  }
 
   final List<LogEntry> _logs = [];
   final StreamController<LogEntry> _logController =
       StreamController<LogEntry>.broadcast();
 
+  late final logger_pkg.Logger _loggerPackage;
+
   Stream<LogEntry> get logStream => _logController.stream;
   List<LogEntry> get allLogs => List.unmodifiable(_logs);
 
-  int get maxLogs => 500; // Limiter la taille du buffer
+  int get maxLogs => 1000; // Augmenté pour capturer plus de logs
 
+  void _initializeLoggerPackage() {
+    _loggerPackage = logger_pkg.Logger(
+      output: _CaptureLogOutput(this),
+      level: logger_pkg.Level.debug,
+    );
+  }
+
+  /// Ajouter un log au système de journalisation
   void debug(String message, {String? source, StackTrace? stackTrace}) {
     _addLog(
       LogEntry(
@@ -124,6 +154,38 @@ class LoggingService {
     );
   }
 
+  /// Capturer une ligne de log du package logger
+  void _captureLogLine(String line) {
+    try {
+      // Déterminer le niveau du log à partir du contenu
+      LogLevel level = LogLevel.info;
+      if (line.contains('VERBOSE') || line.contains('💬')) {
+        level = LogLevel.debug;
+      } else if (line.contains('DEBUG') || line.contains('🐛')) {
+        level = LogLevel.debug;
+      } else if (line.contains('INFO') || line.contains('ℹ️')) {
+        level = LogLevel.info;
+      } else if (line.contains('WARNING') || line.contains('⚠️')) {
+        level = LogLevel.warning;
+      } else if (line.contains('ERROR') || line.contains('❌')) {
+        level = LogLevel.error;
+      } else if (line.contains('WTF') || line.contains('🔥')) {
+        level = LogLevel.critical;
+      }
+
+      _addLog(
+        LogEntry(
+          timestamp: DateTime.now(),
+          message: line,
+          level: level,
+          source: 'logger',
+        ),
+      );
+    } catch (e) {
+      // Éviter les erreurs infinies de logging
+    }
+  }
+
   void _addLog(LogEntry entry) {
     _logs.add(entry);
     _logController.add(entry);
@@ -147,6 +209,14 @@ class LoggingService {
     return filtered.map((e) => e.formatted).join('\n');
   }
 
+  /// Obtenir les logs sous forme de liste pour affichage
+  List<String> getLogsFormatted({LogLevel? minLevel}) {
+    final filtered = _logs
+        .where((log) => minLevel == null || log.level.index >= minLevel.index)
+        .toList();
+    return filtered.map((e) => e.formatted).toList();
+  }
+
   /// Effacer tous les logs
   void clear() {
     _logs.clear();
@@ -162,10 +232,25 @@ class LoggingService {
     return _logs.where((log) => log.source?.contains(source) ?? false).toList();
   }
 
-  void dispose() {
-    _logController.close();
+  /// Obtenir un résumé des logs
+  String getSummary() {
+    final errors = getLogsAtLevel(LogLevel.error).length;
+    final warnings = getLogsAtLevel(LogLevel.warning).length;
+    final infos = getLogsAtLevel(LogLevel.info).length;
+    final debugs = getLogsAtLevel(LogLevel.debug).length;
+    final criticals = getLogsAtLevel(LogLevel.critical).length;
+
+    return '''
+Résumé des Logs:
+- Critical: $criticals
+- Erreurs: $errors
+- Avertissements: $warnings
+- Infos: $infos
+- Debug: $debugs
+- Total: ${_logs.length}
+''';
   }
 }
 
-// Singleton global
+// Singleton global pour accès partout dans l'app
 final log = LoggingService();

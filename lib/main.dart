@@ -96,6 +96,15 @@ class _MyAppState extends State<MyApp> {
       password: config.password ?? '',
       database: config.database ?? 'Planificator',
     );
+
+    // ✅ Charger les types de traitement dès que la BD est prête
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        context.read<TypeTraitementRepository>().loadAllTraitements();
+      } catch (e) {
+        // Silencieusement ignorer si le contexte n'est pas disponible
+      }
+    });
   }
 
   @override
