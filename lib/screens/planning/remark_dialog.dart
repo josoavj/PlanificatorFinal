@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:planificator/models/index.dart';
 import 'package:planificator/repositories/remarque_repository.dart';
+import 'package:planificator/repositories/facture_repository.dart';
 import 'package:planificator/utils/date_helper.dart';
 
 class RemarqueDialog extends StatefulWidget {
@@ -24,6 +25,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
   late TextEditingController _contenuCtrl;
   late TextEditingController _problemeCtrl;
   late TextEditingController _actionCtrl;
+  late TextEditingController _montantCtrl;
   late TextEditingController _datePayementCtrl;
   late TextEditingController _etablissementCtrl;
   late TextEditingController _numeroChequeCtrl;
@@ -38,6 +40,9 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     _contenuCtrl = TextEditingController();
     _problemeCtrl = TextEditingController();
     _actionCtrl = TextEditingController();
+    _montantCtrl = TextEditingController(
+      text: widget.facture.montant.toString(),
+    );
     _datePayementCtrl = TextEditingController();
     _etablissementCtrl = TextEditingController();
     _numeroChequeCtrl = TextEditingController();
@@ -48,6 +53,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     _contenuCtrl.dispose();
     _problemeCtrl.dispose();
     _actionCtrl.dispose();
+    _montantCtrl.dispose();
     _datePayementCtrl.dispose();
     _etablissementCtrl.dispose();
     _numeroChequeCtrl.dispose();
@@ -83,8 +89,24 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     setState(() => _isLoading = true);
 
     try {
+      // Validation: si montant est 0, on doit en saisir un
+      if (widget.facture.montant == 0) {
+        final montant = int.tryParse(_montantCtrl.text) ?? 0;
+        if (montant == 0) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Veuillez entrer un montant valide'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
       final repo = context.read<RemarqueRepository>();
 
+      // Créer la remarque
       await repo.createRemarque(
         planningDetailsId: widget.planningDetail.planningDetailId,
         factureId: widget.facture.factureId,
@@ -102,18 +124,32 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
         estPayee: _estPayee,
       );
 
+      // ✅ Mettre à jour la facture
+      final factureRepo = context.read<FactureRepository>();
+
+      // Si montant était 0, le mettre à jour
+      if (widget.facture.montant == 0) {
+        final montant = int.tryParse(_montantCtrl.text) ?? 0;
+        await factureRepo.updateFacturePrice(widget.facture.factureId, montant);
+      }
+
+      // Marquer comme payée si nécessaire
+      if (_estPayee) {
+        await factureRepo.markAsPaid(widget.facture.factureId);
+      }
+
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Remarque enregistrée')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Remarque & Facture enregistrées')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Erreur: $e'), backgroundColor: Colors.red),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -150,6 +186,60 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                 'Remarque - ${DateHelper.format(widget.planningDetail.datePlanification)}',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
+              const SizedBox(height: 8),
+
+              // Référence et montant facture
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Réf: ${widget.facture.referenceFacture ?? 'N/A'}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'ID Facture: ${widget.facture.factureId}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${widget.facture.montant} Ar',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Contenu remarque
@@ -185,6 +275,49 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Montant facture - SEULEMENT si = 0
+              if (widget.facture.montant == 0) ...[
+                TextField(
+                  controller: _montantCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: false,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Montant (Ar) - OBLIGATOIRE',
+                    border: OutlineInputBorder(),
+                    hintText: 'Entrez le montant',
+                    prefixText: 'Ar ',
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.blue[600], size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Montant: ${widget.facture.montant} Ar',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Paiement
               CheckboxListTile(
