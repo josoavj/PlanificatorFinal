@@ -80,7 +80,7 @@ class RemarqueRepository extends ChangeNotifier {
       if (estPayee) {
         const updateFactureSQL = '''
           UPDATE Facture
-          SET etat = ?, mode = ?, numero_cheque = ?, date_cheque = ?
+          SET etat = ?, mode = ?, numero_cheque = ?, date_cheque = ?, etablissement_payeur = ?
           WHERE facture_id = ?
         ''';
 
@@ -89,6 +89,7 @@ class RemarqueRepository extends ChangeNotifier {
           modePaiement,
           numeroCheque,
           datePayement != null ? DateHelper.reverseFormat(datePayement) : null,
+          modePaiement == 'Chèque' ? etablissement : null,
           factureId,
         ]);
 
