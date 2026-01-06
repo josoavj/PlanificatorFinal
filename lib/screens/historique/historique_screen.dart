@@ -425,7 +425,9 @@ class _PlanningCard extends StatelessWidget {
     if (value is int) return value.toString();
     if (value is double) return value.toString();
     if (value is bool) return value.toString();
-    if (value is DateTime) return value.toString();
+    if (value is DateTime) {
+      return '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
+    }
     if (value is List<int>) {
       try {
         return String.fromCharCodes(value);
@@ -465,11 +467,12 @@ class _PlanningCard extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Expanded(child: _DetailRow('État', etat)),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 8),
                         Expanded(child: _DetailRow('Axe', axe)),
                       ],
                     ),
