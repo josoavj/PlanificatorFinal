@@ -222,6 +222,7 @@ class _ContratScreenState extends State<ContratScreen> {
         ],
       ),
     );
+    
   }
 
   @override
@@ -341,7 +342,7 @@ class _ContratScreenState extends State<ContratScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'contrat_add',
         onPressed: _showAddContratDialog,
-        label: const Text('Ajout'),
+        label: const Text('Ajout un contrat'),
         icon: const Icon(Icons.add),
       ),
     );
@@ -622,6 +623,7 @@ class _ContratScreenState extends State<ContratScreen> {
             onPressed: () {
               Navigator.of(ctx).pop();
               _deleteContrat(contrat);
+              _reloadData();
             },
             child: const Text(
               '🗑️ Supprimer',
