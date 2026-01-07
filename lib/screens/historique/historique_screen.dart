@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
@@ -440,7 +441,7 @@ class _PlanningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = _convertToString(planning['date']);
+    final date = _convertToString(DateTime.parse(planning['date']));
     final etat = _convertToString(planning['etat']);
     final axe = _convertToString(planning['axe']);
 
