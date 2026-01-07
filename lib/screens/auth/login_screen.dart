@@ -65,25 +65,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
                       'assets/Pictures/Logo Planificator.png',
-                      height: 100,
-                      width: 100,
+                      height: 200,
+                      width: 200,
                       fit: BoxFit.cover,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Titre
                   Text(
-                    'Planificator',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.blue.shade800,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Version 1.1.0 - Flutter',
+                    'Version 2.0.0 - APEXNova Labs',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.blue.shade600,
                       fontSize: 12,
@@ -94,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Conteneur avec largeur max
                   SizedBox(
-                    width: 280,
+                    width: 350,
                     child: Column(
                       children: [
                         // Username Field
