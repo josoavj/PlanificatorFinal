@@ -10,6 +10,7 @@ import '../planning/planning_screen.dart';
 import '../historique/historique_screen.dart';
 import '../settings/settings_screen.dart';
 import '../about/about_screen.dart';
+import '../export/export_screen.dart';
 
 final logger = Logger();
 
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Planning',
     'Factures',
     'Historique',
+    'Export',
     'À propos',
     'Paramètres',
   ];
@@ -69,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
             PlanningScreen(),
             FactureScreen(),
             HistoriqueScreen(),
+            ExportScreen(),
             AboutScreen(),
             SettingsScreen(),
           ],

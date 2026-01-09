@@ -759,7 +759,6 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                // ✅ NOUVEAU: Infos de paiement
                                 if (remarque.modePaiement?.isNotEmpty ??
                                     false) ...[
                                   Text(
