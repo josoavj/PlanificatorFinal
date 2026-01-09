@@ -327,4 +327,89 @@ class PlanningDetailsRepository extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Récupère les traitements d'un mois/année spécifique, optionnellement filtrés par client
+  Future<List<Map<String, dynamic>>> getTreatmentsByMonthAndClient({
+    required int year,
+    required int month,
+    int? clientId, // Si null, récupère tous les clients
+    String? treatmentType, // Si null ou 'Tous', récupère tous les traitements
+  }) async {
+    try {
+      String whereClause =
+          'WHERE YEAR(pd.date_planification) = ? AND MONTH(pd.date_planification) = ?';
+      List<dynamic> params = [year, month];
+
+      if (clientId != null && clientId != -1) {
+        whereClause += ' AND c.client_id = ?';
+        params.add(clientId);
+      }
+
+      if (treatmentType != null && treatmentType != 'Tous') {
+        whereClause += ' AND tt.typeTraitement = ?';
+        params.add(treatmentType);
+      }
+
+      final results = await _db.query('''
+        SELECT 
+          pd.date_planification AS `Date du traitement`,
+          tt.typeTraitement AS `Traitement concerné`,
+          tt.categorieTraitement AS `Catégorie du traitement`,
+          CONCAT(c.nom, ' ', c.prenom) AS `Client concerné`,
+          c.categorie AS `Catégorie du client`,
+          c.axe AS `Axe du client`,
+          pd.statut AS `Etat traitement`
+        FROM PlanningDetails pd
+        INNER JOIN Planning p ON pd.planning_id = p.planning_id
+        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+        LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
+        INNER JOIN Client c ON co.client_id = c.client_id
+        $whereClause
+        ORDER BY pd.date_planification ASC
+      ''', params);
+
+      logger.i('✅ ${results.length} traitements récupérés pour $month/$year');
+      return results.cast<Map<String, dynamic>>();
+    } catch (e) {
+      logger.e('❌ Erreur récupération traitements par mois: $e');
+      return [];
+    }
+  }
+
+  /// ✅ Récupère les types de traitements uniques pour un client (ou tous si clientId == -1)
+  Future<List<String>> getTreatmentTypesForClient(int clientId) async {
+    try {
+      final results = await _db.query(
+        clientId == -1
+            ? '''
+        SELECT DISTINCT tt.typeTraitement
+        FROM Traitement t
+        INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+        ORDER BY tt.typeTraitement ASC
+      '''
+            : '''
+        SELECT DISTINCT tt.typeTraitement
+        FROM Traitement t
+        INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
+        WHERE co.client_id = ?
+        ORDER BY tt.typeTraitement ASC
+      ''',
+        clientId == -1 ? [] : [clientId],
+      );
+
+      final treatments = results
+          .map((r) => (r['typeTraitement'] as String?) ?? 'N/A')
+          .toList();
+
+      logger.i(
+        '✅ ${treatments.length} types de traitements trouvés pour client $clientId',
+      );
+      return treatments;
+    } catch (e) {
+      logger.e('❌ Erreur récupération types de traitements: $e');
+      return [];
+    }
+  }
 }
