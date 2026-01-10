@@ -349,7 +349,7 @@ class ContratRepository extends ChangeNotifier {
 
         // Récupérer tous les plannings futurs pour ce traitement
         final planningsSql = '''
-          SELECT planning_id FROM Planning WHERE traitement_id = ? AND date > ?
+          SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?
         ''';
         final plannings = await _db.query(planningsSql, [
           treatmentId,

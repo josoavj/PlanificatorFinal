@@ -229,7 +229,8 @@ class DateUtils {
     }
 
     // Calculer la date de fin basée sur la durée du traitement
-    final dateFin = _addMonths(dateDebut, dureeTraitement);
+    // Pour 12 mois: ajouter 11 mois (janvier + 11 = décembre)
+    final dateFin = _addMonths(dateDebut, dureeTraitement - 1);
 
     // Générer les dates de planification selon la redondance
     DateTime currentDate = dateDebut;

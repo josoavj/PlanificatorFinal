@@ -463,12 +463,28 @@ class PlanningRepository extends ChangeNotifier {
     required int redondance,
   }) async {
     try {
+      // ✅ Vérifier si un planning existe déjà pour ce traitement
+      const checkSql =
+          'SELECT planning_id FROM Planning WHERE traitement_id = ?';
+      final existing = await _db.query(checkSql, [traitementId]);
+
+      if (existing.isNotEmpty) {
+        logger.i(
+          '⚠️ Planning existe déjà pour traitement_id=$traitementId, ID=${existing[0]['planning_id']}',
+        );
+        return existing[0]['planning_id'] as int;
+      }
+
       // Calculer les dates de fin en fonction de la durée
-      final dateFinPlanification = DateTime(
-        dateDebutPlanification.year + (dureeTraitement ~/ 12),
-        dateDebutPlanification.month + (dureeTraitement % 12),
-        dateDebutPlanification.day,
-      );
+      // Pour 12 mois: ajouter 11 mois (janvier + 11 = décembre)
+      final month = dateDebutPlanification.month - 1 + (dureeTraitement - 1);
+      final year = dateDebutPlanification.year + (month ~/ 12);
+      final newMonth = (month % 12) + 1;
+      final daysInMonth = DateTime(year, newMonth + 1, 0).day;
+      final day = dateDebutPlanification.day > daysInMonth
+          ? daysInMonth
+          : dateDebutPlanification.day;
+      final dateFinPlanification = DateTime(year, newMonth, day);
 
       const sql = '''
         INSERT INTO Planning 

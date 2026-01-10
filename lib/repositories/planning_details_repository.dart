@@ -29,16 +29,36 @@ class PlanningDetailsRepository extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   /// Créer un détail de planning
+  /// Vérifie et évite les doublons (ne crée pas si la date existe déjà)
   Future<PlanningDetails?> createPlanningDetails(
     int planningId,
     DateTime datePlanification, {
     String statut = 'À venir',
   }) async {
     try {
+      // ✅ Vérifier si la date existe déjà pour ce planning
+      final dateStr = datePlanification.toIso8601String().split('T')[0];
+      final existingCheck = await _db.query(
+        'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?',
+        [planningId, dateStr],
+      );
+
+      if (existingCheck.isNotEmpty) {
+        logger.i(
+          '⚠️ PlanningDetail existe déjà: planning_id=$planningId, date=$dateStr',
+        );
+        return PlanningDetails(
+          planningDetailId: existingCheck[0]['planning_detail_id'] as int,
+          planningId: planningId,
+          datePlanification: datePlanification,
+          statut: statut,
+        );
+      }
+
       // ✅ Utiliser insert() au lieu de query() pour les INSERT
       final insertId = await _db.insert(
         'INSERT INTO PlanningDetails (planning_id, date_planification, statut) VALUES (?, ?, ?)',
-        [planningId, datePlanification.toIso8601String().split('T')[0], statut],
+        [planningId, dateStr, statut],
       );
 
       if (insertId > 0) {

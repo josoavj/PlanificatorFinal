@@ -473,7 +473,10 @@ class _PlanningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = _convertToString(DateTime.parse(planning['date']));
+    final dateValue = planning['date'] is String
+        ? DateTime.parse(planning['date'] as String)
+        : planning['date'] as DateTime?;
+    final date = _convertToString(dateValue);
     final etat = _convertToString(planning['etat']);
     final axe = _convertToString(planning['axe']);
 
@@ -616,7 +619,6 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final traitement = _convertToString(widget.treatment['traitement']);
-    // ✅ CORRECTION: Utiliser 'date_planification' au lieu de 'date'
     final date = _convertToString(
       widget.treatment['date_planification'] ?? widget.treatment['date'],
     );
