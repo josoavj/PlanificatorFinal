@@ -3074,7 +3074,7 @@ class _ContratCreationFlowScreenState
 
             // Axe
             DropdownButtonFormField<String>(
-              value:
+              initialValue:
                   [
                     'Nord (N)',
                     'Sud (S)',
@@ -3229,8 +3229,9 @@ class _ContratCreationFlowScreenState
             ? 'Décembre $anneeFin'
             : 'Indéterminée';
       }
-      if (!planning.containsKey('dureeTraitement'))
+      if (!planning.containsKey('dureeTraitement')) {
         planning['dureeTraitement'] = '12';
+      }
       if (!planning.containsKey('redondance')) planning['redondance'] = '1';
     }
 
@@ -3532,7 +3533,7 @@ class _ContratCreationFlowScreenState
 
             // Redondance (fréquence)
             DropdownButtonFormField<String>(
-              value: (planning['redondance'] as String?) ?? '1',
+              initialValue: (planning['redondance'] as String?) ?? '1',
               decoration: InputDecoration(
                 labelText: 'Fréquence',
                 border: OutlineInputBorder(
@@ -4562,15 +4563,15 @@ class _ContratCreationFlowScreenState
                 try {
                   // Utiliser NumberFormatter pour parser les montants avec espaces
                   montant = NumberFormatter.parseMontant(montantStr);
-                  logger.i('        ✅ Montant parsé: $montant Ar');
+                  logger.i('✅ Montant parsé: $montant Ar');
                 } catch (e) {
                   logger.e(
-                    '        ❌ Erreur parsing montant: $montantStr - $e',
+                    '❌ Erreur parsing montant: $montantStr - $e',
                   );
                   montant = 0;
                 }
               } else {
-                logger.i('        ⚠️ Montant vide, utilisation de 0 Ar');
+                logger.i('⚠️ Montant vide, utilisation de 0 Ar');
               }
 
               try {
@@ -4581,9 +4582,9 @@ class _ContratCreationFlowScreenState
                       referenceFacture: '', // Vide - sera rempli manuellement
                       montant: montant,
                       mode:
-                          null, // ✅ Mode à définir plus tard (pas de valeur par défaut)
+                          null, // Mode à définir plus tard (pas de valeur par défaut)
                       etat: 'À venir',
-                      axe: clientAxe, // ✅ Axe du client
+                      axe: clientAxe, 
                       dateTraitement: date,
                     );
 
