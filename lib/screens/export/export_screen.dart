@@ -547,7 +547,7 @@ class _ExportScreenState extends State<ExportScreen> {
         final monthIndex = _mois.indexOf(_selectedMois);
         factures = factures.where((f) {
           final dateTraitement = f.dateTraitement;
-          return dateTraitement != null && dateTraitement.month == monthIndex;
+          return dateTraitement.month == monthIndex;
         }).toList();
       }
 
@@ -576,7 +576,7 @@ class _ExportScreenState extends State<ExportScreen> {
           'Mode de Paiement': facture.mode ?? 'N/A',
           'Détails Paiement': 'N/A',
           'Etat de Paiement': facture.etat,
-          'Montant Facturé': facture.montant ?? 0,
+          'Montant Facturé': facture.montant,
         });
       }
 

@@ -24,6 +24,23 @@ final logger = Logger();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialiser le service de logging
+  await log.initialize(
+    config: LoggingConfig(
+      enableFileLogging: true,
+      maxLogsInMemory: 1000,
+      maxFileSize: 5, // 5 MB
+      maxLogFiles: 10,
+      minPersistLevel: LogLevel.info, // Persister à partir de INFO
+    ),
+  );
+
+  log.info('🚀 Application démarrée', source: 'main');
+
+  // Initialiser le service de notifications
+  await notifications.initialize();
+  log.info('🔔 Service de notifications initialisé', source: 'main');
+
   // Initialiser les données de locale pour intl
   await initializeDateFormatting('fr_FR', null);
 
@@ -44,6 +61,14 @@ void main() async {
       password: config.password ?? '',
       database: config.database ?? 'Planificator',
     );
+
+    // Charger les traitements du lendemain et planifier les notifications
+    try {
+      final notifRepo = NotificationRepository();
+      await notifRepo.loadAndNotifyNextDayTreatments();
+    } catch (e) {
+      log.warning('⚠️ Erreur chargement traitements: $e', source: 'main');
+    }
 
     // Essayer de se connecter
     try {
@@ -129,6 +154,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => TypeTraitementRepository()),
         ChangeNotifierProvider(create: (_) => RemarqueRepository()),
         ChangeNotifierProvider(create: (_) => SignalementRepository()),
+        ChangeNotifierProvider(create: (_) => NotificationRepository()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

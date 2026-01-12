@@ -10,7 +10,7 @@ import 'signalement_dialog.dart';
 import 'remark_dialog.dart';
 
 class PlanningScreen extends StatefulWidget {
-  const PlanningScreen({Key? key}) : super(key: key);
+  const PlanningScreen({super.key});
 
   @override
   State<PlanningScreen> createState() => _PlanningScreenState();
@@ -142,9 +142,21 @@ class _PlanningScreenState extends State<PlanningScreen> {
                             'EEEE dd MMMM yyyy',
                             'fr_FR',
                           ).format(_selectedDay);
-                          // Mettre en majuscule le premier caractère du jour
-                          return dateStr[0].toUpperCase() +
-                              dateStr.substring(1);
+                          // Mettre en majuscule le premier caractère du jour et du mois
+                          final parts = dateStr.split(' ');
+                          if (parts.isNotEmpty) {
+                            // Majuscule du jour
+                            parts[0] =
+                                parts[0][0].toUpperCase() +
+                                parts[0].substring(1);
+                            // Majuscule du mois (généralement à l'index 2)
+                            if (parts.length > 2) {
+                              parts[2] =
+                                  parts[2][0].toUpperCase() +
+                                  parts[2].substring(1);
+                            }
+                          }
+                          return parts.join(' ');
                         }(),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -203,7 +215,11 @@ class _PlanningScreenState extends State<PlanningScreen> {
         padding: const EdgeInsets.all(8),
         child: TableCalendar(
           firstDay: DateTime(2024, 1, 1),
-          lastDay: DateTime(2026, 12, 31),
+          lastDay: DateTime(
+            2079,
+            12,
+            31,
+          ), // A mettre à jour, si besoin, dans le futur.
           focusedDay: _focusedDay,
           selectedDayPredicate: (day) {
             return isSameDay(_selectedDay, day);
@@ -262,11 +278,36 @@ class _PlanningCard extends StatelessWidget {
     return value.toString();
   }
 
+  /// Formate le traitement en supprimant le prénom si c'est une Société/Organisation
+  String _formatTraitement(String traitement, String? categorie) {
+    if (categorie == 'Société' || categorie == 'Organisation') {
+      final parts = traitement.split(' pour ');
+      if (parts.length == 2) {
+        final typeTraitement = parts[0].trim();
+        final names = parts[1].trim().split(' ');
+        String nomSociete;
+        if (names.length > 2) {
+          nomSociete = names.sublist(2).join(' ');
+        } else if (names.length > 1) {
+          nomSociete = names.last;
+        } else {
+          return traitement;
+        }
+        return '$typeTraitement pour $nomSociete';
+      }
+    }
+    return traitement;
+  }
+
   @override
   Widget build(BuildContext context) {
     final traitement = _convertToString(treatment['traitement']);
     final axe = _convertToString(treatment['axe']);
     final etat = _convertToString(treatment['etat']);
+    final categorie = _convertToString(treatment['categorie']);
+
+    // Formater le traitement selon la catégorie
+    final traitementFormate = _formatTraitement(traitement, categorie);
 
     final isEffectue = etat.toLowerCase().contains('effectué');
     final bgColor = isEffectue ? Colors.green[50] : Colors.orange[50];
@@ -303,7 +344,7 @@ class _PlanningCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      traitement,
+                      traitementFormate,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: textColor,
@@ -402,7 +443,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
 
       logger.i('✅ PlanningDetails créé: ${planningDetail.planningDetailId}');
 
-      // ✅ CRÉER UNE FACTURE VALIDE D'ABORD
+      // Création d'une facture valide
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -436,7 +477,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                   if (factureId != -1) {
                     logger.i('✅ Facture créée: $factureId');
 
-                    // ✅ Récupérer la vraie facture depuis la BD
+                    // Récupérer la vraie facture depuis la BD
                     final factureRepo = context.read<FactureRepository>();
                     final factures = await factureRepo
                         .getFacturesByPlanningDetail(
@@ -461,7 +502,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                               await context
                                   .read<PlanningDetailsRepository>()
                                   .loadAllTreatmentsComplete();
-                              // ✅ Recharger aussi les factures pour les voir dans Factures
+                              // Recharger aussi les factures pour les voir dans Factures
                               await context
                                   .read<FactureRepository>()
                                   .loadAllFactures();
@@ -530,7 +571,6 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
           onSaved: () async {
             logger.i('✅ Signalement enregistré');
 
-            // ✅ CORRECTION: Attendre vraiment que le chargement se termine
             if (mounted) {
               await context
                   .read<PlanningDetailsRepository>()
@@ -573,13 +613,61 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
     super.dispose();
   }
 
+  /// Formate le traitement en supprimant le titre et prénom si c'est une Société/Organisation
+  String _formatTraitement(String traitement, String? categorie) {
+    if (categorie == 'Société' || categorie == 'Organisation') {
+      final parts = traitement.split(' pour ');
+      if (parts.length == 2) {
+        final typeTraitement = parts[0].trim();
+        final names = parts[1].trim().split(' ');
+        String nomSociete;
+        if (names.length > 2) {
+          nomSociete = names.sublist(2).join(' ');
+        } else if (names.length > 1) {
+          nomSociete = names.last;
+        } else {
+          return traitement;
+        }
+        return '$typeTraitement pour $nomSociete';
+      }
+    }
+    return traitement;
+  }
+
   @override
   Widget build(BuildContext context) {
     final traitement = _convertToString(widget.treatment['traitement']);
     final axe = _convertToString(widget.treatment['axe']);
     final etat = _convertToString(widget.treatment['etat']);
-    // ✅ CORRECTION: Utiliser 'date' (la colonne formatée par SQL en YYYY-MM-DD)
-    final date = _convertToString(widget.treatment['date']);
+    final dateStr = _convertToString(widget.treatment['date']);
+    final categorie = _convertToString(widget.treatment['categorie']);
+
+    // Formater la date en "Lundi 07 Janvier 2026"
+    String dateFormatee = dateStr;
+    if (dateStr.isNotEmpty) {
+      try {
+        final parts = dateStr.split('-');
+        if (parts.length == 3) {
+          final dateObj = DateTime(
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+            int.parse(parts[2]),
+          );
+          final formatted = DateFormat(
+            'EEEE dd MMMM yyyy',
+            'fr_FR',
+          ).format(dateObj);
+          dateFormatee = formatted.isEmpty
+              ? dateStr
+              : formatted[0].toUpperCase() + formatted.substring(1);
+        }
+      } catch (e) {
+        dateFormatee = dateStr;
+      }
+    }
+
+    // Formater le traitement selon la catégorie
+    final traitementFormate = _formatTraitement(traitement, categorie);
 
     return Scaffold(
       appBar: AppBar(
@@ -588,41 +676,41 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
         centerTitle: false,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Section infos planning
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Informations du Planning',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: const Text(
+                            'Informations du Planning',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _DetailRow('Traitement', traitementFormate),
+                        _DetailRow('Date', dateFormatee),
+                        _DetailRow('Axe', axe),
+                        _DetailRow('État', etat),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    _DetailRow('Traitement', traitement),
-                    _DetailRow('Date', date),
-                    _DetailRow('Axe', axe),
-                    _DetailRow('État', etat),
-                  ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-
-            // Section Actions principales
-            const Text(
-              'Actions',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            const SizedBox(height: 8),
 
             // Boutons centré et petit
             Center(
@@ -640,7 +728,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                         backgroundColor: Colors.blue,
                       ),
                       child: const Text(
-                        'Remarque',
+                        'Ajouter une remarque',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -657,10 +745,10 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                       onPressed: _showSignalementDialog,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        backgroundColor: Colors.orange,
+                        backgroundColor: Colors.redAccent,
                       ),
                       child: const Text(
-                        'Problème',
+                        'Signaler un problème',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -688,9 +776,9 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Text(
             label,

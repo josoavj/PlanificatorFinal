@@ -15,7 +15,9 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   late Stream<LogEntry> _logStream;
   LogLevel _filterLevel = LogLevel.debug;
   String _filterSource = '';
+  String _searchQuery = '';
   final TextEditingController _filterCtrl = TextEditingController();
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -27,6 +29,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   void dispose() {
     _scrollController.dispose();
     _filterCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -43,26 +46,71 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   }
 
   void _clearLogs() {
-    log.clear();
-    setState(() {});
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmer la suppression'),
+        content: const Text('Effacer tous les logs en mémoire?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              log.clear();
+              Navigator.pop(ctx);
+              setState(() {});
+            },
+            child: const Text('Effacer'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _exportLogs() {
     log.exportLogs(minLevel: _filterLevel);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logs exportés (${log.allLogs.length} entrées)')),
+      SnackBar(
+        content: Text('✅ ${log.allLogs.length} logs copiés'),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
+  Future<void> _exportToFile() async {
+    try {
+      final logsDir = await log.getLogsDirectory();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('📁 Logs: $logsDir'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+    }
+  }
+
   List<LogEntry> _getFilteredLogs() {
-    return log.allLogs.where((entry) {
+    var results = log.allLogs.where((entry) {
       final levelMatch = entry.level.index >= _filterLevel.index;
       final sourceMatch =
           _filterSource.isEmpty ||
           (entry.source?.toLowerCase().contains(_filterSource.toLowerCase()) ??
               false);
-      return levelMatch && sourceMatch;
+      final searchMatch =
+          _searchQuery.isEmpty ||
+          entry.message.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (entry.source?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false);
+      return levelMatch && sourceMatch && searchMatch;
     }).toList();
+
+    return results;
   }
 
   Color _getLevelColor(LogLevel level) {
@@ -107,10 +155,33 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                   ),
                   const Spacer(),
                   Tooltip(
-                    message: 'Exporter les logs',
+                    message: 'Exporter logs',
                     child: IconButton(
                       icon: const Icon(Icons.download, size: 18),
+                      onPressed: _exportToFile,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  Tooltip(
+                    message: 'Copier (presse-papiers)',
+                    child: IconButton(
+                      icon: const Icon(Icons.copy, size: 18),
                       onPressed: _exportLogs,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  Tooltip(
+                    message: 'Résumé',
+                    child: IconButton(
+                      icon: const Icon(Icons.info, size: 18),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(log.getSummary()),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      },
                       color: Colors.white70,
                     ),
                   ),
@@ -134,7 +205,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                 ],
               ),
               const SizedBox(height: 8),
-              // Filtres
+              // Filtres et recherche
               Row(
                 children: [
                   Expanded(
@@ -157,25 +228,49 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
-                    flex: 2,
+                    flex: 1,
                     child: TextField(
                       controller: _filterCtrl,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                       decoration: InputDecoration(
-                        hintText: 'Filtrer par source...',
+                        hintText: 'Source...',
                         hintStyle: TextStyle(color: Colors.grey[500]),
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey[700]!),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 6,
+                          vertical: 4,
                         ),
+                        isDense: true,
                       ),
                       onChanged: (val) {
                         setState(() => _filterSource = val);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _searchCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      decoration: InputDecoration(
+                        hintText: 'Recherche...',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[700]!),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        isDense: true,
+                      ),
+                      onChanged: (val) {
+                        setState(() => _searchQuery = val);
                       },
                     ),
                   ),

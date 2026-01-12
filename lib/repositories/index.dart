@@ -8,3 +8,4 @@ export 'planning_details_repository.dart';
 export 'remarque_repository.dart';
 export 'signalement_repository.dart';
 export 'type_traitement_repository.dart';
+export 'notification_repository.dart';

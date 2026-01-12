@@ -45,6 +45,9 @@ dependencies:
   excel: ^2.1.0
   path: ^1.8.0
   syncfusion_flutter_xlsio: ^29.2.11
+  flutter_local_notifications: ^17.1.0
+  timezone: ^0.9.2
+  workmanager: ^0.5.1
 
 dev_dependencies:
   flutter_test:

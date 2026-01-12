@@ -1,5 +1,3 @@
-import 'dart:math' as logger;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -12,8 +10,7 @@ class HistoriqueScreen extends StatefulWidget {
   final int? clientId; // Si null, affiche tout l'historique
   final String? categorie; // Si spécifiée, filtre par catégorie
 
-  const HistoriqueScreen({Key? key, this.clientId, this.categorie})
-    : super(key: key);
+  const HistoriqueScreen({super.key, this.clientId, this.categorie});
 
   @override
   State<HistoriqueScreen> createState() => _HistoriqueScreenState();
@@ -109,6 +106,53 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
             if (treatmentsByCode.containsKey(code)) {
               treatmentsByCode[code]!.add(treatment);
             }
+          }
+
+          // Trier chaque catégorie par date (les données du repository sont déjà triées, mais re-trier pour sûr)
+          for (final code in treatmentsByCode.keys) {
+            treatmentsByCode[code]!.sort((a, b) {
+              try {
+                // Préférer date_planification (timestamp) plutôt que date (string formatée)
+                final dateKeyA = a.containsKey('date_planification')
+                    ? 'date_planification'
+                    : a.containsKey('date')
+                    ? 'date'
+                    : null;
+                final dateKeyB = b.containsKey('date_planification')
+                    ? 'date_planification'
+                    : b.containsKey('date')
+                    ? 'date'
+                    : null;
+
+                if (dateKeyA == null || dateKeyB == null) return 0;
+
+                DateTime? dateA;
+                DateTime? dateB;
+
+                try {
+                  final dateValueA = a[dateKeyA];
+                  dateA = dateValueA is DateTime
+                      ? dateValueA
+                      : DateTime.tryParse(dateValueA.toString());
+                } catch (e) {
+                  dateA = null;
+                }
+
+                try {
+                  final dateValueB = b[dateKeyB];
+                  dateB = dateValueB is DateTime
+                      ? dateValueB
+                      : DateTime.tryParse(dateValueB.toString());
+                } catch (e) {
+                  dateB = null;
+                }
+
+                if (dateA == null || dateB == null) return 0;
+                return dateB.compareTo(dateA); // Décroissant
+              } catch (e) {
+                return 0;
+              }
+            });
           }
 
           if (allTreatments.isEmpty) {
@@ -212,6 +256,25 @@ class _TreatmentListScreen extends StatelessWidget {
     required this.treatments,
   });
 
+  DateTime? _extractDate(Map<String, dynamic> item) {
+    try {
+      // Préférer date_planification (timestamp) plutôt que date (string formatée)
+      final dateKey = item.containsKey('date_planification')
+          ? 'date_planification'
+          : item.containsKey('date')
+          ? 'date'
+          : null;
+      if (dateKey == null) return null;
+
+      final dateValue = item[dateKey];
+      if (dateValue is DateTime) return dateValue;
+      if (dateValue is String) return DateTime.tryParse(dateValue);
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Grouper par Traitement + Client (uniquement les info de base)
@@ -228,7 +291,28 @@ class _TreatmentListScreen extends StatelessWidget {
       treatmentClientGroups[key]!.add(treatment);
     }
 
+    // Trier chaque groupe par date décroissante (plus récent en premier)
+    for (final key in treatmentClientGroups.keys) {
+      treatmentClientGroups[key]!.sort((a, b) {
+        final dateA = _extractDate(a);
+        final dateB = _extractDate(b);
+        if (dateA == null || dateB == null) return 0;
+        return dateB.compareTo(dateA); // Décroissant
+      });
+    }
+
+    // Trier les groupes eux-mêmes par date la plus récente du groupe
     final groupedList = treatmentClientGroups.entries.toList();
+    groupedList.sort((entryA, entryB) {
+      final listA = entryA.value;
+      final listB = entryB.value;
+
+      final dateA = listA.isNotEmpty ? _extractDate(listA.first) : null;
+      final dateB = listB.isNotEmpty ? _extractDate(listB.first) : null;
+
+      if (dateA == null || dateB == null) return 0;
+      return dateB.compareTo(dateA); // Décroissant
+    });
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -382,25 +466,51 @@ class _PlanningListScreen extends StatelessWidget {
     final sortedPlannings = List<Map<String, dynamic>>.from(plannings);
     try {
       sortedPlannings.sort((a, b) {
-        // Utiliser la clé qui existe vraiment dans les données
-        final dateKeyA = a.containsKey('date')
-            ? 'date'
-            : a.containsKey('date_planification')
+        // Préférer date_planification (timestamp) plutôt que date (string formatée)
+        final dateKeyA = a.containsKey('date_planification')
             ? 'date_planification'
+            : a.containsKey('date')
+            ? 'date'
             : null;
-        final dateKeyB = b.containsKey('date')
-            ? 'date'
-            : b.containsKey('date_planification')
+        final dateKeyB = b.containsKey('date_planification')
             ? 'date_planification'
+            : b.containsKey('date')
+            ? 'date'
             : null;
 
         if (dateKeyA == null || dateKeyB == null) {
           return 0;
         }
 
-        final dateA = a[dateKeyA].toString();
-        final dateB = b[dateKeyB].toString();
-        return dateB.compareTo(dateA); // Décroissant: plus récent en premier
+        // Convertir en DateTime pour un tri correct
+        DateTime? dateTimeA;
+        DateTime? dateTimeB;
+
+        try {
+          final dateValueA = a[dateKeyA];
+          dateTimeA = dateValueA is DateTime
+              ? dateValueA
+              : DateTime.tryParse(dateValueA.toString());
+        } catch (e) {
+          dateTimeA = null;
+        }
+
+        try {
+          final dateValueB = b[dateKeyB];
+          dateTimeB = dateValueB is DateTime
+              ? dateValueB
+              : DateTime.tryParse(dateValueB.toString());
+        } catch (e) {
+          dateTimeB = null;
+        }
+
+        if (dateTimeA == null || dateTimeB == null) {
+          return 0;
+        }
+
+        return dateTimeB.compareTo(
+          dateTimeA,
+        ); // Décroissant: plus récent en premier
       });
     } catch (e) {
       // Erreur lors du tri - on continue sans tri
@@ -696,6 +806,26 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                       ),
                       const SizedBox(height: 12),
                       ...remarques.map((remarque) {
+                        // Déterminer l'état de paiement: utiliser l'état de la facture si elle existe
+                        bool isPaid = false;
+                        if (remarque.factureId != null) {
+                          // Chercher la facture correspondante
+                          final correspondingFacture =
+                              factures.firstWhere(
+                                    (f) => f.factureId == remarque.factureId,
+                                    orElse: () => null as dynamic,
+                                  )
+                                  as Facture?;
+                          if (correspondingFacture != null) {
+                            isPaid = correspondingFacture.etat
+                                .toLowerCase()
+                                .contains('payé');
+                          }
+                        } else {
+                          // Si pas de facture associée, utiliser le statut de la remarque
+                          isPaid = remarque.estPayee;
+                        }
+
                         return Card(
                           elevation: 1,
                           margin: const EdgeInsets.only(bottom: 12),
@@ -856,24 +986,24 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                // État du paiement
+                                // État du paiement: afficher l'état de la facture si elle existe
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: remarque.estPayee
+                                    color: isPaid
                                         ? Colors.green.shade100
                                         : Colors.orange.shade100,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    remarque.estPayee ? 'PAYÉE' : 'NON PAYÉE',
+                                    isPaid ? 'PAYÉE' : 'NON PAYÉE',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
-                                      color: remarque.estPayee
+                                      color: isPaid
                                           ? Colors.green.shade800
                                           : Colors.orange.shade800,
                                     ),
@@ -883,7 +1013,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                       const SizedBox(height: 12),
                     ],
                   ),
@@ -952,7 +1082,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                       const SizedBox(height: 12),
                     ],
                   ),

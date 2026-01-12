@@ -129,7 +129,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
         estPayee: _estPayee,
       );
 
-      // ✅ Mettre à jour la facture
+      // Mettre à jour la facture
       final factureRepo = context.read<FactureRepository>();
 
       // Si montant était 0, le mettre à jour
@@ -190,90 +190,182 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Remarque - ${DateHelper.format(widget.planningDetail.datePlanification)}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-
-              // Référence et montant facture
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _estPayee ? Colors.green[50] : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _estPayee ? Colors.green[300]! : Colors.grey[300]!,
-                  ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Remarque - ${DateHelper.format(widget.planningDetail.datePlanification)}',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Réf: ${widget.facture.referenceFacture ?? 'N/A'}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'ID Facture: ${widget.facture.factureId}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                const SizedBox(height: 8),
+
+                // Référence et montant facture
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _estPayee ? Colors.green[50] : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _estPayee ? Colors.green[300]! : Colors.grey[300]!,
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _estPayee
-                                ? Colors.green[100]
-                                : Colors.orange[100],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            _estPayee ? 'Payée' : 'Non payée',
-                            style: TextStyle(
-                              fontSize: 11,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Réf: ${widget.facture.referenceFacture ?? 'N/A'}',
+                            style: const TextStyle(
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: _estPayee
-                                  ? Colors.green[700]
-                                  : Colors.orange[700],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${widget.facture.montant} Ar',
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID Facture: ${widget.facture.factureId}',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _estPayee
+                                  ? Colors.green[100]
+                                  : Colors.orange[100],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _estPayee ? 'Payée' : 'Non payée',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: _estPayee
+                                    ? Colors.green[700]
+                                    : Colors.orange[700],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${widget.facture.montant} Ar',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Référence de la facture
+                TextField(
+                  controller: _referenceCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Référence facture',
+                    border: OutlineInputBorder(),
+                    hintText: 'Entrez une référence personnalisée...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Contenu remarque
+                TextField(
+                  controller: _contenuCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Remarque (Obligatoire)',
+                    border: OutlineInputBorder(),
+                    hintText: 'Notes sur la visite...',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+
+                // Problème identifié
+                TextField(
+                  controller: _problemeCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Problème identifié (Obligatoire)',
+                    border: OutlineInputBorder(),
+                    hintText: 'Problème rencontré...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Action corrective
+                TextField(
+                  controller: _actionCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Action corrective (Obligatoire)',
+                    border: OutlineInputBorder(),
+                    hintText: 'Action à prendre...',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Montant facture - SEULEMENT si = 0
+                if (widget.facture.montant == 0) ...[
+                  TextField(
+                    controller: _montantCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: false,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Montant (Ar) - OBLIGATOIRE',
+                      border: OutlineInputBorder(),
+                      hintText: 'Entrez le montant',
+                      prefixText: 'Ar ',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info, color: Colors.blue[600], size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Montant: ${widget.facture.montant} Ar',
+                            style: TextStyle(
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: Colors.blue[700],
                             ),
@@ -281,184 +373,96 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Paiement
+                CheckboxListTile(
+                  title: const Text('Marquer comme payée'),
+                  value: _estPayee,
+                  onChanged: (val) => setState(() => _estPayee = val ?? false),
+                ),
+
+                if (_estPayee) ...[
+                  const SizedBox(height: 12),
+
+                  // Mode de paiement
+                  DropdownButtonFormField(
+                    value: _modePaiement,
+                    decoration: const InputDecoration(
+                      labelText: 'Mode de paiement',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ['Chèque', 'Espèce', 'Virement', 'Mobile Money']
+                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .toList(),
+                    onChanged: (val) => setState(() => _modePaiement = val),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Date de paiement
+                  TextField(
+                    controller: _datePayementCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Date de paiement',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: _selectDate,
+                      ),
+                    ),
+                    readOnly: true,
+                  ),
+
+                  // Champs spécifiques pour chèque
+                  if (_modePaiement == 'Chèque') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _etablissementCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Établissement bancaire',
+                        border: OutlineInputBorder(),
+                        hintText: 'Nom de la banque...',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _numeroChequeCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Numéro de chèque',
+                        border: OutlineInputBorder(),
+                        hintText: 'Ex: 123456',
+                      ),
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 24),
+
+                // Boutons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Annuler'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _isLoading ? null : _saveRemarque,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Enregistrer'),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Référence de la facture
-              TextField(
-                controller: _referenceCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Référence facture',
-                  border: OutlineInputBorder(),
-                  hintText: 'Entrez une référence personnalisée...',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Contenu remarque
-              TextField(
-                controller: _contenuCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Remarque (Obligatoire)',
-                  border: OutlineInputBorder(),
-                  hintText: 'Notes sur la visite...',
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-
-              // Problème identifié
-              TextField(
-                controller: _problemeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Problème identifié (Obligatoire)',
-                  border: OutlineInputBorder(),
-                  hintText: 'Problème rencontré...',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Action corrective
-              TextField(
-                controller: _actionCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Action corrective (Obligatoire)',
-                  border: OutlineInputBorder(),
-                  hintText: 'Action à prendre...',
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Montant facture - SEULEMENT si = 0
-              if (widget.facture.montant == 0) ...[
-                TextField(
-                  controller: _montantCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: false,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Montant (Ar) - OBLIGATOIRE',
-                    border: OutlineInputBorder(),
-                    hintText: 'Entrez le montant',
-                    prefixText: 'Ar ',
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, color: Colors.blue[600], size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Montant: ${widget.facture.montant} Ar',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
               ],
-
-              // Paiement
-              CheckboxListTile(
-                title: const Text('Marquer comme payée'),
-                value: _estPayee,
-                onChanged: (val) => setState(() => _estPayee = val ?? false),
-              ),
-
-              if (_estPayee) ...[
-                const SizedBox(height: 12),
-
-                // Mode de paiement
-                DropdownButtonFormField(
-                  value: _modePaiement,
-                  decoration: const InputDecoration(
-                    labelText: 'Mode de paiement',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ['Chèque', 'Espèce', 'Virement', 'Mobile Money']
-                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                      .toList(),
-                  onChanged: (val) => setState(() => _modePaiement = val),
-                ),
-                const SizedBox(height: 12),
-
-                // Date de paiement
-                TextField(
-                  controller: _datePayementCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Date de paiement',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: _selectDate,
-                    ),
-                  ),
-                  readOnly: true,
-                ),
-
-                // Champs spécifiques pour chèque
-                if (_modePaiement == 'Chèque') ...[
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _etablissementCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Établissement bancaire',
-                      border: OutlineInputBorder(),
-                      hintText: 'Nom de la banque...',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _numeroChequeCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Numéro de chèque',
-                      border: OutlineInputBorder(),
-                      hintText: 'Ex: 123456',
-                    ),
-                  ),
-                ],
-              ],
-
-              const SizedBox(height: 24),
-
-              // Boutons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Annuler'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: _isLoading ? null : _saveRemarque,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Enregistrer'),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

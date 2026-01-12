@@ -181,7 +181,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
              CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
              pd.statut as etat,
              c.axe,
-             tt.categorieTraitement
+             tt.categorieTraitement,
+             c.categorie
            FROM PlanningDetails pd
            INNER JOIN Planning p ON pd.planning_id = p.planning_id
            INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
@@ -202,12 +203,12 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       final completeData = results.cast<Map<String, dynamic>>();
 
-      // ✅ IMPORTANT: Convertir en PlanningDetails ET garder les données enrichies
+      // IMPORTANT: Convertir en PlanningDetails ET garder les données enrichies
       _currentMonthTreatments = results
           .map((row) => PlanningDetails.fromJson(row))
           .toList();
 
-      // ✅ Stocker aussi les données enrichies pour affichage
+      // Stocker aussi les données enrichies pour affichage
       _currentMonthTreatmentsComplete = completeData;
 
       logger.i(
@@ -249,7 +250,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
              CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
              pd.statut as etat,
              c.axe,
-             tt.categorieTraitement
+             tt.categorieTraitement,
+             c.categorie
            FROM PlanningDetails pd
            INNER JOIN Planning p ON pd.planning_id = p.planning_id
            INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
@@ -299,7 +301,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
     try {
       logger.i('🔍 Chargement COMPLET tous les traitements (passés + futurs)');
 
-      // ✅ Requête SANS filtre de date - récupère TOUS les traitements
+      // Requête SANS filtre de date - récupère TOUS les traitements
       final results = await _db.query('''SELECT 
              pd.planning_detail_id,
              pd.planning_id,
@@ -311,7 +313,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
              tt.categorieTraitement,
              tt.id_type_traitement,
              c.client_id,
-             ct.contrat_id
+             ct.contrat_id,
+             c.categorie
            FROM PlanningDetails pd
            INNER JOIN Planning p ON pd.planning_id = p.planning_id
            INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
@@ -331,7 +334,33 @@ class PlanningDetailsRepository extends ChangeNotifier {
         );
       }
 
+      // Assurer le tri DESC par date_planification (le plus récent en premier)
       final completeData = results.cast<Map<String, dynamic>>();
+      completeData.sort((a, b) {
+        try {
+          final dateA = a['date_planification'];
+          final dateB = b['date_planification'];
+
+          DateTime? dateTimeA;
+          DateTime? dateTimeB;
+
+          if (dateA is DateTime)
+            dateTimeA = dateA;
+          else if (dateA is String)
+            dateTimeA = DateTime.tryParse(dateA);
+
+          if (dateB is DateTime)
+            dateTimeB = dateB;
+          else if (dateB is String)
+            dateTimeB = DateTime.tryParse(dateB);
+
+          if (dateTimeA == null || dateTimeB == null) return 0;
+          return dateTimeB.compareTo(dateTimeA); // DESC: plus récent en premier
+        } catch (e) {
+          return 0;
+        }
+      });
+
       _allTreatmentsComplete = completeData;
 
       logger.i(
@@ -397,7 +426,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ Récupère les types de traitements uniques pour un client (ou tous si clientId == -1)
+  /// Récupère les types de traitements uniques pour un client (ou tous si clientId == -1)
   Future<List<String>> getTreatmentTypesForClient(int clientId) async {
     try {
       final results = await _db.query(

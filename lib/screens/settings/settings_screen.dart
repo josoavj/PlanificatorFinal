@@ -22,7 +22,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres')),
       body: Consumer<AuthRepository>(
         builder: (context, authRepository, _) {
           return SingleChildScrollView(
@@ -32,15 +31,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSection(
                   title: 'Profil',
                   children: [
-                    _buildProfileHeader(authRepository),
-                    ListTile(
-                      leading: const Icon(Icons.person),
-                      title: const Text('Voir mon profil'),
+                    _buildModernProfileCard(authRepository),
+                    _buildModernCard(
+                      icon: Icons.person_outline,
+                      title: 'Détails du profil',
+                      subtitle: 'Afficher mes informations',
                       onTap: () => _showProfileDialog(context, authRepository),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.vpn_key),
-                      title: const Text('Changer le mot de passe'),
+                    _buildModernCard(
+                      icon: Icons.lock_outline,
+                      title: 'Changer le mot de passe',
+                      subtitle: 'Mettre à jour votre mot de passe',
                       onTap: () => _showChangePasswordDialog(context),
                     ),
                   ],
@@ -50,47 +51,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSection(
                   title: 'Préférences',
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.notifications),
-                      title: const Text('Notifications'),
-                      subtitle: const Text('Recevoir les notifications'),
-                      trailing: Switch(
-                        value: _notificationsEnabled,
-                        onChanged: (value) {
-                          setState(() => _notificationsEnabled = value);
-                        },
-                      ),
+                    _buildModernSwitchCard(
+                      icon: Icons.notifications_outlined,
+                      title: 'Notifications',
+                      subtitle: 'Recevoir les notifications',
+                      value: _notificationsEnabled,
+                      onChanged: (value) {
+                        setState(() => _notificationsEnabled = value);
+                      },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.brightness_4),
-                      title: const Text('Mode sombre'),
-                      subtitle: const Text('Utiliser le thème sombre'),
-                      trailing: Switch(
-                        value: _darkModeEnabled,
-                        onChanged: (value) {
-                          setState(() => _darkModeEnabled = value);
-                        },
+                    if (_notificationsEnabled)
+                      _buildModernCard(
+                        icon: Icons.schedule,
+                        title: 'Heure des notifications',
+                        subtitle: 'Configurer l\'heure d\'affichage',
+                        onTap: () => _showNotificationTimeDialog(context),
                       ),
+                    _buildModernSwitchCard(
+                      icon: Icons.brightness_4_outlined,
+                      title: 'Mode sombre',
+                      subtitle: 'Utiliser le thème sombre',
+                      value: _darkModeEnabled,
+                      onChanged: (value) {
+                        setState(() => _darkModeEnabled = value);
+                      },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.save),
-                      title: const Text('Sauvegarde automatique'),
-                      subtitle: const Text(
-                        'Sauvegarder automatiquement les données',
-                      ),
-                      trailing: Switch(
-                        value: _autoSaveEnabled,
-                        onChanged: (value) {
-                          setState(() => _autoSaveEnabled = value);
-                        },
-                      ),
+                    _buildModernSwitchCard(
+                      icon: Icons.save_outlined,
+                      title: 'Sauvegarde automatique',
+                      subtitle: 'Sauvegarder automatiquement les données',
+                      value: _autoSaveEnabled,
+                      onChanged: (value) {
+                        setState(() => _autoSaveEnabled = value);
+                      },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.language),
-                      title: const Text('Langue'),
-                      subtitle: Text(
-                        _language == 'fr' ? 'Français' : 'English',
-                      ),
+                    _buildModernCard(
+                      icon: Icons.language,
+                      title: 'Langue',
+                      subtitle: _language == 'fr' ? 'Français' : 'English',
                       onTap: () => _showLanguageDialog(),
                     ),
                   ],
@@ -100,23 +98,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSection(
                   title: 'Application',
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.info),
-                      title: const Text('À propos'),
+                    _buildModernCard(
+                      icon: Icons.info_outline,
+                      title: 'À propos',
+                      subtitle: 'Informations sur l\'application',
                       onTap: () => _showAboutDialog(context),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.description),
-                      title: const Text('Politique de confidentialité'),
+                    _buildModernCard(
+                      icon: Icons.description_outlined,
+                      title: 'Politique de confidentialité',
+                      subtitle: 'Consultez nos conditions',
                       onTap: () => AppDialogs.info(
                         context,
                         title: 'Politique de confidentialité',
                         message: 'Votre politique de confidentialité ici.',
                       ),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.help),
-                      title: const Text('Aide'),
+                    _buildModernCard(
+                      icon: Icons.help_outline,
+                      title: 'Aide',
+                      subtitle: 'Obtenez de l\'assistance',
                       onTap: () => AppDialogs.info(
                         context,
                         title: 'Aide',
@@ -125,11 +126,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'Pour toute question, veuillez nous contacter.',
                       ),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.storage),
-                      title: const Text('Données locales'),
-                      subtitle: const Text('Gérer les données en cache'),
+                    _buildModernCard(
+                      icon: Icons.storage_outlined,
+                      title: 'Données locales',
+                      subtitle: 'Gérer les données en cache',
                       onTap: () => _showCacheDialog(context),
+                    ),
+                  ],
+                ),
+
+                // Section Logs & Débogage
+                _buildSection(
+                  title: 'Logs et Débogage',
+                  children: [
+                    _buildModernCard(
+                      icon: Icons.list_alt,
+                      title: 'Visualiser les logs',
+                      subtitle: 'Afficher tous les événements enregistrés',
+                      onTap: () => _showLogViewer(context),
+                    ),
+                    _buildModernCard(
+                      icon: Icons.cloud_download_outlined,
+                      title: 'Exporter les logs',
+                      subtitle: 'Télécharger les fichiers de logs',
+                      onTap: () => _exportLogs(),
+                    ),
+                    _buildModernCard(
+                      icon: Icons.delete_outline,
+                      title: 'Effacer les logs',
+                      subtitle: 'Supprimer tous les logs',
+                      onTap: () => _clearLogs(context),
+                      isDestructive: true,
                     ),
                   ],
                 ),
@@ -139,23 +166,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Base de Données',
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      margin: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange[50],
+                        color: Colors.orange.shade100,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.shade300),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.warning, color: Colors.orange[700]),
-                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.warning_amber,
+                            color: Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'CRITIQUE - Ne modifiez que si nécessaire',
+                              'Configuration critique - À manipuler avec prudence',
                               style: TextStyle(
-                                color: Colors.orange[900],
+                                color: Colors.orange.shade900,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -164,14 +196,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      leading: const Icon(Icons.storage),
-                      title: const Text('Configuration Base de Données'),
-                      subtitle: const Text(
-                        'Modifier les informations de connexion',
-                      ),
-                      trailing: const Icon(Icons.edit),
+                    _buildModernCard(
+                      icon: Icons.storage,
+                      title: 'Configuration Base de Données',
+                      subtitle: 'Modifier les informations de connexion',
                       onTap: () => _showDatabaseConfigDialog(context),
                     ),
                   ],
@@ -181,27 +209,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSection(
                   title: 'Sécurité',
                   children: [
-                    ListTile(
-                      leading: const Icon(
-                        Icons.logout,
-                        color: AppTheme.errorRed,
-                      ),
-                      title: const Text(
-                        'Déconnexion',
-                        style: TextStyle(color: AppTheme.errorRed),
-                      ),
+                    _buildModernCard(
+                      icon: Icons.logout,
+                      title: 'Déconnexion',
+                      subtitle: 'Terminer la session en cours',
                       onTap: () => _logout(context),
+                      isDestructive: true,
                     ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.delete,
-                        color: AppTheme.errorRed,
-                      ),
-                      title: const Text(
-                        'Supprimer le compte',
-                        style: TextStyle(color: AppTheme.errorRed),
-                      ),
+                    _buildModernCard(
+                      icon: Icons.delete_forever,
+                      title: 'Supprimer le compte',
+                      subtitle: 'Supprimer définitivement mon compte',
                       onTap: () => _deleteAccount(context),
+                      isDestructive: true,
                     ),
                   ],
                 ),
@@ -213,13 +233,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: const [
                       Text(
-                        'Planificator 1.1.0',
+                        'Planificator 2.0.0',
                         style: TextStyle(color: Colors.grey),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Build 1',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],
                   ),
@@ -242,7 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -251,35 +266,186 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ),
-        Column(children: children),
-        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(children: children),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildProfileHeader(AuthRepository authRepository) {
-    final user = authRepository.currentUser;
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: AppTheme.primaryBlue,
-        child: Text(
-          user?.fullName.isNotEmpty == true
-              ? user!.fullName[0].toUpperCase()
-              : '?',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+  Widget _buildModernCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 0,
+        color: isDestructive ? Colors.red.shade50 : Colors.grey.shade100,
+        child: ListTile(
+          leading: Icon(
+            icon,
+            color: isDestructive ? Colors.red.shade600 : AppTheme.primaryBlue,
+            size: 28,
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isDestructive ? Colors.red.shade700 : Colors.black87,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDestructive ? Colors.red.shade600 : Colors.grey.shade600,
+            ),
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: isDestructive ? Colors.red.shade400 : Colors.grey.shade400,
+          ),
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
         ),
       ),
-      title: Text(user?.fullName ?? 'Utilisateur'),
-      subtitle: Text(user?.email ?? ''),
-      trailing: Chip(
-        label: Text(user?.isAdmin == true ? 'Admin' : 'User'),
-        backgroundColor: user?.isAdmin == true
-            ? AppTheme.successGreen
-            : AppTheme.primaryBlue,
-        labelStyle: const TextStyle(color: Colors.white),
+    );
+  }
+
+  Widget _buildModernSwitchCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 0,
+        color: Colors.grey.shade100,
+        child: ListTile(
+          leading: Icon(
+            icon,
+            color: value ? AppTheme.primaryBlue : Colors.grey.shade400,
+            size: 28,
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
+          trailing: Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppTheme.primaryBlue,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernProfileCard(AuthRepository authRepository) {
+    final user = authRepository.currentUser;
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 0,
+        color: Colors.blue.shade100,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: AppTheme.primaryBlue,
+                    child: Text(
+                      user.fullName.isNotEmpty
+                          ? user.fullName[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.fullName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.email,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: user.isAdmin
+                          ? AppTheme.successGreen
+                          : AppTheme.primaryBlue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      user.isAdmin ? 'Admin' : 'Utilisateur',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -291,22 +457,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Mon profil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProfileRow('Nom', user.fullName),
-            _buildProfileRow('Email', user.email),
-            _buildProfileRow('ID', user.userId.toString()),
-            _buildProfileRow(
-              'Rôle',
-              user.isAdmin ? 'Administrateur' : 'Utilisateur',
-            ),
-          ],
+        title: const Text('Détails du profil'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileDetailCard('Nom', user.fullName, Icons.person),
+              const SizedBox(height: 12),
+              _buildProfileDetailCard('Email', user.email, Icons.email),
+              const SizedBox(height: 12),
+              _buildProfileDetailCard(
+                'Identifiant',
+                user.userId.toString(),
+                Icons.badge,
+              ),
+              const SizedBox(height: 12),
+              _buildProfileDetailCard(
+                'Rôle',
+                user.isAdmin ? 'Administrateur' : 'Utilisateur',
+                Icons.shield,
+                backgroundColor: user.isAdmin
+                    ? AppTheme.successGreen
+                    : AppTheme.primaryBlue,
+              ),
+            ],
+          ),
         ),
         actions: [
-          ElevatedButton(
+          FilledButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Fermer'),
           ),
@@ -315,14 +494,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProfileRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildProfileDetailCard(
+    String label,
+    String value,
+    IconData icon, {
+    Color? backgroundColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Icon(icon, color: backgroundColor ?? AppTheme.primaryBlue, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -343,24 +555,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               TextField(
                 controller: oldPassword,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Ancien mot de passe',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
                 ),
                 obscureText: true,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextField(
                 controller: newPassword,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nouveau mot de passe',
+                  prefixIcon: const Icon(Icons.lock_reset_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
                 ),
                 obscureText: true,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextField(
                 controller: confirmPassword,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Confirmer le mot de passe',
+                  prefixIcon: const Icon(Icons.check_circle_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
                 ),
                 obscureText: true,
               ),
@@ -372,12 +602,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Annuler'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               if (newPassword.text != confirmPassword.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Les mots de passe ne correspondent pas'),
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
                 return;
@@ -389,10 +620,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Mot de passe changé')),
+                const SnackBar(
+                  content: Text('Mot de passe changé avec succès'),
+                  behavior: SnackBarBehavior.floating,
+                ),
               );
             },
-            child: const Text('Enregistrer'),
+            child: const Text('Changer'),
           ),
         ],
       ),
@@ -643,5 +877,225 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
       }
     });
+  }
+
+  // Logs & Débogage
+  void _showLogViewer(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => SizedBox(
+        width: MediaQuery.of(context).size.width * 0.95,
+        height: MediaQuery.of(context).size.height * 0.95,
+        child: const LogViewerDialog(),
+      ),
+    );
+  }
+
+  Future<void> _exportLogs() async {
+    try {
+      final logsDir = await log.getLogsDirectory();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logs sauvegardés: $logsDir'),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _clearLogs(BuildContext context) {
+    AppDialogs.confirm(
+      context,
+      title: 'Effacer les logs',
+      message: 'Supprimer tous les logs en mémoire et sur disque ?',
+      confirmText: 'Effacer',
+      cancelText: 'Annuler',
+    ).then((confirmed) async {
+      if (confirmed == true) {
+        log.clear();
+        await log.clearLogFiles();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logs effacés avec succès'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
+
+  // Notifications
+  void _showNotificationTimeDialog(BuildContext context) {
+    final notifRepo = context.read<NotificationRepository>();
+    int hour = notifRepo.notificationHour;
+    int minute = notifRepo.notificationMinute;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: const Text('Configurer les notifications'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'À quelle heure voulez-vous être notifié des traitements du jour suivant ?',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            StatefulBuilder(
+              builder: (context, setState) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Column(
+                        children: [
+                          const Text(
+                            'Heure',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: 70,
+                            child: TextField(
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              controller: TextEditingController(
+                                text: hour.toString().padLeft(2, '0'),
+                              ),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              onChanged: (value) {
+                                final h = int.tryParse(value);
+                                if (h != null && h >= 0 && h < 24) {
+                                  setState(() => hour = h);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        ':',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        children: [
+                          const Text(
+                            'Minute',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: 70,
+                            child: TextField(
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              controller: TextEditingController(
+                                text: minute.toString().padLeft(2, '0'),
+                              ),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              onChanged: (value) {
+                                final m = int.tryParse(value);
+                                if (m != null && m >= 0 && m < 60) {
+                                  setState(() => minute = m);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final notifRepo = context.read<NotificationRepository>();
+              await notifRepo.scheduleCustomNotification(
+                title: 'Prochains Traitements',
+                body: 'Rappel des traitements de demain',
+                hour: hour,
+                minute: minute,
+              );
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Notification planifiée à ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              Navigator.pop(ctx);
+            },
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
   }
 }
