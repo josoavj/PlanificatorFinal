@@ -2,26 +2,54 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:syncfusion_flutter_xlsio/xlsio.dart';
+import 'package:planificator/services/logging_service.dart';
+
+final _logger = createLoggerWithFileOutput(name: 'excel_utils');
 
 class FolderManager {
   static List<Directory> initDesktopStructure() {
-    final desktop = _getDesktopPath();
-    final dossiers = ["Factures", "Traitements"];
-    List<Directory> paths = [];
+    try {
+      final desktop = _getDesktopPath();
+      _logger.i('📁 Desktop trouvé: ${desktop.path}');
 
-    for (var nom in dossiers) {
-      final dir = Directory(p.join(desktop.path, nom));
-      if (!dir.existsSync()) {
-        dir.createSync(recursive: true);
+      final dossiers = ["Factures", "Traitements"];
+      List<Directory> paths = [];
+
+      for (var nom in dossiers) {
+        final dir = Directory(p.join(desktop.path, nom));
+        try {
+          if (!dir.existsSync()) {
+            dir.createSync(recursive: true);
+            _logger.i('✅ Dossier créé: ${dir.path}');
+          } else {
+            _logger.d('ℹ️ Dossier existe déjà: ${dir.path}');
+          }
+          paths.add(dir);
+        } catch (e) {
+          _logger.e('❌ Erreur création dossier $nom: $e');
+          // Créer dans un dossier de secours (Documents)
+          final homeDir = Platform.isWindows
+              ? (envVars['USERPROFILE'] ?? '')
+              : (envVars['HOME'] ?? '');
+          final fallbackDir = Directory(
+            p.join(homeDir, 'Documents', 'Planificator', nom),
+          );
+          fallbackDir.createSync(recursive: true);
+          _logger.i('✅ Dossier de secours créé: ${fallbackDir.path}');
+          paths.add(fallbackDir);
+        }
       }
-      paths.add(dir);
+      return paths;
+    } catch (e) {
+      _logger.e('❌ Erreur initDesktopStructure: $e');
+      rethrow;
     }
-    return paths;
   }
+
+  static final Map<String, String> envVars = Platform.environment;
 
   static Directory _getDesktopPath() {
     String home = "";
-    Map<String, String> envVars = Platform.environment;
 
     if (Platform.isWindows) {
       home = envVars['USERPROFILE'] ?? "";
@@ -29,16 +57,44 @@ class FolderManager {
       home = envVars['HOME'] ?? "";
     }
 
+    if (home.isEmpty) {
+      _logger.w('⚠️ HOME/USERPROFILE non trouvé');
+      throw Exception('Cannot determine home directory');
+    }
+
+    _logger.i('🏠 Home directory: $home');
+
+    // Sur Windows, essayer Desktop d'abord
     var desktop = Directory(p.join(home, 'Desktop'));
+    _logger.d(
+      '🔍 Vérification Desktop: ${desktop.path} (existe: ${desktop.existsSync()})',
+    );
+
     if (!desktop.existsSync()) {
       desktop = Directory(p.join(home, 'Bureau'));
+      _logger.d(
+        '🔍 Vérification Bureau: ${desktop.path} (existe: ${desktop.existsSync()})',
+      );
     }
+
+    if (!desktop.existsSync()) {
+      // Si Bureau et Desktop n'existent pas, créer dans Documents
+      desktop = Directory(p.join(home, 'Documents'));
+      _logger.d(
+        '🔍 Fallback Documents: ${desktop.path} (existe: ${desktop.existsSync()})',
+      );
+    }
+
+    _logger.i('✅ Desktop path final: ${desktop.path}');
     return desktop;
   }
 }
 
 class ExcelService {
   final List<Directory> paths = FolderManager.initDesktopStructure();
+
+  // Cache pour éviter les doublons de styles
+  final Map<String, Style> _styleCache = {};
 
   // --- LOGIQUE COMMUNE POUR LE NETTOYAGE DU NOM (safe_client_name) ---
   String _getSafeName(String name) {
@@ -49,10 +105,13 @@ class ExcelService {
   }
 
   // --- 1. FONCTION : generate_comprehensive_facture_excel (Annuel) ---
-  Future<void> generateComprehensiveFactureExcel(
+  Future<String> generateComprehensiveFactureExcel(
     List<Map<String, dynamic>> data,
     String clientFullName,
   ) async {
+    // Vider le cache avant de générer un nouveau fichier
+    _styleCache.clear();
+
     final int reportPeriod = DateTime.now().year;
     final String safeName = _getSafeName(clientFullName);
 
@@ -82,7 +141,7 @@ class ExcelService {
     // Logique Totaux (Simule Pandas sum/groupby)
     _insertTotals(sheet, workbook, data, currentRow, isMonthly: false);
 
-    _saveFile(
+    return _saveFile(
       workbook,
       paths[0],
       "Rapport_Factures_${safeName}_$reportPeriod.xlsx",
@@ -90,12 +149,15 @@ class ExcelService {
   }
 
   // --- 2. FONCTION : generer_facture_excel (Mensuel ou Annuel) ---
-  Future<void> genererFactureExcel(
+  Future<String> genererFactureExcel(
     List<Map<String, dynamic>> data,
     String clientFullName,
     int year,
     int month,
   ) async {
+    // Vider le cache avant de générer un nouveau fichier
+    _styleCache.clear();
+
     final String safeName = _getSafeName(clientFullName);
 
     final Workbook workbook = Workbook();
@@ -135,15 +197,18 @@ class ExcelService {
     );
     _insertTotals(sheet, workbook, data, currentRow, isMonthly: month != 0);
 
-    _saveFile(workbook, paths[0], filename);
+    return _saveFile(workbook, paths[0], filename);
   }
 
   // --- 3. FONCTION : generate_traitements_excel ---
-  Future<void> generateTraitementsExcel(
+  Future<String> generateTraitementsExcel(
     List<Map<String, dynamic>> data,
     int year,
     int month,
   ) async {
+    // Vider le cache avant de générer un nouveau fichier
+    _styleCache.clear();
+
     final String monthNameFr = DateFormat.MMMM(
       'fr_FR',
     ).format(DateTime(year, month)).toUpperCase();
@@ -172,7 +237,7 @@ class ExcelService {
         cell.setText(headers[i]);
         cell.cellStyle = _getBoldBorderStyle(workbook);
       }
-      // Données + Couleurs (Effectué = Rouge, À venir = Vert)
+      // Données + Couleurs (Effectué = Vert, À venir = Rouge)
       for (int i = 0; i < data.length; i++) {
         for (int j = 0; j < headers.length; j++) {
           var cell = sheet.getRangeByIndex(6 + i, j + 1);
@@ -182,9 +247,9 @@ class ExcelService {
 
           if (headers[j] == 'Etat traitement') {
             if (value == 'Effectué') {
-              cell.cellStyle.backColor = '#FFC7CE';
+              cell.cellStyle.backColor = '#C6EFCE'; // Vert pour effectué
             } else if (value == 'À venir') {
-              cell.cellStyle.backColor = '#C6EFCE';
+              cell.cellStyle.backColor = '#FFC7CE'; // Rouge pour à venir
             }
           }
         }
@@ -194,7 +259,7 @@ class ExcelService {
     for (int i = 1; i <= 10; i++) {
       sheet.autoFitColumn(i);
     }
-    _saveFile(workbook, paths[1], "traitements-$monthNameFr-$year.xlsx");
+    return _saveFile(workbook, paths[1], "traitements-$monthNameFr-$year.xlsx");
   }
 
   // --- MÉTHODES PRIVÉES (LOGIQUE INTERNE) ---
@@ -273,26 +338,85 @@ class ExcelService {
         isMonthly ? item['montant_facture'] : item['Montant Facturé'],
       ];
 
+      // Déterminer le statut de paiement pour la coloration
+      String status =
+          (isMonthly
+                  ? item['Etat paiement (Payée ou non)']
+                  : item['Etat de Paiement'])
+              .toString();
+
+      // Appliquer la couleur et les formats à chaque cellule de la ligne
       for (int cIdx = 0; cIdx < rowData.length; cIdx++) {
         var cell = sheet.getRangeByIndex(rIdx, cIdx + 1);
-        cell.setValue(rowData[cIdx]);
-        cell.cellStyle.borders.all.lineStyle = LineStyle.thin;
+        var value = rowData[cIdx];
 
-        // Couleurs Payé/Non payé
-        String status =
-            (isMonthly
-                    ? item['Etat paiement (Payée ou non)']
-                    : item['Etat de Paiement'])
-                .toString();
-        if (status == 'Payé') {
-          cell.cellStyle.backColor = '#C6EFCE';
-        } else if (status == 'Non payé') {
-          cell.cellStyle.backColor = '#FFC7CE';
+        // Créer le style avec les propriétés appropriées
+        final cellStyle = wb.styles.add('row_style_$rIdx$cIdx');
+        cellStyle.borders.all.lineStyle = LineStyle.thin;
+
+        // Appliquer la couleur de fond selon le statut
+        if (status == 'Payé' || status == 'Payée') {
+          cellStyle.backColor = '#C6EFCE'; // Vert pour payé
+        } else {
+          cellStyle.backColor = '#FFC7CE'; // Rouge pour non payé/à venir
         }
+
+        // Formater les dates (colonnes 1 et 2)
+        if (cIdx == 1 || cIdx == 2) {
+          // Colonnes de dates
+          if (value is DateTime) {
+            cell.setDateTime(value);
+            cellStyle.numberFormat = 'dd/mm/yy';
+          } else if (value is String && value != 'N/A') {
+            try {
+              final date = DateTime.parse(value);
+              cell.setDateTime(date);
+              cellStyle.numberFormat = 'dd/mm/yy';
+            } catch (e) {
+              cell.setText(value.toString());
+            }
+          } else {
+            cell.setText(value?.toString() ?? 'N/A');
+          }
+        }
+        // Formater les montants (colonne 8)
+        else if (cIdx == 8) {
+          cell.setText(_formatMontant(value));
+        } else {
+          cell.setValue(value);
+        }
+
+        cell.cellStyle = cellStyle;
       }
       rIdx++;
     }
     return rIdx + 1;
+  }
+
+  Style _getGreenRowStyle(Workbook wb) {
+    if (_styleCache.containsKey('greenRow')) {
+      return _styleCache['greenRow']!;
+    }
+
+    Style s = wb.styles.add(
+      'greenRow_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    s.backColor = '#C6EFCE';
+    s.borders.all.lineStyle = LineStyle.thin;
+    _styleCache['greenRow'] = s;
+    return s;
+  }
+
+  Style _getRedRowStyle(Workbook wb) {
+    if (_styleCache.containsKey('redRow')) {
+      return _styleCache['redRow']!;
+    }
+
+    Style s = wb.styles.add('redRow_${DateTime.now().millisecondsSinceEpoch}');
+    s.backColor = '#FFC7CE';
+    s.borders.all.lineStyle = LineStyle.thin;
+    _styleCache['redRow'] = s;
+    return s;
   }
 
   void _insertTotals(
@@ -308,18 +432,70 @@ class ExcelService {
     final String statusKey = isMonthly
         ? 'Etat paiement (Payée ou non)'
         : 'Etat de Paiement';
+    final String treatmentKey = isMonthly
+        ? 'Traitement (Type)'
+        : 'Type de Traitement';
 
-    double total = data.fold(0, (prev, e) => prev + (e[amountKey] ?? 0));
+    // Calcul des totaux généraux - convertir en double/num
+    double total = data.fold(0.0, (prev, e) {
+      final amount = e[amountKey];
+      final numAmount = (amount is num) ? amount.toDouble() : 0.0;
+      return prev + numAmount;
+    });
+
     double paid = data
-        .where((e) => e[statusKey] == 'Payé')
-        .fold(0, (prev, e) => prev + (e[amountKey] ?? 0));
+        .where((e) => e[statusKey] == 'Payé' || e[statusKey] == 'Payée')
+        .fold(0.0, (prev, e) {
+          final amount = e[amountKey];
+          final numAmount = (amount is num) ? amount.toDouble() : 0.0;
+          return prev + numAmount;
+        });
 
+    // Grouper par type de traitement
+    final Map<String, double> totalByTreatment = {};
+    for (var item in data) {
+      final treatment = item[treatmentKey]?.toString() ?? 'N/A';
+      final amount = item[amountKey];
+      final numAmount = (amount is num) ? amount.toDouble() : 0.0;
+      totalByTreatment[treatment] =
+          (totalByTreatment[treatment] ?? 0) + numAmount;
+    }
+
+    // Ajouter une ligne vide
+    row++;
+
+    // Afficher les totaux par type de traitement
+    if (totalByTreatment.isNotEmpty) {
+      sheet.getRangeByIndex(row, 1).setText("Totaux par Type de Traitement :");
+      sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
+      row += 2;
+
+      for (var entry in totalByTreatment.entries) {
+        sheet.getRangeByIndex(row, 1).setText(entry.key);
+        sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
+        sheet.getRangeByIndex(row, 9).setText(_formatMontant(entry.value));
+        sheet.getRangeByIndex(row, 9).cellStyle.bold = true;
+        sheet.getRangeByIndex(row, 9).cellStyle.backColor = '#E7E6E6';
+        row++;
+      }
+    }
+
+    // Ligne de séparation
+    row++;
+
+    // Afficher les totaux généraux
     sheet.getRangeByIndex(row, 1).setText("Montant Total Facturé :");
-    sheet.getRangeByIndex(row++, 9).setNumber(total);
+    sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 9).setText(_formatMontant(total));
+    sheet.getRangeByIndex(row, 9).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 9).cellStyle.backColor = '#FFF2CC';
+    row++;
 
     sheet.getRangeByIndex(row, 1).setText("Montant Total Payé :");
-    sheet.getRangeByIndex(row, 9).setNumber(paid);
-    sheet.getRangeByIndex(row++, 9).cellStyle.backColor = '#C6EFCE';
+    sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 9).setText(_formatMontant(paid));
+    sheet.getRangeByIndex(row, 9).cellStyle.bold = true;
+    sheet.getRangeByIndex(row, 9).cellStyle.backColor = '#C6EFCE';
 
     // Auto-fit à la fin
     for (int i = 1; i <= 9; i++) {
@@ -328,38 +504,78 @@ class ExcelService {
   }
 
   String _formatPaymentDetails(Map<String, dynamic> item) {
-    String mode = item['Mode de Paiement'] ?? 'N/A';
-    String date = item['Date de Paiement'] != null
-        ? DateFormat('yyyy-MM-dd').format(item['Date de Paiement'])
-        : 'N/A';
-    if (mode == 'Chèque') {
-      return "Chèque: ${item['Numéro du Chèque']} ($date, ${item['Établissement Payeur']})";
+    // Utiliser la clé 'Détails Paiement' déjà calculée dans export_screen.dart
+    return item['Détails Paiement'] ?? 'N/A';
+  }
+
+  /// Formate un montant au format: 90 000 Ar, 120 000 Ar, etc.
+  String _formatMontant(dynamic amount) {
+    if (amount == null) return 'N/A';
+
+    // Convertir en int correctement (gère les int et les double)
+    int intAmount = 0;
+    if (amount is int) {
+      intAmount = amount;
+    } else if (amount is double) {
+      intAmount = amount.toInt();
+    } else {
+      intAmount = int.tryParse(amount.toString()) ?? 0;
     }
-    if (mode == 'Virement' || mode == 'Mobile Money' || mode == 'Espèce') {
-      return "$mode: ($date)";
-    }
-    return "N/A";
+
+    final formatter = NumberFormat('#,##0', 'fr_FR');
+    return '${formatter.format(intAmount)} Ar';
   }
 
   Style _getHeaderStyle(Workbook wb) {
-    Style s = wb.styles.add('h');
-    s.bold = true;
-    s.fontSize = 14;
-    s.hAlign = HAlignType.center;
-    return s;
+    // Vérifier le cache d'abord
+    if (_styleCache.containsKey('header')) {
+      return _styleCache['header']!;
+    }
+
+    // Si pas en cache, créer et mettre en cache
+    try {
+      final style = wb.styles['h']!;
+      _styleCache['header'] = style;
+      return style;
+    } catch (e) {
+      // Le style n'existe pas, le créer
+      Style s = wb.styles.add('h');
+      s.bold = true;
+      s.fontSize = 14;
+      s.hAlign = HAlignType.center;
+      _styleCache['header'] = s;
+      return s;
+    }
   }
 
   Style _getBoldBorderStyle(Workbook wb) {
-    Style s = wb.styles.add(DateTime.now().microsecondsSinceEpoch.toString());
-    s.bold = true;
-    s.borders.all.lineStyle = LineStyle.thin;
-    return s;
+    // Vérifier le cache d'abord
+    if (_styleCache.containsKey('boldBorder')) {
+      return _styleCache['boldBorder']!;
+    }
+
+    // Si pas en cache, créer et mettre en cache
+    try {
+      final style = wb.styles['bold_border']!;
+      _styleCache['boldBorder'] = style;
+      return style;
+    } catch (e) {
+      // Le style n'existe pas, le créer
+      Style s = wb.styles.add('bold_border');
+      s.bold = true;
+      s.borders.all.lineStyle = LineStyle.thin;
+      _styleCache['boldBorder'] = s;
+      return s;
+    }
   }
 
-  void _saveFile(Workbook wb, Directory dir, String fileName) {
+  String _saveFile(Workbook wb, Directory dir, String fileName) {
     final List<int> bytes = wb.saveAsStream();
-    File(p.join(dir.path, fileName)).writeAsBytesSync(bytes);
+    final String filePath = p.join(dir.path, fileName);
+    File(filePath).writeAsBytesSync(bytes);
     wb.dispose();
+    _logger.i('✅ Fichier sauvegardé: $filePath');
+    return filePath;
   }
 
   /// Méthode générique pour créer des exports Excel
