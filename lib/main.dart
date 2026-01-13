@@ -66,6 +66,10 @@ void main() async {
       database: config.database ?? 'Planificator',
     );
 
+    // Activer l'utilisation des isolates pour les requêtes (résout le freeze sur Windows)
+    db.setUseIsolates(true);
+    logger.i('✅ Isolates activés pour les requêtes');
+
     // Essayer de se connecter d'abord
     try {
       await db.connect();
