@@ -27,8 +27,10 @@ class FactureRepository extends ChangeNotifier {
         INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
         INNER JOIN Planning p ON pd.planning_id = p.planning_id
         INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
+        INNER JOIN Client cl ON co.client_id = cl.client_id
         WHERE t.contrat_id = ?
-        ORDER BY f.date_traitement ASC
+        ORDER BY cl.nom ASC
       ''';
 
       final rows = await _db.query(sql, [contratId]);
@@ -77,7 +79,7 @@ class FactureRepository extends ChangeNotifier {
         LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
         LEFT JOIN Client cl ON co.client_id = cl.client_id
         WHERE cl.client_id = ?
-        ORDER BY f.date_traitement ASC
+        ORDER BY cl.nom ASC
       ''';
 
       final rows = await _db.query(sql, [clientId]);
@@ -129,7 +131,7 @@ class FactureRepository extends ChangeNotifier {
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
         LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
         LEFT JOIN Client cl ON co.client_id = cl.client_id
-        ORDER BY f.date_traitement ASC
+        ORDER BY cl.nom ASC
       ''';
 
       final rows = await _db.query(sql);
