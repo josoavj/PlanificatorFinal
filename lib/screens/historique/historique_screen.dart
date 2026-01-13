@@ -57,9 +57,9 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
     _loadData();
   }
 
-  void _loadData() {
-    // ✅ CORRECTION: Charger TOUS les traitements (passés + futurs) pas juste les à venir
-    _planningDetailsRepo.loadAllTreatmentsComplete();
+  Future<void> _loadData() async {
+    // CORRECTION: Charger TOUS les traitements (passés + futurs) pas juste les à venir
+    await _planningDetailsRepo.loadAllTreatmentsComplete();
   }
 
   @override
@@ -86,7 +86,7 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
             );
           }
 
-          // ✅ CORRECTION: Utiliser allTreatmentsComplete pour afficher TOUS les traitements
+          // CORRECTION: Utiliser allTreatmentsComplete pour afficher TOUS les traitements
           final allTreatments = repository.allTreatmentsComplete;
 
           // Compter les traitements par catégorie (utiliser les codes courts AT, PC, NI, RO)
@@ -795,7 +795,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // ✅ NOUVEAU: Section Remarques
+                // NOUVEAU: Section Remarques
                 if (remarques.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1020,7 +1020,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                     ],
                   ),
 
-                // ✅ NOUVEAU: Section Signalements
+                // NOUVEAU: Section Signalements
                 if (signalements.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1089,7 +1089,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                     ],
                   ),
 
-                // ✅ NOUVEAU: Section Factures
+                // NOUVEAU: Section Factures
                 if (factures.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1345,7 +1345,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                     ),
                                   ],
                                 ],
-                                // ✅ NOUVEAU: Historique des prix
+                                // NOUVEAU: Historique des prix
                                 if (priceHistories.containsKey(
                                       facture.factureId,
                                     ) &&

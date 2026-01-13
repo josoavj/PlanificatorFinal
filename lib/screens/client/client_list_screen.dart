@@ -23,8 +23,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
     super.initState();
     _searchController = TextEditingController();
     // Charger les clients
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClientRepository>().loadClients();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<ClientRepository>().loadClients();
     });
   }
 

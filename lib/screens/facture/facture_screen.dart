@@ -22,8 +22,8 @@ class _FactureScreenState extends State<FactureScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<FactureRepository>().loadAllFactures();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<FactureRepository>().loadAllFactures();
     });
   }
 

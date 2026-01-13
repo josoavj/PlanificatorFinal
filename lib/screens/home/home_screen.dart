@@ -99,10 +99,11 @@ class _DashboardTabState extends State<_DashboardTab> {
     _loadData();
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
     logger.i('🔄 Démarrage du chargement des données complètes...');
-    _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
-    _planningDetailsRepo.loadUpcomingTreatmentsComplete();
+    await _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
+    await _planningDetailsRepo.loadUpcomingTreatmentsComplete();
+    logger.i('✅ Chargement complété');
   }
 
   @override

@@ -53,8 +53,10 @@ class _PlanningScreenState extends State<PlanningScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Charger TOUS les traitements (passés, présents, futurs) pour le calendrier
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context
+          .read<PlanningDetailsRepository>()
+          .loadAllTreatmentsComplete();
     });
   }
 
@@ -103,8 +105,10 @@ class _PlanningScreenState extends State<PlanningScreen> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'planning_refresh',
-        onPressed: () {
-          context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete();
+        onPressed: () async {
+          await context
+              .read<PlanningDetailsRepository>()
+              .loadAllTreatmentsComplete();
         },
         tooltip: 'Actualiser',
         child: const Icon(Icons.refresh),
