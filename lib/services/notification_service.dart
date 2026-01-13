@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdata;
@@ -44,9 +45,13 @@ class NotificationService {
             defaultPresentSound: true,
           );
 
+      const LinuxInitializationSettings linuxSettings =
+          LinuxInitializationSettings(defaultActionName: 'Open notification');
+
       const InitializationSettings initSettings = InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
+        linux: linuxSettings,
       );
 
       await _flutterLocalNotificationsPlugin.initialize(
@@ -54,11 +59,19 @@ class NotificationService {
         onDidReceiveNotificationResponse: _handleNotificationResponse,
       );
 
-      // Initialiser WorkManager pour les tâches planifiées
-      await Workmanager().initialize(
-        callbackDispatcher,
-        isInDebugMode: kDebugMode,
-      );
+      // Initialiser WorkManager pour les tâches planifiées (Android et iOS uniquement)
+      if (Platform.isAndroid || Platform.isIOS) {
+        await Workmanager().initialize(
+          callbackDispatcher,
+          isInDebugMode: kDebugMode,
+        );
+        log.info('WorkManager initialisé', source: 'NotificationService');
+      } else {
+        log.info(
+          'WorkManager non disponible sur cette plateforme',
+          source: 'NotificationService',
+        );
+      }
 
       _isInitialized = true;
       log.info(
@@ -130,6 +143,17 @@ class NotificationService {
     if (!_isInitialized) return;
 
     try {
+      // Sur Windows et Linux, les notifications planifiées ne sont pas supportées
+      // Afficher juste une notification immédiate
+      if (Platform.isWindows || Platform.isLinux) {
+        log.info(
+          'Notification immédiate sur $Platform: $title',
+          source: 'NotificationService',
+        );
+        await showNotification(title: title, body: body, payload: payload);
+        return;
+      }
+
       final now = tz.TZDateTime.now(tz.local);
       var scheduledDate = tz.TZDateTime(
         tz.local,
