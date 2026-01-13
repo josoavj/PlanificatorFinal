@@ -178,6 +178,10 @@ class _ExportScreenState extends State<ExportScreen> {
                   onChanged: (value) {
                     setState(() {
                       _selectedCategory = value;
+                      // Si Facture: forcer Tous les mois
+                      if (value == 'Facture') {
+                        _selectedMois = 'Tous';
+                      }
                     });
                   },
                 ),
@@ -198,17 +202,24 @@ class _ExportScreenState extends State<ExportScreen> {
                   const SizedBox(height: 24),
                 ],
 
-                // Mois
-                _buildDropdownRow(
-                  label: 'Mois',
-                  value: _selectedMois,
-                  items: _mois,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedMois = value;
-                    });
-                  },
-                ),
+                // Mois (désactivé pour Facture, obligatoirement "Tous")
+                if (_selectedCategory == 'Traitement')
+                  _buildDropdownRow(
+                    label: 'Mois',
+                    value: _selectedMois,
+                    items: _mois,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedMois = value;
+                      });
+                    },
+                  )
+                else
+                  _buildDisabledDropdownRow(
+                    label: 'Mois',
+                    value: 'Tous',
+                    reason: 'Tous les mois (export Facture)',
+                  ),
                 const SizedBox(height: 24),
 
                 // Client
@@ -470,6 +481,65 @@ class _ExportScreenState extends State<ExportScreen> {
     );
   }
 
+  Widget _buildDisabledDropdownRow({
+    required String label,
+    required String value,
+    required String reason,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 150,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey[100],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                Tooltip(
+                  message: reason,
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _actualiserDonnees() async {
     setState(() {
       _isLoadingClients = true;
@@ -664,10 +734,6 @@ class _ExportScreenState extends State<ExportScreen> {
       _selectedClient = 'Tous';
       _lastExportPath = null;
     });
-  }
-
-  void _fermerEcran() {
-    Navigator.pop(context);
   }
 
   void _showSuccessDialog(BuildContext context, String title, String message) {

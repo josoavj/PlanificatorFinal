@@ -62,20 +62,20 @@ void main() async {
       database: config.database ?? 'Planificator',
     );
 
+    // Essayer de se connecter d'abord
+    try {
+      await db.connect();
+      logger.i('✅ Base de données connectée');
+    } catch (e) {
+      logger.e('⚠️ Connexion impossible: $e');
+    }
+
     // Charger les traitements du lendemain et planifier les notifications
     try {
       final notifRepo = NotificationRepository();
       await notifRepo.loadAndNotifyNextDayTreatments();
     } catch (e) {
       log.warning('⚠️ Erreur chargement traitements: $e', source: 'main');
-    }
-
-    // Essayer de se connecter
-    try {
-      await db.connect();
-      logger.i('✅ Base de données connectée');
-    } catch (e) {
-      logger.e('⚠️ Connexion impossible: $e');
     }
   }
 

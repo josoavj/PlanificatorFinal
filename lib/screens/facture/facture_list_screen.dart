@@ -368,9 +368,13 @@ class _FacturesListByClientScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Trier les factures par date croissante (plus anciennes en premier)
+    final sortedFactures = List<Facture>.from(factures)
+      ..sort((a, b) => a.dateTraitement.compareTo(b.dateTraitement));
+
     return Scaffold(
       appBar: AppBar(title: Text(clientName)),
-      body: factures.isEmpty
+      body: sortedFactures.isEmpty
           ? const EmptyStateWidget(
               title: 'Aucune facture',
               message: 'Aucune facture pour ce client',
@@ -378,9 +382,9 @@ class _FacturesListByClientScreen extends StatelessWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
-              itemCount: factures.length,
+              itemCount: sortedFactures.length,
               itemBuilder: (context, index) {
-                final facture = factures[index];
+                final facture = sortedFactures[index];
                 return _FactureDetailCard(
                   facture: facture,
                   onTap: () {

@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Flutter-%3E%3D3.1.0-blue?style=flat-square" alt="Flutter Version">
   <img src="https://img.shields.io/badge/Dart-%3E%3D3.1.0-blue?style=flat-square" alt="Dart Version">
   <img src="https://img.shields.io/badge/MySQL-8.0-orange?style=flat-square" alt="MySQL Version">
-  <img src="https://img.shields.io/badge/Version-1.0.0-green?style=flat-square" alt="Current Version">
+  <img src="https://img.shields.io/badge/Version-2.0.0-green?style=flat-square" alt="Current Version">
   <img src="https://img.shields.io/badge/Status-Stable-brightgreen?style=flat-square" alt="Status">
   <img src="https://img.shields.io/github/last-commit/josoavj/PlanificatorFinal?style=flat-square" alt="Last Commit">
 </p>
@@ -27,6 +27,7 @@
 
 - [📖 À Propos](#-à-propos)
 - [✨ Fonctionnalités](#-fonctionnalités)
+- [🚀 Fonctionnalités Avancées](#-fonctionnalités-avancées)
 - [🏗️ Architecture](#-architecture)
 - [💾 Base de Données](#-base-de-données)
 - [🔧 Utilitaires](#-utilitaires)
@@ -34,14 +35,19 @@
 - [🐛 Bugs Fixes Récents](#-bugs-fixes-récents)
 - [🚀 Démarrage Rapide](#-démarrage-rapide)
 - [📦 Dépendances](#-dépendances)
+- [📊 État du Projet](#-état-du-projet)
+- [🔄 Stratégie de Commit](#-stratégie-de-commit)
 - [👨‍💻 Auteur](#-auteur)
 - [📄 Licence](#-licence)
+- [🎯 Roadmap Futures](#-roadmap-futures)
+- [💡 Contribution](#-contribution)
+- [🐛 Signaler un Bug](#-signaler-un-bug)
 
 ---
 
 ## 📖 À Propos
 
-**Planificator** est une application Flutter moderne et intuitive conçue pour révolutionner la gestion des contrats et de la facturation. Actuellement en **version 1.0.0 (Stable)**, elle offre une solution complète pour :
+**Planificator** est une application Flutter moderne et intuitive conçue pour révolutionner la gestion des contrats et de la facturation. Actuellement en **version 2.0.0 (Stable)**, elle offre une solution complète pour :
 
 - 📋 Gérer efficacement vos clients et contrats
 - 📅 Planifier vos interventions avec un calendrier interactif
@@ -62,21 +68,33 @@
 
 ### Actuellement Disponibles ✅
 
-- **📋 Gestion des Clients**
+#### 🔐 Authentification & Sécurité
+  - Système de **connexion sécurisée**
+    - Hash des mots de passe avec bcrypt
+    - Validation des identifiants
+    - Sessions utilisateur persistantes
+  - **Système d'enregistrement** (inscription)
+    - Création de nouveaux comptes
+    - Validation des données
+  - Protection des données sensibles
+
+#### 📋 Gestion des Clients
   - Création, édition et suppression de clients
   - Support des catégories (Particulier, Organisation, Société)
   - Gestion complète : NIF, STAT, Adresse, Téléphone, Email
   - Classification par axe géographique (Nord, Sud, Est, Ouest, Centre)
   - Comptage précis des traitements par client
+  - Recherche et filtrage des clients
 
-- **📄 Gestion des Contrats**
+#### 📄 Gestion des Contrats
   - Création de contrats avec sélection multiple de traitements
   - Support des contrats déterminés (date fin) et indéterminés
   - Affichage complet : numéro, référence, dates, durée
   - Gestion des traitements associés avec détails
   - Rechargement automatique après création
+  - Vue complète des contrats actifs et archivés
 
-- **💰 Gestion des Factures (Nouvel Écran)**
+#### 💰 Gestion des Factures
   - Recherche moderne : par client, traitement, date
   - Groupement intelligent par client-traitement
   - Affichage du montant total, payé et non payé
@@ -87,25 +105,62 @@
     - Crée une piste d'audit dans `Historique_prix`
   - Validation des montants (positifs uniquement)
   - Gestion automatique des espaces dans les entrées
+  - États des factures (payée, partiellement payée, impayée)
 
-- **📅 Gestion du Planning**
+#### 📅 Gestion du Planning
   - Calendrier interactif avec `table_calendar`
   - Affichage des traitements prévus et en cours
   - Filtrage par état (À venir, En cours, Effectué)
   - Génération automatique des dates de planning
   - Bouton de rafraîchissement flottant
+  - Vue détaillée des plannings avec statuts
 
-- **🏠 Tableau de Bord (Home)**
+#### 🏠 Tableau de Bord (Home)
   - Vue "En cours" : traitements du mois actuel
   - Vue "À venir" : traitements futurs (sans redondance 1 mois)
   - Affichage : dates, noms, états et axes
   - **Bouton de rafraîchissement** pour mise à jour en temps réel
   - Charge tous les statuts (pas seulement "À venir")
 
-- **📊 Historique**
+#### 📊 Historique & Audit
   - Suivi complet de toutes les actions
   - Affichage des modifications de prix avec ancien/nouveau montant
   - Piste d'audit pour conformité
+  - Historique des traitements et modifications
+
+#### 📤 Export de Données
+  - **Export en Excel**
+    - Export des factures par client-traitement
+    - Formatting automatique avec en-têtes
+    - Support des montants et dates formatés
+  - **Export de rapports**
+    - Données complètes des factures
+    - Historique des modifications
+    - Statistiques de gestion
+
+#### 🔧 Paramètres & Configuration
+  - Gestion des préférences utilisateur
+  - Configuration de la base de données
+  - Paramètres d'affichage
+  - Gestion des notifications
+
+#### ℹ️ À Propos
+  - Informations de l'application
+  - Numéro de version actuel
+  - Droits d'auteur et crédits
+  - Liens utiles
+
+#### 📬 Remarques & Signalements
+  - Ajout de remarques sur les traitements
+  - Signalement de problèmes ou d'anomalies
+  - Suivi des commentaires utilisateur
+  - Piste d'audit des signalements
+
+#### 🔔 Notifications
+  - **Notifications locales** intégrées
+  - Alertes planifiées pour les traitements
+  - Rappels des factures impayées
+  - Gestion des événements avec timezone
 
 ---
 
@@ -248,6 +303,19 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 
 ## 📱 Écrans Principaux
 
+### 🔐 Authentification
+- **Écran de Connexion**
+  - Formulaire de connexion sécurisée
+  - Validation des identifiants
+  - Gestion des erreurs de connexion
+  - Lien vers inscription
+
+- **Écran d'Enregistrement**
+  - Création de nouveaux comptes
+  - Validation des mots de passe
+  - Confirmation des données
+  - Retour à la connexion
+
 ### 🏠 Accueil (Home)
 - Deux tables côte à côte : "En cours" et "À venir"
 - ⚡ Bouton de rafraîchissement flottant
@@ -269,7 +337,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
   - Revue et confirmation
 - 📊 Résumé : nombre de clients, contrats et traitements
 
-### 💰 Factures (Nouvel Écran)
+### 💰 Factures
 - 🔍 **Onglet de Recherche Moderne**
   - Filtrage par client
   - Filtrage par traitement
@@ -291,6 +359,47 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 - 📍 Génération automatique des dates de planning
 - 🔄 Filtrage par statut (À venir, En cours, Effectué)
 - 🔄 Bouton de rafraîchissement flottant
+- 📊 Vue détaillée des événements planifiés
+
+### 📊 Historique
+- 📖 Affichage complet de tous les historiques
+- 🔄 Tri par date décroissante (récentes en premier)
+- 📝 Détails des modifications :
+  - Type de modification
+  - Ancien et nouveau montants
+  - Date de changement
+  - Utilisateur responsable
+- 🔍 Recherche et filtrage par client/traitement
+
+### 📬 Remarques & Signalements
+- ➕ Ajout de remarques sur les traitements
+- 🚩 Signalement de problèmes
+- 💬 Gestion des commentaires
+- 🔔 Suivi des signalements
+
+### 📤 Export de Données
+- 📊 **Export en Excel**
+  - Export des factures complètes
+  - Formatting professionnel
+  - Support de multiples formats
+- 📋 **Rapports**
+  - Statistiques de gestion
+  - Historique des modifications
+  - État des factures par client
+
+### 🔧 Paramètres
+- ⚙️ Configuration générale
+- 🗄️ Gestion de la base de données
+- 🎨 Préférences d'affichage
+- 📱 Paramètres des notifications
+- 🔔 Configuration des alertes
+
+### ℹ️ À Propos
+- 📋 Informations de l'application
+- 🔢 Numéro de version
+- 👨‍💻 Informations de l'auteur
+- 📚 Liens utiles
+- ⚖️ Licences et crédits
 
 ---
 
@@ -376,22 +485,54 @@ Utilisez ces identifiants si disponibles dans votre base de données :
 ### Dépendances Principales
 
 ```yaml
+# Framework & SDK
+flutter:
+  sdk: flutter
+  version: >=3.1.0
+
 # State management
-provider: ^6.0.0
+provider: ^6.1.5+1
 
 # Database
 mysql1: ^0.20.0
+path_provider: ^2.1.0
 
 # UI & Design
-flutter:
-  sdk: flutter
 cupertino_icons: ^1.0.0
+table_calendar: ^3.2.0
 
 # Utilities
-intl: ^0.18.0              # Internationalisation (fr_FR)
-logger: ^1.3.0             # Logging avec emojis
-table_calendar: ^3.0.0     # Calendrier interactif
-shared_preferences: ^2.1.0 # Stockage local
+intl: ^0.20.2              # Internationalisation (fr_FR)
+logger: ^2.6.2             # Logging avec emojis
+shared_preferences: ^2.2.0 # Stockage local
+http: ^1.6.0              # Requêtes HTTP
+collection: ^1.19.1       # Utilitaires collection
+
+# Sécurité & Cryptographie
+crypto: ^3.0.7            # Utilitaires cryptographiques
+bcrypt: ^1.1.3            # Hash des mots de passe
+
+# Export & Fichiers
+excel: ^2.1.0             # Création de fichiers Excel
+path: ^1.8.0              # Gestion des chemins
+syncfusion_flutter_xlsio: ^29.2.11  # Création avancée Excel
+url_launcher: ^6.2.0      # Ouverture d'URLs
+
+# Notifications & Calendrier
+flutter_local_notifications: ^17.1.0  # Notifications locales
+timezone: ^0.9.2                      # Gestion des fuseaux horaires
+workmanager: ^0.5.1                   # Tâches planifiées en arrière-plan
+```
+
+### Versions Compatibles
+
+```yaml
+environment:
+  sdk: ^3.10.4
+
+Flutter: ≥3.1.0
+Dart: ≥3.1.0
+MySQL: ≥8.0
 ```
 
 ### Dev Dependencies
@@ -402,19 +543,80 @@ flutter_lints: ^2.0.0
 
 ---
 
+## � Fonctionnalités Avancées
+
+### 💾 Gestion Avancée de la Base de Données
+- **MySQL Connection Pooling**
+  - Connexions persistantes optimisées
+  - Gestion automatique des erreurs de connexion
+  - Reconnexion automatique en cas de déconnexion
+
+- **Requêtes Optimisées**
+  - SQL joins optimisés pour les performances
+  - Indexation efficace des clés primaires et étrangères
+  - Caching intelligent des données
+  - Pagination pour les grandes listes
+
+### 📊 Utilitaires Avancés
+- **NumberFormatter avec Validation**
+  - Parsing intelligent des montants (accepte les espaces)
+  - Formatting avec séparateurs
+  - Validation robuste avec regex
+  - Montants positifs uniquement
+
+- **Localisation Complète**
+  - Support multilingue (français par défaut)
+  - Dates formatées selon la locale
+  - Nombres et montants localisés
+  - Support des fuseau horaires
+
+### 🔐 Sécurité Renforcée
+- **Authentification**
+  - Hash bcrypt pour les mots de passe
+  - Sessions utilisateur persistantes
+  - Protection contre les attaques par injection SQL
+  
+- **Audit & Conformité**
+  - Piste d'audit complète (`Historique_prix`)
+  - Traçabilité de toutes les modifications
+  - Timestamps de chaque action
+  - Identification de l'utilisateur
+
+### 📱 Notifications Intelligentes
+- **Notifications Locales**
+  - Alertes planifiées pour les traitements
+  - Rappels des factures impayées
+  - Support des timezones
+  - Gestion en arrière-plan avec workmanager
+
+### 📊 Rapports & Analytics
+- **Génération de Rapports**
+  - Export Excel professionnel
+  - Statistiques de gestion
+  - Analyse des factures par client
+  - Historique des modifications
+
+---
+
 ## 📊 État du Projet
 
 | Composant | État | Completude |
 |-----------|------|-----------|
+| Authentification | ✅ Stable | 100% |
 | Gestion Clients | ✅ Stable | 100% |
 | Gestion Contrats | ✅ Stable | 100% |
 | Gestion Factures | ✅ Stable | 100% |
 | Planning | ✅ Stable | 100% |
 | Historique | ✅ Stable | 100% |
+| Remarques & Signalements | ✅ Stable | 100% |
+| Export de Données | ✅ Stable | 100% |
+| Paramètres | ✅ Stable | 100% |
+| Notifications | ✅ Stable | 100% |
 | UI/UX | ✅ Stable | 95% |
 | Base de Données | ✅ Optimisée | 100% |
+| Sécurité | ✅ Renforcée | 100% |
 | Tests | 🚧 À faire | 20% |
-| Documentation | ✅ À jour | 90% |
+| Documentation | ✅ À jour | 95% |
 
 ---
 
@@ -447,28 +649,6 @@ Tous les changements ont été committés de manière logique et séquentielle :
 
 Ce projet est sous licence **MIT**.
 
-```
-MIT License
-
-Copyright (c) 2026 Planificator Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-```
-
----
-
 ## 🙏 Remerciements
 
 - [Flutter Team](https://flutter.dev) pour le framework remarquable
@@ -496,6 +676,45 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 Made with ❤️ by Josoa
 
-**Dernière mise à jour** : 3 janvier 2026
+**Dernière mise à jour** : 13 janvier 2026
+
+---
+
+## 🎯 Roadmap Futures
+
+- 🧪 **Tests Unitaires & Intégration** : Suite de tests complète
+- 📱 **Version iOS Optimisée** : Support iOS natif amélioré
+- 🌐 **Synchronisation Cloud** : Sauvegarde et synchronisation des données
+- 📈 **Dashboard Analytique** : Graphiques et statistiques avancées
+- 🔔 **Push Notifications** : Notifications cloud améliorées
+- 🌙 **Mode Sombre** : Support complet du thème sombre
+- 🗺️ **Géolocalisation** : Intégration GPS pour les interventions
+- 📊 **API REST** : Exposition des données via API
+- 🤖 **Machine Learning** : Prédictions et recommandations
+
+---
+
+## 💡 Contribution
+
+Les contributions sont bienvenues! Pour contribuer :
+
+1. Fork le projet
+2. Créez une branche (`git checkout -b feature/AmazingFeature`)
+3. Commit vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
+
+Veuillez vous assurer que votre code suit les guidelines du projet et que tous les tests passent.
+
+---
+
+## 🐛 Signaler un Bug
+
+Si vous trouvez un bug, veuillez ouvrir une [issue GitHub](https://github.com/josoavj/PlanificatorFinal/issues) avec :
+- Description détaillée du bug
+- Étapes pour reproduire le problème
+- Version de l'application
+- Logs/stack traces si disponible
+- Suggestions de fix si vous en avez
 
 </div>

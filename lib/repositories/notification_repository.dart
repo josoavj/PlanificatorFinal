@@ -43,6 +43,11 @@ class NotificationRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Vérifier et établir la connexion si nécessaire
+      if (!_db.isConnected) {
+        await _db.connect();
+      }
+
       // Charger les paramètres de notification
       await loadNotificationSettings();
 
@@ -54,20 +59,21 @@ class NotificationRepository extends ChangeNotifier {
           pd.planning_detail_id,
           pd.planning_id,
           pd.date_planification,
-          pd.etat,
-          p.titre,
+          pd.statut,
+          tt.typeTraitement,
           c.nom,
           c.prenom,
           c.telephone,
           c.email,
-          tt.type as traitement_type,
-          p.contrat_id
+          p.traitement_id
         FROM PlanningDetails pd
-        JOIN Planning p ON pd.planning_id = p.planningId
-        JOIN Client c ON p.client_id = c.client_id
-        JOIN TypeTraitement tt ON p.type_traitement_id = tt.id
+        JOIN Planning p ON pd.planning_id = p.planning_id
+        JOIN Traitement t ON p.traitement_id = t.traitement_id
+        JOIN Contrat co ON t.contrat_id = co.contrat_id
+        JOIN Client c ON co.client_id = c.client_id
+        JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
         WHERE DATE(pd.date_planification) = ?
-        AND pd.etat NOT IN ('completed', 'cancelled')
+        AND pd.statut NOT IN ('Effectué')
         ORDER BY pd.date_planification ASC
       ''';
 
@@ -81,7 +87,7 @@ class NotificationRepository extends ChangeNotifier {
             .take(3)
             .map((t) {
               final nom = '${t['prenom']} ${t['nom']}';
-              final traitement = t['traitement_type'] ?? 'Traitement';
+              final traitement = t['typeTraitement'] ?? 'Traitement';
               return '$nom ($traitement)';
             })
             .join(', ');
@@ -159,6 +165,14 @@ class NotificationRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Vérifier et établir la connexion si nécessaire
+      if (!_db.isConnected) {
+        await _db.connect();
+      }
+
+      // Charger les paramètres de notification
+      await loadNotificationSettings();
+
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       final dateStr = tomorrow.toIso8601String().split('T')[0];
 
@@ -167,21 +181,22 @@ class NotificationRepository extends ChangeNotifier {
           pd.planning_detail_id,
           pd.planning_id,
           pd.date_planification,
-          pd.etat,
-          p.titre,
+          pd.statut,
+          tt.typeTraitement,
           c.nom,
           c.prenom,
           c.telephone,
           c.email,
           c.adresse,
-          tt.type as traitement_type,
-          p.contrat_id
+          p.traitement_id
         FROM PlanningDetails pd
-        JOIN Planning p ON pd.planning_id = p.planningId
-        JOIN Client c ON p.client_id = c.client_id
-        JOIN TypeTraitement tt ON p.type_traitement_id = tt.id
+        JOIN Planning p ON pd.planning_id = p.planning_id
+        JOIN Traitement t ON p.traitement_id = t.traitement_id
+        JOIN Contrat co ON t.contrat_id = co.contrat_id
+        JOIN Client c ON co.client_id = c.client_id
+        JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
         WHERE DATE(pd.date_planification) = ?
-        AND pd.etat NOT IN ('completed', 'cancelled')
+        AND pd.statut NOT IN ('Effectué')
         ORDER BY pd.date_planification ASC
       ''';
 
@@ -213,6 +228,11 @@ class NotificationRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Vérifier et établir la connexion si nécessaire
+      if (!_db.isConnected) {
+        await _db.connect();
+      }
+
       final today = DateTime.now().toIso8601String().split('T')[0];
 
       const sql = '''

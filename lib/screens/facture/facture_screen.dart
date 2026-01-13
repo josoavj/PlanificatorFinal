@@ -616,9 +616,9 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Trier les factures par date décroissante (récentes en premier)
+    // Trier les factures par date croissante (plus anciennes en premier)
     final sortedFactures = List<Facture>.from(widget.factures);
-    sortedFactures.sort((a, b) => b.dateTraitement.compareTo(a.dateTraitement));
+    sortedFactures.sort((a, b) => a.dateTraitement.compareTo(b.dateTraitement));
 
     final montantTotal = _calculateTotalMontant(sortedFactures);
     final montantNonPaye = _calculateMontantNonPaye(sortedFactures);

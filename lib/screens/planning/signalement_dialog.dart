@@ -254,134 +254,142 @@ class _SignalementDialogState extends State<SignalementDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Signalement - ${DateHelper.format(widget.planningDetail.datePlanification)}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-
-              // Type de signalement
-              Text(
-                'Type de signalement',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'avancement', label: Text('Avancement')),
-                  ButtonSegment(value: 'décalage', label: Text('Décalage')),
-                ],
-                selected: {_type},
-                onSelectionChanged: (newSelection) {
-                  setState(() => _type = newSelection.first);
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Motif
-              TextField(
-                controller: _motifCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Motif du signalement',
-                  border: OutlineInputBorder(),
-                  hintText: 'Ex: Visite impossible, client absent, ...',
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Signalement - ${DateHelper.format(widget.planningDetail.datePlanification)}',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Nouvelle date
-              TextField(
-                controller: _dateCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Nouvelle date de planification',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: _selectDate,
-                  ),
+                // Type de signalement
+                Text(
+                  'Type de signalement',
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-                readOnly: true,
-                onChanged: (_) {
-                  setState(() {
-                    // Auto-détection du type en fonction de l'écart
-                    final ecart = _calculateEcart();
-                    final direction = ecart['direction'] as String;
-                    if (direction.isNotEmpty && direction != 'Même date') {
-                      _type = direction.toLowerCase();
-                    }
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'avancement',
+                      label: Text('Avancement'),
+                    ),
+                    ButtonSegment(value: 'décalage', label: Text('Décalage')),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (newSelection) {
+                    setState(() => _type = newSelection.first);
+                  },
+                ),
+                const SizedBox(height: 16),
 
-              // 📊 Affichage de l'écart (jours/mois)
-              if (_ecartText().isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    border: Border.all(color: Colors.blue[300]!),
-                    borderRadius: BorderRadius.circular(8),
+                // Motif
+                TextField(
+                  controller: _motifCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Motif du signalement',
+                    border: OutlineInputBorder(),
+                    hintText: 'Ex: Visite impossible, client absent, ...',
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _ecartText(),
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue[700],
-                              ),
+                  maxLines: 4,
+                  minLines: 4,
+                ),
+                const SizedBox(height: 16),
+
+                // Nouvelle date
+                TextField(
+                  controller: _dateCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Nouvelle date de planification',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: _selectDate,
+                    ),
+                  ),
+                  readOnly: true,
+                  onChanged: (_) {
+                    setState(() {
+                      // Auto-détection du type en fonction de l'écart
+                      final ecart = _calculateEcart();
+                      final direction = ecart['direction'] as String;
+                      if (direction.isNotEmpty && direction != 'Même date') {
+                        _type = direction.toLowerCase();
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // 📊 Affichage de l'écart (jours/mois)
+                if (_ecartText().isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      border: Border.all(color: Colors.blue[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _ecartText(),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue[700],
+                                ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                const SizedBox(height: 16),
+
+                // Décaler redondance
+                CheckboxListTile(
+                  title: const Text('Décaler TOUTES les dates futures'),
+                  subtitle: const Text('(sinon ne modifie que cette date)'),
+                  value: _changerRedondance,
+                  onChanged: (val) {
+                    setState(() => _changerRedondance = val ?? false);
+                  },
                 ),
-              const SizedBox(height: 16),
 
-              // Décaler redondance
-              CheckboxListTile(
-                title: const Text('Décaler TOUTES les dates futures'),
-                subtitle: const Text('(sinon ne modifie que cette date)'),
-                value: _changerRedondance,
-                onChanged: (val) {
-                  setState(() => _changerRedondance = val ?? false);
-                },
-              ),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
-
-              // Boutons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Annuler'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: _isLoading ? null : _saveSignalement,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Enregistrer'),
-                  ),
-                ],
-              ),
-            ],
+                // Boutons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Annuler'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _isLoading ? null : _saveSignalement,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Enregistrer'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

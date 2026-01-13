@@ -1,3 +1,4 @@
+import 'package:Planificator/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
@@ -37,6 +38,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Détails du profil',
                       subtitle: 'Afficher mes informations',
                       onTap: () => _showProfileDialog(context, authRepository),
+                    ),
+                    _buildModernCard(
+                      icon: Icons.edit_outlined,
+                      title: 'Modifier le profil',
+                      subtitle: 'Mettre à jour mes informations',
+                      onTap: () =>
+                          _showEditProfileDialog(context, authRepository),
+                    ),
+                    _buildModernCard(
+                      icon: Icons.group_outlined,
+                      title: 'Liste des profils',
+                      subtitle: 'Voir tous les profils et leurs types',
+                      onTap: () => _showAllProfilesDialog(context),
                     ),
                     _buildModernCard(
                       icon: Icons.lock_outline,
@@ -494,6 +508,397 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showEditProfileDialog(
+    BuildContext context,
+    AuthRepository authRepository,
+  ) async {
+    final user = authRepository.currentUser;
+    if (user == null) return;
+
+    final nomCtrl = TextEditingController(text: user.fullName.split(' ').last);
+    final prenomCtrl = TextEditingController(
+      text: user.fullName.split(' ').first,
+    );
+    final emailCtrl = TextEditingController(text: user.email);
+    final usernameCtrl = TextEditingController();
+    bool _isUpdating = false;
+
+    // Fetch username from database
+    try {
+      final db = DatabaseService();
+      final result = await db.query(
+        'SELECT username FROM Account WHERE id_compte = ?',
+        [user.userId],
+      );
+      if (result.isNotEmpty && result[0]['username'] != null) {
+        usernameCtrl.text = result[0]['username'].toString();
+      }
+    } catch (e) {
+      logger.w('Error fetching username: $e');
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Modifier le profil'),
+          contentPadding: const EdgeInsets.all(16),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: prenomCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Prénom',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: nomCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Nom',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: emailCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: usernameCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Nom d\'utilisateur',
+                    prefixIcon: const Icon(Icons.account_circle_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.shield, color: Colors.blue[700], size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Type de compte',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user.isAdmin ? 'Administrateur' : 'Utilisateur',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.blue[900],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: _isUpdating
+                  ? null
+                  : () async {
+                      if (prenomCtrl.text.isEmpty ||
+                          nomCtrl.text.isEmpty ||
+                          emailCtrl.text.isEmpty ||
+                          usernameCtrl.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tous les champs sont requis'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() => _isUpdating = true);
+
+                      try {
+                        await _updateUserProfile(
+                          userId: user.userId,
+                          prenom: prenomCtrl.text,
+                          nom: nomCtrl.text,
+                          email: emailCtrl.text,
+                          username: usernameCtrl.text,
+                        );
+
+                        if (!context.mounted) return;
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('✅ Profil mis à jour avec succès'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erreur: $e'),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      } finally {
+                        setState(() => _isUpdating = false);
+                      }
+                    },
+              child: _isUpdating
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateUserProfile({
+    required int userId,
+    required String prenom,
+    required String nom,
+    required String email,
+    required String username,
+  }) async {
+    try {
+      final db = DatabaseService();
+      const sql = '''
+        UPDATE Account
+        SET nom = ?, prenom = ?, email = ?, username = ?
+        WHERE id_compte = ?
+      ''';
+
+      await db.execute(sql, [nom, prenom, email, username, userId]);
+    } catch (e) {
+      throw 'Erreur lors de la mise à jour du profil: $e';
+    }
+  }
+
+  void _showAllProfilesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: const Text('Liste des profils'),
+        contentPadding: const EdgeInsets.all(16),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: SingleChildScrollView(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchAllProfiles(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Erreur: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  );
+                }
+
+                final profiles = snapshot.data ?? [];
+
+                if (profiles.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text('Aucun profil trouvé'),
+                    ),
+                  );
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(profiles.length, (index) {
+                    final profile = profiles[index];
+                    final userId = profile['id_compte'] ?? 'N/A';
+                    final nom = profile['nom'] ?? 'N/A';
+                    final prenom = profile['prenom'] ?? 'N/A';
+                    final fullName = '$prenom $nom'.trim();
+                    final email = profile['email'] ?? 'N/A';
+                    final typeCom = profile['type_compte'] ?? 'Utilisateur';
+                    final isAdmin = typeCom == 'Administrateur';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isAdmin ? Colors.blue[50] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isAdmin
+                              ? Colors.blue[300]!
+                              : Colors.grey[300]!,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  fullName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: isAdmin
+                                        ? Colors.blue[900]
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isAdmin
+                                      ? AppTheme.successGreen
+                                      : AppTheme.primaryBlue,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  isAdmin ? 'Admin' : 'Utilisateur',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Email: $email',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID: $userId',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAllProfiles() async {
+    try {
+      final db = DatabaseService();
+      const sql = '''
+        SELECT id_compte, nom, prenom, email, type_compte
+        FROM Account
+        ORDER BY nom, prenom ASC
+      ''';
+      final rows = await db.query(sql);
+      return rows;
+    } catch (e) {
+      throw 'Erreur lors du chargement des profils: $e';
+    }
+  }
+
   Widget _buildProfileDetailCard(
     String label,
     String value,
@@ -853,6 +1258,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ).then((confirmed) {
       if (confirmed == true) {
         context.read<AuthRepository>().logout();
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     });
   }
@@ -866,15 +1274,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Êtes-vous sûr ?',
       confirmText: 'Supprimer définitivement',
       cancelText: 'Annuler',
-    ).then((confirmed) {
+    ).then((confirmed) async {
       if (confirmed == true) {
-        AppDialogs.info(
-          context,
-          title: 'Compte supprimé',
-          message: 'Votre compte a été supprimé.',
-        ).then((_) {
-          context.read<AuthRepository>().logout();
-        });
+        try {
+          // Supprimer le compte de la base de données
+          final authRepository = context.read<AuthRepository>();
+          final userId = authRepository.currentUser?.userId;
+
+          if (userId != null) {
+            final db = DatabaseService();
+            await db.execute('DELETE FROM Account WHERE id_compte = ?', [
+              userId,
+            ]);
+          }
+
+          if (!context.mounted) return;
+
+          AppDialogs.info(
+            context,
+            title: 'Compte supprimé',
+            message: 'Votre compte a été supprimé.',
+          ).then((_) {
+            context.read<AuthRepository>().logout();
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/register', (route) => false);
+          });
+        } catch (e) {
+          if (!context.mounted) return;
+          AppDialogs.error(
+            context,
+            title: 'Erreur',
+            message: 'Erreur lors de la suppression du compte: $e',
+          );
+        }
       }
     });
   }

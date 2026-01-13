@@ -342,7 +342,9 @@ class _TreatmentListScreen extends StatelessWidget {
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
                             _PlanningListScreen(
-                              title: '$traitementName - $clientName',
+                              title: clientName.trim().isNotEmpty
+                                  ? '$traitementName - ${clientName.trim()}'
+                                  : traitementName,
                               plannings: allPlannings,
                             ),
                         transitionsBuilder:
@@ -508,9 +510,9 @@ class _PlanningListScreen extends StatelessWidget {
           return 0;
         }
 
-        return dateTimeB.compareTo(
-          dateTimeA,
-        ); // Décroissant: plus récent en premier
+        return dateTimeA.compareTo(
+          dateTimeB,
+        ); // Croissant: plus ancien en premier
       });
     } catch (e) {
       // Erreur lors du tri - on continue sans tri
