@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:logger/logger.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
+import '../../services/logging_service.dart';
 
 class HistoriqueScreen extends StatefulWidget {
   final int? clientId; // Si null, affiche tout l'historique
@@ -648,7 +648,7 @@ class _TreatmentDetailScreen extends StatefulWidget {
 
 class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
   late Future<Map<String, dynamic>> _detailsFuture;
-  final _logger = Logger();
+  final _logger = createLoggerWithFileOutput(name: 'traitement_detail_dialog');
 
   @override
   void initState() {

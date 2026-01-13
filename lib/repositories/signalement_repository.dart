@@ -1,12 +1,12 @@
-import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 import '../utils/date_helper.dart';
 
 class SignalementRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'signalement_repository');
 
   List<Signalement> _signalements = [];
   bool _isLoading = false;

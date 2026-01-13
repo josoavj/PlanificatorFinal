@@ -1,14 +1,14 @@
-import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 import '../utils/date_helper.dart';
 
 /// Repository pour la gestion des remarques
 /// Conforme à Kivy create_remarque() - crée remarque + met à jour état planning + facture
 class RemarqueRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'remarque_repository');
 
   List<Remarque> _remarques = [];
   bool _isLoading = false;

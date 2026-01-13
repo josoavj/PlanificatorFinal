@@ -1,11 +1,11 @@
-import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 
 class TypeTraitementRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'type_traitement_repository');
 
   List<TypeTraitement> _traitements = [];
   bool _isLoading = false;

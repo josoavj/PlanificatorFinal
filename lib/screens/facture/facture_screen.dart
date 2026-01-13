@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:logger/logger.dart';
 import '../../repositories/index.dart';
 import '../../models/index.dart';
 import '../../core/theme.dart';
 import '../../utils/number_formatter.dart';
+import '../../services/logging_service.dart';
 
 class FactureScreen extends StatefulWidget {
   const FactureScreen({Key? key}) : super(key: key);
@@ -16,7 +16,7 @@ class FactureScreen extends StatefulWidget {
 
 class _FactureScreenState extends State<FactureScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'facture_screen');
   String _searchQuery = '';
 
   @override
@@ -404,7 +404,7 @@ class _FactureDetailScreen extends StatefulWidget {
 }
 
 class _FactureDetailScreenState extends State<_FactureDetailScreen> {
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'facture_detail_screen');
 
   int _calculateTotalMontant(List<Facture> factures) {
     int total = 0;

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:logger/logger.dart';
 import '../../models/client.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../services/database_service.dart';
+import '../../services/logging_service.dart';
 
 class ClientListScreen extends StatefulWidget {
   const ClientListScreen({Key? key}) : super(key: key);
@@ -16,7 +16,7 @@ class ClientListScreen extends StatefulWidget {
 
 class _ClientListScreenState extends State<ClientListScreen> {
   late TextEditingController _searchController;
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'client_list_screen');
 
   @override
   void initState() {

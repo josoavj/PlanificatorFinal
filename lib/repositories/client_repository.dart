@@ -1,11 +1,11 @@
-import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'client_repository');
 
   List<Client> _clients = [];
   Client? _currentClient;

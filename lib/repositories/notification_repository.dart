@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 
 /// Repository pour gérer les notifications de traitements
 class NotificationRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'notification_repository');
 
   bool _isLoading = false;
   String? _errorMessage;

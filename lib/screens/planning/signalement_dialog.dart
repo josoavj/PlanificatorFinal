@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:logger/logger.dart';
 import 'package:Planificator/models/index.dart';
 import 'package:Planificator/repositories/signalement_repository.dart';
 import 'package:Planificator/utils/date_helper.dart';
+import '../../services/logging_service.dart';
 
 class SignalementDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -23,7 +23,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
   late TextEditingController _motifCtrl;
   late TextEditingController _dateCtrl;
 
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'signalement_dialog');
 
   String _type = 'décalage'; // 'avancement' ou 'décalage'
   bool _changerRedondance =

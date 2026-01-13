@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:core';
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'package:Planificator/models/planning_details.dart';
 import 'package:Planificator/services/database_service.dart';
+import '../services/logging_service.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {
   final _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'planning_details_repository');
 
   List<PlanningDetails> _details = [];
   List<PlanningDetails> _currentMonthTreatments = [];

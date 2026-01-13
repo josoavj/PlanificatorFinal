@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:logger/logger.dart';
 import '../../repositories/index.dart';
 import '../../models/index.dart';
 import '../../utils/excel_utils.dart';
 import '../../services/database_service.dart';
+import '../../services/logging_service.dart';
 
-final logger = Logger();
+final logger = createLoggerWithFileOutput(name: 'export_screen');
 
 class ExportScreen extends StatefulWidget {
   const ExportScreen({Key? key}) : super(key: key);

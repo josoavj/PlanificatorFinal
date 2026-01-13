@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:logger/logger.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
+import '../../services/logging_service.dart';
 import '../client/client_list_screen.dart';
 import '../facture/facture_screen.dart';
 import '../contrat/contrat_screen.dart';
@@ -12,7 +12,7 @@ import '../settings/settings_screen.dart';
 import '../about/about_screen.dart';
 import '../export/export_screen.dart';
 
-final logger = Logger();
+final logger = createLoggerWithFileOutput(name: 'home_screen');
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);

@@ -13,6 +13,7 @@ import '../../utils/date_utils.dart' as DateUtils;
 import '../../utils/date_helper.dart';
 import '../../utils/number_formatter.dart';
 import '../../services/database_service.dart';
+import '../../services/logging_service.dart';
 
 class ContratScreen extends StatefulWidget {
   final int? clientId;
@@ -26,7 +27,7 @@ class _ContratScreenState extends State<ContratScreen> {
   late Future<List<Map<String, dynamic>>> _contratsWithClientsAndTreatments;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'contrat_screen');
   int _contratCount = 0;
 
   @override

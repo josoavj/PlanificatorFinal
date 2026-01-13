@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:logger/logger.dart';
 import 'package:mysql1/mysql1.dart';
+import './logging_service.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
-  static final logger = Logger();
+  static final logger = createLoggerWithFileOutput(name: 'database_service');
 
   late MySqlConnection _connection;
   bool _isConnected = false;

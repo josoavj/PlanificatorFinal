@@ -1,14 +1,14 @@
-import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 import '../utils/excel_utils.dart';
 import '../utils/date_helper.dart';
 import '../utils/date_utils.dart' as date_utils;
 
 class FactureRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'facture_repository');
 
   List<Facture> _factures = [];
   bool _isLoading = false;

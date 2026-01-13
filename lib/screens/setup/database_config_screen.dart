@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
 import '../../services/index.dart';
+import '../../services/logging_service.dart';
 
 class DatabaseConfigScreen extends StatefulWidget {
   final VoidCallback onConfigured;
@@ -21,7 +21,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
   final _userController = TextEditingController(text: 'sudoted');
   final _passwordController = TextEditingController(text: '100805Josh');
   final _databaseController = TextEditingController(text: 'Planificator');
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'database_config_screen');
 
   bool _isLoading = false;
   bool _showPassword = false;

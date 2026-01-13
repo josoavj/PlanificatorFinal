@@ -1,11 +1,11 @@
-import 'package:logger/logger.dart';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/logging_service.dart';
 
 class HistoriqueRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'historique_repository');
 
   List<HistoriqueEvent> _events = [];
   bool _isLoading = false;

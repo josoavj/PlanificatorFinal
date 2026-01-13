@@ -1,11 +1,11 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:logger/logger.dart';
+import '../services/logging_service.dart';
 
 /// Configuration singleton pour la base de données
 /// Stocke les credentials de connexion MySQL
 class DatabaseConfig {
   static final DatabaseConfig _instance = DatabaseConfig._internal();
-  final logger = Logger();
+  final logger = createLoggerWithFileOutput(name: 'database_config');
 
   late SharedPreferences _prefs;
   bool _initialized = false;
