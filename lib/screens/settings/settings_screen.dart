@@ -1,4 +1,4 @@
-import 'package:Planificator/main.dart';
+import 'package:planificator/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';

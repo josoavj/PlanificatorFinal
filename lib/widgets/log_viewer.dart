@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Planificator/services/logging_service.dart';
+import 'package:planificator/services/logging_service.dart';
 
 class LogViewerDialog extends StatefulWidget {
   final bool isDialog;

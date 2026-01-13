@@ -198,8 +198,6 @@ class NotificationService {
         payload: payload,
         matchDateTimeComponents: DateTimeComponents.time,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
       );
 
       log.info(

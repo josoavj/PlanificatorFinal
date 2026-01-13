@@ -498,9 +498,11 @@ class AboutScreen extends StatelessWidget {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Impossible d\'ouvrir: $url')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Impossible d\'ouvrir: $url')));
+      }
     }
   }
 }

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:core';
 import 'package:flutter/material.dart';
-import 'package:Planificator/models/planning_details.dart';
-import 'package:Planificator/services/database_service.dart';
+import 'package:planificator/models/planning_details.dart';
+import 'package:planificator/services/database_service.dart';
 import '../services/logging_service.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {

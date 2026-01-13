@@ -55,7 +55,7 @@ void main() async {
   final config = DatabaseConfig();
   await config.initialize();
 
-  // Mettre à jour les paramètres du DatabaseService
+  // Mettre à jour les paramètres du DatabaseService si configuré
   if (config.isConfigured) {
     final db = DatabaseService();
     db.updateConnectionSettings(
@@ -169,14 +169,7 @@ class _MyAppState extends State<MyApp> {
         theme: AppTheme.lightTheme,
         locale: const Locale('fr', 'FR'),
         home: _isConfigured
-            ? Consumer<AuthRepository>(
-                builder: (context, authRepository, _) {
-                  if (authRepository.isAuthenticated) {
-                    return const HomeScreen();
-                  }
-                  return const LoginScreen();
-                },
-              )
+            ? _AuthGate()
             : DatabaseConfigScreen(onConfigured: _onConfigured),
         routes: {
           '/login': (context) => const LoginScreen(),
@@ -191,6 +184,26 @@ class _MyAppState extends State<MyApp> {
           '/settings': (context) => const SettingsScreen(),
         },
       ),
+    );
+  }
+}
+
+// Widget séparé pour éviter les rebuilds de l'arbre entier
+class _AuthGate extends StatelessWidget {
+  const _AuthGate({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ Utiliser Selector pour UNIQUEMENT récupérer isAuthenticated
+    // Pas de rebuild si un autre champ change
+    return Selector<AuthRepository, bool>(
+      selector: (_, auth) => auth.isAuthenticated,
+      builder: (_, isAuthenticated, __) {
+        if (isAuthenticated) {
+          return const HomeScreen();
+        }
+        return const LoginScreen();
+      },
     );
   }
 }

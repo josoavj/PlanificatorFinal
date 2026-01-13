@@ -416,35 +416,47 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         axe: _axeController.text,
       );
 
+      Navigator.of(context);
+      final scaff = ScaffoldMessenger.of(context);
       context
           .read<ClientRepository>()
           .updateClient(updated)
           .then((_) {
-            setState(() => _isEditing = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Client modifié avec succès')),
-            );
+            if (mounted) {
+              setState(() => _isEditing = false);
+              scaff.showSnackBar(
+                const SnackBar(content: Text('Client modifié avec succès')),
+              );
+            }
           })
           .catchError((error) {
-            AppDialogs.error(context, message: error.toString());
+            if (mounted) {
+              AppDialogs.error(context, message: error.toString());
+            }
           });
     }
   }
 
   void _deleteClient() async {
     final confirmed = await AppDialogs.confirmDelete(context);
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
+      final nav = Navigator.of(context);
+      final scaff = ScaffoldMessenger.of(context);
       context
           .read<ClientRepository>()
           .deleteClient(_client!.clientId)
           .then((_) {
-            Navigator.of(context).pop(true);
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Client supprimé')));
+            if (mounted) {
+              nav.pop(true);
+              scaff.showSnackBar(
+                const SnackBar(content: Text('Client supprimé')),
+              );
+            }
           })
           .catchError((error) {
-            AppDialogs.error(context, message: error.toString());
+            if (mounted) {
+              AppDialogs.error(context, message: error.toString());
+            }
           });
     }
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Planificator/widgets/log_viewer.dart';
+import 'package:planificator/widgets/log_viewer.dart';
 
 class LogViewerButton extends StatefulWidget {
   const LogViewerButton({super.key});
