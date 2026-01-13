@@ -165,7 +165,7 @@ class FactureRepository extends ChangeNotifier {
           f.axe
         FROM Facture f
         WHERE f.planning_detail_id = ?
-        ORDER BY f.date_traitement ASC
+        ORDER BY f.date_traitement DESC
       ''';
 
       final rows = await _db.query(sql, [planningDetailId]);
@@ -373,7 +373,7 @@ class FactureRepository extends ChangeNotifier {
         LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
         LEFT JOIN Planning p ON pd.planning_id = p.planning_id
         WHERE p.traitement_id = ? AND f.date_traitement >= ?
-        ORDER BY f.date_traitement ASC
+        ORDER BY f.date_traitement DESC
       ''';
 
       final otherFactures = await _db.query(getOtherFacturesSql, [
@@ -614,7 +614,7 @@ class FactureRepository extends ChangeNotifier {
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
         LEFT JOIN Contrat c ON t.contrat_id = c.contrat_id
         WHERE c.client_id = ?
-        ORDER BY f.date_traitement ASC
+        ORDER BY f.date_traitement DESC
       ''';
 
       final rows = await _db.query(sql, [clientId]);
