@@ -92,11 +92,13 @@ class _DashboardTabState extends State<_DashboardTab> {
   late PlanningDetailsRepository _planningDetailsRepo;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     _planningDetailsRepo = context.read<PlanningDetailsRepository>();
-    logger.i('📱 _DashboardTabState mounted, loading data...');
-    _loadData();
+    // Charger les données après le premier frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -271,6 +273,71 @@ class _DashboardTabState extends State<_DashboardTab> {
     required List<Map<String, dynamic>> treatments,
     String? errorMessage,
   }) {
+    // ✅ PRIORITÉ: Afficher les données si présentes, ignorer le spinner
+    if (treatments.isNotEmpty) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Date')),
+            DataColumn(label: Text('Nom')),
+            DataColumn(label: Text('État')),
+            DataColumn(label: Text('Axe')),
+          ],
+          rows: treatments.map((treatment) {
+            final etat = treatment['etat'] ?? '';
+            final bgColor = etat == 'Effectué'
+                ? Colors.green.shade50
+                : etat == 'À venir'
+                ? Colors.red.shade50
+                : Colors.white;
+            final textColor = etat == 'Effectué'
+                ? Colors.green.shade700
+                : etat == 'À venir'
+                ? Colors.red.shade700
+                : Colors.black;
+
+            return DataRow(
+              color: WidgetStatePropertyAll(bgColor),
+              cells: [
+                DataCell(
+                  Text(
+                    treatment['date'] ?? '',
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                DataCell(
+                  Text(
+                    treatment['nom'] ?? '',
+                    style: TextStyle(color: textColor),
+                  ),
+                ),
+                DataCell(
+                  Text(
+                    etat,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                DataCell(
+                  Text(
+                    treatment['axe'] ?? '',
+                    style: TextStyle(color: textColor),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      );
+    }
+
+    // ✅ Afficher le spinner que si pas de données ET isLoading
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -295,83 +362,14 @@ class _DashboardTabState extends State<_DashboardTab> {
       );
     }
 
-    if (treatments.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            'Aucun traitement',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
+    // Aucun traitement
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text(
+          'Aucun traitement',
+          style: TextStyle(color: Colors.grey[600]),
         ),
-      );
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Date')),
-          DataColumn(label: Text('Nom')),
-          DataColumn(label: Text('État')),
-          DataColumn(label: Text('Axe')),
-        ],
-        rows: treatments.map((treatment) {
-          final etat = treatment['etat'] ?? '';
-          final bgColor = etat == 'Effectué'
-              ? Colors.green.shade50
-              : etat == 'À venir'
-              ? Colors.red.shade50
-              : Colors.white;
-          final textColor = etat == 'Effectué'
-              ? Colors.green.shade700
-              : etat == 'À venir'
-              ? Colors.red.shade700
-              : Colors.black;
-
-          return DataRow(
-            color: WidgetStatePropertyAll(bgColor),
-            cells: [
-              DataCell(
-                Text(
-                  // ✅ CORRECTION: Utiliser 'date_planification' au lieu de 'date'
-                  treatment['date_planification'] ?? treatment['date'] ?? '',
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  treatment['nom'] ?? '',
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  treatment['etat'] ?? '',
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  treatment['axe'] ?? '',
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
       ),
     );
   }
