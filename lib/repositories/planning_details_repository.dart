@@ -7,7 +7,9 @@ import '../services/logging_service.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {
   final _db = DatabaseService();
-  final logger = createLoggerWithFileOutput(name: 'planning_details_repository');
+  final logger = createLoggerWithFileOutput(
+    name: 'planning_details_repository',
+  );
 
   List<PlanningDetails> _details = [];
   List<PlanningDetails> _currentMonthTreatments = [];
@@ -175,16 +177,16 @@ class PlanningDetailsRepository extends ChangeNotifier {
         '🔍 Chargement COMPLET traitements du mois $currentMonth/$currentYear',
       );
 
-      // Requête COMPLÈTE: récupère typeTraitement + categorieTraitement + nom + prenom + axe
+      // Requête optimisée: utilise COALESCE et ajoute LIMIT
       final results = await _db.query(
         '''SELECT 
              pd.planning_detail_id,
              DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
-             CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
-             pd.statut as etat,
-             c.axe,
-             tt.categorieTraitement,
-             c.categorie
+             CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) as traitement,
+             COALESCE(pd.statut, 'Non planifié') as etat,
+             COALESCE(c.axe, 'Non défini') as axe,
+             COALESCE(tt.categorieTraitement, '') as categorieTraitement,
+             COALESCE(c.categorie, '') as categorie
            FROM PlanningDetails pd
            INNER JOIN Planning p ON pd.planning_id = p.planning_id
            INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
@@ -193,7 +195,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Client c ON ct.client_id = c.client_id
            WHERE YEAR(pd.date_planification) = ?
            AND MONTH(pd.date_planification) = ?
-           ORDER BY pd.date_planification ASC''',
+           ORDER BY pd.date_planification ASC
+           LIMIT 5000''',
         [currentYear, currentMonth],
       );
 
@@ -242,18 +245,18 @@ class PlanningDetailsRepository extends ChangeNotifier {
         '🔍 Chargement COMPLET traitements à venir (à partir de $todayStr)',
       );
 
-      // Requête COMPLÈTE: récupère typeTraitement + categorieTraitement + nom + prenom + axe
+      // Requête optimisée: utilise COALESCE et ajoute LIMIT
       final results = await _db.query(
         '''SELECT 
              pd.planning_detail_id,
              pd.planning_id,
              DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
              pd.date_planification,
-             CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
-             pd.statut as etat,
-             c.axe,
-             tt.categorieTraitement,
-             c.categorie
+             CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) as traitement,
+             COALESCE(pd.statut, 'Non planifié') as etat,
+             COALESCE(c.axe, 'Non défini') as axe,
+             COALESCE(tt.categorieTraitement, '') as categorieTraitement,
+             COALESCE(c.categorie, '') as categorie
            FROM PlanningDetails pd
            INNER JOIN Planning p ON pd.planning_id = p.planning_id
            INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
@@ -261,7 +264,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
            INNER JOIN Client c ON ct.client_id = c.client_id
            WHERE pd.date_planification >= ?
-           ORDER BY pd.date_planification ASC''',
+           ORDER BY pd.date_planification ASC
+           LIMIT 10000''',
         [todayStr],
       );
 
