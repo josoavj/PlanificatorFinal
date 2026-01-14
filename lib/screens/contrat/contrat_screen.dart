@@ -3387,6 +3387,7 @@ class _ContratCreationFlowScreenState
                                 } else {
                                   planning['dureeTraitement'] = '12';
                                 }
+                                _saveProgress();
                               });
                             }
                           },
@@ -3497,6 +3498,7 @@ class _ContratCreationFlowScreenState
                 setState(() {
                   planning['redondance'] = value ?? '1';
                 });
+                _saveProgress();
               },
             ),
           ],

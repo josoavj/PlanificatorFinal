@@ -578,11 +578,6 @@ class _ExportScreenState extends State<ExportScreen> {
 
       if (mounted) {
         setState(() => _isExporting = false);
-        _showSuccessDialog(
-          context,
-          'Export généré',
-          'L\'export a été généré avec succès',
-        );
       }
     } catch (e) {
       logger.e('Erreur lors de la génération de l\'export: $e');
@@ -596,6 +591,9 @@ class _ExportScreenState extends State<ExportScreen> {
   Future<void> _exportFactures(BuildContext context, int clientId) async {
     try {
       final factureRepo = context.read<FactureRepository>();
+      final contratRepo = context.read<ContratRepository>();
+      final clientRepo = context.read<ClientRepository>();
+
       List<Facture> factures;
 
       // Charger les factures filtrées par client si clientId != -1
@@ -626,27 +624,107 @@ class _ExportScreenState extends State<ExportScreen> {
         return;
       }
 
+      // Charger tous les contrats et clients une seule fois
+      await contratRepo.loadContrats();
+      final allContrats = contratRepo.contrats;
+      await clientRepo.loadClients();
+      final allClients = clientRepo.clients;
+
       // Préparer les données pour Excel
       List<Map<String, dynamic>> data = [];
       for (var facture in factures) {
+        // Charger les infos client et contrat si disponibles
+        String clientNom = facture.clientNom ?? 'N/A';
+        String clientPrenom = facture.clientPrenom ?? 'N/A';
+        String clientCategorie = facture.clientCategorie ?? 'N/A';
+        String referenceContrat = 'N/A';
+        String clientAdresse = 'N/A';
+        String clientTelephone = 'N/A';
+
+        // Chercher les infos complètes du client
+        if (facture.clientId != null) {
+          try {
+            // Chercher le client
+            try {
+              final client = allClients.firstWhere(
+                (c) => c.clientId == facture.clientId,
+              );
+              clientAdresse = client.adresse.isNotEmpty
+                  ? client.adresse
+                  : 'N/A';
+              clientTelephone = client.telephone.isNotEmpty
+                  ? client.telephone
+                  : 'N/A';
+            } catch (e) {
+              logger.d('Client ${facture.clientId} non trouvé');
+            }
+
+            // Chercher le contrat pour ce client
+            final contratsClient = allContrats
+                .where((c) => c.clientId == facture.clientId)
+                .toList();
+            if (contratsClient.isNotEmpty) {
+              // Prendre le premier contrat actif ou le dernier
+              final contratActif = contratsClient.firstWhere(
+                (c) => c.statutContrat == 'Actif',
+                orElse: () => contratsClient.last,
+              );
+              referenceContrat = contratActif.referenceContrat;
+            }
+          } catch (e) {
+            logger.d(
+              'Erreur chargement infos pour client ${facture.clientId}: $e',
+            );
+          }
+        }
+
+        // Construire les détails de paiement selon la logique BD
+        String detailsPaiement = 'N/A';
+        if (facture.etat == 'Payé') {
+          detailsPaiement = 'Payé';
+          if (facture.mode != null && facture.mode!.isNotEmpty) {
+            detailsPaiement += ' par ${facture.mode}';
+          }
+          if (facture.dateCheque != null) {
+            detailsPaiement += ' le ${facture.dateCheque!.toLocal()}';
+          }
+          if (facture.numeroCheque != null &&
+              facture.numeroCheque!.isNotEmpty) {
+            detailsPaiement += ' (N°${facture.numeroCheque})';
+          }
+          if (facture.etablissementPayeur != null &&
+              facture.etablissementPayeur!.isNotEmpty) {
+            detailsPaiement += ' - ${facture.etablissementPayeur}';
+          }
+        } else if (facture.etat == 'À venir') {
+          detailsPaiement = 'À venir';
+        } else {
+          detailsPaiement = 'Non payé';
+        }
+
         data.add({
+          // Infos client (pour l'en-tête)
+          'client_nom': clientNom,
+          'client_prenom': clientPrenom,
+          'client_categorie': clientCategorie,
+          'client_axe': facture.axe,
+          'client_adresse': clientAdresse,
+          'client_telephone': clientTelephone,
+          'Référence Contrat': referenceContrat,
+          // Infos facture
           'Numéro Facture': facture.referenceFacture ?? 'N/A',
-          'Date de Planification':
-              facture.datePlanification?.toString().split(' ')[0] ??
-              DateTime.now().toString().split(' ')[0],
-          'Date de Facturation': facture.dateTraitement.toString().split(
-            ' ',
-          )[0],
+          'Date de Planification': facture.datePlanification ?? DateTime.now(),
+          'Date de Facturation': facture.dateTraitement,
           'Type de Traitement': facture.typeTreatment ?? 'Standard',
           'Etat du Planning': facture.etatPlanning ?? 'Complété',
           'Mode de Paiement': facture.mode ?? 'N/A',
-          'Détails Paiement': 'N/A',
+          'Détails Paiement': detailsPaiement,
           'Etat de Paiement': facture.etat,
           'Montant Facturé': facture.montant,
         });
       }
 
-      await _excelService.genererFactureExcel(
+      final filePath = await _excelService.genererFactureExcel(
         data,
         '${_selectedClient}_${_selectedMois}',
         DateTime.now().year,
@@ -654,8 +732,11 @@ class _ExportScreenState extends State<ExportScreen> {
       );
 
       if (mounted) {
-        setState(
-          () => _lastExportPath = '${_selectedClient}_${_selectedMois}.xlsx',
+        setState(() => _lastExportPath = filePath);
+        _showSuccessDialog(
+          context,
+          'Fichier sauvegardé',
+          'Emplacement: $filePath',
         );
       }
     } catch (e) {
@@ -667,7 +748,7 @@ class _ExportScreenState extends State<ExportScreen> {
   Future<void> _exportTraitements(BuildContext context, int clientId) async {
     try {
       final planningDetailsRepo = context.read<PlanningDetailsRepository>();
-      final monthIndex = _mois.indexOf(_selectedMois) + 1;
+      final monthIndex = _mois.indexOf(_selectedMois); // Janvier = index 1
       final year = DateTime.now().year;
 
       // Déterminer le traitement à passer (null si 'Tous')
@@ -679,7 +760,7 @@ class _ExportScreenState extends State<ExportScreen> {
       final treatments = await planningDetailsRepo
           .getTreatmentsByMonthAndClient(
             year: year,
-            month: monthIndex,
+            month: monthIndex, // monthIndex déjà correct (1-12)
             clientId: clientId == -1 ? null : clientId,
             treatmentType: treatmentType,
           );
@@ -708,12 +789,18 @@ class _ExportScreenState extends State<ExportScreen> {
         });
       }
 
-      await _excelService.generateTraitementsExcel(data, year, monthIndex);
+      final filePath = await _excelService.generateTraitementsExcel(
+        data,
+        year,
+        monthIndex,
+      );
 
       if (mounted) {
-        setState(
-          () => _lastExportPath =
-              '${_selectedClient}_Traitements_$_selectedMois.xlsx',
+        setState(() => _lastExportPath = filePath);
+        _showSuccessDialog(
+          context,
+          'Fichier sauvegardé',
+          'Emplacement: $filePath',
         );
       }
     } catch (e) {

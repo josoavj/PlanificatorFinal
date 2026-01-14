@@ -129,15 +129,6 @@ class _MyAppState extends State<MyApp> {
       password: config.password ?? '',
       database: config.database ?? 'Planificator',
     );
-
-    // ✅ Charger les types de traitement dès que la BD est prête
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        context.read<TypeTraitementRepository>().loadAllTraitements();
-      } catch (e) {
-        // Silencieusement ignorer si le contexte n'est pas disponible
-      }
-    });
   }
 
   @override
@@ -189,6 +180,61 @@ class _MyAppState extends State<MyApp> {
 }
 
 // Widget séparé pour éviter les rebuilds de l'arbre entier
+class _AuthGate extends StatefulWidget {
+  const _AuthGate({Key? key}) : super(key: key);
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    // Précharger les données une fois que les providers sont disponibles
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _preloadData();
+    });
+  }
+
+  void _preloadData() {
+    try {
+      // Précharger les types de traitement
+      context.read<TypeTraitementRepository>().loadAllTraitements();
+
+      // Précharger les clients
+      context.read<ClientRepository>().loadClients();
+
+      // Précharger les plannings (données home/planning)
+      final planningDetailsRepo = context.read<PlanningDetailsRepository>();
+      planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
+      planningDetailsRepo.loadUpcomingTreatmentsComplete();
+      planningDetailsRepo.loadAllTreatmentsComplete();
+
+      log.info('✅ Données préchargées au startup', source: 'main');
+    } catch (e) {
+      log.warning('⚠️ Erreur lors du préchargement: $e', source: 'main');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ Utiliser Selector pour UNIQUEMENT récupérer isAuthenticated
+    // Pas de rebuild si un autre champ change
+    return Selector<AuthRepository, bool>(
+      selector: (_, auth) => auth.isAuthenticated,
+      builder: (_, isAuthenticated, __) {
+        if (isAuthenticated) {
+          return const HomeScreen();
+        }
+        return const LoginScreen();
+      },
+    );
+  }
+}
+
+// Ancien widget _AuthGate - à supprimer
+/*
 class _AuthGate extends StatelessWidget {
   const _AuthGate({Key? key}) : super(key: key);
 
@@ -207,3 +253,4 @@ class _AuthGate extends StatelessWidget {
     );
   }
 }
+*/

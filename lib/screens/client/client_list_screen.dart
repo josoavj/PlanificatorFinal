@@ -33,7 +33,43 @@ class _ClientListScreenState extends State<ClientListScreen> {
     return Scaffold(
       body: Consumer<ClientRepository>(
         builder: (context, repository, _) {
-          // État de chargement
+          // ✅ Afficher les données en priorité si présentes
+          if (repository.clients.isNotEmpty) {
+            return Column(
+              children: [
+                // En-tête avec gradient bleu et barre de recherche
+                _buildHeader(context, repository),
+
+                // Liste des clients ou état vide
+                Expanded(
+                  child: repository.clients.isEmpty
+                      ? const Center(
+                          child: EmptyStateWidget(
+                            title: 'Aucun client',
+                            message:
+                                'Aucun client trouvé. Commencez par créer un client.',
+                            icon: Icons.people_outline,
+                            actionLabel: 'Ajouter un client',
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          itemCount: repository.clients.length,
+                          itemBuilder: (context, index) {
+                            final client = repository.clients[index];
+                            return _buildClientCard(
+                              context,
+                              repository,
+                              client,
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          }
+
+          // État de chargement (si pas de données)
           if (repository.isLoading) {
             return const LoadingWidget(message: 'Chargement des clients...');
           }
@@ -46,33 +82,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
             );
           }
 
-          return Column(
-            children: [
-              // En-tête avec gradient bleu et barre de recherche
-              _buildHeader(context, repository),
-
-              // Liste des clients ou état vide
-              Expanded(
-                child: repository.clients.isEmpty
-                    ? const Center(
-                        child: EmptyStateWidget(
-                          title: 'Aucun client',
-                          message:
-                              'Aucun client trouvé. Commencez par créer un client.',
-                          icon: Icons.people_outline,
-                          actionLabel: 'Ajouter un client',
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        itemCount: repository.clients.length,
-                        itemBuilder: (context, index) {
-                          final client = repository.clients[index];
-                          return _buildClientCard(context, repository, client);
-                        },
-                      ),
-              ),
-            ],
+          // Aucun client
+          return const EmptyStateWidget(
+            title: 'Aucun client',
+            message: 'Aucun client trouvé. Commencez par créer un client.',
+            icon: Icons.people_outline,
+            actionLabel: 'Ajouter un client',
           );
         },
       ),

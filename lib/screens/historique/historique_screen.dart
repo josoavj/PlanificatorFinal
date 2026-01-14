@@ -51,10 +51,13 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
   ];
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     _planningDetailsRepo = context.read<PlanningDetailsRepository>();
-    _loadData();
+    // Charger les données après le premier frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -73,19 +76,6 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
       ),
       body: Consumer<PlanningDetailsRepository>(
         builder: (context, repository, _) {
-          if (repository.isLoading) {
-            return const LoadingWidget(
-              message: 'Chargement de l\'historique...',
-            );
-          }
-
-          if (repository.errorMessage != null) {
-            return ErrorDisplayWidget(
-              message: repository.errorMessage!,
-              onRetry: _loadData,
-            );
-          }
-
           // CORRECTION: Utiliser allTreatmentsComplete pour afficher TOUS les traitements
           final allTreatments = repository.allTreatmentsComplete;
 
@@ -155,55 +145,78 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
             });
           }
 
-          if (allTreatments.isEmpty) {
-            return const EmptyStateWidget(
-              title: 'Aucun traitement',
-              message: 'Aucun traitement à afficher pour le moment',
-              icon: Icons.history,
+          // ✅ Afficher les données en priorité si présentes
+          if (allTreatments.isNotEmpty) {
+            return Center(
+              child: SizedBox(
+                width: 250,
+                height: 250,
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  shrinkWrap: true,
+                  children: _sections.map((section) {
+                    final code = (section['code'] as String?) ?? 'PC';
+                    final treatments = treatmentsByCode[code] ?? [];
+
+                    return _CategoryButton(
+                      label: code,
+                      count: treatments.length,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                ) => _TreatmentListScreen(
+                                  title: (section['title'] as String?) ?? 'N/A',
+                                  code: code,
+                                  treatments: treatments,
+                                ),
+                            transitionsBuilder:
+                                (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) => FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
             );
           }
 
-          return Center(
-            child: SizedBox(
-              width: 250,
-              height: 250,
-              child: GridView.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                shrinkWrap: true,
-                children: _sections.map((section) {
-                  final code = (section['code'] as String?) ?? 'PC';
-                  final treatments = treatmentsByCode[code] ?? [];
+          // Afficher le spinner si chargement en cours
+          if (repository.isLoading) {
+            return const LoadingWidget(
+              message: 'Chargement de l\'historique...',
+            );
+          }
 
-                  return _CategoryButton(
-                    label: code,
-                    count: treatments.length,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  _TreatmentListScreen(
-                                    title:
-                                        (section['title'] as String?) ?? 'N/A',
-                                    code: code,
-                                    treatments: treatments,
-                                  ),
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) =>
-                                  FadeTransition(
-                                    opacity: animation,
-                                    child: child,
-                                  ),
-                        ),
-                      );
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
+          // Afficher l'erreur si présente
+          if (repository.errorMessage != null) {
+            return ErrorDisplayWidget(
+              message: repository.errorMessage!,
+              onRetry: _loadData,
+            );
+          }
+
+          // Aucun traitement
+          return const EmptyStateWidget(
+            title: 'Aucun traitement',
+            message: 'Aucun traitement à afficher pour le moment',
+            icon: Icons.history,
           );
         },
       ),
