@@ -2,7 +2,7 @@ class AppConstants {
   // Database Configuration
   // Configuration stockée dans database_config.dart
   static const String appName = 'planificator';
-  static const String appVersion = '2.0.0';
+  static const String appVersion = '2.1.1';
   static const String appBuild = '1';
 
   // Messages
