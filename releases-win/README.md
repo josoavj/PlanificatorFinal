@@ -1,8 +1,8 @@
-# Planificator v2.0.0
+# Planificator v2.1.1
 
 ## 📋 Informations Release
 
-**Version:** 2.0.0  
+**Version:** 2.1.1  
 **Date de Release:** Janvier 2026  
 **Plateforme:** Windows 
 **Framework:** Flutter 3.x + Dart
@@ -70,7 +70,7 @@
 
 ## 🐛 Corrections et Améliorations
 
-### v2.0.0
+### v2.1.1
 - ✅ Export Excel sans erreurs de style
 - ✅ Affichage correct des chemins d'export
 - ✅ Enrichissement automatique des données client

@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Flutter-%3E%3D3.1.0-blue?style=flat-square" alt="Flutter Version">
   <img src="https://img.shields.io/badge/Dart-%3E%3D3.1.0-blue?style=flat-square" alt="Dart Version">
   <img src="https://img.shields.io/badge/MySQL-8.0-orange?style=flat-square" alt="MySQL Version">
-  <img src="https://img.shields.io/badge/Version-2.0.0-green?style=flat-square" alt="Current Version">
+  <img src="https://img.shields.io/badge/Version-2.1.1-green?style=flat-square" alt="Current Version">
   <img src="https://img.shields.io/badge/Status-Stable-brightgreen?style=flat-square" alt="Status">
   <img src="https://img.shields.io/github/last-commit/josoavj/PlanificatorFinal?style=flat-square" alt="Last Commit">
 </p>
@@ -47,7 +47,7 @@
 
 ## 📖 À Propos
 
-**Planificator** est une application Flutter moderne et intuitive conçue pour révolutionner la gestion des contrats et de la facturation. Actuellement en **version 2.0.0 (Stable)**, elle offre une solution complète pour :
+**Planificator** est une application Flutter moderne et intuitive conçue pour révolutionner la gestion des contrats et de la facturation. Actuellement en **version 2.1.1 (Stable)**, elle offre une solution complète pour :
 
 - 📋 Gérer efficacement vos clients et contrats
 - 📅 Planifier vos interventions avec un calendrier interactif
