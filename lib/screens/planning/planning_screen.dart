@@ -20,6 +20,10 @@ class _PlanningScreenState extends State<PlanningScreen> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
 
+  // Cache pour les traitements par jour
+  final Map<String, List<Map<String, dynamic>>> _treatmentCache = {};
+  String? _cachedTreatmentsKey;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
   Future<void> _loadData() async {
     // Charger TOUS les traitements (passés, présents, futurs) pour le calendrier
     await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete();
+    // Vider le cache quand les données changent
+    _treatmentCache.clear();
+    _cachedTreatmentsKey = null;
   }
 
   /// Convertir une valeur dynamique en String
@@ -59,20 +66,19 @@ class _PlanningScreenState extends State<PlanningScreen> {
     return value.toString();
   }
 
-  List<String> _getEventsMarkers(
-    DateTime day,
-    List<Map<String, dynamic>> treatments,
-  ) {
-    final treatmentsForDay = _getTreatmentsForDay(day, treatments);
-    // Retourner une liste de marqueurs (un par traitement)
-    return List.generate(treatmentsForDay.length, (index) => 'event_$index');
-  }
-
   List<Map<String, dynamic>> _getTreatmentsForDay(
     DateTime day,
     List<Map<String, dynamic>> treatments,
   ) {
-    return treatments.where((treatment) {
+    final dayKey = '${day.year}-${day.month}-${day.day}';
+
+    // Vérifier si les données sont en cache
+    if (_cachedTreatmentsKey == dayKey && _treatmentCache.containsKey(dayKey)) {
+      return _treatmentCache[dayKey]!;
+    }
+
+    // Calculer et cacher les traitements pour ce jour
+    final result = treatments.where((treatment) {
       try {
         // ✅ CORRECTION: Utiliser 'date' (la colonne formatée par SQL) pour le filtrage
         final dateValue = treatment['date'];
@@ -97,6 +103,9 @@ class _PlanningScreenState extends State<PlanningScreen> {
         return false;
       }
     }).toList();
+
+    _treatmentCache[dayKey] = result;
+    return result;
   }
 
   @override
@@ -105,6 +114,8 @@ class _PlanningScreenState extends State<PlanningScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'planning_refresh',
         onPressed: () async {
+          _treatmentCache.clear();
+          _cachedTreatmentsKey = null;
           await context
               .read<PlanningDetailsRepository>()
               .loadAllTreatmentsComplete();
@@ -122,12 +133,21 @@ class _PlanningScreenState extends State<PlanningScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // Calendrier
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  child: _buildCalendar(
-                    detailsRepository.allTreatmentsComplete,
-                  ),
+                // Calendrier - extrait dans un widget séparé pour éviter les rebuilds
+                _CalendarWidget(
+                  focusedDay: _focusedDay,
+                  selectedDay: _selectedDay,
+                  treatments: detailsRepository.allTreatmentsComplete,
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  },
+                  onPageChanged: (focusedDay) {
+                    _focusedDay = focusedDay;
+                  },
+                  getTreatmentsForDay: _getTreatmentsForDay,
                 ),
 
                 // Événements du jour
@@ -211,32 +231,48 @@ class _PlanningScreenState extends State<PlanningScreen> {
       ),
     );
   }
+}
 
-  Widget _buildCalendar(List<Map<String, dynamic>> treatments) {
+/// Widget séparé du calendrier pour éviter les rebuilds inutiles
+class _CalendarWidget extends StatelessWidget {
+  final DateTime focusedDay;
+  final DateTime selectedDay;
+  final List<Map<String, dynamic>> treatments;
+  final Function(DateTime selectedDay, DateTime focusedDay) onDaySelected;
+  final Function(DateTime focusedDay) onPageChanged;
+  final Function(DateTime, List<Map<String, dynamic>>) getTreatmentsForDay;
+
+  const _CalendarWidget({
+    required this.focusedDay,
+    required this.selectedDay,
+    required this.treatments,
+    required this.onDaySelected,
+    required this.onPageChanged,
+    required this.getTreatmentsForDay,
+  });
+
+  List<String> _getEventsMarkers(DateTime day) {
+    final treatmentsForDay = getTreatmentsForDay(day, treatments);
+    return List.generate(treatmentsForDay.length, (index) => 'event_$index');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: TableCalendar(
           firstDay: DateTime(2024, 1, 1),
-          lastDay: DateTime(
-            2079,
-            12,
-            31,
-          ), // A mettre à jour, si besoin, dans le futur.
-          focusedDay: _focusedDay,
+          lastDay: DateTime(2079, 12, 31),
+          focusedDay: focusedDay,
           selectedDayPredicate: (day) {
-            return isSameDay(_selectedDay, day);
+            return isSameDay(selectedDay, day);
           },
           onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _focusedDay = focusedDay;
-            });
+            onDaySelected(selectedDay, focusedDay);
           },
-          onPageChanged: (focusedDay) {
-            _focusedDay = focusedDay;
-          },
-          eventLoader: (day) => _getEventsMarkers(day, treatments),
+          onPageChanged: onPageChanged,
+          eventLoader: _getEventsMarkers,
           calendarStyle: CalendarStyle(
             selectedDecoration: BoxDecoration(
               color: AppTheme.primaryBlue,

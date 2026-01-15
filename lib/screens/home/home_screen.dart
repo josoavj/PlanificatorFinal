@@ -46,8 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         appBar: AppBar(
           title: Text(_pageTitles[_selectedIndex]),
@@ -95,17 +95,37 @@ class _DashboardTabState extends State<_DashboardTab> {
   void initState() {
     super.initState();
     _planningDetailsRepo = context.read<PlanningDetailsRepository>();
-    // Charger les données après le premier frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
+    // Les données sont déjà préchargées dans _AuthGate
+    // Ne pas recharger ici pour éviter le double rendu
   }
 
   Future<void> _loadData() async {
-    logger.i('🔄 Démarrage du chargement des données complètes...');
-    await _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
-    await _planningDetailsRepo.loadUpcomingTreatmentsComplete();
-    logger.i('✅ Chargement complété');
+    try {
+      logger.i('🔄 Rafraîchissement manuel des données...');
+      await _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
+      await _planningDetailsRepo.loadUpcomingTreatmentsComplete();
+      logger.i('✅ Rafraîchissement complété');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Données rafraîchies'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      logger.e('❌ Erreur lors du rafraîchissement: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erreur: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -119,152 +139,152 @@ class _DashboardTabState extends State<_DashboardTab> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            Text(
-              'BIENVENUE DANS PLANIFICATOR',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 25),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height - 100,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Text(
+                'BIENVENUE DANS PLANIFICATOR',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 25),
 
-            // Two columns layout for current and next treatments
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // LEFT: A venir (mois prochain) - sans redondance 1 mois
-                Expanded(
-                  child: Column(
+              // Two columns layout for current and next treatments (responsive)
+              Consumer<PlanningDetailsRepository>(
+                builder: (context, planningDetailsRepo, _) {
+                  // Filtrer une seule fois pour éviter les recalculs
+                  final currentMonthIds = planningDetailsRepo
+                      .currentMonthTreatmentsComplete
+                      .map((t) => t['planning_detail_id'] as int?)
+                      .toSet();
+
+                  final upcomingFiltered = planningDetailsRepo
+                      .upcomingTreatmentsComplete
+                      .where(
+                        (treatment) => !currentMonthIds.contains(
+                          treatment['planning_detail_id'] as int?,
+                        ),
+                      )
+                      .toList();
+
+                  final currentMonth =
+                      planningDetailsRepo.currentMonthTreatmentsComplete;
+
+                  logger.d(
+                    '📊 Dashboard: ${currentMonth.length} en cours, ${upcomingFiltered.length} à venir',
+                  );
+
+                  // Responsive layout: 2 columns sur grand écran, 1 colonne sinon
+                  final isMobile = MediaQuery.of(context).size.width < 900;
+
+                  if (isMobile) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTreatmentSection(
+                          title: 'En cours',
+                          isLoading: planningDetailsRepo.isLoading,
+                          errorMessage: planningDetailsRepo.errorMessage,
+                          treatments: _formatTreatments(currentMonth),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildTreatmentSection(
+                          title: 'À venir',
+                          isLoading: planningDetailsRepo.isLoading,
+                          errorMessage: planningDetailsRepo.errorMessage,
+                          treatments: _formatTreatments(upcomingFiltered),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'A venir',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                      // LEFT: A venir
+                      Expanded(
+                        child: _buildTreatmentSection(
+                          title: 'À venir',
+                          isLoading: planningDetailsRepo.isLoading,
+                          errorMessage: planningDetailsRepo.errorMessage,
+                          treatments: _formatTreatments(upcomingFiltered),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        constraints: const BoxConstraints(minHeight: 400),
-                        child: Consumer<PlanningDetailsRepository>(
-                          builder: (context, planningDetailsRepo, _) {
-                            // ✅ "A venir" = Traitements du MOIS SUIVANT
-                            // MAIS exclure ceux déjà affichés dans "En cours"
-                            final currentMonthIds = planningDetailsRepo
-                                .currentMonthTreatmentsComplete
-                                .map((t) => t['planning_detail_id'] as int?)
-                                .toSet();
+                      const SizedBox(width: 24),
 
-                            final filteredTreatments = planningDetailsRepo
-                                .upcomingTreatmentsComplete
-                                .where(
-                                  (treatment) => !currentMonthIds.contains(
-                                    treatment['planning_detail_id'] as int?,
-                                  ),
-                                )
-                                .toList();
-
-                            logger.d(
-                              '🔄 Rebuilding upcoming table with ${filteredTreatments.length} items (exclu ${currentMonthIds.length} en cours)',
-                            );
-                            return _buildTreatmentTable(
-                              title: 'Prochains traitements',
-                              isLoading: planningDetailsRepo.isLoading,
-                              errorMessage: planningDetailsRepo.errorMessage,
-                              treatments: filteredTreatments
-                                  .map(
-                                    (data) => {
-                                      'date': _formatDate(data['date']),
-                                      'nom': _convertToString(
-                                        data['traitement'] ?? '',
-                                      ),
-                                      'etat': _convertToString(
-                                        data['etat'] ?? '',
-                                      ),
-                                      'axe': _convertToString(
-                                        data['axe'] ?? '',
-                                      ),
-                                    },
-                                  )
-                                  .toList(),
-                            );
-                          },
+                      // RIGHT: En cours
+                      Expanded(
+                        child: _buildTreatmentSection(
+                          title: 'En cours',
+                          isLoading: planningDetailsRepo.isLoading,
+                          errorMessage: planningDetailsRepo.errorMessage,
+                          treatments: _formatTreatments(currentMonth),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-
-                // RIGHT: En cours (mois actuel) - affiche à venir ET effectué
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'En cours',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        constraints: const BoxConstraints(minHeight: 400),
-                        child: Consumer<PlanningDetailsRepository>(
-                          builder: (context, planningDetailsRepo, _) {
-                            // ✅ "En cours" = TOUS les traitements du MOIS ACTUEL
-                            // (affichage complet: à venir, en cours, effectué)
-                            final filteredTreatments = planningDetailsRepo
-                                .currentMonthTreatmentsComplete
-                                .toList();
-
-                            logger.d(
-                              '🔄 Rebuilding current month table with ${filteredTreatments.length} items (mois actuel)',
-                            );
-                            return _buildTreatmentTable(
-                              title: 'Traitements en cours',
-                              isLoading: planningDetailsRepo.isLoading,
-                              errorMessage: planningDetailsRepo.errorMessage,
-                              treatments: filteredTreatments
-                                  .map(
-                                    (data) => {
-                                      'date': _formatDate(data['date']),
-                                      'nom': _convertToString(
-                                        data['traitement'] ?? '',
-                                      ),
-                                      'etat': _convertToString(
-                                        data['etat'] ?? '',
-                                      ),
-                                      'axe': _convertToString(
-                                        data['axe'] ?? '',
-                                      ),
-                                    },
-                                  )
-                                  .toList(),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildTreatmentSection({
+    required String title,
+    required bool isLoading,
+    required List<Map<String, dynamic>> treatments,
+    String? errorMessage,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          constraints: const BoxConstraints(minHeight: 300, maxHeight: 600),
+          child: _buildTreatmentTable(
+            title: title,
+            isLoading: isLoading,
+            errorMessage: errorMessage,
+            treatments: treatments,
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> _formatTreatments(
+    List<Map<String, dynamic>> rawTreatments,
+  ) {
+    return rawTreatments
+        .map(
+          (data) => {
+            'date': _formatDate(data['date']),
+            'nom': _convertToString(data['traitement'] ?? ''),
+            'etat': _convertToString(data['etat'] ?? ''),
+            'axe': _convertToString(data['axe'] ?? ''),
+          },
+        )
+        .toList();
   }
 
   Widget _buildTreatmentTable({
@@ -277,62 +297,65 @@ class _DashboardTabState extends State<_DashboardTab> {
     if (treatments.isNotEmpty) {
       return SingleChildScrollView(
         scrollDirection: Axis.vertical,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('Nom')),
-            DataColumn(label: Text('État')),
-            DataColumn(label: Text('Axe')),
-          ],
-          rows: treatments.map((treatment) {
-            final etat = treatment['etat'] ?? '';
-            final bgColor = etat == 'Effectué'
-                ? Colors.green.shade50
-                : etat == 'À venir'
-                ? Colors.red.shade50
-                : Colors.white;
-            final textColor = etat == 'Effectué'
-                ? Colors.green.shade700
-                : etat == 'À venir'
-                ? Colors.red.shade700
-                : Colors.black;
+        child: SizedBox(
+          width: double.infinity,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Date')),
+              DataColumn(label: Text('Nom')),
+              DataColumn(label: Text('État')),
+              DataColumn(label: Text('Axe')),
+            ],
+            rows: treatments.map((treatment) {
+              final etat = treatment['etat'] ?? '';
+              final bgColor = etat == 'Effectué'
+                  ? Colors.green.shade50
+                  : etat == 'À venir'
+                  ? Colors.red.shade50
+                  : Colors.white;
+              final textColor = etat == 'Effectué'
+                  ? Colors.green.shade700
+                  : etat == 'À venir'
+                  ? Colors.red.shade700
+                  : Colors.black;
 
-            return DataRow(
-              color: WidgetStatePropertyAll(bgColor),
-              cells: [
-                DataCell(
-                  Text(
-                    treatment['date'] ?? '',
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.w500,
+              return DataRow(
+                color: WidgetStatePropertyAll(bgColor),
+                cells: [
+                  DataCell(
+                    Text(
+                      treatment['date'] ?? '',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                DataCell(
-                  Text(
-                    treatment['nom'] ?? '',
-                    style: TextStyle(color: textColor),
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    etat,
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.bold,
+                  DataCell(
+                    Text(
+                      treatment['nom'] ?? '',
+                      style: TextStyle(color: textColor),
                     ),
                   ),
-                ),
-                DataCell(
-                  Text(
-                    treatment['axe'] ?? '',
-                    style: TextStyle(color: textColor),
+                  DataCell(
+                    Text(
+                      etat,
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            );
-          }).toList(),
+                  DataCell(
+                    Text(
+                      treatment['axe'] ?? '',
+                      style: TextStyle(color: textColor),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
         ),
       );
     }
