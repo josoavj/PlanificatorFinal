@@ -18,8 +18,8 @@ class DatabaseConfigScreen extends StatefulWidget {
 class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
   final _hostController = TextEditingController(text: 'localhost');
   final _portController = TextEditingController(text: '3306');
-  final _userController = TextEditingController(text: 'sudoted');
-  final _passwordController = TextEditingController(text: '100805Josh');
+  final _userController = TextEditingController(text: 'root');
+  final _passwordController = TextEditingController(text: 'root');
   final _databaseController = TextEditingController(text: 'Planificator');
   final logger = createLoggerWithFileOutput(name: 'database_config_screen');
 
@@ -89,10 +89,10 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
 
         logger.i('✅ Base de données configurée avec succès');
 
-        // Fermer la page et continuer
+        // Appeler le callback et naviguer vers login
         widget.onConfigured();
         if (mounted) {
-          Navigator.of(context).pop();
+          Navigator.of(context).pushReplacementNamed('/login');
         }
       } else {
         AppDialogs.error(
@@ -113,8 +113,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Empêcher de fermer avant la config
+    return PopScope(
+      canPop: false, // Empêcher de fermer avant la config
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         body: SafeArea(
