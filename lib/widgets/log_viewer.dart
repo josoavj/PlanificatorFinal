@@ -33,6 +33,70 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     super.dispose();
   }
 
+  String _getLevelIcon(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return '🐛';
+      case LogLevel.info:
+        return 'ℹ️';
+      case LogLevel.warning:
+        return '⚠️';
+      case LogLevel.error:
+        return '❌';
+      case LogLevel.critical:
+        return '🔴';
+    }
+  }
+
+  Color _getMessageColor(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return Colors.grey;
+      case LogLevel.info:
+        return Colors.white70;
+      case LogLevel.warning:
+        return Colors.amber[300] ?? Colors.amber;
+      case LogLevel.error:
+      case LogLevel.critical:
+        return Colors.red[300] ?? Colors.red;
+    }
+  }
+
+  Color _getLogBackgroundColor(LogLevel level) {
+    switch (level) {
+      case LogLevel.error:
+      case LogLevel.critical:
+        return Colors.red.withOpacity(0.05);
+      case LogLevel.warning:
+        return Colors.amber.withOpacity(0.05);
+      case LogLevel.debug:
+        return (Colors.grey[900] ?? Colors.grey[850])!;
+      case LogLevel.info:
+        return (Colors.grey[850] ?? Colors.grey[800])!;
+    }
+  }
+
+  Widget _buildLevelBadge(LogLevel level) {
+    final color = _getLevelColor(level);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        border: Border.all(color: color, width: 1.5),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        level.name.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'monospace',
+        ),
+      ),
+    );
+  }
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
@@ -292,89 +356,155 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                   _scrollToBottom();
 
                   return Container(
-                    color: index % 2 == 0 ? Colors.grey[950] : Colors.grey[900],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 2,
+                      horizontal: 4,
                     ),
+                    decoration: BoxDecoration(
+                      color: _getLogBackgroundColor(entry.level),
+                      border: Border(
+                        left: BorderSide(
+                          color: _getLevelColor(entry.level),
+                          width: 3,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // En-tête: Numéro, Temps, Niveau
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Temps
-                            Text(
-                              entry.formattedTime,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                                fontFamily: 'monospace',
+                            // Numéro et Temps
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  // Numéro du log
+                                  Container(
+                                    width: 30,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.grey[800] ?? Colors.grey[700],
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Temps
+                                  Text(
+                                    entry.formattedTime,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            // Niveau
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getLevelColor(
-                                  entry.level,
-                                ).withOpacity(0.2),
-                                border: Border.all(
-                                  color: _getLevelColor(entry.level),
-                                ),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Text(
-                                entry.levelName,
-                                style: TextStyle(
-                                  color: _getLevelColor(entry.level),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Source
-                            if (entry.source != null)
-                              Text(
-                                '[${entry.source}]',
-                                style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 11,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
+                            // Niveau avec icône
+                            _buildLevelBadge(entry.level),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        // Message
-                        Text(
-                          entry.message,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontFamily: 'monospace',
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(height: 6),
+                        // Source et Message dans Row pour compacité
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Icône selon le niveau
+                            SizedBox(
+                              width: 24,
+                              child: Text(
+                                _getLevelIcon(entry.level),
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Source et Message
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Source
+                                  if (entry.source?.isNotEmpty ?? false)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(
+                                        entry.source ?? '',
+                                        style: const TextStyle(
+                                          color: Colors.lightBlue,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: 'monospace',
+                                        ),
+                                      ),
+                                    ),
+                                  if (entry.source != null)
+                                    const SizedBox(height: 4),
+                                  // Message
+                                  Text(
+                                    entry.message,
+                                    style: TextStyle(
+                                      color: _getMessageColor(entry.level),
+                                      fontSize: 12,
+                                      fontFamily: 'monospace',
+                                      height: 1.4,
+                                    ),
+                                    maxLines: 4,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        // StackTrace si présent
+                        // StackTrace si présent (affiché sous avec indentation)
                         if (entry.stackTrace != null)
                           Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              entry.stackTrace.toString().split('\n').first,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 10,
-                                fontFamily: 'monospace',
+                            padding: const EdgeInsets.only(top: 6, left: 30),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.3),
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              child: Text(
+                                (entry.stackTrace?.toString() ??
+                                        '(empty trace)')
+                                    .split('\n')
+                                    .first,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 10,
+                                  fontFamily: 'monospace',
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                       ],
@@ -389,13 +519,16 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     );
 
     if (widget.isDialog) {
-      return Dialog(backgroundColor: Colors.grey[950], child: content);
+      return Dialog(
+        backgroundColor: Colors.grey[950] ?? Colors.black,
+        child: content,
+      );
     } else {
       return Scaffold(
         backgroundColor: Colors.grey[950],
         appBar: AppBar(
           title: const Text('Log Viewer'),
-          backgroundColor: Colors.grey[900],
+          backgroundColor: Colors.grey[900] ?? Colors.grey[800],
         ),
         body: content,
       );

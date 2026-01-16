@@ -20,7 +20,7 @@ class User {
   });
 
   /// Nom complet
-  String get fullName => '$prenom $nom';
+  String get fullName => '$nom $prenom';
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(

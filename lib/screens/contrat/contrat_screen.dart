@@ -662,7 +662,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '� Redondance: ${_getRedondanceLabel(stat['redondance'] as int? ?? 1)}', // ✅ Ajouter redondance
+                                    'Redondance: ${_getRedondanceLabel(stat['redondance'] as int? ?? 1)}', //  Ajouter redondance
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.orange[700],
@@ -1182,7 +1182,9 @@ class _ContratScreenState extends State<ContratScreen> {
                           const SizedBox(width: 8),
                           ElevatedButton.icon(
                             icon: const Icon(Icons.build, size: 18),
-                            label: const Text('Réparer ce traitement'),
+                            label: const Text(
+                              'Réparer la facture de ce traitement',
+                            ),
                             onPressed: () {
                               _repairTreatmentType(contrat, traitementType);
                             },
@@ -1492,82 +1494,191 @@ class _ContratScreenState extends State<ContratScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // Liste des plannings
-                          ...traitements.map((planning) {
-                            final dateStr =
-                                planning['date_planification'] != null
-                                ? DateFormat(
-                                    'EEEE dd MMMM yyyy',
-                                    'fr_FR',
-                                  ).format(
-                                    planning['date_planification'] as DateTime,
-                                  )
-                                : 'Date N/A';
-                            final parts = dateStr.split(' ');
-                            if (parts.isNotEmpty) {
-                              parts[0] =
-                                  parts[0][0].toUpperCase() +
-                                  parts[0].substring(1);
-                            }
-                            if (parts.length > 2) {
-                              parts[2] =
-                                  parts[2][0].toUpperCase() +
-                                  parts[2].substring(1);
-                            }
-                            final capitalizedDate = parts.join(' ');
-
-                            return Container(
+                          // Liste des plannings OU message si orphelin
+                          if (traitements.isNotEmpty &&
+                              traitements.first['planning_detail_id'] == null)
+                            // TRAITEMENT ORPHELIN: Afficher un message spécial
+                            Container(
                               margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.grey[50],
+                                color: Colors.orange[50],
                                 border: Border.all(
-                                  color: Colors.grey[300]!,
-                                  width: 0.5,
+                                  color: Colors.orange[300]!,
+                                  width: 1,
                                 ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          capitalizedDate,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        planning['etat'] ?? '-',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: _getStatusColorForPlanning(
-                                            planning['etat'] as String?,
-                                          ),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
+                                  Icon(
+                                    Icons.warning_rounded,
+                                    color: Colors.orange[700],
+                                    size: 20,
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Axe: ${planning['axe'] ?? '-'}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '⚠️ SANS PLANNING',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                            color: Colors.orange[900],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Ce traitement n\'a pas encore de planning ni de factures.',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.orange[700],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            );
-                          }),
+                            )
+                          else
+                            // ✅ TRAITEMENT AVEC PLANNING: Afficher les dates
+                            ...traitements.map((planning) {
+                              final dateStr =
+                                  planning['date_planification'] != null
+                                  ? DateFormat(
+                                      'EEEE dd MMMM yyyy',
+                                      'fr_FR',
+                                    ).format(
+                                      planning['date_planification']
+                                          as DateTime,
+                                    )
+                                  : 'Date N/A';
+                              final parts = dateStr.split(' ');
+                              if (parts.isNotEmpty) {
+                                parts[0] =
+                                    parts[0][0].toUpperCase() +
+                                    parts[0].substring(1);
+                              }
+                              if (parts.length > 2) {
+                                parts[2] =
+                                    parts[2][0].toUpperCase() +
+                                    parts[2].substring(1);
+                              }
+                              final capitalizedDate = parts.join(' ');
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  border: Border.all(
+                                    color: Colors.grey[300]!,
+                                    width: 0.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            capitalizedDate,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          planning['etat'] ?? '-',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: _getStatusColorForPlanning(
+                                              planning['etat'] as String?,
+                                            ),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Axe: ${planning['axe'] ?? '-'}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
                           const SizedBox(height: 12),
+                          // Boutons d'action
+                          Row(
+                            children: [
+                              // Bouton Changer redondance
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    // Obtenir le premier traitementId du groupe pour cette modification
+                                    final firstPlanning = traitements.isNotEmpty
+                                        ? traitements.first
+                                        : null;
+                                    if (firstPlanning != null) {
+                                      _showModifyRedondanceDialog(
+                                        ctx,
+                                        contrat.contratId,
+                                        firstPlanning['traitementId'] as int,
+                                        typeTraitement,
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.edit),
+                                  label: const Text('Changer redondance'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue[600],
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Bouton Réparer données
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final firstPlanning = traitements.isNotEmpty
+                                      ? traitements.first
+                                      : null;
+                                  if (firstPlanning != null) {
+                                    // Demander le montant avant réparation
+                                    await _showRepairMontantDialog(
+                                      firstPlanning['traitementId'] as int,
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.build),
+                                label: const Text('Réparer'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange[600],
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                    horizontal: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
                         ],
                       );
                     },
@@ -1617,29 +1728,49 @@ class _ContratScreenState extends State<ContratScreen> {
       final rows = await database.query(sql, [contratId]);
 
       final groupedMap = <String, List<Map<String, dynamic>>>{};
+      final treatmentIds = <int>{}; // Tracker pour éviter les doublons
 
       for (final row in rows) {
         final typeTraitement =
             (row['typeTraitement'] as String?) ?? 'Sans type';
+        final traitementId = row['traitement_id'] as int;
 
-        final planningData = {
-          'traitementId': row['traitement_id'] as int,
-          'contratId': row['contrat_id'] as int,
-          'nom': typeTraitement,
-          'type': row['type'] as String,
-          'planning_detail_id': row['planning_detail_id'],
-          'date_planification': row['date_planification'] is String
-              ? DateTime.parse(row['date_planification'] as String)
-              : row['date_planification'] as DateTime?,
-          'axe': row['axe'] as String? ?? '-',
-          'etat': row['etat'] as String? ?? '-',
-        };
+        // Créer une entry par planning_detail (pour chaque date)
+        if (row['planning_detail_id'] != null) {
+          final planningData = {
+            'traitementId': traitementId,
+            'contratId': row['contrat_id'] as int,
+            'nom': typeTraitement,
+            'type': row['type'] as String,
+            'planning_detail_id': row['planning_detail_id'],
+            'date_planification': row['date_planification'] is String
+                ? DateTime.parse(row['date_planification'] as String)
+                : row['date_planification'] as DateTime?,
+            'axe': row['axe'] as String? ?? '-',
+            'etat': row['etat'] as String? ?? '-',
+          };
 
-        if (!groupedMap.containsKey(typeTraitement)) {
-          groupedMap[typeTraitement] = [];
-        }
-        // Vérifier si cette entrée a au moins un planning detail
-        if (planningData['planning_detail_id'] != null) {
+          if (!groupedMap.containsKey(typeTraitement)) {
+            groupedMap[typeTraitement] = [];
+          }
+          groupedMap[typeTraitement]!.add(planningData);
+        } else if (!treatmentIds.contains(traitementId)) {
+          //  AJOUTER LES TRAITEMENTS ORPHELINS (sans planning)
+          treatmentIds.add(traitementId);
+          final planningData = {
+            'traitementId': traitementId,
+            'contratId': row['contrat_id'] as int,
+            'nom': typeTraitement,
+            'type': row['type'] as String,
+            'planning_detail_id': null,
+            'date_planification': null,
+            'axe': row['axe'] as String? ?? '-',
+            'etat': '⚠️ SANS PLANNING',
+          };
+
+          if (!groupedMap.containsKey(typeTraitement)) {
+            groupedMap[typeTraitement] = [];
+          }
           groupedMap[typeTraitement]!.add(planningData);
         }
       }
@@ -1648,6 +1779,1250 @@ class _ContratScreenState extends State<ContratScreen> {
     } catch (e) {
       logger.e('Erreur chargement plannings: $e');
       return {};
+    }
+  }
+
+  /// Afficher un dialog pour modifier la redondance et régénérer les plannings
+  /// OU créer un nouveau planning si absent
+  Future<void> _showModifyRedondanceDialog(
+    BuildContext ctx,
+    int contratId,
+    int traitementId,
+    String typeTraitement,
+  ) async {
+    // Récupérer les informations du traitement existant
+    final db = DatabaseService();
+    const sql = '''
+      SELECT 
+        p.planning_id,
+        p.traitement_id,
+        p.duree_traitement,
+        p.redondance,
+        MIN(pd.date_planification) as first_date,
+        COUNT(pd.planning_detail_id) as nb_details,
+        GROUP_CONCAT(DISTINCT pd.planning_detail_id) as detail_ids,
+        MAX(pd.date_planification) as last_date
+      FROM Planning p
+      LEFT JOIN PlanningDetails pd ON pd.planning_id = p.planning_id
+      WHERE p.traitement_id = ?
+      GROUP BY p.planning_id
+      LIMIT 1
+    ''';
+
+    final result = await db.query(sql, [traitementId]);
+
+    // SI PLANNING ABSENT: créer un nouveau
+    if (result.isEmpty) {
+      logger.i(
+        '⚠️ Aucun planning trouvé pour traitement $traitementId, création...',
+      );
+      if (!mounted) return;
+      _showCreatePlanningDialog(ctx, contratId, traitementId, typeTraitement);
+      return;
+    }
+
+    // SINON: modifier le planning existant
+    final currentData = result.first;
+    final currentFirstDate = currentData['first_date'] != null
+        ? (currentData['first_date'] is String
+              ? DateTime.parse(currentData['first_date'] as String)
+              : currentData['first_date'] as DateTime?)
+        : null;
+
+    // Récupérer la durée en MOIS depuis la table Planning, pas le nombre de détails
+    final currentDuree = currentData['duree_traitement'] as int? ?? 12;
+    final currentRedondance = currentData['redondance'] as int? ?? 1;
+
+    String selectedRedondance = '1'; // Mensuel par défaut
+    DateTime? selectedDate = currentFirstDate;
+
+    // Options de redondance
+    final redondanceOptions = [
+      {'label': 'Mensuel', 'value': '1'},
+      {'label': 'Bimestriel', 'value': '2'},
+      {'label': 'Trimestriel', 'value': '3'},
+      {'label': 'Quadrimestriel', 'value': '4'},
+      {'label': 'Semestriel', 'value': '6'},
+      {'label': 'Annuel', 'value': '12'},
+      {'label': 'Une seule fois', 'value': '0'},
+    ];
+
+    // Afficher le dialog de modification
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('🔄 Modifier redondance - $typeTraitement'),
+            content: SizedBox(
+              width: 450,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Redondance actuelle: ${_getRedondanceLabel(currentRedondance)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Sélecteur de redondance
+                  DropdownButtonFormField<String>(
+                    value: selectedRedondance,
+                    decoration: InputDecoration(
+                      labelText: 'Nouvelle redondance',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      isDense: true,
+                    ),
+                    items: redondanceOptions
+                        .map(
+                          (opt) => DropdownMenuItem(
+                            value: opt['value'] as String,
+                            child: Text(opt['label'] as String),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedRedondance = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Sélecteur de date
+                  Text(
+                    'Date de début du planning:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          selectedDate = date;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedDate != null
+                                ? DateFormat('dd/MM/yyyy').format(selectedDate!)
+                                : 'Sélectionner une date',
+                            style: TextStyle(
+                              color: selectedDate != null
+                                  ? Colors.black
+                                  : Colors.grey[500],
+                            ),
+                          ),
+                          Icon(Icons.calendar_today, color: Colors.grey[600]),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Durée (à vérifier)
+                  Text(
+                    'Durée du traitement: ${(currentDuree / (int.tryParse(selectedRedondance) ?? 1)).ceil()} mois',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (selectedDate == null) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Veuillez sélectionner une date'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (!mounted) return;
+                  Navigator.pop(dialogCtx); // Fermer le dialog de modification
+
+                  // Demander le montant avant régénération
+                  if (!mounted) return;
+                  _showMontantInputDialog(
+                    context,
+                    traitementId,
+                    selectedDate!.toUtc(),
+                    int.tryParse(selectedRedondance) ?? 1,
+                    currentDuree,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[600],
+                ),
+                child: const Text('Régénérer'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Créer un nouveau planning pour un traitement sans planning
+  Future<void> _showCreatePlanningDialog(
+    BuildContext ctx,
+    int contratId,
+    int traitementId,
+    String typeTraitement,
+  ) async {
+    final dateController = TextEditingController();
+    final durationController = TextEditingController(text: '12');
+    final montantController = TextEditingController();
+    String selectedRedondance = '1'; // Mensuel par défaut
+
+    final redondanceOptions = [
+      {'label': 'Mensuel', 'value': '1'},
+      {'label': 'Bimestriel', 'value': '2'},
+      {'label': 'Trimestriel', 'value': '3'},
+      {'label': 'Quadrimestriel', 'value': '4'},
+      {'label': 'Semestriel', 'value': '6'},
+      {'label': 'Annuel', 'value': '12'},
+      {'label': 'Une seule fois', 'value': '0'},
+    ];
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('📅 Créer un planning - $typeTraitement'),
+            content: SizedBox(
+              width: 450,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '⚠️ Ce traitement n\'a pas encore de planning. Créez-en un:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Date début
+                    TextButton(
+                      onPressed: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (date != null) {
+                          dateController.text = DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(date);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              dateController.text.isNotEmpty
+                                  ? dateController.text
+                                  : 'Sélectionner date début',
+                              style: TextStyle(
+                                color: dateController.text.isNotEmpty
+                                    ? Colors.black
+                                    : Colors.grey[500],
+                              ),
+                            ),
+                            Icon(Icons.calendar_today, color: Colors.grey[600]),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Durée en mois
+                    TextField(
+                      controller: durationController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Durée du traitement',
+                        hintText: 'Ex: 12',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        suffixText: 'mois',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Redondance
+                    DropdownButtonFormField<String>(
+                      value: selectedRedondance,
+                      decoration: InputDecoration(
+                        labelText: 'Redondance',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        isDense: true,
+                      ),
+                      items: redondanceOptions
+                          .map(
+                            (opt) => DropdownMenuItem(
+                              value: opt['value'] as String,
+                              child: Text(opt['label'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedRedondance = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Montant
+                    TextField(
+                      controller: montantController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Montant unitaire',
+                        hintText: 'Ex: 50000 ou 50 000',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        suffixText: 'Ar',
+                        helperText: 'Montant par planification',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // Validations
+                  if (dateController.text.isEmpty) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Veuillez sélectionner une date'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (montantController.text.isEmpty) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Veuillez entrer un montant'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    // Parser la date et le montant
+                    final selectedDate = DateFormat(
+                      'dd/MM/yyyy',
+                    ).parse(dateController.text);
+                    final duree = int.tryParse(durationController.text) ?? 12;
+                    final redondance = int.tryParse(selectedRedondance) ?? 1;
+                    final montant = NumberFormatter.parseMontant(
+                      montantController.text,
+                    );
+
+                    if (!mounted) return;
+                    Navigator.pop(dialogCtx);
+
+                    // Créer le planning dans la base de données
+                    await _createPlanningForTreatment(
+                      traitementId: traitementId,
+                      dateDebut: selectedDate,
+                      duree: duree,
+                      redondance: redondance,
+                      montant: montant,
+                      contratId: contratId,
+                    );
+
+                    // Recharger le planning
+                    if (mounted) {
+                      Navigator.pop(context);
+                      _viewPlanning(
+                        Contrat(
+                          contratId: contratId,
+                          clientId: 0,
+                          referenceContrat: '',
+                          dateContrat: DateTime.now(),
+                          dateDebut: DateTime.now(),
+                          dateFin: null,
+                          statutContrat: '',
+                          duree: null,
+                          categorie: '',
+                          dureeContrat: 0,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('❌ Erreur: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[600],
+                ),
+                child: const Text('Créer'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Créer un planning complet (table Planning + PlanningDetails + Factures)
+  Future<void> _createPlanningForTreatment({
+    required int traitementId,
+    required DateTime dateDebut,
+    required int duree,
+    required int redondance,
+    required int montant,
+    required int contratId,
+  }) async {
+    try {
+      final db = DatabaseService();
+
+      logger.i(
+        '✨ Création planning: traitementId=$traitementId, duree=$duree, redondance=$redondance, montant=$montant',
+      );
+
+      // 1. Créer l'enregistrement Planning
+      const sqlCreatePlanning = '''
+        INSERT INTO Planning (
+          traitement_id,
+          date_debut_planification,
+          duree_traitement,
+          redondance,
+          date_fin_planification
+        ) VALUES (?, ?, ?, ?, DATE_ADD(?, INTERVAL ? MONTH))
+      ''';
+
+      final dateStr = dateDebut.toUtc().toString().split(' ')[0];
+      await db.execute(sqlCreatePlanning, [
+        traitementId,
+        dateStr,
+        duree,
+        redondance,
+        dateStr,
+        duree,
+      ]);
+
+      // Récupérer l'ID du planning créé
+      const sqlGetPlanningId =
+          'SELECT planning_id FROM Planning WHERE traitement_id = ? LIMIT 1';
+      final planningIdResult = await db.query(sqlGetPlanningId, [traitementId]);
+
+      if (planningIdResult.isEmpty) {
+        throw Exception('Impossible de récupérer l\'ID du planning créé');
+      }
+
+      final planningId = planningIdResult.first['planning_id'] as int;
+      logger.i('✅ Planning créé: ID $planningId');
+
+      // 2. Générer les dates
+      final planningDates = DateUtils.DateUtils.generatePlanningDates(
+        dateDebut: dateDebut,
+        dureeTraitement: duree,
+        redondance: redondance,
+      );
+
+      logger.i('📅 ${planningDates.length} dates générées');
+
+      // 3. Créer les PlanningDetails
+      int detailsCreated = 0;
+      for (final date in planningDates) {
+        const sqlInsertDetail = '''
+          INSERT INTO PlanningDetails (planning_id, date_planification, statut)
+          VALUES (?, ?, 'À venir')
+        ''';
+        final dateStr = date.toUtc().toString().split(' ')[0];
+        await db.execute(sqlInsertDetail, [planningId, dateStr]);
+        detailsCreated++;
+      }
+
+      logger.i('✅ $detailsCreated planning details créés');
+
+      // 4. Récupérer l'axe du client
+      String clientAxe = 'Centre (C)';
+      const sqlGetAxe = '''
+        SELECT COALESCE(cl.axe, 'Centre (C)') as axe
+        FROM Contrat c
+        INNER JOIN Client cl ON c.client_id = cl.client_id
+        WHERE c.contrat_id = ?
+      ''';
+      try {
+        final axeResult = await db.query(sqlGetAxe, [contratId]);
+        if (axeResult.isNotEmpty) {
+          clientAxe = axeResult.first['axe'] as String? ?? 'Centre (C)';
+        }
+      } catch (e) {
+        logger.w('⚠️ Impossible de récupérer axe: $e');
+      }
+
+      // 5. Créer les Factures pour chaque PlanningDetail
+      const sqlGetDetails = '''
+        SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?
+      ''';
+      final detailsResult = await db.query(sqlGetDetails, [planningId]);
+
+      int facturesCreated = 0;
+      for (final detail in detailsResult) {
+        final planningDetailId = detail['planning_detail_id'] as int;
+        const sqlInsertFacture = '''
+          INSERT INTO Facture (
+            planning_detail_id,
+            reference_facture,
+            montant,
+            mode,
+            date_traitement,
+            etat,
+            axe
+          ) VALUES (?, ?, ?, NULL, NOW(), 'À venir', ?)
+        ''';
+
+        final reference = 'FAC-${DateTime.now().millisecondsSinceEpoch}';
+        await db.execute(sqlInsertFacture, [
+          planningDetailId,
+          reference,
+          montant,
+          clientAxe,
+        ]);
+        facturesCreated++;
+      }
+
+      logger.i('✅ $facturesCreated factures créées');
+
+      // 6. Recharger les données
+      await context
+          .read<PlanningDetailsRepository>()
+          .loadAllTreatmentsComplete();
+      await context.read<FactureRepository>().loadAllFactures();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✨ Planning créé! $detailsCreated dates, $facturesCreated factures.',
+          ),
+          backgroundColor: Colors.green[700],
+        ),
+      );
+
+      logger.i('✅ Planning complètement créé');
+    } catch (e) {
+      logger.e('❌ Erreur création planning: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red[700]),
+      );
+    }
+  }
+
+  /// Afficher un dialog pour saisir le montant avant régénération
+  Future<void> _showMontantInputDialog(
+    BuildContext ctx,
+    int traitementId,
+    DateTime datePlanification,
+    int redondance,
+    int dureeTraitement,
+  ) async {
+    final montantController = TextEditingController();
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('💰 Saisir le montant unitaire'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Entrez le montant unitaire (par planification)',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: montantController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Montant',
+                hintText: 'Ex: 50000 ou 1 500 000',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                suffixText: 'Ar',
+                helperText: 'Les espaces sont ignorés',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final montantStr = montantController.text.trim();
+              if (montantStr.isEmpty) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Veuillez entrer un montant'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                // Parser le montant avec NumberFormatter (gère les espaces)
+                final montant = NumberFormatter.parseMontant(montantStr);
+
+                if (!mounted) return;
+                Navigator.pop(dialogCtx); // Fermer le dialog de montant
+
+                // Appeler la régénération avec le montant
+                await _regeneratePlanningDetails(
+                  traitementId,
+                  datePlanification,
+                  redondance,
+                  dureeTraitement,
+                  montant,
+                );
+
+                // Recharger le planning
+                if (mounted) {
+                  Navigator.pop(context); // Fermer le dialog de planning
+                  _viewPlanning(
+                    Contrat(
+                      contratId: 0,
+                      clientId: 0,
+                      referenceContrat: '',
+                      dateContrat: DateTime.now(),
+                      dateDebut: DateTime.now(),
+                      dateFin: null,
+                      statutContrat: '',
+                      duree: null,
+                      categorie: '',
+                      dureeContrat: 0,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('❌ Erreur: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green[600]),
+            child: const Text('Régénérer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Régénérer les planning details et factures pour un traitement
+  Future<void> _regeneratePlanningDetails(
+    int traitementId,
+    DateTime datePlanification,
+    int redondance,
+    int dureeTraitement,
+    int montant, // Nouveau paramètre: montant saisi manuellement
+  ) async {
+    try {
+      final db = DatabaseService();
+
+      logger.i(
+        '🔄 Régénération planning: traitementId=$traitementId, redondance=$redondance, duree=$dureeTraitement, montant=$montant',
+      );
+
+      // Récupérer le planning existant
+      const sqlGetPlanning = '''
+        SELECT planning_id FROM Planning WHERE traitement_id = ? LIMIT 1
+      ''';
+      final planningResult = await db.query(sqlGetPlanning, [traitementId]);
+
+      if (planningResult.isEmpty) {
+        logger.e('❌ Aucun planning trouvé pour traitementId $traitementId');
+        return;
+      }
+
+      final planningId = planningResult.first['planning_id'] as int;
+
+      // Mettre à jour la redondance et duree dans Planning
+      const sqlUpdatePlanning = '''
+        UPDATE Planning 
+        SET redondance = ?, duree_traitement = ?, date_debut_planification = ?
+        WHERE planning_id = ?
+      ''';
+      await db.execute(sqlUpdatePlanning, [
+        redondance,
+        dureeTraitement,
+        datePlanification.toUtc().toString().split(' ')[0], // Format DATE
+        planningId,
+      ]);
+      logger.i(
+        '✅ Planning mis à jour: redondance=$redondance, duree=$dureeTraitement',
+      );
+
+      // Supprimer les planning details existants
+      const sqlDeleteDetails =
+          'DELETE FROM PlanningDetails WHERE planning_id = ?';
+      await db.execute(sqlDeleteDetails, [planningId]);
+      logger.i('✅ Planning details supprimés');
+
+      // Supprimer les factures associées aux details supprimés
+      const sqlDeleteFactures = '''
+        DELETE FROM Facture WHERE planning_detail_id NOT IN (
+          SELECT planning_detail_id FROM PlanningDetails
+        )
+      ''';
+      await db.execute(sqlDeleteFactures);
+      logger.i('✅ Factures orphelines supprimées');
+
+      // Générer les nouvelles dates
+      final planningDates = DateUtils.DateUtils.generatePlanningDates(
+        dateDebut: datePlanification,
+        dureeTraitement: dureeTraitement,
+        redondance: redondance,
+      );
+
+      logger.i(
+        '📅 ${planningDates.length} dates générées (redondance=$redondance, duree=$dureeTraitement mois)',
+      );
+
+      // Créer les nouveaux planning details
+      int detailsCreated = 0;
+      for (final date in planningDates) {
+        const sqlInsertDetail = '''
+          INSERT INTO PlanningDetails (planning_id, date_planification, statut)
+          VALUES (?, ?, 'À venir')
+        ''';
+        // Convertir en UTC pour MySQL et formater en DATE
+        final dateStr = date.toUtc().toString().split(' ')[0];
+        await db.execute(sqlInsertDetail, [planningId, dateStr]);
+        detailsCreated++;
+      }
+
+      logger.i('✅ $detailsCreated planning details créés');
+
+      // Créer les factures pour chaque planning detail
+      const sqlGetDetails = '''
+        SELECT 
+          pd.planning_detail_id,
+          p.traitement_id,
+          t.contrat_id
+        FROM PlanningDetails pd
+        INNER JOIN Planning p ON pd.planning_id = p.planning_id
+        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+        WHERE p.planning_id = ?
+      ''';
+
+      final detailsResult = await db.query(sqlGetDetails, [planningId]);
+
+      // Récupérer l'axe du client pour ce contrat
+      String clientAxe = 'Centre (C)'; // Valeur par défaut
+      if (detailsResult.isNotEmpty) {
+        final contratId = detailsResult.first['contrat_id'] as int;
+        const sqlGetAxe = '''
+          SELECT COALESCE(cl.axe, 'Centre (C)') as axe
+          FROM Contrat c
+          INNER JOIN Client cl ON c.client_id = cl.client_id
+          WHERE c.contrat_id = ?
+        ''';
+        try {
+          final axeResult = await db.query(sqlGetAxe, [contratId]);
+          if (axeResult.isNotEmpty) {
+            clientAxe = axeResult.first['axe'] as String? ?? 'Centre (C)';
+          }
+        } catch (e) {
+          logger.w('⚠️ Impossible de récupérer axe du client: $e');
+        }
+      }
+
+      int facturesCreated = 0;
+      for (final detail in detailsResult) {
+        final planningDetailId = detail['planning_detail_id'] as int;
+
+        // ✅ UTILISER LE MONTANT SAISI MANUELLEMENT
+        const sqlInsertFacture = '''
+          INSERT INTO Facture (
+            planning_detail_id,
+            reference_facture,
+            montant,
+            mode,
+            date_traitement,
+            etat,
+            axe
+          ) VALUES (?, ?, ?, NULL, NOW(), 'À venir', ?)
+        ''';
+
+        final reference = 'FAC-${DateTime.now().millisecondsSinceEpoch}';
+        await db.execute(sqlInsertFacture, [
+          planningDetailId,
+          reference,
+          montant, // ✅ Utiliser le montant passé en paramètre
+          clientAxe,
+        ]);
+        facturesCreated++;
+      }
+
+      logger.i('✅ $facturesCreated factures créées avec montant=$montant Ar');
+
+      // Recharger les données
+      await context
+          .read<PlanningDetailsRepository>()
+          .loadAllTreatmentsComplete();
+      await context.read<FactureRepository>().loadAllFactures();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ Régénération complète! $detailsCreated dates, $facturesCreated factures.',
+          ),
+          backgroundColor: Colors.green[700],
+        ),
+      );
+    } catch (e) {
+      logger.e('❌ Erreur régénération: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red[700]),
+      );
+    }
+  }
+
+  /// Réparer les données de planning (régénère les détails et factures si manquants)
+  Future<void> _showRepairMontantDialog(int traitementId) async {
+    try {
+      final db = DatabaseService();
+
+      // Vérifier d'abord si la réparation est nécessaire
+      const sqlCheckPlanning = '''
+        SELECT 
+          p.planning_id,
+          p.duree_traitement,
+          p.redondance,
+          p.date_debut_planification,
+          COUNT(pd.planning_detail_id) as nb_details
+        FROM Planning p
+        LEFT JOIN PlanningDetails pd ON pd.planning_id = p.planning_id
+        WHERE p.traitement_id = ?
+        GROUP BY p.planning_id
+        LIMIT 1
+      ''';
+
+      final checkResult = await db.query(sqlCheckPlanning, [traitementId]);
+
+      if (checkResult.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Aucun planning trouvé'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      final planning = checkResult.first;
+      final nbDetailsActuels = planning['nb_details'] as int? ?? 0;
+      final duree = planning['duree_traitement'] as int? ?? 12;
+      final redondance = planning['redondance'] as int? ?? 1;
+      final dateDebut = planning['date_debut_planification'] != null
+          ? (planning['date_debut_planification'] is String
+                ? DateTime.parse(planning['date_debut_planification'] as String)
+                : planning['date_debut_planification'] as DateTime)
+          : DateTime.now();
+
+      // Générer les dates attendues pour vérifier
+      final expectedDates = DateUtils.DateUtils.generatePlanningDates(
+        dateDebut: dateDebut,
+        dureeTraitement: duree,
+        redondance: redondance,
+      );
+
+      logger.i(
+        '🔍 Vérification: $nbDetailsActuels details actuels vs ${expectedDates.length} attendus',
+      );
+
+      // Si les données sont déjà correctes, ne pas demander le montant
+      if (nbDetailsActuels >= expectedDates.length) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '✅ Les données de planning sont intègres, aucune réparation nécessaire',
+              ),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Les données manquent, demander le montant
+      final montantController = TextEditingController();
+
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Montant unitaire pour réparation'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Détails manquants détectés: $nbDetailsActuels/${expectedDates.length}\nEntrez le montant unitaire:',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: montantController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: '50 000',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixText: '₦ ',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final montantText = montantController.text.trim();
+                  if (montantText.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Veuillez entrer un montant'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final montant = NumberFormatter.parseMontant(montantText);
+                    Navigator.of(context).pop();
+                    _repairPlanningData(traitementId, montant);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Montant invalide: $e'),
+                        backgroundColor: Colors.red[700],
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Réparer'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      logger.e('❌ Erreur vérification réparation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _repairPlanningData(int traitementId, int montant) async {
+    try {
+      final db = DatabaseService();
+
+      logger.i(
+        '🔧 Réparation des données de planning pour traitementId=$traitementId avec montant=$montant',
+      );
+
+      // Récupérer les infos du planning
+      const sqlGetPlanning = '''
+        SELECT 
+          p.planning_id,
+          p.traitement_id,
+          p.date_debut_planification,
+          p.duree_traitement,
+          p.redondance,
+          COUNT(pd.planning_detail_id) as nb_details
+        FROM Planning p
+        LEFT JOIN PlanningDetails pd ON pd.planning_id = p.planning_id
+        WHERE p.traitement_id = ?
+        GROUP BY p.planning_id
+        LIMIT 1
+      ''';
+
+      final planningResult = await db.query(sqlGetPlanning, [traitementId]);
+
+      if (planningResult.isEmpty) {
+        logger.e('❌ Aucun planning trouvé');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Aucun planning trouvé pour ce traitement'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final planning = planningResult.first;
+      final planningId = planning['planning_id'] as int;
+      final dateDebut = planning['date_debut_planification'] != null
+          ? (planning['date_debut_planification'] is String
+                ? DateTime.parse(planning['date_debut_planification'] as String)
+                : planning['date_debut_planification'] as DateTime)
+          : DateTime.now();
+      final duree = planning['duree_traitement'] as int? ?? 12;
+      final redondance = planning['redondance'] as int? ?? 1;
+      final nbDetailsActuels = planning['nb_details'] as int? ?? 0;
+
+      logger.i(
+        '📋 Planning actuel: $nbDetailsActuels details, duree=$duree, redondance=$redondance',
+      );
+
+      // Générer les dates attendues
+      final expectedDates = DateUtils.DateUtils.generatePlanningDates(
+        dateDebut: dateDebut,
+        dureeTraitement: duree,
+        redondance: redondance,
+      );
+
+      logger.i('📅 Dates attendues: ${expectedDates.length}');
+
+      // Vérifier les détails manquants
+      if (nbDetailsActuels < expectedDates.length) {
+        logger.i(
+          '⚠️ ${expectedDates.length - nbDetailsActuels} details manquants, régénération...',
+        );
+
+        // Récupérer les dates existantes
+        const sqlGetExistingDates = '''
+          SELECT date_planification FROM PlanningDetails 
+          WHERE planning_id = ?
+        ''';
+        final existingResult = await db.query(sqlGetExistingDates, [
+          planningId,
+        ]);
+        final existingDates = existingResult
+            .map((r) => r['date_planification'] as String)
+            .toSet();
+
+        logger.i('✅ Dates existantes: ${existingDates.length}');
+
+        // Créer les details manquants
+        int detailsCreated = 0;
+        for (final date in expectedDates) {
+          final dateStr = date.toUtc().toString().split(' ')[0];
+          if (!existingDates.contains(dateStr)) {
+            const sqlInsertDetail = '''
+              INSERT INTO PlanningDetails (planning_id, date_planification, statut)
+              VALUES (?, ?, 'À venir')
+            ''';
+            await db.execute(sqlInsertDetail, [planningId, dateStr]);
+            detailsCreated++;
+          }
+        }
+
+        logger.i(
+          '✅ $detailsCreated planning details créés lors de la réparation',
+        );
+
+        // Récupérer l'axe du client
+        String clientAxe = 'Centre (C)';
+        const sqlGetAxe = '''
+          SELECT COALESCE(cl.axe, 'Centre (C)') as axe
+          FROM Contrat c
+          INNER JOIN Client cl ON c.client_id = cl.client_id
+          WHERE c.contrat_id = (
+            SELECT contrat_id FROM Traitement WHERE traitement_id = ?
+          )
+        ''';
+        try {
+          final axeResult = await db.query(sqlGetAxe, [traitementId]);
+          if (axeResult.isNotEmpty) {
+            clientAxe = axeResult.first['axe'] as String? ?? 'Centre (C)';
+          }
+        } catch (e) {
+          logger.w('⚠️ Impossible de récupérer axe du client: $e');
+        }
+
+        // Créer les factures manquantes
+        const sqlGetDetailsWithoutFacture = '''
+          SELECT pd.planning_detail_id
+          FROM PlanningDetails pd
+          WHERE pd.planning_id = ? 
+          AND pd.planning_detail_id NOT IN (
+            SELECT planning_detail_id FROM Facture
+          )
+        ''';
+        final detailsWithoutFacture = await db.query(
+          sqlGetDetailsWithoutFacture,
+          [planningId],
+        );
+
+        int facturesCreated = 0;
+        for (final detail in detailsWithoutFacture) {
+          final planningDetailId = detail['planning_detail_id'] as int;
+          const sqlInsertFacture = '''
+            INSERT INTO Facture (
+              planning_detail_id,
+              reference_facture,
+              montant,
+              mode,
+              date_traitement,
+              etat,
+              axe
+            ) VALUES (?, ?, ?, NULL, NOW(), 'À venir', ?)
+          ''';
+          final reference = 'FAC-${DateTime.now().millisecondsSinceEpoch}';
+          await db.execute(sqlInsertFacture, [
+            planningDetailId,
+            reference,
+            montant,
+            clientAxe,
+          ]);
+          facturesCreated++;
+        }
+
+        logger.i('✅ $facturesCreated factures créées lors de la réparation');
+
+        // Recharger les données
+        await context
+            .read<PlanningDetailsRepository>()
+            .loadAllTreatmentsComplete();
+        await context.read<FactureRepository>().loadAllFactures();
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✅ Réparation complète! $detailsCreated details et $facturesCreated factures créés avec montant $montant Ar.',
+            ),
+            backgroundColor: Colors.green[700],
+          ),
+        );
+      } else {
+        logger.i('ℹ️ Aucune réparation nécessaire - données cohérentes');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              '✅ Les données sont intègres, aucune réparation nécessaire',
+            ),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+
+      logger.i('✅ Réparation terminée');
+    } catch (e) {
+      logger.e('❌ Erreur réparation: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red[700]),
+      );
     }
   }
 
@@ -2618,21 +3993,25 @@ class _ContratCreationFlowScreenState
 
     // Vérifier que les mois sont remplis
     if ((planning['moisDebut'] as String?) == null ||
-        (planning['moisDebut'] as String).isEmpty)
+        (planning['moisDebut'] as String).isEmpty) {
       return false;
+    }
     if ((planning['moisFin'] as String?) == null ||
-        (planning['moisFin'] as String).isEmpty)
+        (planning['moisFin'] as String).isEmpty) {
       return false;
+    }
 
     // Vérifier que la durée du traitement est remplie
     if ((planning['dureeTraitement'] as String?) == null ||
-        (planning['dureeTraitement'] as String).isEmpty)
+        (planning['dureeTraitement'] as String).isEmpty) {
       return false;
+    }
 
     // Vérifier que la redondance (fréquence) est sélectionnée
     if ((planning['redondance'] as String?) == null ||
-        (planning['redondance'] as String).isEmpty)
+        (planning['redondance'] as String).isEmpty) {
       return false;
+    }
 
     return true;
   }
@@ -3808,12 +5187,6 @@ class _ContratCreationFlowScreenState
             _DetailRow('Date début', _dateDebut.text),
             _DetailRow('Date fin', _dateFin.text),
             _DetailRow('Catégorie', _categorie.text),
-            _DetailRow(
-              'Durée',
-              _isDeterminee
-                  ? 'Déterminée (${_duree.text} mois)'
-                  : 'Indéterminée (12 mois)',
-            ),
             const SizedBox(height: 16),
             // Infos client
             _buildSectionHeader('Informations client'),

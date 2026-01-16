@@ -239,18 +239,33 @@ class ExcelService {
       }
       // Données + Couleurs (Effectué = Vert, À venir = Rouge)
       for (int i = 0; i < data.length; i++) {
+        String rowStatus = '';
+
+        // D'abord, déterminer le statut de la ligne
+        for (int j = 0; j < headers.length; j++) {
+          if (headers[j] == 'Etat traitement') {
+            rowStatus = data[i][headers[j]].toString();
+            break;
+          }
+        }
+
+        // Appliquer la couleur à toute la ligne selon le statut
+        String backgroundColor = '';
+        if (rowStatus == 'Effectué') {
+          backgroundColor = '#C6EFCE'; // Vert pour effectué
+        } else if (rowStatus == 'À venir') {
+          backgroundColor = '#FFC7CE'; // Rouge pour à venir
+        }
+
+        // Appliquer la couleur à toutes les cellules de la ligne
         for (int j = 0; j < headers.length; j++) {
           var cell = sheet.getRangeByIndex(6 + i, j + 1);
           var value = data[i][headers[j]];
           cell.setValue(value);
           cell.cellStyle.borders.all.lineStyle = LineStyle.thin;
 
-          if (headers[j] == 'Etat traitement') {
-            if (value == 'Effectué') {
-              cell.cellStyle.backColor = '#C6EFCE'; // Vert pour effectué
-            } else if (value == 'À venir') {
-              cell.cellStyle.backColor = '#FFC7CE'; // Rouge pour à venir
-            }
+          if (backgroundColor.isNotEmpty) {
+            cell.cellStyle.backColor = backgroundColor;
           }
         }
       }
@@ -391,32 +406,6 @@ class ExcelService {
       rIdx++;
     }
     return rIdx + 1;
-  }
-
-  Style _getGreenRowStyle(Workbook wb) {
-    if (_styleCache.containsKey('greenRow')) {
-      return _styleCache['greenRow']!;
-    }
-
-    Style s = wb.styles.add(
-      'greenRow_${DateTime.now().millisecondsSinceEpoch}',
-    );
-    s.backColor = '#C6EFCE';
-    s.borders.all.lineStyle = LineStyle.thin;
-    _styleCache['greenRow'] = s;
-    return s;
-  }
-
-  Style _getRedRowStyle(Workbook wb) {
-    if (_styleCache.containsKey('redRow')) {
-      return _styleCache['redRow']!;
-    }
-
-    Style s = wb.styles.add('redRow_${DateTime.now().millisecondsSinceEpoch}');
-    s.backColor = '#FFC7CE';
-    s.borders.all.lineStyle = LineStyle.thin;
-    _styleCache['redRow'] = s;
-    return s;
   }
 
   void _insertTotals(
@@ -570,12 +559,44 @@ class ExcelService {
   }
 
   String _saveFile(Workbook wb, Directory dir, String fileName) {
+    // Ajouter la signature à la première feuille
+    try {
+      _addSignatureToSheet(wb.worksheets[0], wb);
+    } catch (e) {
+      _logger.w('⚠️ Erreur lors de l\'ajout de la signature: $e');
+    }
+
     final List<int> bytes = wb.saveAsStream();
     final String filePath = p.join(dir.path, fileName);
     File(filePath).writeAsBytesSync(bytes);
     wb.dispose();
     _logger.i('✅ Fichier sauvegardé: $filePath');
     return filePath;
+  }
+
+  /// Ajoute une signature de pied de page à une feuille
+  void _addSignatureToSheet(Worksheet sheet, Workbook wb) {
+    try {
+      // Trouver la dernière ligne avec du contenu
+      int lastRow = sheet.getLastRow();
+      int signatureRow = lastRow + 2; // Laisser une ligne vide
+
+      // Créer un style pour la signature (petit, gris, italique)
+      final Style signatureStyle = wb.styles.add(
+        'signature_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      signatureStyle.fontSize = 9;
+      signatureStyle.fontColor = '#808080';
+      signatureStyle.italic = true;
+
+      // Ajouter la signature
+      final signatureCell = sheet.getRangeByIndex(signatureRow, 1);
+      signatureCell.setText('Données générées via Planificator v2.1.1');
+      signatureCell.cellStyle = signatureStyle;
+    } catch (e) {
+      _logger.w('⚠️ Impossible d\'ajouter la signature: $e');
+      // Ne pas bloquer si la signature échoue
+    }
   }
 
   /// Méthode générique pour créer des exports Excel

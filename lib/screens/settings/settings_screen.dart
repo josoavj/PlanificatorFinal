@@ -466,9 +466,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showProfileDialog(BuildContext context, AuthRepository authRepository) {
+  void _showProfileDialog(
+    BuildContext context,
+    AuthRepository authRepository,
+  ) async {
     final user = authRepository.currentUser;
     if (user == null) return;
+
+    String username = '';
+    try {
+      final db = DatabaseService();
+      final result = await db.query(
+        'SELECT username FROM Account WHERE id_compte = ?',
+        [user.userId],
+      );
+      if (result.isNotEmpty && result[0]['username'] != null) {
+        username = result[0]['username'].toString();
+      }
+    } catch (e) {
+      logger.w('Error fetching username: $e');
+    }
+
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -479,15 +498,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProfileDetailCard('Nom', user.fullName, Icons.person),
+              _buildProfileDetailCard('Nom', user.nom, Icons.person),
+              const SizedBox(height: 12),
+              _buildProfileDetailCard('Prénom', user.prenom, Icons.person),
+              const SizedBox(height: 12),
+              _buildProfileDetailCard('Username', username, Icons.badge),
               const SizedBox(height: 12),
               _buildProfileDetailCard('Email', user.email, Icons.email),
-              const SizedBox(height: 12),
-              _buildProfileDetailCard(
-                'Identifiant',
-                user.userId.toString(),
-                Icons.badge,
-              ),
               const SizedBox(height: 12),
               _buildProfileDetailCard(
                 'Rôle',
@@ -517,10 +534,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = authRepository.currentUser;
     if (user == null) return;
 
-    final nomCtrl = TextEditingController(text: user.fullName.split(' ').last);
     final prenomCtrl = TextEditingController(
-      text: user.fullName.split(' ').first,
+      text: user.fullName.split(' ').last,
     );
+    final nomCtrl = TextEditingController(text: user.fullName.split(' ').first);
     final emailCtrl = TextEditingController(text: user.email);
     final usernameCtrl = TextEditingController();
     bool _isUpdating = false;
@@ -793,7 +810,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     final userId = profile['id_compte'] ?? 'N/A';
                     final nom = profile['nom'] ?? 'N/A';
                     final prenom = profile['prenom'] ?? 'N/A';
-                    final fullName = '$prenom $nom'.trim();
+                    final fullName = '$nom $prenom'.trim();
                     final email = profile['email'] ?? 'N/A';
                     final typeCom = profile['type_compte'] ?? 'Utilisateur';
                     final isAdmin = typeCom == 'Administrateur';

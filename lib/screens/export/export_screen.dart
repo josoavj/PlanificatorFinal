@@ -46,7 +46,10 @@ class _ExportScreenState extends State<ExportScreen> {
     'Décembre',
   ];
   List<String> _clients = ['Tous'];
-  Map<String, int> _clientMap = {'Tous': -1}; // Map nom -> client_id
+  Map<String, int> _clientMap = {'Tous': -1};
+  Map<String, String> _clientDisplayNames = {
+    'Tous': 'Tous',
+  }; // Map clé interne -> label affichage
 
   @override
   void initState() {
@@ -75,6 +78,8 @@ class _ExportScreenState extends State<ExportScreen> {
 
       final clientMap = <String, int>{'Tous': -1};
       final clientList = ['Tous'];
+      final displayNames = <String, String>{'Tous': 'Tous'};
+      final nameCount = <String, int>{}; // Compte les occurrences de chaque nom
 
       for (final row in rows) {
         final clientId = row['client_id'] as int;
@@ -83,20 +88,40 @@ class _ExportScreenState extends State<ExportScreen> {
         final categorie = row['categorie'] as String;
 
         // Construire le fullName selon la catégorie
-        final fullName = (categorie == 'Société' || categorie == 'Organisation')
+        final displayName =
+            (categorie == 'Société' || categorie == 'Organisation')
             ? nom
-            : '$prenom $nom'.trim();
+            : '$nom $prenom'.trim();
 
-        clientMap[fullName] = clientId;
-        clientList.add(fullName);
-        logger.i('✅ Client ajouté: $fullName (ID: $clientId, Cat: $categorie)');
+        // Vérifier les doublons et créer une clé unique interne
+        nameCount[displayName] = (nameCount[displayName] ?? 0) + 1;
+
+        // Clé interne avec ID pour éviter les doublons
+        final internalKey = nameCount[displayName]! > 1
+            ? '$displayName\$_\$$clientId' // Utiliser \$ pour éviter les conflits
+            : displayName;
+
+        clientMap[internalKey] = clientId;
+        clientList.add(internalKey);
+        displayNames[internalKey] = displayName; // Affichage sans ID
+        logger.i(
+          '✅ Client ajouté: $displayName (ID: $clientId, Cat: $categorie)',
+        );
       }
 
       if (mounted) {
         setState(() {
           _clients = clientList;
           _clientMap = clientMap;
+          _clientDisplayNames = displayNames;
           _isLoadingClients = false;
+
+          // Vérifier que le client sélectionné existe encore dans la liste
+          if (!clientList.contains(_selectedClient)) {
+            _selectedClient = 'Tous';
+            logger.i('⚠️ Client sélectionné introuvable, reset à "Tous"');
+          }
+
           logger.i(
             '✅ ${clientList.length - 1} clients affichables (total: ${clientList.length} avec Tous)',
           );
@@ -458,7 +483,7 @@ class _ExportScreenState extends State<ExportScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Text(
-                      item,
+                      _clientDisplayNames[item] ?? item,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
