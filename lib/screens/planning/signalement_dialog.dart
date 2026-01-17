@@ -77,15 +77,16 @@ class _SignalementDialogState extends State<SignalementDialog> {
         return;
       }
 
-      // ✅ ÉTAPE 1: Créer le signalement (enregistre le motif)
+      //  ÉTAPE 1: Créer le signalement (enregistre le motif)
       await repo.createSignalement(
         planningDetailsId: widget.planningDetail.planningDetailId,
         motif: _motifCtrl.text,
         type: _type,
       );
+      if (!mounted) return;
       logger.i('✅ Signalement créé');
 
-      // ✅ ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
+      // ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
       logger.i('📌 Étape 2a: Modifier la date du planning courant');
       logger.i(
         '   planningDetailId=${widget.planningDetail.planningDetailId}, oldDate=$oldDate → newDate=$newDate',
@@ -94,8 +95,9 @@ class _SignalementDialogState extends State<SignalementDialog> {
         planningDetailsId: widget.planningDetail.planningDetailId,
         newDate: newDate,
       );
+      if (!mounted) return;
 
-      // ✅ ÉTAPE 2B: Appliquer la logique DÉCALER vs GARDER
+      // ÉTAPE 2B: Appliquer la logique DÉCALER vs GARDER
       if (_changerRedondance) {
         // === MODE 1: DÉCALER TOUTES les dates futures ===
         logger.i(
@@ -111,6 +113,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
           ancienneDateModifiee: oldDate,
           nouvelleDateModifiee: newDate,
         );
+        if (!mounted) return;
       } else {
         // === MODE 2: GARDER - on a déjà modifié JUSTE cette date en 2A ===
         logger.i('✅ MODE GARDER: date modifiée (autres dates inchangées)');
