@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -38,15 +37,22 @@ class ClientRepository extends ChangeNotifier {
           COALESCE(c.axe, '') as axe,
           COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
         FROM Client c
-        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        INNER JOIN Contrat co ON c.client_id = co.client_id
         LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
         GROUP BY c.client_id
-        ORDER BY COALESCE(c.nom, 'Z') ASC
+        ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
         LIMIT 10000
       ''';
 
       final rows = await _db.query(sql);
       _clients = rows.map((row) => Client.fromMap(row)).toList();
+
+      // Tri garantit par Dart (en plus du SQL)
+      _clients.sort((a, b) {
+        final compareNom = (a.nom).compareTo(b.nom);
+        if (compareNom != 0) return compareNom;
+        return (a.prenom).compareTo(b.prenom);
+      });
 
       logger.i('${_clients.length} clients chargés');
     } catch (e) {
@@ -67,10 +73,14 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          client_id, nom, prenom, email, telephone, adresse,
-          categorie, nif, stat, axe
-        FROM Client
-        WHERE client_id = ?
+          c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
+          c.categorie, c.nif, c.stat, c.axe, c.date_ajout,
+          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
+        FROM Client c
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
+        WHERE c.client_id = ?
+        GROUP BY c.client_id
       ''';
 
       final row = await _db.queryOne(sql, [clientId]);
@@ -114,9 +124,6 @@ class ClientRepository extends ChangeNotifier {
         client.axe,
         DateTime.now().toIso8601String().split('T')[0],
       ]);
-
-      final newClient = client.copyWith(clientId: id);
-      _clients.add(newClient);
 
       logger.i('Client créé avec l\'ID: $id');
       return id;
@@ -185,7 +192,7 @@ class ClientRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // ✅ 1. Récupérer tous les contrats du client
+      // 1. Récupérer tous les contrats du client
       const getContratsSQL = '''
         SELECT contrat_id
         FROM Contrat
@@ -195,7 +202,7 @@ class ClientRepository extends ChangeNotifier {
       final contrats = await _db.query(getContratsSQL, [clientId]);
       logger.i('📋 Trouvé ${contrats.length} contrats pour client $clientId');
 
-      // ✅ 2. Pour chaque contrat, supprimer en cascade
+      // 2. Pour chaque contrat, supprimer en cascade
       for (final contrat in contrats) {
         final contratId = contrat['contrat_id'] as int;
 
@@ -292,19 +299,25 @@ class ClientRepository extends ChangeNotifier {
         SELECT 
           c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
           c.categorie, c.nif, c.stat, c.axe,
-          COALESCE(COUNT(p.planning_id), 0) as treatment_count
+          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
         FROM Client c
-        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        INNER JOIN Contrat co ON c.client_id = co.client_id
         LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
-        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
         WHERE c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ?
         GROUP BY c.client_id
-        ORDER BY c.nom ASC
+        ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
       ''';
 
       final searchTerm = '%$query%';
       final rows = await _db.query(sql, [searchTerm, searchTerm, searchTerm]);
       _clients = rows.map((row) => Client.fromMap(row)).toList();
+
+      // Tri garantit par Dart (en plus du SQL)
+      _clients.sort((a, b) {
+        final compareNom = (a.nom).compareTo(b.nom);
+        if (compareNom != 0) return compareNom;
+        return (a.prenom).compareTo(b.prenom);
+      });
 
       logger.i('${_clients.length} clients trouvés pour la recherche: $query');
     } catch (e) {
@@ -325,11 +338,15 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          client_id, nom, prenom, email, telephone, adresse,
-          categorie, nif, stat, axe
-        FROM Client
-        WHERE categorie = ?
-        ORDER BY nom ASC
+          c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
+          c.categorie, c.nif, c.stat, c.axe,
+          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
+        FROM Client c
+        INNER JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
+        WHERE c.categorie = ?
+        GROUP BY c.client_id
+        ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
       ''';
 
       final rows = await _db.query(sql, [category]);

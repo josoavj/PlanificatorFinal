@@ -37,6 +37,12 @@ class _ContratScreenState extends State<ContratScreen> {
     _contratsWithClientsAndTreatments = _fetchContratsWithDetails();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   /// Recharger les données
   void _reloadData() {
     setState(() {
@@ -297,15 +303,6 @@ class _ContratScreenState extends State<ContratScreen> {
 
                 var contratsWithDetails = snapshot.data!;
 
-                // Mettre à jour le nombre de contrats affichés
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_contratCount != contratsWithDetails.length) {
-                    setState(() {
-                      _contratCount = contratsWithDetails.length;
-                    });
-                  }
-                });
-
                 // Appliquer le filtre de recherche
                 if (_searchQuery.isNotEmpty) {
                   contratsWithDetails = contratsWithDetails.where((data) {
@@ -320,6 +317,9 @@ class _ContratScreenState extends State<ContratScreen> {
                         contratRef.contains(_searchQuery);
                   }).toList();
                 }
+
+                // Mettre à jour le nombre de contrats affichés
+                _contratCount = contratsWithDetails.length;
 
                 // Message si aucun résultat après recherche
                 if (contratsWithDetails.isEmpty && _searchQuery.isNotEmpty) {
@@ -393,73 +393,91 @@ class _ContratScreenState extends State<ContratScreen> {
     final clientEmail = client?.email ?? 'N/A';
     final clientPhone = client?.telephone ?? 'N/A';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
-      elevation: 2,
-      child: InkWell(
-        onTap: () => _showContratDetails(contrat, client, numTraitements),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Ligne 1: Nom et Prénom du client
-              Text(
-                fullName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showContratDetails(contrat, client, numTraitements),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-              const SizedBox(height: 4),
-
-              // Ligne 2: Date contrat et nombre de traitements
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Contrat: ${dateFormat.format(contrat.dateContrat)}',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              ],
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ligne 1: Nom et Prénom du client
+                Text(
+                  fullName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 2,
+                ),
+                const SizedBox(height: 4),
+
+                // Ligne 2: Date contrat et nombre de traitements
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Contrat: ${dateFormat.format(contrat.dateContrat)}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$numTraitements traitement(s)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue[900],
-                        fontWeight: FontWeight.w500,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$numTraitements traitement(s)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[900],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
+                  ],
+                ),
+                const SizedBox(height: 6),
 
-              // Ligne 3: Email et Téléphone
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      '📧 $clientEmail',
-                      style: const TextStyle(fontSize: 12),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                // Ligne 3: Email et Téléphone
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '📧 $clientEmail',
+                        style: const TextStyle(fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('📞 $clientPhone', style: const TextStyle(fontSize: 12)),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    Text(
+                      '📞 $clientPhone',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -775,7 +793,6 @@ class _ContratScreenState extends State<ContratScreen> {
             onPressed: () {
               Navigator.of(ctx).pop();
               _deleteContrat(contrat);
-              _reloadData();
             },
             child: const Text(
               '🗑️ Supprimer',
@@ -3106,6 +3123,9 @@ class _ContratScreenState extends State<ContratScreen> {
                   _contratsWithClientsAndTreatments =
                       _fetchContratsWithDetails();
                 });
+                // Recharger la liste des clients pour recalculer le treatment_count
+                await context.read<ClientRepository>().loadClients();
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('✅ Contrat supprimé avec succès'),

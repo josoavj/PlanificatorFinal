@@ -99,6 +99,18 @@ class _FactureListScreenState extends State<FactureListScreen> {
             groupedByClient[clientName]!.add(facture);
           }
 
+          // Trier alphabétiquement par nom client, et trier les factures par date décroissante
+          final sortedKeys = groupedByClient.keys.toList()
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+          for (final key in sortedKeys) {
+            groupedByClient[key]!.sort((a, b) {
+              return b.dateTraitement.compareTo(
+                a.dateTraitement,
+              ); // Récent d'abord
+            });
+          }
+
           return Column(
             children: [
               // Filtres
@@ -140,11 +152,10 @@ class _FactureListScreenState extends State<FactureListScreen> {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
-                  itemCount: groupedByClient.length,
+                  itemCount: sortedKeys.length,
                   itemBuilder: (context, index) {
-                    final entry = groupedByClient.entries.elementAt(index);
-                    final clientName = entry.key;
-                    final clientFactures = entry.value;
+                    final clientName = sortedKeys[index];
+                    final clientFactures = groupedByClient[clientName]!;
 
                     return _ClientFacturesCard(
                       clientName: clientName,

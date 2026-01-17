@@ -249,12 +249,22 @@ class _FactureScreenState extends State<FactureScreen> {
       grouped[key]!.add(facture);
     }
 
+    // Trier alphabétiquement par clé (client - traitement) et par date décroissante dans chaque groupe
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    for (final key in sortedKeys) {
+      grouped[key]!.sort((a, b) {
+        return b.dateTraitement.compareTo(a.dateTraitement); // Récent d'abord
+      });
+    }
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: grouped.length,
+      itemCount: sortedKeys.length,
       itemBuilder: (context, index) {
-        final key = grouped.keys.elementAt(index);
+        final key = sortedKeys[index];
         final facturesGroup = grouped[key]!;
 
         return _FactureGroupCard(

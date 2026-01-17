@@ -128,6 +128,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
         numeroCheque: _modePaiement == 'Chèque' ? _numeroChequeCtrl.text : null,
         estPayee: _estPayee,
       );
+      if (!mounted) return;
 
       // Mettre à jour la facture
       final factureRepo = context.read<FactureRepository>();
@@ -136,6 +137,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
       if (widget.facture.montant == 0) {
         final montant = int.tryParse(_montantCtrl.text) ?? 0;
         await factureRepo.updateFacturePrice(widget.facture.factureId, montant);
+        if (!mounted) return;
       }
 
       // Mettre à jour la référence si modifiée
@@ -145,11 +147,13 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
           widget.facture.factureId,
           _referenceCtrl.text,
         );
+        if (!mounted) return;
       }
 
       // Marquer comme payée si nécessaire
       if (_estPayee) {
         await factureRepo.markAsPaid(widget.facture.factureId);
+        if (!mounted) return;
       }
 
       if (mounted) {

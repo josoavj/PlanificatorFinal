@@ -31,12 +31,12 @@ class Client {
 
   /// Nom complet du client
   /// Pour Société et Organisation: affiche seulement le nom
-  /// Pour les autres catégories: affiche prénom et nom
+  /// Pour les autres catégories: affiche nom et prénom
   String get fullName {
     if (categorie == 'Société' || categorie == 'Organisation') {
       return nom;
     }
-    return '$prenom $nom'.trim();
+    return '$nom $prenom'.trim();
   }
 
   /// Récupère le label pour le prénom selon la catégorie

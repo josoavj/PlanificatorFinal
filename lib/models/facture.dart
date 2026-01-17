@@ -137,8 +137,8 @@ class Facture {
     if (clientCategorie == 'Société' || clientCategorie == 'Organisation') {
       return clientNom ?? 'N/A';
     }
-    if (clientPrenom != null || clientNom != null) {
-      return '${clientPrenom ?? ''} ${clientNom ?? ''}'.trim();
+    if (clientNom != null || clientPrenom != null) {
+      return '${clientNom ?? ''} ${clientPrenom ?? ''}'.trim();
     }
     return 'N/A';
   }

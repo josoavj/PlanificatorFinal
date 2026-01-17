@@ -15,13 +15,14 @@ class ClientListScreen extends StatefulWidget {
 }
 
 class _ClientListScreenState extends State<ClientListScreen> {
-  late TextEditingController _searchController;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  String _searchQuery = '';
   final logger = createLoggerWithFileOutput(name: 'client_list_screen');
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
     // Charger les clients
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<ClientRepository>().loadClients();
@@ -29,52 +30,23 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Consumer<ClientRepository>(
         builder: (context, repository, _) {
-          // ✅ Afficher les données en priorité si présentes
-          if (repository.clients.isNotEmpty) {
-            return Column(
-              children: [
-                // En-tête avec gradient bleu et barre de recherche
-                _buildHeader(context, repository),
-
-                // Liste des clients ou état vide
-                Expanded(
-                  child: repository.clients.isEmpty
-                      ? const Center(
-                          child: EmptyStateWidget(
-                            title: 'Aucun client',
-                            message:
-                                'Aucun client trouvé. Commencez par créer un client.',
-                            icon: Icons.people_outline,
-                            actionLabel: 'Ajouter un client',
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          itemCount: repository.clients.length,
-                          itemBuilder: (context, index) {
-                            final client = repository.clients[index];
-                            return _buildClientCard(
-                              context,
-                              repository,
-                              client,
-                            );
-                          },
-                        ),
-                ),
-              ],
-            );
-          }
-
-          // État de chargement (si pas de données)
+          //  État de chargement
           if (repository.isLoading) {
             return const LoadingWidget(message: 'Chargement des clients...');
           }
 
-          // État d'erreur
+          //  État d'erreur
           if (repository.errorMessage != null) {
             return ErrorDisplayWidget(
               message: repository.errorMessage!,
@@ -82,12 +54,42 @@ class _ClientListScreenState extends State<ClientListScreen> {
             );
           }
 
-          // Aucun client
-          return const EmptyStateWidget(
-            title: 'Aucun client',
-            message: 'Aucun client trouvé. Commencez par créer un client.',
-            icon: Icons.people_outline,
-            actionLabel: 'Ajouter un client',
+          //  Filtrer les clients par recherche
+          final filteredClients = _filterClientsBySearch(repository.clients);
+
+          //  Afficher la structure avec en-tête toujours visible
+          return Column(
+            children: [
+              // En-tête avec gradient bleu et barre de recherche (TOUJOURS VISIBLE)
+              _buildHeader(context, repository, filteredClients),
+
+              // Liste des clients ou état vide
+              Expanded(
+                child: filteredClients.isNotEmpty
+                    ? ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemCount: filteredClients.length,
+                        itemBuilder: (context, index) {
+                          final client = filteredClients[index];
+                          return _buildClientCard(context, repository, client);
+                        },
+                      )
+                    : Center(
+                        child: EmptyStateWidget(
+                          title: _searchQuery.isEmpty
+                              ? 'Aucun client'
+                              : 'Aucun résultat',
+                          message: _searchQuery.isEmpty
+                              ? 'Aucun client trouvé. Commencez par créer un client.'
+                              : 'Aucun client ne correspond à votre recherche',
+                          icon: Icons.people_outline,
+                          actionLabel: _searchQuery.isEmpty
+                              ? 'Ajouter un client'
+                              : null,
+                        ),
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -95,7 +97,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   /// Construit l'en-tête avec gradient et barre de recherche
-  Widget _buildHeader(BuildContext context, ClientRepository repository) {
+  Widget _buildHeader(
+    BuildContext context,
+    ClientRepository repository,
+    List<Client> filteredClients,
+  ) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -119,17 +125,19 @@ class _ClientListScreenState extends State<ClientListScreen> {
               Expanded(
                 child: TextField(
                   controller: _searchController,
+                  focusNode: _searchFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Rechercher par nom, email...',
                     hintStyle: const TextStyle(color: Colors.white70),
                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                    suffixIcon: _searchController.text.isNotEmpty
+                    suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.close, color: Colors.white),
                             onPressed: () {
                               _searchController.clear();
-                              repository.loadClients();
-                              setState(() {});
+                              setState(() {
+                                _searchQuery = '';
+                              });
                             },
                           )
                         : null,
@@ -145,13 +153,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     ),
                   ),
                   style: const TextStyle(color: Colors.white),
-                  onChanged: (query) {
-                    setState(() {});
-                    if (query.isEmpty) {
-                      repository.loadClients();
-                    } else {
-                      repository.searchClients(query);
-                    }
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
                   },
                 ),
               ),
@@ -166,10 +171,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () {
+                    onPressed: () async {
+                      _searchQuery = '';
                       _searchController.clear();
-                      repository.loadClients();
-                      setState(() {});
+                      await repository.loadClients();
                     },
                   ),
                 ),
@@ -185,7 +190,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${repository.clients.length} ${repository.clients.length > 1 ? 'clients' : 'client'}',
+              '${filteredClients.length} ${filteredClients.length > 1 ? 'clients' : 'client'}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -327,55 +332,25 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   ),
                 ],
                 const SizedBox(height: 12),
-                // Boutons d'action
+                // Bouton d'action moderne
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    OutlinedButton.icon(
+                    ElevatedButton.icon(
                       icon: const Icon(Icons.visibility, size: 18),
-                      label: const Text('Voir'),
+                      label: const Text('Voir les détails'),
                       onPressed: () => _showClientDetails(context, client),
-                      style: OutlinedButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 20,
+                          vertical: 12,
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('Éditer'),
-                      onPressed: () => _showEditClientDialog(context, client),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      label: const Text(
-                        'Supprimer',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      onPressed: () => _showDeleteConfirmation(
-                        context,
-                        context.read<ClientRepository>(),
-                        client.clientId,
-                        client.fullName,
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+                        elevation: 2,
                       ),
                     ),
                   ],
@@ -478,6 +453,24 @@ class _ClientListScreenState extends State<ClientListScreen> {
       default:
         return Colors.grey[600]!;
     }
+  }
+
+  /// Filtre les clients selon la requête de recherche
+  List<Client> _filterClientsBySearch(List<Client> clients) {
+    if (_searchQuery.isEmpty) {
+      return clients;
+    }
+
+    final query = _searchQuery.toLowerCase();
+    return clients
+        .where(
+          (client) =>
+              client.fullName.toLowerCase().contains(query) ||
+              client.email.toLowerCase().contains(query) ||
+              client.telephone.contains(query) ||
+              client.adresse.toLowerCase().contains(query),
+        )
+        .toList();
   }
 
   /// Affiche la boîte de dialogue d'édition
@@ -611,9 +604,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 _showClientPlanningDialog(context, client);
               },
             ),
-          ElevatedButton.icon(
+          OutlinedButton.icon(
             icon: const Icon(Icons.edit, size: 18),
-            label: const Text('Modifier'),
+            label: const Text('Éditer'),
             onPressed: () {
               Navigator.of(ctx).pop();
               _showEditClientDialog(context, client);
@@ -904,104 +897,174 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
     showDialog(
       context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Modifier les informations du client'),
-        content: SizedBox(
-          width: 550,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ═════════════════════════════════════════
-                // SECTION: INFORMATIONS PERSONNELLES
-                // ═════════════════════════════════════════
-                _buildSectionHeader('👤 INFORMATIONS PERSONNELLES'),
-                _buildEditField('Nom', nomController),
-                _buildEditField(
-                  selectedCategorie == 'Société' ||
-                          selectedCategorie == 'Organisation'
-                      ? 'Responsable'
-                      : 'Prénom',
-                  prenomController,
-                ),
-                _buildEditField('Email', emailController),
-                _buildEditField('Téléphone', telephoneController),
-                const SizedBox(height: 16),
+      builder: (BuildContext ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Modifier les informations du client'),
+          content: SizedBox(
+            width: 550,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ═════════════════════════════════════════
+                  // SECTION: INFORMATIONS PERSONNELLES
+                  // ═════════════════════════════════════════
+                  _buildSectionHeader('👤 INFORMATIONS PERSONNELLES'),
+                  _buildEditField('Nom', nomController),
+                  _buildEditField(
+                    selectedCategorie == 'Société' ||
+                            selectedCategorie == 'Organisation'
+                        ? 'Responsable'
+                        : 'Prénom',
+                    prenomController,
+                  ),
+                  _buildEditField('Email', emailController),
+                  _buildEditField('Téléphone', telephoneController),
+                  const SizedBox(height: 16),
 
-                // ═════════════════════════════════════════
-                // SECTION: ADRESSE & LOCALISATION
-                // ═════════════════════════════════════════
-                _buildSectionHeader('📍 ADRESSE & LOCALISATION'),
-                _buildEditField('Adresse', adresseController),
-                _buildAxisDropdown((value) {
-                  selectedAxe = value;
-                }, selectedAxe),
-                const SizedBox(height: 16),
+                  // ═════════════════════════════════════════
+                  // SECTION: ADRESSE & LOCALISATION
+                  // ═════════════════════════════════════════
+                  _buildSectionHeader('📍 ADRESSE & LOCALISATION'),
+                  _buildEditField('Adresse', adresseController),
+                  _buildAxisDropdown((value) {
+                    setState(() {
+                      selectedAxe = value;
+                    });
+                  }, selectedAxe),
+                  const SizedBox(height: 16),
 
-                // ═════════════════════════════════════════
-                // SECTION: CATÉGORIE & INFOS FISCALES
-                // ═════════════════════════════════════════
-                _buildSectionHeader('📋 CATÉGORIE & INFOS'),
-                _buildCategoryDropdown((value) {
-                  selectedCategorie = value;
-                }, selectedCategorie),
-                if (selectedCategorie == 'Société') ...[
-                  const SizedBox(height: 8),
-                  _buildEditField('NIF', nifController),
-                  _buildEditField('STAT', statController),
+                  // ═════════════════════════════════════════
+                  // SECTION: CATÉGORIE & INFOS FISCALES
+                  // ═════════════════════════════════════════
+                  _buildSectionHeader('📋 CATÉGORIE & INFOS'),
+                  _buildCategoryDropdown((value) {
+                    setState(() {
+                      selectedCategorie = value;
+                      // Réinitialiser les champs NIF/STAT si passage à Particulier
+                      if (value == 'Particulier') {
+                        nifController.clear();
+                        statController.clear();
+                      }
+                    });
+                  }, selectedCategorie),
+
+                  // Afficher les champs NIF/STAT uniquement pour Société
+                  if (selectedCategorie == 'Société') ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue[200]!, width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '🏢 Informations Fiscales',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[700],
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildEditField('NIF', nifController),
+                          _buildEditField('STAT', statController),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Afficher un message pour Organisation
+                  if (selectedCategorie == 'Organisation') ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber[200]!, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.amber[700],
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Les infos fiscales ne sont pas requises pour les organisations.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.amber[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.save, size: 18),
-            label: const Text('Enregistrer'),
-            onPressed: () {
-              if (nomController.text.isNotEmpty &&
-                  prenomController.text.isNotEmpty) {
-                final updatedClient = Client(
-                  clientId: client.clientId,
-                  nom: nomController.text,
-                  prenom: prenomController.text,
-                  email: emailController.text,
-                  telephone: telephoneController.text,
-                  adresse: adresseController.text,
-                  categorie: selectedCategorie,
-                  nif: nifController.text,
-                  stat: statController.text,
-                  axe: selectedAxe,
-                  dateAjout: client.dateAjout,
-                  treatmentCount: client.treatmentCount,
-                );
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.save, size: 18),
+              label: const Text('Enregistrer'),
+              onPressed: () async {
+                if (nomController.text.isNotEmpty &&
+                    prenomController.text.isNotEmpty) {
+                  final updatedClient = Client(
+                    clientId: client.clientId,
+                    nom: nomController.text,
+                    prenom: prenomController.text,
+                    email: emailController.text,
+                    telephone: telephoneController.text,
+                    adresse: adresseController.text,
+                    categorie: selectedCategorie,
+                    nif: nifController.text,
+                    stat: statController.text,
+                    axe: selectedAxe,
+                    dateAjout: client.dateAjout,
+                    treatmentCount: client.treatmentCount,
+                  );
 
-                context.read<ClientRepository>().updateClient(updatedClient);
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✅ Client modifié avec succès'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      '⚠️ Veuillez remplir les champs obligatoires',
+                  await context.read<ClientRepository>().updateClient(
+                    updatedClient,
+                  );
+                  await context.read<ClientRepository>().loadClients();
+                  Navigator.of(ctx).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Client modifié avec succès'),
+                      backgroundColor: Colors.green,
                     ),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        '⚠️ Veuillez remplir les champs obligatoires',
+                      ),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1130,58 +1193,5 @@ class _ClientListScreenState extends State<ClientListScreen> {
         ],
       ),
     );
-  }
-
-  /// Affiche la confirmation de suppression
-  void _showDeleteConfirmation(
-    BuildContext context,
-    ClientRepository repository,
-    int clientId,
-    String clientName,
-  ) {
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: Text(
-          'Êtes-vous sûr de vouloir supprimer le client $clientName?\n\n'
-          'Cette action est irréversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              try {
-                await repository.deleteClient(clientId);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✅ Client supprimé avec succès'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('❌ Erreur: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }
