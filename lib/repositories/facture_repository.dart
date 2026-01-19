@@ -72,12 +72,12 @@ class FactureRepository extends ChangeNotifier {
           pd.date_planification as datePlanification,
           pd.statut as etatPlanning
         FROM Facture f
-        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        LEFT JOIN Traitement t ON p.traitement_id = t.traitement_id
+        INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+        INNER JOIN Planning p ON pd.planning_id = p.planning_id
+        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
-        LEFT JOIN Client cl ON co.client_id = cl.client_id
+        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
+        INNER JOIN Client cl ON co.client_id = cl.client_id
         WHERE cl.client_id = ?
         ORDER BY cl.nom ASC
       ''';
@@ -104,8 +104,8 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Requête optimisée: utilise INNER JOIN pour éviter les NULL inutiles
-      // et réduit le nombre de jointures en cascade
+      // Requête optimisée: utilise INNER JOIN pour les liens critiques
+      // et LEFT JOIN pour les données optionnelles
       const sql = '''
         SELECT 
           f.facture_id,
@@ -127,12 +127,12 @@ class FactureRepository extends ChangeNotifier {
           COALESCE(pd.date_planification, '2000-01-01') as datePlanification,
           COALESCE(pd.statut, 'Non planifié') as etatPlanning
         FROM Facture f
-        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        LEFT JOIN Traitement t ON p.traitement_id = t.traitement_id
+        INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+        INNER JOIN Planning p ON pd.planning_id = p.planning_id
+        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
-        LEFT JOIN Client cl ON co.client_id = cl.client_id
+        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
+        INNER JOIN Client cl ON co.client_id = cl.client_id
         ORDER BY COALESCE(cl.nom, 'Z') ASC
         LIMIT 10000
       ''';

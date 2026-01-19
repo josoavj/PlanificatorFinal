@@ -65,11 +65,14 @@ class _ExportScreenState extends State<ExportScreen> {
     try {
       final db = DatabaseService();
 
-      // Charger DIRECTEMENT tous les clients depuis la base de données
+      // Charger DIRECTEMENT tous les clients avec au moins un contrat depuis la base de données
       const sql = '''
-        SELECT client_id, nom, prenom, categorie
-        FROM Client
-        ORDER BY nom ASC
+        SELECT DISTINCT c.client_id, c.nom, c.prenom, c.categorie
+        FROM Client c
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        GROUP BY c.client_id
+        HAVING COUNT(DISTINCT co.contrat_id) > 0
+        ORDER BY c.nom ASC
       ''';
 
       logger.i('📥 Chargement des clients depuis la DB...');

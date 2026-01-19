@@ -821,24 +821,31 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                       ),
                       const SizedBox(height: 12),
                       ...remarques.map((remarque) {
-                        // Déterminer l'état de paiement: utiliser l'état de la facture si elle existe
+                        // Déterminer l'état de paiement: vérifier que BOTH traitement est effectué ET facture est payée
+                        bool isCompleted =
+                            etat.toLowerCase().contains('effectué') ||
+                            etat.toLowerCase().contains('complété') ||
+                            etat.toLowerCase().contains('done');
                         bool isPaid = false;
-                        if (remarque.factureId != null) {
-                          // Chercher la facture correspondante
-                          final correspondingFacture =
-                              factures.firstWhere(
-                                    (f) => f.factureId == remarque.factureId,
-                                    orElse: () => null as dynamic,
-                                  )
-                                  as Facture?;
-                          if (correspondingFacture != null) {
-                            isPaid = correspondingFacture.etat
-                                .toLowerCase()
-                                .contains('payé');
+
+                        if (isCompleted) {
+                          if (remarque.factureId != null) {
+                            // Chercher la facture correspondante
+                            final correspondingFacture =
+                                factures.firstWhere(
+                                      (f) => f.factureId == remarque.factureId,
+                                      orElse: () => null as dynamic,
+                                    )
+                                    as Facture?;
+                            if (correspondingFacture != null) {
+                              isPaid = correspondingFacture.etat
+                                  .toLowerCase()
+                                  .contains('payé');
+                            }
+                          } else {
+                            // Si pas de facture associée, utiliser le statut de la remarque
+                            isPaid = remarque.estPayee;
                           }
-                        } else {
-                          // Si pas de facture associée, utiliser le statut de la remarque
-                          isPaid = remarque.estPayee;
                         }
 
                         return Card(
@@ -1117,12 +1124,21 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                       ...factures.map((facture) {
                         final montantStr = facture.montant.toString();
                         final etatFacture = facture.etat;
-                        final bgColor =
-                            etatFacture.toLowerCase().contains('payée')
+                        // Vérifier que BOTH traitement est effectué ET facture est payée pour le vert
+                        final isTraitementCompleted =
+                            etat.toLowerCase().contains('effectué') ||
+                            etat.toLowerCase().contains('complété') ||
+                            etat.toLowerCase().contains('done');
+                        final isFacturePaid =
+                            etatFacture.toLowerCase().contains('payée') ||
+                            etatFacture.toLowerCase().contains('payé');
+                        final isBothCompleted =
+                            isTraitementCompleted && isFacturePaid;
+
+                        final bgColor = isBothCompleted
                             ? Colors.green.shade50
                             : Colors.orange.shade50;
-                        final badgeColor =
-                            etatFacture.toLowerCase().contains('payée')
+                        final badgeColor = isBothCompleted
                             ? Colors.green
                             : Colors.orange;
 
@@ -1304,7 +1320,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                       ],
                                     ),
                                   ],
-                                  // Date chèque
+                                  // Date chèque ou autre mode de paiement
                                   if (facture.dateCheque != null) ...[
                                     const SizedBox(height: 8),
                                     Row(
@@ -1312,7 +1328,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          'Date du chèque',
+                                          _getDateLabel(facture.mode),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall
@@ -1484,6 +1500,26 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
         },
       ),
     );
+  }
+
+  /// Retourne le label de la date selon le mode de paiement
+  String _getDateLabel(String? mode) {
+    if (mode == null || mode.isEmpty) {
+      return 'Date de paiement';
+    }
+
+    switch (mode.toLowerCase()) {
+      case 'chèque':
+        return 'Date du chèque';
+      case 'espèce':
+        return 'Date du paiement en espèces';
+      case 'mobile money':
+        return 'Date du paiement mobile money';
+      case 'virement':
+        return 'Date du virement';
+      default:
+        return 'Date de paiement';
+    }
   }
 }
 

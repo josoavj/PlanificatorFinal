@@ -1,4 +1,35 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+
+// Sélectionner la meilleure police système en fonction de la plateforme
+// avec fallback en cas d'indisponibilité
+String? _selectFontFamily() {
+  if (Platform.isWindows) {
+    // Segoe UI est installé par défaut sur Windows 6.0+ (Vista/2008+)
+    // Fallback vers Tahoma puis défaut si indisponible
+    return 'Segoe UI';
+  } else if (Platform.isMacOS) {
+    // San Francisco est la police système macOS moderne
+    return '-apple-system';
+  } else if (Platform.isLinux) {
+    // Ubuntu est disponible par défaut sur Ubuntu
+    // Fallback vers DejaVu
+    return 'Ubuntu';
+  }
+  // Défaut Android/Web
+  return null; // Utiliser la police par défaut Material
+}
+
+String? _bodyFontFamily() {
+  if (Platform.isWindows) {
+    return 'Segoe UI';
+  } else if (Platform.isMacOS) {
+    return '-apple-system';
+  } else if (Platform.isLinux) {
+    return 'Ubuntu';
+  }
+  return null;
+}
 
 class AppTheme {
   // Couleurs principales
@@ -128,36 +159,61 @@ class AppTheme {
       labelStyle: const TextStyle(color: darkGrey),
     ),
 
-    // Typography
-    textTheme: const TextTheme(
+    // Typography - Polices optimisées pour Windows, Mac et Linux
+    textTheme: TextTheme(
       displayLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
         color: darkGrey,
+        fontFamily: _selectFontFamily(),
+        letterSpacing: 0.5,
       ),
       displayMedium: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         color: darkGrey,
+        fontFamily: _selectFontFamily(),
+        letterSpacing: 0.5,
       ),
       headlineSmall: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: darkGrey,
+        fontFamily: _selectFontFamily(),
+        letterSpacing: 0.25,
       ),
       titleLarge: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: darkGrey,
+        fontFamily: _selectFontFamily(),
+        letterSpacing: 0.15,
       ),
       titleMedium: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w500,
         color: darkGrey,
+        fontFamily: _selectFontFamily(),
+        letterSpacing: 0.1,
       ),
-      bodyLarge: TextStyle(fontSize: 16, color: darkGrey),
-      bodyMedium: TextStyle(fontSize: 14, color: darkGrey),
-      bodySmall: TextStyle(fontSize: 12, color: mediumGrey),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        color: darkGrey,
+        fontFamily: _bodyFontFamily(),
+        letterSpacing: 0.5,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        color: darkGrey,
+        fontFamily: _bodyFontFamily(),
+        letterSpacing: 0.25,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        color: mediumGrey,
+        fontFamily: _bodyFontFamily(),
+        letterSpacing: 0.4,
+      ),
     ),
 
     // Color scheme

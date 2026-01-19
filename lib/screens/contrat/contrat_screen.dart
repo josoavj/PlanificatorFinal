@@ -588,21 +588,59 @@ class _ContratScreenState extends State<ContratScreen> {
                       itemCount: traitements.length,
                       itemBuilder: (context, index) {
                         final t = traitements[index];
+                        final statuts =
+                            (t['statuts'] as String?)?.split(',') ?? [];
+                        final hasClassedSansSuite = statuts.any(
+                          (s) => s.trim().toLowerCase().contains('classé'),
+                        );
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: hasClassedSansSuite
+                                ? Colors.red[50]
+                                : Colors.grey[100],
+                            border: hasClassedSansSuite
+                                ? Border.all(color: Colors.red[200]!, width: 1)
+                                : null,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                t['nom'] ?? 'Traitement',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      t['nom'] ?? 'Traitement',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  if (hasClassedSansSuite)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red[200],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Classé',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red[800],
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -612,6 +650,49 @@ class _ContratScreenState extends State<ContratScreen> {
                                   color: Colors.grey[700],
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Planifications: ${t['planning_count'] ?? 0}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              if (statuts.isNotEmpty &&
+                                  statuts.first != 'Pas de planifications')
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Wrap(
+                                    spacing: 4,
+                                    children: statuts
+                                        .map(
+                                          (status) => Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _getStatusColor(
+                                                status.trim(),
+                                              ).withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(3),
+                                            ),
+                                            child: Text(
+                                              status.trim(),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: _getStatusColor(
+                                                  status.trim(),
+                                                ),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
                             ],
                           ),
                         );
@@ -815,11 +896,16 @@ class _ContratScreenState extends State<ContratScreen> {
     try {
       final db = DatabaseService();
       const sql = '''
-        SELECT t.traitement_id, t.contrat_id, tt.typeTraitement as nom,
-               tt.categorieTraitement as type
+        SELECT DISTINCT t.traitement_id, t.contrat_id, tt.typeTraitement as nom,
+               tt.categorieTraitement as type,
+               COALESCE(GROUP_CONCAT(DISTINCT pd.statut), 'Pas de planifications') as statuts,
+               COUNT(DISTINCT pd.planning_detail_id) as planning_count
         FROM Traitement t
         LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
+        LEFT JOIN PlanningDetails pd ON p.planning_id = pd.planning_id
         WHERE t.contrat_id = ?
+        GROUP BY t.traitement_id
       ''';
       return await db.query(sql, [contratId]);
     } catch (e) {
@@ -1000,6 +1086,24 @@ class _ContratScreenState extends State<ContratScreen> {
       default:
         return 'Tous les $redondance mois';
     }
+  }
+
+  /// Retourne la couleur selon le statut du planning
+  Color _getStatusColor(String status) {
+    final lower = status.toLowerCase();
+    if (lower.contains('effectué') || lower.contains('complété')) {
+      return Colors.green;
+    }
+    if (lower.contains('classé')) {
+      return Colors.red;
+    }
+    if (lower.contains('en attente') || lower.contains('prévu')) {
+      return Colors.orange;
+    }
+    if (lower.contains('non planifié')) {
+      return Colors.grey;
+    }
+    return Colors.blue;
   }
 
   /// Éditer les informations du client

@@ -177,7 +177,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
         '🔍 Chargement COMPLET traitements du mois $currentMonth/$currentYear',
       );
 
-      // Requête optimisée: utilise COALESCE et ajoute LIMIT
+      // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db.query(
         '''SELECT 
              pd.planning_detail_id,
@@ -195,6 +195,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Client c ON ct.client_id = c.client_id
            WHERE YEAR(pd.date_planification) = ?
            AND MONTH(pd.date_planification) = ?
+           AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
            ORDER BY pd.date_planification ASC
            LIMIT 5000''',
         [currentYear, currentMonth],
@@ -245,7 +246,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
         '🔍 Chargement COMPLET traitements à venir (à partir de $todayStr)',
       );
 
-      // Requête optimisée: utilise COALESCE et ajoute LIMIT
+      // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db.query(
         '''SELECT 
              pd.planning_detail_id,
@@ -264,6 +265,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
            INNER JOIN Client c ON ct.client_id = c.client_id
            WHERE pd.date_planification >= ?
+           AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
            ORDER BY pd.date_planification ASC
            LIMIT 10000''',
         [todayStr],

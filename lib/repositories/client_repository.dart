@@ -16,7 +16,7 @@ class ClientRepository extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// Charge tous les clients
+  /// Charge tous les clients (seulement ceux avec au moins un contrat)
   Future<void> loadClients() async {
     _isLoading = true;
     _errorMessage = null;
@@ -37,9 +37,10 @@ class ClientRepository extends ChangeNotifier {
           COALESCE(c.axe, '') as axe,
           COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
         FROM Client c
-        INNER JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
         LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
         GROUP BY c.client_id
+        HAVING COUNT(DISTINCT co.contrat_id) > 0
         ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
         LIMIT 10000
       ''';
@@ -47,14 +48,14 @@ class ClientRepository extends ChangeNotifier {
       final rows = await _db.query(sql);
       _clients = rows.map((row) => Client.fromMap(row)).toList();
 
-      // Tri garantit par Dart (en plus du SQL)
+      // Tri garantis par Dart (en plus du SQL)
       _clients.sort((a, b) {
         final compareNom = (a.nom).compareTo(b.nom);
         if (compareNom != 0) return compareNom;
         return (a.prenom).compareTo(b.prenom);
       });
 
-      logger.i('${_clients.length} clients chargés');
+      logger.i('${_clients.length} clients chargés (avec contrats actifs)');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors du chargement des clients: $e');
@@ -288,7 +289,7 @@ class ClientRepository extends ChangeNotifier {
     }
   }
 
-  /// Recherche des clients
+  /// Recherche des clients (seulement ceux avec contrats)
   Future<void> searchClients(String query) async {
     _isLoading = true;
     _errorMessage = null;
@@ -301,10 +302,11 @@ class ClientRepository extends ChangeNotifier {
           c.categorie, c.nif, c.stat, c.axe,
           COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
         FROM Client c
-        INNER JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
         LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
         WHERE c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ?
         GROUP BY c.client_id
+        HAVING COUNT(DISTINCT co.contrat_id) > 0
         ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
       ''';
 
@@ -329,7 +331,7 @@ class ClientRepository extends ChangeNotifier {
     }
   }
 
-  /// Filtre les clients par catégorie
+  /// Filtre les clients par catégorie (seulement ceux avec contrats)
   Future<void> filterByCategory(String category) async {
     _isLoading = true;
     _errorMessage = null;
@@ -342,10 +344,11 @@ class ClientRepository extends ChangeNotifier {
           c.categorie, c.nif, c.stat, c.axe,
           COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
         FROM Client c
-        INNER JOIN Contrat co ON c.client_id = co.client_id
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
         LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
         WHERE c.categorie = ?
         GROUP BY c.client_id
+        HAVING COUNT(DISTINCT co.contrat_id) > 0
         ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
       ''';
 
