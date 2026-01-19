@@ -6,6 +6,9 @@ import 'package:logger/logger.dart' as logger_pkg;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
+// Vérifier si on est sur Windows
+bool isWindows = Platform.isWindows;
+
 enum LogLevel { debug, info, warning, error, critical }
 
 class LogEntry {
@@ -46,8 +49,18 @@ class LogEntry {
   String get formatted =>
       '$colorCode[$formattedTime] [$levelName]${source != null ? ' [$source]' : ''}: $message\x1B[0m';
 
-  String get plainText =>
-      '[$formattedTime] [$levelName]${source != null ? ' [$source]' : ''}: $message';
+  String get plainText {
+    // Sur Windows, éviter les codes ANSI qui rendent le fichier illisible
+    // Utiliser un format structuré et lisible à la place
+    final sourceStr = source != null ? ' [$source]' : '';
+    final baseLog = '[$formattedTime] [$levelName]$sourceStr: $message';
+
+    // Ajouter séparateurs pour meilleure lisibilité sur Windows
+    if (isWindows && level == LogLevel.error || level == LogLevel.critical) {
+      return '\n${'=' * 80}\n$baseLog\n${'=' * 80}';
+    }
+    return baseLog;
+  }
 
   @override
   String toString() => formatted;
@@ -178,11 +191,34 @@ class LoggingService {
         path.join(logsDir.path, 'planificator_$dateStr.log'),
       );
 
+      // Ajouter un en-tête au fichier si c'est un nouveau fichier
+      if (!await _currentLogFile!.exists()) {
+        await _currentLogFile!.writeAsString(
+          _getLogFileHeader(),
+          encoding: const Utf8Codec(),
+        );
+      }
+
       // Vérifier la rotation des fichiers
       await _rotateLogsIfNeeded();
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Générer un en-tête formaté pour le fichier log
+  String _getLogFileHeader() {
+    final now = DateTime.now();
+    final separator = '═' * 100;
+    return '''$separator
+PLANIFICATOR LOG FILE
+Démarré: ${now.toString()}
+Plateforme: ${Platform.operatingSystem.toUpperCase()}
+$separator
+
+FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
+
+''';
   }
 
   /// Vérifier et archiver les fichiers logs si nécessaire
@@ -255,15 +291,33 @@ class LoggingService {
 
     try {
       await _rotateLogsIfNeeded();
-      // Forcer UTF-8 pour Windows, macOS, Linux (évite les problèmes d'encodage)
+
+      // Format structuré et lisible pour le fichier, sans codes ANSI
+      String logLine = _formatLogForFile(entry);
+
       await _currentLogFile!.writeAsString(
-        '${entry.plainText}\n',
+        '$logLine\n',
         mode: FileMode.append,
         encoding: const Utf8Codec(),
       );
     } catch (e) {
       // Ignorer silencieusement les erreurs d'écriture fichier
     }
+  }
+
+  /// Formater un log pour le fichier en fonction de la plateforme
+  String _formatLogForFile(LogEntry entry) {
+    final baseLog =
+        '${entry.formattedTime} | ${entry.levelName.padRight(8)} | '
+        '${entry.source?.padRight(20) ?? 'general'.padRight(20)} | ${entry.message}';
+
+    // Sur Windows: ajouter des séparateurs visuels pour les erreurs
+    if (isWindows &&
+        (entry.level == LogLevel.error || entry.level == LogLevel.critical)) {
+      return '\n${'▔' * 100}\n$baseLog\n${'▔' * 100}';
+    }
+
+    return baseLog;
   }
 
   /// Ajouter un log au système de journalisation
@@ -382,15 +436,23 @@ class LoggingService {
     final filtered = _logs
         .where((log) => minLevel == null || log.level.index >= minLevel.index)
         .toList();
-    return filtered.map((e) => e.plainText).join('\n');
+    return filtered
+        .map((e) {
+          final baseLog =
+              '${e.formattedTime} | ${e.levelName.padRight(8)} | '
+              '${e.source?.padRight(20) ?? 'general'.padRight(20)} | ${e.message}';
+          return baseLog;
+        })
+        .join('\n');
   }
 
-  /// Obtenir les logs sous forme de liste pour affichage
+  /// Obtenir les logs sous forme de liste pour affichage console
   List<String> getLogsFormatted({LogLevel? minLevel}) {
     final filtered = _logs
         .where((log) => minLevel == null || log.level.index >= minLevel.index)
         .toList();
-    return filtered.map((e) => e.formatted).toList();
+    // Sur Windows, utiliser plainText sans codes ANSI; sur autres OS, utiliser formatted avec couleurs
+    return filtered.map((e) => isWindows ? e.plainText : e.formatted).toList();
   }
 
   /// Effacer tous les logs en mémoire
