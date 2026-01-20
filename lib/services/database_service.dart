@@ -22,8 +22,8 @@ class DatabaseService {
     // Valeurs par défaut
     _host = 'localhost';
     _port = 3306;
-    _user = 'sudoted';
-    _password = '100805Josh';
+    _user = 'root';
+    _password = 'root';
     _database = 'Planificator';
   }
 

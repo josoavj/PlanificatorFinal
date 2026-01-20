@@ -1161,7 +1161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   controller: userController,
                   decoration: const InputDecoration(
                     labelText: 'Utilisateur',
-                    hintText: 'sudoted',
+                    hintText: 'root',
                   ),
                 ),
                 const SizedBox(height: 12),
