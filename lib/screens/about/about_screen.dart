@@ -46,20 +46,72 @@ class AboutScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                // Version
+                // Version, Build, Date et Contact
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue[100]!),
                   ),
-                  child: Text(
-                    'Version 2.1.1',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
+                  child: Column(
+                    children: [
+                      _buildInfoRow('Version', 'v2.1.1'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('Build', '20260120-001'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('Dernière mise à jour', '20 janvier 2026'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(
+                        'Support',
+                        'support@planificator.app',
+                        isEmail: true,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Lien vers le Changelog
+                InkWell(
+                  onTap: () => _launchUrl(
+                    context,
+                    'https://github.com/josoavj/PlanificatorFinal/releases',
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.amber[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.description,
+                          color: Colors.amber[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Consulter les notes de version (Changelog)',
+                            style: TextStyle(
+                              color: Colors.amber[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.open_in_new,
+                          color: Colors.amber[700],
+                          size: 18,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -503,6 +555,49 @@ class AboutScreen extends StatelessWidget {
           context,
         ).showSnackBar(SnackBar(content: Text('Impossible d\'ouvrir: $url')));
       }
+    }
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool isEmail = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.blue[700],
+            fontSize: 14,
+          ),
+        ),
+        if (isEmail)
+          GestureDetector(
+            onTap: () => _launchEmail(value),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.blue[600],
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          )
+        else
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final uri = Uri(scheme: 'mailto', path: email);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 }

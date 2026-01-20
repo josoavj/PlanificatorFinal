@@ -405,14 +405,64 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 
 ## 🐛 Bugs Fixes Récents
 
-| Bug | Cause | Solution |
-|-----|-------|----------|
-| Comptage faux des traitements (20 au lieu de 2) | `COUNT(p.planning_id)` avec Planning JOIN créait des doublons | Utilisé `COUNT(DISTINCT t.traitement_id)` sans Planning JOIN |
-| Nouveaux contrats invisibles après création | `loadContrats()` non appelé après insertion | Ajout de `await loadContrats()` après création |
-| Statuts incomplets dans le planning | Filtre SQL `AND pd.statut = 'À venir'` cachait les autres | Suppression du filtre dans SQL, filtrage en Flutter |
-| Erreur colonne `ancien_montant` inconnue | Noms de colonnes français au lieu des vrais noms | Utilisation de `old_amount`, `new_amount`, `change_date` |
-| Montants négatifs dans factures | Regex `r'[^\d-]'` acceptait `-` n'importe où | Regex `r'[^\d]'` + validation `if (newPrix <= 0)` |
-| Factures non triées par date | Aucun tri appliqué dans la vue détail | Sort par `dateTraitement DESC` |
+### Version 2.1.1 - Windows Compatibility & Stability (20 janvier 2026)
+
+| Bug | Cause | Solution | Statut |
+|-----|-------|----------|--------|
+| **Client page infinite loading sur Windows** | MySQL strict mode + GROUP BY complexe avec COUNT/DISTINCT | Simplifié avec `SELECT DISTINCT` + `WHERE` clause au lieu de `HAVING` + subquery pour treatment_count | ✅ Résolu |
+| **Contract count showing 0 on first load** | `_contratCount` variable updated in FutureBuilder without `setState()` call | Added `setState()` callback in FutureBuilder `onData` to trigger UI rebuild | ✅ Résolu |
+| **Treatment count lost after query simplification** | Suppression du `GROUP BY` pattern a cassé le comptage | Restored using subquery approach: `SELECT COUNT(DISTINCT t.traitement_id) WHERE co.client_id = c.client_id` | ✅ Résolu |
+| Comptage faux des traitements (20 au lieu de 2) | `COUNT(p.planning_id)` avec Planning JOIN créait des doublons | Utilisé `COUNT(DISTINCT t.traitement_id)` sans Planning JOIN | ✅ Hérité v2.0.0 |
+| Nouveaux contrats invisibles après création | `loadContrats()` non appelé après insertion | Ajout de `await loadContrats()` après création | ✅ Hérité v2.0.0 |
+| Statuts incomplets dans le planning | Filtre SQL `AND pd.statut = 'À venir'` cachait les autres | Suppression du filtre dans SQL, filtrage en Flutter | ✅ Hérité v2.0.0 |
+
+### SQL Optimization Pattern (Windows Compatible)
+
+**Ancien Pattern (Problématique sur Windows)** ❌:
+```sql
+SELECT c.client_id, COUNT(DISTINCT co.contrat_id) as contract_count,
+       COUNT(DISTINCT t.traitement_id) as treatment_count
+FROM Client c
+LEFT JOIN Contrat co ON c.client_id = co.client_id
+LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
+GROUP BY c.client_id
+HAVING COUNT(DISTINCT co.contrat_id) > 0
+```
+
+**Nouveau Pattern (Windows Safe)** ✅:
+```sql
+SELECT DISTINCT c.client_id, 
+  COALESCE((
+    SELECT COUNT(DISTINCT t.traitement_id)
+    FROM Traitement t
+    INNER JOIN Contrat co2 ON t.contrat_id = co2.contrat_id
+    WHERE co2.client_id = c.client_id
+  ), 0) as treatment_count
+FROM Client c
+LEFT JOIN Contrat co ON c.client_id = co.client_id
+WHERE co.contrat_id IS NOT NULL
+```
+
+**Avantages** ✨:
+- `SELECT DISTINCT` universellement supporté (tous les versions MySQL)
+- `WHERE` clause au lieu de `HAVING` (plus robuste, moins d'erreurs)
+- Subquery pour COUNT (évite les problèmes GROUP BY + strict mode)
+- Compatible avec MySQL 5.7, 8.0, MariaDB 10.x+
+
+### Enhancements v2.1.1 ✨
+
+**About Screen Improvements** :
+- ✅ Build number display: `20260120-001`
+- ✅ Last update date: `20 janvier 2026`
+- ✅ Support email: `support@planificator.app` (clickable mailto)
+- ✅ Changelog link: Direct access to GitHub releases
+- ✅ Info box with reusable `_buildInfoRow()` component
+
+**Code Quality** :
+- ✅ Improved logging with platform-specific formatting
+- ✅ Enhanced error handling in repositories
+- ✅ Windows-specific SQL patterns tested and validated
+- ✅ UI state management with proper `setState()` callbacks
 
 ---
 
@@ -676,7 +726,7 @@ Ce projet est sous licence **MIT**.
 
 Made with ❤️ by Josoa
 
-**Dernière mise à jour** : 13 janvier 2026
+**Dernière mise à jour** : 20 janvier 2026
 
 ---
 

@@ -24,7 +24,7 @@ class ClientRepository extends ChangeNotifier {
 
     try {
       const sql = '''
-        SELECT 
+        SELECT DISTINCT
           c.client_id, 
           COALESCE(c.nom, 'Sans nom') as nom, 
           COALESCE(c.prenom, '') as prenom, 
@@ -35,17 +35,23 @@ class ClientRepository extends ChangeNotifier {
           COALESCE(c.nif, '') as nif, 
           COALESCE(c.stat, '') as stat, 
           COALESCE(c.axe, '') as axe,
-          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
+          COALESCE((
+            SELECT COUNT(DISTINCT t.traitement_id)
+            FROM Traitement t
+            INNER JOIN Contrat co2 ON t.contrat_id = co2.contrat_id
+            WHERE co2.client_id = c.client_id
+          ), 0) as treatment_count
         FROM Client c
         LEFT JOIN Contrat co ON c.client_id = co.client_id
-        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
-        GROUP BY c.client_id
-        HAVING COUNT(DISTINCT co.contrat_id) > 0
+        WHERE co.contrat_id IS NOT NULL
         ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
         LIMIT 10000
       ''';
 
+      logger.i('🔍 Exécution requête SQL loadClients...');
       final rows = await _db.query(sql);
+      logger.i('✅ Requête réussie, ${rows.length} lignes retournées');
+
       _clients = rows.map((row) => Client.fromMap(row)).toList();
 
       // Tri garantis par Dart (en plus du SQL)
@@ -58,7 +64,8 @@ class ClientRepository extends ChangeNotifier {
       logger.i('${_clients.length} clients chargés (avec contrats actifs)');
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des clients: $e');
+      logger.e('❌ ERREUR CRITIQUE loadClients: $e');
+      logger.e('Stack trace: ${e is Error ? e.stackTrace : 'N/A'}');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -314,7 +321,7 @@ class ClientRepository extends ChangeNotifier {
       final rows = await _db.query(sql, [searchTerm, searchTerm, searchTerm]);
       _clients = rows.map((row) => Client.fromMap(row)).toList();
 
-      // Tri garantit par Dart (en plus du SQL)
+      // Tri garantis par Dart (en plus du SQL)
       _clients.sort((a, b) {
         final compareNom = (a.nom).compareTo(b.nom);
         if (compareNom != 0) return compareNom;
