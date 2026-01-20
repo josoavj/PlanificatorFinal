@@ -293,6 +293,8 @@ class _ContratScreenState extends State<ContratScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  // Mettre à jour le compte même si vide
+                  _contratCount = 0;
                   return const EmptyStateWidget(
                     title: 'Aucun contrat',
                     message:
@@ -318,8 +320,16 @@ class _ContratScreenState extends State<ContratScreen> {
                   }).toList();
                 }
 
-                // Mettre à jour le nombre de contrats affichés
-                _contratCount = contratsWithDetails.length;
+                // Mettre à jour le nombre de contrats affichés ET redessiner l'header
+                if (_contratCount != contratsWithDetails.length) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() {
+                      _contratCount = contratsWithDetails.length;
+                    });
+                  });
+                } else {
+                  _contratCount = contratsWithDetails.length;
+                }
 
                 // Message si aucun résultat après recherche
                 if (contratsWithDetails.isEmpty && _searchQuery.isNotEmpty) {
