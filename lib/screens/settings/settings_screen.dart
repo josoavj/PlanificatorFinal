@@ -1096,14 +1096,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final portController = TextEditingController(
       text: (config.port ?? 3306).toString(),
     );
-    final userController = TextEditingController(
-      text: config.user ?? 'sudoted',
-    );
+    final userController = TextEditingController(text: config.user ?? 'root');
     final databaseController = TextEditingController(
       text: config.database ?? 'Planificator',
     );
     final passwordController = TextEditingController(
-      text: config.password ?? '',
+      text: config.password ?? 'root',
     );
 
     bool showPassword = false;
