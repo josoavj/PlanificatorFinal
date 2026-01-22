@@ -1,6 +1,7 @@
 import 'package:planificator/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bcrypt/bcrypt.dart';
 import '../../repositories/index.dart';
 import '../../services/index.dart';
 import '../../config/database_config.dart';
@@ -493,28 +494,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Détails du profil'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildProfileDetailCard('Nom', user.nom, Icons.person),
-              const SizedBox(height: 12),
-              _buildProfileDetailCard('Prénom', user.prenom, Icons.person),
-              const SizedBox(height: 12),
-              _buildProfileDetailCard('Username', username, Icons.badge),
-              const SizedBox(height: 12),
-              _buildProfileDetailCard('Email', user.email, Icons.email),
-              const SizedBox(height: 12),
-              _buildProfileDetailCard(
-                'Rôle',
-                user.isAdmin ? 'Administrateur' : 'Utilisateur',
-                Icons.shield,
-                backgroundColor: user.isAdmin
-                    ? AppTheme.successGreen
-                    : AppTheme.primaryBlue,
-              ),
-            ],
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.65,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProfileDetailCard('Nom', user.nom, Icons.person),
+                const SizedBox(height: 12),
+                _buildProfileDetailCard('Prénom', user.prenom, Icons.person),
+                const SizedBox(height: 12),
+                _buildProfileDetailCard('Username', username, Icons.badge),
+                const SizedBox(height: 12),
+                _buildProfileDetailCard('Email', user.email, Icons.email),
+                const SizedBox(height: 12),
+                _buildProfileDetailCard(
+                  'Rôle',
+                  user.isAdmin ? 'Administrateur' : 'Utilisateur',
+                  Icons.shield,
+                  backgroundColor: user.isAdmin
+                      ? AppTheme.successGreen
+                      : AppTheme.primaryBlue,
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -533,6 +537,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) async {
     final user = authRepository.currentUser;
     if (user == null) return;
+
+    // Première demande de confirmation
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Modifier le profil'),
+        content: const Text(
+          'Souhaitez-vous modifier vos informations de profil ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Non, annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Oui, continuer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
 
     final prenomCtrl = TextEditingController(
       text: user.fullName.split(' ').last,
@@ -562,110 +589,113 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (context, setState) => AlertDialog(
           title: const Text('Modifier le profil'),
           contentPadding: const EdgeInsets.all(16),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: prenomCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Prénom',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: nomCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Nom',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: emailCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: usernameCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Nom d\'utilisateur',
-                    prefixIcon: const Icon(Icons.account_circle_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[300]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.shield, color: Colors.blue[700], size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Type de compte',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              user.isAdmin ? 'Administrateur' : 'Utilisateur',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.blue[900],
-                              ),
-                            ),
-                          ],
-                        ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.65,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: prenomCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Prénom',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: nomCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nom',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: emailCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: usernameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nom d\'utilisateur',
+                      prefixIcon: const Icon(Icons.account_circle_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.shield, color: Colors.blue[700], size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Type de compte',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                user.isAdmin ? 'Administrateur' : 'Utilisateur',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.blue[900],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -690,6 +720,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         );
                         return;
                       }
+
+                      // Deuxième demande de confirmation avant d'enregistrer
+                      final confirmSave = await showDialog<bool>(
+                        context: context,
+                        builder: (confirmCtx) => AlertDialog(
+                          title: const Text('Confirmer les modifications'),
+                          content: const Text(
+                            'Êtes-vous sûr de vouloir enregistrer ces modifications ?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(confirmCtx).pop(false),
+                              child: const Text('Annuler'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.of(confirmCtx).pop(true),
+                              child: const Text('Confirmer'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmSave != true) return;
 
                       setState(() => _isUpdating = true);
 
@@ -964,61 +1019,110 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
+  void _showChangePasswordDialog(BuildContext context) async {
+    // Première demande de confirmation
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Changer le mot de passe'),
+        content: const Text('Souhaitez-vous changer votre mot de passe ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Non, annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Oui, continuer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final authRepository = context.read<AuthRepository>();
+    final user = authRepository.currentUser;
+    if (user == null) return;
+
+    // Récupérer les informations nécessaires pour les validations
+    String username = '';
+    String passwordHash = '';
+    try {
+      final db = DatabaseService();
+      final result = await db.query(
+        'SELECT username, password FROM Account WHERE id_compte = ?',
+        [user.userId],
+      );
+      if (result.isNotEmpty) {
+        username = result[0]['username']?.toString() ?? '';
+        passwordHash = result[0]['password']?.toString() ?? '';
+      }
+    } catch (e) {
+      logger.w('Error fetching user data: $e');
+    }
+
+    if (!context.mounted) return;
+
     final oldPassword = TextEditingController();
     final newPassword = TextEditingController();
     final confirmPassword = TextEditingController();
+
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Changer le mot de passe'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: oldPassword,
-                decoration: InputDecoration(
-                  labelText: 'Ancien mot de passe',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.65,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: oldPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Ancien mot de passe',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
+                  obscureText: true,
                 ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: newPassword,
-                decoration: InputDecoration(
-                  labelText: 'Nouveau mot de passe',
-                  prefixIcon: const Icon(Icons.lock_reset_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Nouveau mot de passe',
+                    prefixIcon: const Icon(Icons.lock_reset_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
+                  obscureText: true,
                 ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: confirmPassword,
-                decoration: InputDecoration(
-                  labelText: 'Confirmer le mot de passe',
-                  prefixIcon: const Icon(Icons.check_circle_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Confirmer le mot de passe',
+                    prefixIcon: const Icon(Icons.check_circle_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
                   ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
+                  obscureText: true,
                 ),
-                obscureText: true,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -1027,28 +1131,153 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Annuler'),
           ),
           FilledButton(
-            onPressed: () {
-              if (newPassword.text != confirmPassword.text) {
+            onPressed: () async {
+              // Validation 1: Vérifier que tous les champs sont remplis
+              if (oldPassword.text.isEmpty ||
+                  newPassword.text.isEmpty ||
+                  confirmPassword.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Les mots de passe ne correspondent pas'),
+                    content: Text('❌ Tous les champs sont requis'),
                     behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
                   ),
                 );
                 return;
               }
 
-              context.read<AuthRepository>().changePassword(
-                oldPassword.text,
-                newPassword.text,
-              );
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Mot de passe changé avec succès'),
-                  behavior: SnackBarBehavior.floating,
+              // Validation 2: Vérifier que l'ancien mot de passe est correct (avec bcrypt)
+              try {
+                if (!BCrypt.checkpw(oldPassword.text, passwordHash)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('❌ L\'ancien mot de passe est incorrect'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('❌ L\'ancien mot de passe est incorrect'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Validation 3: Vérifier que les nouveaux mots de passe correspondent
+              if (newPassword.text != confirmPassword.text) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('❌ Les mots de passe ne correspondent pas'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Validation 4: Vérifier que le nouveau mot de passe ne ressemble pas à l'ancien
+              if (newPassword.text == oldPassword.text) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      '⚠️ Le nouveau mot de passe doit être différent de l\'ancien',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              // Validation 5: Vérifier la longueur minimale
+              if (newPassword.text.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      '⚠️ Le mot de passe doit contenir au moins 6 caractères',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              // Validation 6: Vérifier que le mot de passe ne contient pas le username, nom ou prénom
+              final newPasswordLower = newPassword.text.toLowerCase();
+              final usernameLower = username.toLowerCase();
+              final nomLower = user.nom.toLowerCase();
+              final prenomLower = user.prenom.toLowerCase();
+
+              if (newPasswordLower.contains(usernameLower) ||
+                  newPasswordLower.contains(nomLower) ||
+                  newPasswordLower.contains(prenomLower)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      '⚠️ Le mot de passe ne doit pas contenir votre nom, prénom ou identifiant',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              // Deuxième demande de confirmation
+              final confirmChange = await showDialog<bool>(
+                context: context,
+                builder: (confirmCtx) => AlertDialog(
+                  title: const Text('Confirmer le changement'),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir changer votre mot de passe ?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(confirmCtx).pop(false),
+                      child: const Text('Annuler'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(confirmCtx).pop(true),
+                      child: const Text('Confirmer'),
+                    ),
+                  ],
                 ),
               );
+
+              if (confirmChange != true) return;
+
+              try {
+                authRepository.changePassword(
+                  oldPassword.text,
+                  newPassword.text,
+                );
+
+                if (!context.mounted) return;
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ Mot de passe changé avec succès'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('❌ Erreur: $e'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: const Text('Changer'),
           ),

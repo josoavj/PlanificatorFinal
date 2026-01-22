@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
@@ -49,7 +51,18 @@ class ClientRepository extends ChangeNotifier {
       ''';
 
       logger.i('🔍 Exécution requête SQL loadClients...');
-      final rows = await _db.query(sql);
+
+      // Ajouter un timeout pour éviter le freeze sur Windows avec isolates
+      final rows = await _db
+          .query(sql)
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              throw TimeoutException(
+                '⏱️ Timeout chargement clients après 60 secondes',
+              );
+            },
+          );
       logger.i('✅ Requête réussie, ${rows.length} lignes retournées');
 
       _clients = rows.map((row) => Client.fromMap(row)).toList();
@@ -69,6 +82,7 @@ class ClientRepository extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+      logger.d('✅ notifyListeners appelé dans finally de loadClients');
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:logger/logger.dart' as logger_pkg;
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'dart:io';
 import 'services/index.dart';
 import 'repositories/index.dart';
 import 'config/database_config.dart';
@@ -66,9 +67,17 @@ void main() async {
       database: config.database ?? 'Planificator',
     );
 
-    // Activer l'utilisation des isolates pour les requêtes (résout le freeze sur Windows)
-    db.setUseIsolates(true);
-    logger.i('✅ Isolates activés pour les requêtes');
+    // Sur Windows, désactiver les isolates (bug avec compute() sur Windows)
+    // Utiliser la connexion directe à la DB à la place
+    if (Platform.isWindows) {
+      db.setUseIsolates(false);
+      logger.i(
+        '✅ Isolates désactivés (Windows détecté - utiliser connexion directe)',
+      );
+    } else {
+      db.setUseIsolates(true);
+      logger.i('✅ Isolates activés pour les requêtes');
+    }
 
     // Essayer de se connecter d'abord
     try {
@@ -91,7 +100,7 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -181,7 +190,7 @@ class _MyAppState extends State<MyApp> {
 
 // Widget séparé pour éviter les rebuilds de l'arbre entier
 class _AuthGate extends StatefulWidget {
-  const _AuthGate({Key? key}) : super(key: key);
+  const _AuthGate();
 
   @override
   State<_AuthGate> createState() => _AuthGateState();
@@ -219,11 +228,9 @@ class _AuthGateState extends State<_AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Utiliser Selector pour UNIQUEMENT récupérer isAuthenticated
-    // Pas de rebuild si un autre champ change
     return Selector<AuthRepository, bool>(
       selector: (_, auth) => auth.isAuthenticated,
-      builder: (_, isAuthenticated, __) {
+      builder: (_, isAuthenticated, _) {
         if (isAuthenticated) {
           return const HomeScreen();
         }
@@ -232,25 +239,3 @@ class _AuthGateState extends State<_AuthGate> {
     );
   }
 }
-
-// Ancien widget _AuthGate - à supprimer
-/*
-class _AuthGate extends StatelessWidget {
-  const _AuthGate({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // ✅ Utiliser Selector pour UNIQUEMENT récupérer isAuthenticated
-    // Pas de rebuild si un autre champ change
-    return Selector<AuthRepository, bool>(
-      selector: (_, auth) => auth.isAuthenticated,
-      builder: (_, isAuthenticated, __) {
-        if (isAuthenticated) {
-          return const HomeScreen();
-        }
-        return const LoginScreen();
-      },
-    );
-  }
-}
-*/

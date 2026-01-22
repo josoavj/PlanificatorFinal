@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -8,7 +9,7 @@ import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
 
 class ClientListScreen extends StatefulWidget {
-  const ClientListScreen({Key? key}) : super(key: key);
+  const ClientListScreen({super.key});
 
   @override
   State<ClientListScreen> createState() => _ClientListScreenState();
@@ -23,9 +24,72 @@ class _ClientListScreenState extends State<ClientListScreen> {
   @override
   void initState() {
     super.initState();
-    // Charger les clients
+    // Charger les clients avec timeout et fallback
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<ClientRepository>().loadClients();
+      try {
+        await context.read<ClientRepository>().loadClients().timeout(
+          const Duration(seconds: 65),
+          onTimeout: () {
+            logger.e('⏱️ Timeout chargement clients - tentative fallback');
+            throw TimeoutException('Chargement clients timeout');
+          },
+        );
+      } catch (e) {
+        logger.e('❌ Erreur loadClients: $e - tentative fallback direct DB');
+        // Fallback: charger directement de la base de données
+        try {
+          if (!mounted) return;
+          final db = DatabaseService();
+          const sql = '''
+            SELECT DISTINCT
+              c.client_id, 
+              COALESCE(c.nom, 'Sans nom') as nom, 
+              COALESCE(c.prenom, '') as prenom, 
+              COALESCE(c.email, '') as email, 
+              COALESCE(c.telephone, '') as telephone, 
+              COALESCE(c.adresse, '') as adresse, 
+              COALESCE(c.categorie, '') as categorie, 
+              COALESCE(c.nif, '') as nif, 
+              COALESCE(c.stat, '') as stat, 
+              COALESCE(c.axe, '') as axe,
+              COALESCE((\n                SELECT COUNT(DISTINCT t.traitement_id)
+                FROM Traitement t
+                INNER JOIN Contrat co2 ON t.contrat_id = co2.contrat_id
+                WHERE co2.client_id = c.client_id
+              ), 0) as treatment_count
+            FROM Client c
+            LEFT JOIN Contrat co ON c.client_id = co.client_id
+            WHERE co.contrat_id IS NOT NULL
+            ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
+            LIMIT 10000
+          ''';
+          final rows = await db.query(sql);
+          logger.i(
+            '✅ Fallback réussi: ${rows.length} clients chargés directement',
+          );
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Chargement fallback réussi (${rows.length} clients)',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } catch (fallbackError) {
+          logger.e('❌ Fallback aussi échoué: $fallbackError');
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Erreur lors du chargement des clients'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
     });
   }
 
