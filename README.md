@@ -36,7 +36,6 @@
 - [🚀 Démarrage Rapide](#-démarrage-rapide)
 - [📦 Dépendances](#-dépendances)
 - [📊 État du Projet](#-état-du-projet)
-- [🔄 Stratégie de Commit](#-stratégie-de-commit)
 - [👨‍💻 Auteur](#-auteur)
 - [📄 Licence](#-licence)
 - [🎯 Roadmap Futures](#-roadmap-futures)
@@ -418,18 +417,8 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 
 ### SQL Optimization Pattern (Windows Compatible)
 
-**Ancien Pattern (Problématique sur Windows)** ❌:
-```sql
-SELECT c.client_id, COUNT(DISTINCT co.contrat_id) as contract_count,
-       COUNT(DISTINCT t.traitement_id) as treatment_count
-FROM Client c
-LEFT JOIN Contrat co ON c.client_id = co.client_id
-LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
-GROUP BY c.client_id
-HAVING COUNT(DISTINCT co.contrat_id) > 0
-```
 
-**Nouveau Pattern (Windows Safe)** ✅:
+**Pattern (Windows Safe)** :
 ```sql
 SELECT DISTINCT c.client_id, 
   COALESCE((
@@ -511,8 +500,8 @@ flutter analyze
 # Sur Linux (desktop)
 flutter run -d linux
 
-# Sur Android ou Windows
-flutter run
+# Sur Windows
+flutter run -d windows
 
 # Sur iOS (macOS uniquement)
 flutter run -d ios
@@ -670,25 +659,14 @@ flutter_lints: ^2.0.0
 
 ---
 
-## 🔄 Stratégie de Commit
-
-Tous les changements ont été committés de manière logique et séquentielle :
-
-1. ✅ Ajout du bouton de rafraîchissement (FAB) sur HomeScreen
-2. ✅ Chargement de tous les statuts du planning
-3. ✅ Rechargement des contrats après création
-4. ✅ Création de l'utilitaire NumberFormatter
-5. ✅ Nouvel écran Facture avec recherche et groupement
-6. ✅ Implémentation de la modification de prix en cascade
-7. ✅ Correction du comptage des traitements (COUNT DISTINCT)
-8. ✅ Ajout du parsing DateTime flexible
-9. ✅ Mises à jour mineures et optimisations
-
----
-
 ## 👨‍💻 Auteur
 
 **Josoa** - Développeur principal
+
+- 📧 Email: josoavonjiniaina13@gmail.com 
+- 🐙 GitHub: [@josoavj](https://github.com/josoavj)
+
+**Josoa** - Développeur Back-end
 
 - 📧 Email: contact@planificator.app
 - 🐙 GitHub: [@josoavj](https://github.com/josoavj)
@@ -733,13 +711,10 @@ Made with ❤️ by Josoa
 ## 🎯 Roadmap Futures
 
 - 🧪 **Tests Unitaires & Intégration** : Suite de tests complète
-- 📱 **Version iOS Optimisée** : Support iOS natif amélioré
-- 🌐 **Synchronisation Cloud** : Sauvegarde et synchronisation des données
 - 📈 **Dashboard Analytique** : Graphiques et statistiques avancées
 - 🔔 **Push Notifications** : Notifications cloud améliorées
 - 🌙 **Mode Sombre** : Support complet du thème sombre
 - 🗺️ **Géolocalisation** : Intégration GPS pour les interventions
-- 📊 **API REST** : Exposition des données via API
 - 🤖 **Machine Learning** : Prédictions et recommandations
 
 ---
