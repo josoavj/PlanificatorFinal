@@ -25,72 +25,59 @@ class _ClientListScreenState extends State<ClientListScreen> {
   void initState() {
     super.initState();
     // Charger les clients avec timeout et fallback
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        await context.read<ClientRepository>().loadClients().timeout(
-          const Duration(seconds: 65),
-          onTimeout: () {
-            logger.e('⏱️ Timeout chargement clients - tentative fallback');
-            throw TimeoutException('Chargement clients timeout');
-          },
-        );
-      } catch (e) {
-        logger.e('❌ Erreur loadClients: $e - tentative fallback direct DB');
-        // Fallback: charger directement de la base de données
-        try {
-          if (!mounted) return;
-          final db = DatabaseService();
-          const sql = '''
-            SELECT DISTINCT
-              c.client_id, 
-              COALESCE(c.nom, 'Sans nom') as nom, 
-              COALESCE(c.prenom, '') as prenom, 
-              COALESCE(c.email, '') as email, 
-              COALESCE(c.telephone, '') as telephone, 
-              COALESCE(c.adresse, '') as adresse, 
-              COALESCE(c.categorie, '') as categorie, 
-              COALESCE(c.nif, '') as nif, 
-              COALESCE(c.stat, '') as stat, 
-              COALESCE(c.axe, '') as axe,
-              COALESCE((\n                SELECT COUNT(DISTINCT t.traitement_id)
-                FROM Traitement t
-                INNER JOIN Contrat co2 ON t.contrat_id = co2.contrat_id
-                WHERE co2.client_id = c.client_id
-              ), 0) as treatment_count
-            FROM Client c
-            LEFT JOIN Contrat co ON c.client_id = co.client_id
-            WHERE co.contrat_id IS NOT NULL
-            ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
-            LIMIT 10000
-          ''';
-          final rows = await db.query(sql);
-          logger.i(
-            '✅ Fallback réussi: ${rows.length} clients chargés directement',
-          );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeClientData();
+    });
+  }
 
-          if (!mounted) return;
+  /// Initialise le chargement des données clients
+  Future<void> _initializeClientData() async {
+    try {
+      logger.i('📥 Début initialisation clients...');
+      await context.read<ClientRepository>().loadClients().timeout(
+        const Duration(seconds: 65),
+        onTimeout: () {
+          logger.e('⏱️ Timeout chargement clients après 65 secondes');
+          throw TimeoutException('Chargement clients timeout');
+        },
+      );
+      logger.i('✅ Clients chargés avec succès');
+    } catch (e) {
+      logger.e('❌ Erreur loadClients: $e');
+
+      // En cas d'erreur, on essaie de recharger une fois de plus
+      if (!mounted) return;
+
+      try {
+        logger.i('🔄 Nouvelle tentative de chargement...');
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (!mounted) return;
+        await context.read<ClientRepository>().loadClients();
+
+        logger.i('✅ Nouvelle tentative réussie');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Chargement fallback réussi (${rows.length} clients)',
-              ),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
+            const SnackBar(
+              content: Text('✅ Clients chargés après retry'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
-        } catch (fallbackError) {
-          logger.e('❌ Fallback aussi échoué: $fallbackError');
-          if (!mounted) return;
+        }
+      } catch (retryError) {
+        logger.e('❌ Retry aussi échoué: $retryError');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Erreur lors du chargement des clients'),
+              content: Text('❌ Erreur: ${retryError.toString()}'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 5),
             ),
           );
         }
       }
-    });
+    }
   }
 
   @override
@@ -105,19 +92,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
     return Scaffold(
       body: Consumer<ClientRepository>(
         builder: (context, repository, _) {
-          //  État de chargement
-          if (repository.isLoading) {
-            return const LoadingWidget(message: 'Chargement des clients...');
-          }
-
-          //  État d'erreur
-          if (repository.errorMessage != null) {
-            return ErrorDisplayWidget(
-              message: repository.errorMessage!,
-              onRetry: () => repository.loadClients(),
-            );
-          }
-
           //  Filtrer les clients par recherche
           final filteredClients = _filterClientsBySearch(repository.clients);
 
@@ -127,35 +101,57 @@ class _ClientListScreenState extends State<ClientListScreen> {
               // En-tête avec gradient bleu et barre de recherche (TOUJOURS VISIBLE)
               _buildHeader(context, repository, filteredClients),
 
-              // Liste des clients ou état vide
+              // Contenu principal: état de chargement, erreur, liste ou vide
               Expanded(
-                child: filteredClients.isNotEmpty
-                    ? ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        itemCount: filteredClients.length,
-                        itemBuilder: (context, index) {
-                          final client = filteredClients[index];
-                          return _buildClientCard(context, repository, client);
-                        },
-                      )
-                    : Center(
-                        child: EmptyStateWidget(
-                          title: _searchQuery.isEmpty
-                              ? 'Aucun client'
-                              : 'Aucun résultat',
-                          message: _searchQuery.isEmpty
-                              ? 'Aucun client trouvé. Commencez par créer un client.'
-                              : 'Aucun client ne correspond à votre recherche',
-                          icon: Icons.people_outline,
-                          actionLabel: _searchQuery.isEmpty
-                              ? 'Ajouter un client'
-                              : null,
-                        ),
-                      ),
+                child: _buildContent(context, repository, filteredClients),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// Construit le contenu principal (liste, chargement, erreur ou vide)
+  Widget _buildContent(
+    BuildContext context,
+    ClientRepository repository,
+    List<Client> filteredClients,
+  ) {
+    //  État de chargement
+    if (repository.isLoading) {
+      return const LoadingWidget(message: 'Chargement des clients...');
+    }
+
+    //  État d'erreur
+    if (repository.errorMessage != null) {
+      return ErrorDisplayWidget(
+        message: repository.errorMessage!,
+        onRetry: () => repository.loadClients(),
+      );
+    }
+
+    //  Liste des clients ou état vide
+    if (filteredClients.isNotEmpty) {
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemCount: filteredClients.length,
+        itemBuilder: (context, index) {
+          final client = filteredClients[index];
+          return _buildClientCard(context, repository, client);
+        },
+      );
+    }
+
+    // État vide
+    return Center(
+      child: EmptyStateWidget(
+        title: _searchQuery.isEmpty ? 'Aucun client' : 'Aucun résultat',
+        message: _searchQuery.isEmpty
+            ? 'Aucun client trouvé. Commencez par créer un client.'
+            : 'Aucun client ne correspond à votre recherche',
+        icon: Icons.people_outline,
+        actionLabel: _searchQuery.isEmpty ? 'Ajouter un client' : null,
       ),
     );
   }
