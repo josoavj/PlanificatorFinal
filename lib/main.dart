@@ -206,23 +206,33 @@ class _AuthGateState extends State<_AuthGate> {
     });
   }
 
-  void _preloadData() {
+  void _preloadData() async {
     try {
+      logger.i('⏳ Début du préchargement des données...');
+
       // Précharger les types de traitement
-      context.read<TypeTraitementRepository>().loadAllTraitements();
+      await context.read<TypeTraitementRepository>().loadAllTraitements();
+      logger.i('✅ Types de traitement chargés');
 
       // Précharger les clients
-      context.read<ClientRepository>().loadClients();
+      await context.read<ClientRepository>().loadClients();
+      logger.i('✅ Clients chargés');
 
       // Précharger les plannings (données home/planning)
       final planningDetailsRepo = context.read<PlanningDetailsRepository>();
-      planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
-      planningDetailsRepo.loadUpcomingTreatmentsComplete();
-      planningDetailsRepo.loadAllTreatmentsComplete();
+      await planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
+      logger.i('✅ Plannings du mois courant chargés');
 
-      log.info('✅ Données préchargées au startup', source: 'main');
+      await planningDetailsRepo.loadUpcomingTreatmentsComplete();
+      logger.i('✅ Plannings à venir chargés');
+
+      await planningDetailsRepo.loadAllTreatmentsComplete();
+      logger.i('✅ Tous les plannings chargés');
+
+      log.info('✅ Données préchargées avec succès au startup', source: 'main');
     } catch (e) {
       log.warning('⚠️ Erreur lors du préchargement: $e', source: 'main');
+      logger.w('Stack trace: ${e is Error ? e.stackTrace : "N/A"}');
     }
   }
 
