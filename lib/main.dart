@@ -72,19 +72,19 @@ void main() async {
     if (Platform.isWindows) {
       db.setUseIsolates(false);
       logger.i(
-        '✅ Isolates désactivés (Windows détecté - utiliser connexion directe)',
+        'Isolates désactivés (Windows détecté - utiliser connexion directe)',
       );
     } else {
       db.setUseIsolates(true);
-      logger.i('✅ Isolates activés pour les requêtes');
+      logger.i('Isolates activés pour les requêtes');
     }
 
     // Essayer de se connecter d'abord
     try {
       await db.connect();
-      logger.i('✅ Base de données connectée');
+      logger.i('Base de données connectée');
     } catch (e) {
-      logger.e('⚠️ Connexion impossible: $e');
+      logger.e('Connexion impossible: $e');
     }
 
     // Charger les traitements du lendemain et planifier les notifications
@@ -92,7 +92,7 @@ void main() async {
       final notifRepo = NotificationRepository();
       await notifRepo.loadAndNotifyNextDayTreatments();
     } catch (e) {
-      log.warning('⚠️ Erreur chargement traitements: $e', source: 'main');
+      log.warning('Erreur chargement traitements: $e', source: 'main');
     }
   }
 
@@ -208,26 +208,26 @@ class _AuthGateState extends State<_AuthGate> {
 
   void _preloadData() async {
     try {
-      logger.i('⏳ Début du préchargement des données...');
+      logger.i('Début du préchargement des données...');
 
       // Précharger les types de traitement
       await context.read<TypeTraitementRepository>().loadAllTraitements();
-      logger.i('✅ Types de traitement chargés');
+      logger.i('Types de traitement chargés');
 
       // Précharger les clients
       await context.read<ClientRepository>().loadClients();
-      logger.i('✅ Clients chargés');
+      logger.i('Clients chargés');
 
       // Précharger les plannings (données home/planning)
       final planningDetailsRepo = context.read<PlanningDetailsRepository>();
       await planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
-      logger.i('✅ Plannings du mois courant chargés');
+      logger.i('Plannings du mois courant chargés');
 
       await planningDetailsRepo.loadUpcomingTreatmentsComplete();
-      logger.i('✅ Plannings à venir chargés');
+      logger.i('Plannings à venir chargés');
 
       await planningDetailsRepo.loadAllTreatmentsComplete();
-      logger.i('✅ Tous les plannings chargés');
+      logger.i('Tous les plannings chargés');
 
       log.info('✅ Données préchargées avec succès au startup', source: 'main');
     } catch (e) {
