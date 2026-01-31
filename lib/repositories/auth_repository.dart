@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 
 class AuthRepository extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
   final logger = createLoggerWithFileOutput(name: 'auth_repository');
 
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isAuthenticated = false;
+
+  // Constructeur avec injection optionnelle (pour tests)
+  AuthRepository({DatabaseService? databaseService})
+    : _db = databaseService ?? DatabaseService();
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -234,6 +237,9 @@ class AuthRepository extends ChangeNotifier {
   }
 
   /// Change le mot de passe
+  ///
+  /// IMPORTANT: Valide le mot de passe actuel avant de changer.
+  /// Utilise bcrypt pour la vérification et le hachage sécurisé.
   Future<bool> changePassword(String oldPassword, String newPassword) async {
     if (_currentUser == null) {
       _errorMessage = 'Aucun utilisateur connecté';
@@ -245,16 +251,40 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
+      // 1️⃣ Récupérer le hash actuel du mot de passe
+      const selectSql = 'SELECT password FROM Account WHERE id_compte = ?';
+      final row = await _db.queryOne(selectSql, [_currentUser!.userId]);
+
+      if (row == null) {
+        _errorMessage = 'Utilisateur non trouvé';
+        logger.e('Utilisateur ${_currentUser!.userId} introuvable');
+        return false;
+      }
+
+      // 2️⃣ Vérifier que l'ancien mot de passe est correct (protection contre les accès non autorisés)
+      final storedHash = row['password'] as String;
+      if (!_verifyPassword(oldPassword, storedHash)) {
+        _errorMessage = 'Ancien mot de passe incorrect';
+        logger.w(
+          'Tentative de changement de mot de passe échouée (mauvais ancien pwd) pour utilisateur ${_currentUser!.userId}',
+        );
+        return false;
+      }
+
+      // 3️⃣ Hacher le nouveau mot de passe
+      final hashedPassword = _hashPassword(newPassword);
+
+      // 4️⃣ Mettre à jour le mot de passe
+      const updateSql = '''
         UPDATE Account
         SET password = ?
         WHERE id_compte = ?
       ''';
+      await _db.execute(updateSql, [hashedPassword, _currentUser!.userId]);
 
-      final hashedPassword = _hashPassword(newPassword);
-      await _db.execute(sql, [hashedPassword, _currentUser!.userId]);
-
-      logger.i('Mot de passe de l\'utilisateur ${_currentUser!.userId} changé');
+      logger.i(
+        '✅ Mot de passe de l\'utilisateur ${_currentUser!.userId} changé avec succès',
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
