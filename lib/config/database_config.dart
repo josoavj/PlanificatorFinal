@@ -1,13 +1,25 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/logging_service.dart';
 
 /// Configuration singleton pour la base de données
 /// Stocke les credentials de connexion MySQL
+///
+/// SÉCURITÉ:
+/// - Non-sensibles (host, port, database) → SharedPreferences
+/// - Sensibles (user, password) → flutter_secure_storage (chiffré DPAPI/Keychain/Keystore)
 class DatabaseConfig {
   static final DatabaseConfig _instance = DatabaseConfig._internal();
   final logger = createLoggerWithFileOutput(name: 'database_config');
 
   late SharedPreferences _prefs;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      keyCipherAlgorithm:
+          KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+      storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
+    ),
+  );
   bool _initialized = false;
 
   String? _host;
@@ -22,7 +34,7 @@ class DatabaseConfig {
     return _instance;
   }
 
-  /// Initialiser la configuration depuis SharedPreferences
+  /// Initialiser la configuration depuis SharedPreferences et flutter_secure_storage
   Future<void> initialize() async {
     if (_initialized) return;
 
@@ -31,15 +43,19 @@ class DatabaseConfig {
 
       _host = _prefs.getString('db_host') ?? 'localhost';
       _port = _prefs.getInt('db_port') ?? 3306;
-      _user = _prefs.getString('db_user');
-      _password = _prefs.getString('db_password');
       _database = _prefs.getString('db_name') ?? 'Planificator';
 
+      // Récupérer les credentials du stockage sécurisé
+      _user = await _secureStorage.read(key: 'db_user');
+      _password = await _secureStorage.read(key: 'db_password');
+
       _initialized = true;
-      logger.i('✅ Configuration base de données initialisée');
+      logger.i(
+        'Configuration database initialized (credentials from secure storage)',
+      );
     } catch (e) {
-      logger.e('❌ Erreur lors de l\'initialisation: $e');
-      throw Exception('Impossible d\'initialiser la configuration');
+      logger.e('Error during initialization: $e');
+      throw Exception('Unable to initialize configuration');
     }
   }
 
@@ -49,6 +65,10 @@ class DatabaseConfig {
   }
 
   /// Sauvegarde la configuration
+  ///
+  ///   SÉCURITÉ:
+  /// - Les NON-SENSIBLES (host, port, database) → SharedPreferences
+  /// - Les CREDENTIALS SENSIBLES (user, password) → FlutterSecureStorage (chiffré)
   Future<void> saveConfig({
     required String host,
     required int port,
@@ -57,13 +77,16 @@ class DatabaseConfig {
     String? database,
   }) async {
     try {
+      // 1. Store non-sensitive data
       await _prefs.setString('db_host', host);
       await _prefs.setInt('db_port', port);
-      await _prefs.setString('db_user', user);
-      await _prefs.setString('db_password', password);
       if (database != null) {
         await _prefs.setString('db_name', database);
       }
+
+      // 2. Store credentials (should use flutter_secure_storage in production)
+      await _secureStorage.write(key: 'db_user', value: user);
+      await _secureStorage.write(key: 'db_password', value: password);
 
       _host = host;
       _port = port;
@@ -71,10 +94,10 @@ class DatabaseConfig {
       _password = password;
       _database = database ?? 'Planificator';
 
-      logger.i('✅ Configuration sauvegardée');
+      logger.i('Configuration saved (credentials encrypted in secure storage)');
     } catch (e) {
-      logger.e('❌ Erreur lors de la sauvegarde: $e');
-      throw Exception('Impossible de sauvegarder la configuration');
+      logger.e('Error saving config: $e');
+      throw Exception('Unable to save configuration');
     }
   }
 
@@ -89,11 +112,14 @@ class DatabaseConfig {
   /// Réinitialise la configuration (pour tests)
   Future<void> reset() async {
     try {
+      // 1. Remove non-sensitive data
       await _prefs.remove('db_host');
       await _prefs.remove('db_port');
-      await _prefs.remove('db_user');
-      await _prefs.remove('db_password');
       await _prefs.remove('db_name');
+
+      // 2. Remove credentials from secure storage
+      await _secureStorage.delete(key: 'db_user');
+      await _secureStorage.delete(key: 'db_password');
 
       _host = null;
       _port = null;
@@ -101,9 +127,9 @@ class DatabaseConfig {
       _password = null;
       _database = null;
 
-      logger.i('✅ Configuration réinitialisée');
+      logger.i('Configuration reset');
     } catch (e) {
-      logger.e('❌ Erreur lors de la réinitialisation: $e');
+      logger.e('Error during reset: $e');
     }
   }
 
