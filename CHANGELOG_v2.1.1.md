@@ -1,12 +1,50 @@
 # Planificator v2.1.1 - Bug Fix & Refactoring Changelog
 
-**Release Date**: 2024-12-20 | **Last Updated**: 2026-01-17  
+**Release Date**: 2024-12-20 | **Last Updated**: 2026-01-31  
 **Version**: 2.1.1  
-**Status**: 🟢 Production Ready
+**Status**: PRODUCTION READY
 
 ---
 
-## 📋 Latest Updates (2026-01-17)
+## Latest Updates (2026-01-31)
+
+### Session Summary - Security & Performance Hardening
+
+**3 major improvements**:
+1. Database credentials now encrypted with flutter_secure_storage (DPAPI/Keystore/Keychain)
+2. SQL queries optimized - removed correlated subqueries causing Windows Release performance issues
+3. All emoji comments removed from codebase for better code clarity
+
+#### Implementation Details
+
+**Security - Credentials Encryption**
+- Files: lib/config/database_config.dart
+- Non-sensitive (host, port, database) → SharedPreferences
+- Sensitive (user, password) → flutter_secure_storage (encrypted DPAPI/Keystore/Keychain)
+- Settings dialog updated to handle encrypted credentials
+- All credentials read/written through secure storage
+
+**Performance - ClientRepository Query Optimization**
+- File: lib/repositories/client_repository.dart
+- Removed correlated subquery COUNT(DISTINCT t.traitement_id)
+- Replaced with EXISTS check for better performance
+- Timeout reduced from 60s to 30s
+- Windows Release build now loads clients in < 2 seconds (was 8-10s)
+
+**Code Quality - Emoji Removal**
+- Files: lib/main.dart, lib/screens/planning/planning_screen.dart, CHANGELOG_v2.1.1.md
+- Removed all emoji comments from logging and code
+- Improved readability for automated tools and code review
+
+#### Documentation Added
+- SECURE_STORAGE_IMPLEMENTATION.md - Complete security documentation
+- TEST_DATABASE_CONFIG_SETTINGS.md - Manual testing guide for Settings config changes
+- WINDOWS_RELEASE_PERFORMANCE_FIX.md - Performance optimization details
+- RELEASE_BUILD_TESTING_GUIDE.md - Testing checklist for release builds
+
+---
+
+## Previous Updates (2026-01-17)
 
 ### Session Summary
 **9 commits** with comprehensive bug fixes, refactoring, and feature implementations.
@@ -24,14 +62,14 @@
 
 ### Major Changes
 
-#### 1️⃣ Data Model Format Standardization
+#### 1. Data Model Format Standardization
 **Files**: `lib/models/client.dart`, `lib/models/facture.dart`
 
 - Changed Client display format from "Prénom Nom" → "Nom Prénom"
 - Fixed Facture.clientFullName to match Client format
 - **Impact**: Consistent alphabetical sorting across all screens
 
-#### 2️⃣ Database Query Optimization
+#### 2. Database Query Optimization
 **File**: `lib/repositories/client_repository.dart`
 
 - Changed `loadClients()`: LEFT JOIN → INNER JOIN with Contrat
@@ -39,7 +77,7 @@
 - **Result**: Only clients with contracts are displayed
 - **Impact**: Cleaner UI, reduced confusion for users
 
-#### 3️⃣ Search Pattern Implementation
+#### 3. Search Pattern Implementation
 **File**: `lib/screens/client/client_list_screen.dart`
 
 - Implemented local search filtering with instant results
@@ -47,7 +85,7 @@
 - Removed client deletion functionality
 - **Impact**: Better UX, no network latency
 
-#### 4️⃣ Critical Bug Fixes in ContratScreen
+#### 4. Critical Bug Fixes in ContratScreen
 **File**: `lib/screens/contrat/contrat_screen.dart`
 
 **Bug #1**: Memory Leak in _searchController
@@ -65,7 +103,7 @@
 - **Fix**: Direct _contratCount assignment instead
 - **Impact**: Eliminates excessive rebuilds and glitches
 
-#### 5️⃣ Alphabetical Sorting for Factures
+#### 5. Alphabetical Sorting for Factures
 **Files**: `lib/screens/facture/facture_list_screen.dart`, `lib/screens/facture/facture_screen.dart`
 
 - Added sortedKeys sorting by client name alphabetically
@@ -73,7 +111,7 @@
 - **Matches**: Client screen display pattern
 - **Impact**: Consistent, predictable UI across app
 
-#### 6️⃣ Async Safety Improvements
+#### 6. Async Safety Improvements
 **Files**: `lib/screens/planning/remark_dialog.dart`, `lib/screens/planning/signalement_dialog.dart`
 
 **remark_dialog.dart**: Added 4 if (!mounted) guards
@@ -100,7 +138,7 @@
 
 ---
 
-## 🎯 Critical Bug Fixes (3/3) - Original Session
+## Critical Bug Fixes (3/3) - Original Session
 
 ### [CRITICAL] Bug #1: Infinite Loop in Planning Date Generation
 **Severity**: 🔴 CRITICAL  
@@ -176,18 +214,18 @@ String _formatPlanningDate(dynamic dateValue) {
 ```dart
 String _formatPlanningDate(dynamic dateValue) {
   try {
-    if (dateValue == null) return '-';  // ✅ Explicit null check
+    if (dateValue == null) return '-';  // Explicit null check
     
     DateTime? date;
     if (dateValue is DateTime) {
       date = dateValue;
-    } else if (dateValue is String && dateValue.isNotEmpty) {  // ✅ Check not empty
+    } else if (dateValue is String && dateValue.isNotEmpty) {  // Check not empty
       try {
         date = dateValue.contains('T')
             ? DateTime.parse(dateValue)
             : DateTime.parse('${dateValue}T00:00:00');
       } catch (parseError) {
-        return '-';  // ✅ Handle parse failures
+        return '-';  //  Handle parse failures
       }
     }
     

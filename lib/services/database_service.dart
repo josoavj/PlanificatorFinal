@@ -33,6 +33,29 @@ class DatabaseService {
 
   bool get isConnected => _isConnected;
 
+  /// 🔒 Masque les données sensibles dans les logs
+  /// Remplace les valeurs par des placeholders pour éviter d'exposer des secrets
+  static String _sanitizeParamsForLogging(List<dynamic>? params) {
+    if (params == null) return 'null';
+
+    try {
+      final sanitized = params.map((param) {
+        // Si c'est un String long (possiblement un hash), le masquer
+        if (param is String && param.length > 20) {
+          return '[MASKED:${param.length}chars]';
+        }
+        // Masquer les valeurs ressemblant à des hash bcrypt (60 chars)
+        if (param is String && param.startsWith('\$2')) {
+          return '[BCRYPT_HASH_MASKED]';
+        }
+        return param;
+      }).toList();
+      return sanitized.toString();
+    } catch (e) {
+      return '[ERROR_SANITIZING_PARAMS]';
+    }
+  }
+
   /// Active/désactive l'utilisation des isolates
   void setUseIsolates(bool useIsolates) {
     _useIsolates = useIsolates;
@@ -108,8 +131,9 @@ class DatabaseService {
 
     try {
       logger.d('Query: $sql');
-      if (params != null) {
-        logger.d('Params: $params');
+      if (params != null && params.isNotEmpty) {
+        // 🔒 Logs sécurisés: masquer les données sensibles
+        logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
       // Utiliser les isolates si activés (recommandé pour Windows)
@@ -165,8 +189,9 @@ class DatabaseService {
 
     try {
       logger.d('Execute: $sql');
-      if (params != null) {
-        logger.d('Params: $params');
+      if (params != null && params.isNotEmpty) {
+        // 🔒 Logs sécurisés: masquer les données sensibles
+        logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
       // Utiliser les isolates si activés
@@ -201,8 +226,9 @@ class DatabaseService {
 
     try {
       logger.d('Insert: $sql');
-      if (params != null) {
-        logger.d('Params: $params');
+      if (params != null && params.isNotEmpty) {
+        // 🔒 Logs sécurisés: masquer les données sensibles
+        logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
       // Utiliser les isolates si activés

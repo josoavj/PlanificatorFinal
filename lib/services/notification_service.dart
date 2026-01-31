@@ -55,7 +55,7 @@ class NotificationService {
       );
 
       await _flutterLocalNotificationsPlugin.initialize(
-        initSettings,
+        settings: initSettings,
         onDidReceiveNotificationResponse: _handleNotificationResponse,
       );
 
@@ -116,10 +116,10 @@ class NotificationService {
       );
 
       await _flutterLocalNotificationsPlugin.show(
-        0,
-        title,
-        body,
-        notificationDetails,
+        id: 1,
+        title: title,
+        body: body,
+        notificationDetails: notificationDetails,
         payload: payload,
       );
 
@@ -190,11 +190,11 @@ class NotificationService {
       );
 
       await _flutterLocalNotificationsPlugin.zonedSchedule(
-        0,
-        title,
-        body,
-        scheduledDate,
-        notificationDetails,
+        id: 2,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: notificationDetails,
         payload: payload,
         matchDateTimeComponents: DateTimeComponents.time,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -270,7 +270,7 @@ class NotificationService {
   Future<void> cancel(int id) async {
     if (!_isInitialized) return;
     try {
-      await _flutterLocalNotificationsPlugin.cancel(id);
+      await _flutterLocalNotificationsPlugin.cancel(id: id);
     } catch (e) {
       log.error(
         'Erreur annulation notification $id: $e',

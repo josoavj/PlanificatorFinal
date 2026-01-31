@@ -1,8 +1,3 @@
-/// Utilitaires pour la validation et le hachage des mots de passe
-
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
-
 class PasswordValidator {
   /// Vérifie si le mot de passe contient des informations personnelles (nom/prénom)
   static bool isPasswordPersonalInfo(
@@ -21,17 +16,6 @@ class PasswordValidator {
     }
 
     return false;
-  }
-
-  /// Hache un mot de passe en utilisant SHA-256
-  static String hashPassword(String password) {
-    return sha256.convert(utf8.encode(password)).toString();
-  }
-
-  /// Vérifie si un mot de passe correspond à un hachage
-  static bool verifyPassword(String password, String hash) {
-    final hashedInput = hashPassword(password);
-    return hashedInput == hash;
   }
 
   /// Valide un mot de passe - retourne le message d'erreur ou vide si OK

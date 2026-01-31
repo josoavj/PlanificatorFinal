@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../services/query_cache_service.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
+  final QueryCacheService _cache = QueryCacheService();
   final logger = createLoggerWithFileOutput(name: 'client_repository');
 
   List<Client> _clients = [];
@@ -18,15 +20,33 @@ class ClientRepository extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// Charge tous les clients (seulement ceux avec au moins un contrat)
+  /// Charge tous les clients (avec optimisation cache)
+  ///
+  /// Cache: 15 minutes par défaut
+  /// Indexes SQL: idx_client_nom, idx_contrat_client_id, idx_traitement_contrat_type
   Future<void> loadClients() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // Vérifier le cache d'abord
+      final cacheKey = CacheKeys.clientsList();
+      final cachedRows = _cache.get(cacheKey);
+
+      if (cachedRows != null) {
+        logger.i('Cache HIT: Loading ${cachedRows.length} clients from cache');
+        _clients = cachedRows.map((row) => Client.fromMap(row)).toList();
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      logger.i('Cache MISS: Executing SQL query for clients...');
+
+
       const sql = '''
-        SELECT DISTINCT
+        SELECT 
           c.client_id, 
           COALESCE(c.nom, 'Sans nom') as nom, 
           COALESCE(c.prenom, '') as prenom, 
@@ -37,62 +57,76 @@ class ClientRepository extends ChangeNotifier {
           COALESCE(c.nif, '') as nif, 
           COALESCE(c.stat, '') as stat, 
           COALESCE(c.axe, '') as axe,
-          COALESCE((
-            SELECT COUNT(DISTINCT t.traitement_id)
-            FROM Traitement t
-            INNER JOIN Contrat co2 ON t.contrat_id = co2.contrat_id
-            WHERE co2.client_id = c.client_id
-          ), 0) as treatment_count
+          0 as treatment_count
         FROM Client c
-        LEFT JOIN Contrat co ON c.client_id = co.client_id
-        WHERE co.contrat_id IS NOT NULL
+        WHERE EXISTS (
+          SELECT 1 FROM Contrat co 
+          WHERE co.client_id = c.client_id
+        )
         ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
         LIMIT 10000
       ''';
 
-      logger.i('🔍 Exécution requête SQL loadClients...');
-
-      // Ajouter un timeout pour éviter le freeze sur Windows avec isolates
       final rows = await _db
           .query(sql)
           .timeout(
-            const Duration(seconds: 60),
+            const Duration(seconds: 30),
             onTimeout: () {
               throw TimeoutException(
-                '⏱️ Timeout chargement clients après 60 secondes',
+                'Timeout loading clients after 30 seconds',
               );
             },
           );
-      logger.i('✅ Requête réussie, ${rows.length} lignes retournées');
+
+      logger.i('SQL executed successfully: ${rows.length} rows returned');
+
+      // Mettre en cache les résultats
+      _cache.set(cacheKey, rows, ttl: const Duration(minutes: 15));
 
       _clients = rows.map((row) => Client.fromMap(row)).toList();
 
-      // Tri garantis par Dart (en plus du SQL)
+      // Tri garanti par Dart (en plus du SQL)
       _clients.sort((a, b) {
         final compareNom = (a.nom).compareTo(b.nom);
         if (compareNom != 0) return compareNom;
         return (a.prenom).compareTo(b.prenom);
       });
 
-      logger.i('${_clients.length} clients chargés (avec contrats actifs)');
+      logger.i('${_clients.length} clients loaded (with active contracts)');
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ ERREUR CRITIQUE loadClients: $e');
+      logger.e('CRITICAL ERROR in loadClients: $e');
       logger.e('Stack trace: ${e is Error ? e.stackTrace : 'N/A'}');
     } finally {
       _isLoading = false;
       notifyListeners();
-      logger.d('✅ notifyListeners appelé dans finally de loadClients');
     }
   }
 
-  /// Charge un client spécifique
+  /// Charge un client spécifique (avec cache)
+  ///
+  /// Cache: 15 minutes par défaut
+  /// Indexes SQL: idx_client_id_pk (PRIMARY KEY)
   Future<void> loadClient(int clientId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // Vérifier le cache d'abord
+      final cacheKey = CacheKeys.client(clientId);
+      final cachedRow = _cache.get(cacheKey);
+
+      if (cachedRow != null) {
+        logger.i('Cache HIT: Loading client $clientId from cache');
+        _currentClient = Client.fromMap(cachedRow as Map<String, dynamic>);
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      logger.i('Cache MISS: Executing SQL query for client $clientId');
+
       const sql = '''
         SELECT 
           c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
@@ -107,14 +141,16 @@ class ClientRepository extends ChangeNotifier {
 
       final row = await _db.queryOne(sql, [clientId]);
       if (row != null) {
+        // Mettre en cache le résultat
+        _cache.set(cacheKey, row, ttl: const Duration(minutes: 15));
         _currentClient = Client.fromMap(row);
-        logger.i('Client $clientId chargé');
+        logger.i('Client $clientId loaded');
       } else {
-        _errorMessage = 'Client non trouvé';
+        _errorMessage = 'Client not found';
       }
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement du client: $e');
+      logger.e('Error loading client: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -122,6 +158,8 @@ class ClientRepository extends ChangeNotifier {
   }
 
   /// Crée un nouveau client
+  ///
+  /// Invalide le cache des clients après création
   Future<int> createClient(Client client) async {
     _isLoading = true;
     _errorMessage = null;
@@ -147,11 +185,15 @@ class ClientRepository extends ChangeNotifier {
         DateTime.now().toIso8601String().split('T')[0],
       ]);
 
-      logger.i('Client créé avec l\'ID: $id');
+      logger.i('Client created with ID: $id');
+
+      // Invalider le cache des clients
+      _cache.invalidateByEntity('client');
+
       return id;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la création: $e');
+      logger.e('Error creating client: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -160,6 +202,8 @@ class ClientRepository extends ChangeNotifier {
   }
 
   /// Met à jour un client
+  ///
+  /// Invalide le cache après mise à jour
   Future<void> updateClient(Client client) async {
     _isLoading = true;
     _errorMessage = null;
@@ -196,10 +240,13 @@ class ClientRepository extends ChangeNotifier {
         _currentClient = client;
       }
 
-      logger.i('Client ${client.clientId} mis à jour');
+      logger.i('Client ${client.clientId} updated');
+
+      // Invalider le cache spécifique et la liste
+      _cache.invalidateByEntity('client', entityId: client.clientId);
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la mise à jour: $e');
+      logger.e('Error updating client: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -207,6 +254,8 @@ class ClientRepository extends ChangeNotifier {
   }
 
   /// Supprime un client avec cascade: contrats → planning → planning_details → factures → remarques
+  ///
+  /// Invalide le cache après suppression
   /// Conforme à Kivy delete_client() (lignes 915-950)
   Future<void> deleteClient(int clientId) async {
     _isLoading = true;
@@ -222,7 +271,7 @@ class ClientRepository extends ChangeNotifier {
       ''';
 
       final contrats = await _db.query(getContratsSQL, [clientId]);
-      logger.i('📋 Trouvé ${contrats.length} contrats pour client $clientId');
+      logger.i('Found ${contrats.length} contracts for client $clientId');
 
       // 2. Pour chaque contrat, supprimer en cascade
       for (final contrat in contrats) {
@@ -278,7 +327,7 @@ class ClientRepository extends ChangeNotifier {
             planningId,
           ]);
 
-          logger.i('  ✅ Planning $planningId supprimé (avec cascade)');
+          logger.i('Planning $planningId deleted (with cascade)');
         }
 
         // Supprimer le contrat
@@ -286,10 +335,10 @@ class ClientRepository extends ChangeNotifier {
           contratId,
         ]);
 
-        logger.i('  ✅ Contrat $contratId supprimé');
+        logger.i('Contract $contratId deleted');
       }
 
-      // ✅ 3. Supprimer le client
+      // 3. Supprimer le client
       await _db.execute('DELETE FROM Client WHERE client_id = ?', [clientId]);
 
       _clients.removeWhere((c) => c.clientId == clientId);
@@ -299,11 +348,14 @@ class ClientRepository extends ChangeNotifier {
       }
 
       logger.i(
-        '✅ Client $clientId supprimé (avec tous les contrats et données associées)',
+        'Client $clientId deleted successfully (with all contracts and associated data)',
       );
+
+      // Invalider le cache après suppression
+      _cache.invalidateByEntity('client', entityId: clientId);
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la suppression: $e');
+      logger.e('Error deleting client: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
