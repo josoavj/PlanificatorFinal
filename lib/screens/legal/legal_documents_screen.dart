@@ -26,7 +26,7 @@ class LegalDocumentsScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryBlue,
-                    AppTheme.primaryBlue.withOpacity(0.7),
+                    AppTheme.primaryBlue.withValues(alpha: 0.7),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -47,7 +47,7 @@ class LegalDocumentsScreen extends StatelessWidget {
                     'Planificator v2.1.1',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                   const SizedBox(height: 12),
