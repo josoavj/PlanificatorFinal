@@ -37,40 +37,40 @@ class _ClientListScreenState extends State<ClientListScreen> {
       await context.read<ClientRepository>().loadClients().timeout(
         const Duration(seconds: 65),
         onTimeout: () {
-          logger.e('⏱️ Timeout chargement clients après 65 secondes');
+          logger.e(' Timeout chargement clients après 65 secondes');
           throw TimeoutException('Chargement clients timeout');
         },
       );
-      logger.i('✅ Clients chargés avec succès');
+      logger.i(' Clients chargés avec succès');
     } catch (e) {
-      logger.e('❌ Erreur loadClients: $e');
+      logger.e(' Erreur loadClients: $e');
 
       // En cas d'erreur, on essaie de recharger une fois de plus
       if (!mounted) return;
 
       try {
-        logger.i('🔄 Nouvelle tentative de chargement...');
+        logger.i(' Nouvelle tentative de chargement...');
         await Future.delayed(const Duration(milliseconds: 500));
 
         if (!mounted) return;
         await context.read<ClientRepository>().loadClients();
 
-        logger.i('✅ Nouvelle tentative réussie');
+        logger.i(' Nouvelle tentative réussie');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('✅ Clients chargés après retry'),
+              content: Text(' Clients chargés après retry'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 2),
             ),
           );
         }
       } catch (retryError) {
-        logger.e('❌ Retry aussi échoué: $retryError');
+        logger.e(' Retry aussi échoué: $retryError');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('❌ Erreur: ${retryError.toString()}'),
+              content: Text(' Erreur: ${retryError.toString()}'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 5),
             ),
@@ -206,7 +206,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -226,7 +226,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 message: 'Actualiser',
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -246,7 +246,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -283,7 +283,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -569,7 +569,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: CATÉGORIE & INFOS FISCALES
                 // ═════════════════════════════════════════
-                _buildSectionHeader('📋 CATÉGORIE & INFOS'),
+                _buildSectionHeader(' CATÉGORIE & INFOS'),
                 _buildDetailRow('Catégorie', client.categorie),
                 if (client.categorie == 'Société') ...[
                   _buildDetailRow('NIF', client.nif),
@@ -580,7 +580,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: TRAITEMENTS ASSOCIÉS
                 // ═════════════════════════════════════════
-                _buildSectionHeader('🔧 TRAITEMENTS'),
+                _buildSectionHeader(' TRAITEMENTS'),
                 _buildDetailRow(
                   'Nombre de traitements',
                   '${client.treatmentCount}',
@@ -998,7 +998,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   // ═════════════════════════════════════════
                   // SECTION: CATÉGORIE & INFOS FISCALES
                   // ═════════════════════════════════════════
-                  _buildSectionHeader('📋 CATÉGORIE & INFOS'),
+                  _buildSectionHeader(' CATÉGORIE & INFOS'),
                   _buildCategoryDropdown((value) {
                     setState(() {
                       selectedCategorie = value;
@@ -1107,7 +1107,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   Navigator.of(ctx).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('✅ Client modifié avec succès'),
+                      content: Text(' Client modifié avec succès'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -1115,7 +1115,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        '⚠️ Veuillez remplir les champs obligatoires',
+                        ' Veuillez remplir les champs obligatoires',
                       ),
                       backgroundColor: Colors.orange,
                     ),
