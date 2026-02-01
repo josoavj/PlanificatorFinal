@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 
 class PlanningRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -338,34 +337,34 @@ class PlanningRepository extends ChangeNotifier {
   }
 
   Future<bool> savePlanningComplete({
-    required int traitement_id,
+    required int traitementId,
     required DateTime debut,
-    required int mois_debut,
-    required int? mois_fin,
+    required int moisDebut,
+    required int? moisFin,
     required int redondance, // 0='une seule fois', 1='1 mois', 2='2 mois', etc.
     required DateTime dateFinContrat,
     required List<DateTime>
     planningDates, // Dates générées par planning_per_year
     required double montant,
-    required String axe_client,
+    required String axeClient,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // ✅ 1. Créer le planning dans la BD
+      //  1. Créer le planning dans la BD
       const createPlanningSQL = '''
         INSERT INTO Planning 
-        (traitement_id, date_debut_planification, mois_debut, mois_fin, duree_traitement, redondance, date_fin_planification)
+        (traitementId, date_debut_planification, moisDebut, moisFin, duree_traitement, redondance, date_fin_planification)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       ''';
 
       final planning = await _db.query(createPlanningSQL, [
-        traitement_id,
+        traitementId,
         debut.toIso8601String().split('T')[0],
-        mois_debut,
-        mois_fin ?? 0,
+        moisDebut,
+        moisFin ?? 0,
         12,
         redondance,
         dateFinContrat.toIso8601String().split('T')[0],
@@ -378,9 +377,9 @@ class PlanningRepository extends ChangeNotifier {
       int planningId = planning[0]['planning_id'] ?? 0;
       if (planningId == 0) throw Exception('Planning ID non défini');
 
-      logger.i('✅ Planning créé: ID $planningId');
+      logger.i(' Planning créé: ID $planningId');
 
-      // ✅ 2. Créer planning_details pour chaque date
+      //  2. Créer planning_details pour chaque date
       const createDetailsSQL = '''
         INSERT INTO PlanningDetails 
         (planning_id, date_planification, statut)
@@ -400,13 +399,11 @@ class PlanningRepository extends ChangeNotifier {
 
           int detailId = details[0]['planning_detail_id'] ?? 0;
           if (detailId == 0) {
-            logger.w(
-              '⚠️ Impossible de créer planning_detail pour $planningDate',
-            );
+            logger.w(' Impossible de créer planning_detail pour $planningDate');
             continue;
           }
 
-          // ✅ 3. Créer facture pour chaque détail
+          //  3. Créer facture pour chaque détail
           const createFactureSQL = '''
             INSERT INTO Facture 
             (planning_detail_id, montant, date_traitement, etat, axe)
@@ -418,22 +415,22 @@ class PlanningRepository extends ChangeNotifier {
             montant.toInt(), // Convertir double en int
             planningDate.toIso8601String().split('T')[0],
             'Non payé',
-            axe_client,
+            axeClient,
           ]);
 
           facturesCreated++;
-          logger.i('✅ Facture $facturesCreated créée pour $planningDate');
+          logger.i(' Facture $facturesCreated créée pour $planningDate');
         } catch (e) {
-          logger.e('❌ Erreur création facture pour $planningDate: $e');
+          logger.e(' Erreur création facture pour $planningDate: $e');
           continue; // Continuer avec la prochaine date
         }
       }
 
-      logger.i('✅ Planning complet créé: $facturesCreated factures');
+      logger.i(' Planning complet créé: $facturesCreated factures');
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur savePlanningComplete: $e');
+      logger.e(' Erreur savePlanningComplete: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -441,7 +438,7 @@ class PlanningRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ NOUVEAU : Extraire redondance depuis fréquence (conforme à main.py)
+  ///  NOUVEAU : Extraire redondance depuis fréquence (conforme à main.py)
   /// "une seule fois" → 0
   /// "1 mois" → 1
   /// "2 mois" → 2
@@ -464,14 +461,14 @@ class PlanningRepository extends ChangeNotifier {
     required int redondance,
   }) async {
     try {
-      // ✅ Vérifier si un planning existe déjà pour ce traitement
+      //  Vérifier si un planning existe déjà pour ce traitement
       const checkSql =
-          'SELECT planning_id FROM Planning WHERE traitement_id = ?';
+          'SELECT planning_id FROM Planning WHERE traitementId = ?';
       final existing = await _db.query(checkSql, [traitementId]);
 
       if (existing.isNotEmpty) {
         logger.i(
-          '⚠️ Planning existe déjà pour traitement_id=$traitementId, ID=${existing[0]['planning_id']}',
+          ' Planning existe déjà pour traitementId=$traitementId, ID=${existing[0]['planning_id']}',
         );
         return existing[0]['planning_id'] as int;
       }
@@ -489,7 +486,7 @@ class PlanningRepository extends ChangeNotifier {
 
       const sql = '''
         INSERT INTO Planning 
-        (traitement_id, date_debut_planification, mois_debut, mois_fin, duree_traitement, redondance, date_fin_planification)
+        (traitementId, date_debut_planification, moisDebut, moisFin, duree_traitement, redondance, date_fin_planification)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       ''';
 
@@ -497,16 +494,16 @@ class PlanningRepository extends ChangeNotifier {
         traitementId,
         dateDebutPlanification.toIso8601String().split('T')[0],
         moisDebut,
-        moisDebut + dureeTraitement - 1, // mois_fin
+        moisDebut + dureeTraitement - 1, // moisFin
         dureeTraitement,
         redondance,
         dateFinPlanification.toIso8601String().split('T')[0],
       ]);
 
-      logger.i('✅ Planning créé: ID $planningId pour traitement $traitementId');
+      logger.i(' Planning créé: ID $planningId pour traitement $traitementId');
       return planningId;
     } catch (e) {
-      logger.e('❌ Erreur création planning: $e');
+      logger.e(' Erreur création planning: $e');
       return -1;
     }
   }
@@ -522,12 +519,12 @@ class PlanningRepository extends ChangeNotifier {
       }
     } catch (e) {
       // Utiliser le logger global
-      Logger().e('❌ Erreur parsing frequency: $e');
+      Logger().e(' Erreur parsing frequency: $e');
     }
     return 1; // Défaut: 1 mois
   }
 
-  /// ✅ NOUVEAU : Valider montant (remove spaces: "1 234" → 1234)
+  ///  NOUVEAU : Valider montant (remove spaces: "1 234" → 1234)
   static int cleanMontant(String montantStr) {
     return int.parse(montantStr.replaceAll(' ', '').replaceAll('Ar', ''));
   }
