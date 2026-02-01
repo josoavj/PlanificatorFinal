@@ -101,7 +101,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('❌ Veuillez entrer un montant valide'),
+              content: Text(' Veuillez entrer un montant valide'),
               backgroundColor: Colors.red,
             ),
           );
@@ -160,13 +160,13 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
         widget.onSaved();
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Remarque & Facture enregistrées')),
+          const SnackBar(content: Text(' Remarque & Facture enregistrées')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(' Erreur: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
