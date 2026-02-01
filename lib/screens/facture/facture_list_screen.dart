@@ -23,12 +23,12 @@ class _FactureListScreenState extends State<FactureListScreen> {
     super.initState();
     _factureRepository = context.read<FactureRepository>();
 
-    // ✅ Charger les factures (toutes ou par client)
+    //  Charger les factures (toutes ou par client)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (widget.clientId != null) {
         await _factureRepository.loadFacturesForClient(widget.clientId!);
       } else {
-        // ✅ CORRECTION: Charger TOUTES les factures si pas de clientId
+        //  CORRECTION: Charger TOUTES les factures si pas de clientId
         await _factureRepository.loadAllFactures();
       }
     });
@@ -43,7 +43,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
           if (widget.clientId != null) {
             await _factureRepository.loadFacturesForClient(widget.clientId!);
           } else {
-            // ✅ CORRECTION: Recharger toutes les factures si pas de clientId
+            //  CORRECTION: Recharger toutes les factures si pas de clientId
             await _factureRepository.loadAllFactures();
           }
         },
@@ -65,7 +65,7 @@ class _FactureListScreenState extends State<FactureListScreen> {
                 if (widget.clientId != null) {
                   repository.loadFacturesForClient(widget.clientId!);
                 } else {
-                  // ✅ CORRECTION: Recharger toutes les factures si pas de clientId
+                  //  CORRECTION: Recharger toutes les factures si pas de clientId
                   repository.loadAllFactures();
                 }
               },
