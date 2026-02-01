@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     //WidgetsBinding.instance.addPostFrameCallback((_) {
-    //  logger.i('🏠 HomeScreen mounted with initial tab index $_selectedIndex');
+    //  logger.i(' HomeScreen mounted with initial tab index $_selectedIndex');
     //});
   }
 
@@ -101,25 +101,25 @@ class _DashboardTabState extends State<_DashboardTab> {
 
   Future<void> _loadData() async {
     try {
-      logger.i('🔄 Rafraîchissement manuel des données...');
+      logger.i(' Rafraîchissement manuel des données...');
       await _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
       await _planningDetailsRepo.loadUpcomingTreatmentsComplete();
-      logger.i('✅ Rafraîchissement complété');
+      logger.i(' Rafraîchissement complété');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Données rafraîchies'),
+            content: Text(' Données rafraîchies'),
             duration: Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      logger.e('❌ Erreur lors du rafraîchissement: $e');
+      logger.e(' Erreur lors du rafraîchissement: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ Erreur: $e'),
+            content: Text(' Erreur: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -177,7 +177,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                       planningDetailsRepo.currentMonthTreatmentsComplete;
 
                   logger.d(
-                    '📊 Dashboard: ${currentMonth.length} en cours, ${upcomingFiltered.length} à venir',
+                    ' Dashboard: ${currentMonth.length} en cours, ${upcomingFiltered.length} à venir',
                   );
 
                   // Responsive layout: 2 columns sur grand écran, 1 colonne sinon
@@ -293,7 +293,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     required List<Map<String, dynamic>> treatments,
     String? errorMessage,
   }) {
-    // ✅ PRIORITÉ: Afficher les données si présentes, ignorer le spinner
+    //  PRIORITÉ: Afficher les données si présentes, ignorer le spinner
     if (treatments.isNotEmpty) {
       return SingleChildScrollView(
         scrollDirection: Axis.vertical,
@@ -360,7 +360,7 @@ class _DashboardTabState extends State<_DashboardTab> {
       );
     }
 
-    // ✅ Afficher le spinner que si pas de données ET isLoading
+    //  Afficher le spinner que si pas de données ET isLoading
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -397,7 +397,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     );
   }
 
-  /// ✅ Helper pour convertir une valeur en String (gère Blob, DateTime, String)
+  ///  Helper pour convertir une valeur en String (gère Blob, DateTime, String)
   String _convertToString(dynamic value) {
     if (value == null) return 'N/A';
 
@@ -424,7 +424,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     return value.toString();
   }
 
-  /// ✅ Helper pour formater les dates (gère DateTime et String)
+  ///  Helper pour formater les dates (gère DateTime et String)
   String _formatDate(dynamic dateInput) {
     if (dateInput == null) return 'N/A';
 
