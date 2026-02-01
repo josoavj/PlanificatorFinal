@@ -40,11 +40,11 @@ void main() async {
   // Configurer le logger global pour envoyer tous les logs au fichier
   log.configureGlobalLogger(logger);
 
-  log.info('🚀 Application démarrée', source: 'main');
+  log.info(' Application démarrée', source: 'main');
 
   // Initialiser le service de notifications
   await notifications.initialize();
-  log.info('🔔 Service de notifications initialisé', source: 'main');
+  log.info(' Service de notifications initialisé', source: 'main');
 
   // Initialiser les données de locale pour intl
   await initializeDateFormatting('fr_FR', null);
@@ -229,9 +229,9 @@ class _AuthGateState extends State<_AuthGate> {
       await planningDetailsRepo.loadAllTreatmentsComplete();
       logger.i('Tous les plannings chargés');
 
-      log.info('✅ Données préchargées avec succès au startup', source: 'main');
+      log.info(' Données préchargées avec succès au startup', source: 'main');
     } catch (e) {
-      log.warning('⚠️ Erreur lors du préchargement: $e', source: 'main');
+      log.warning(' Erreur lors du préchargement: $e', source: 'main');
       logger.w('Stack trace: ${e is Error ? e.stackTrace : "N/A"}');
     }
   }
