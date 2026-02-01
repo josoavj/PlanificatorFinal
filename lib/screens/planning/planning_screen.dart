@@ -80,7 +80,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
     // Calculer et cacher les traitements pour ce jour
     final result = treatments.where((treatment) {
       try {
-        // ✅ CORRECTION: Utiliser 'date' (la colonne formatée par SQL) pour le filtrage
+        //  CORRECTION: Utiliser 'date' (la colonne formatée par SQL) pour le filtrage
         final dateValue = treatment['date'];
         if (dateValue == null) return false;
 
@@ -480,7 +480,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       // Créer le PlanningDetails à partir du treatment map
       final planningDetail = PlanningDetails.fromJson(widget.treatment);
 
-      logger.i('✅ PlanningDetails créé: ${planningDetail.planningDetailId}');
+      logger.i(' PlanningDetails créé: ${planningDetail.planningDetailId}');
 
       // Création d'une facture valide
       showDialog(
@@ -514,7 +514,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                       );
 
                   if (factureId != -1) {
-                    logger.i('✅ Facture créée: $factureId');
+                    logger.i(' Facture créée: $factureId');
 
                     // Récupérer la vraie facture depuis la BD
                     final factureRepo = context.read<FactureRepository>();
@@ -535,7 +535,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                           planningDetail: planningDetail,
                           facture: facture,
                           onSaved: () async {
-                            logger.i('✅ Remarque enregistrée');
+                            logger.i(' Remarque enregistrée');
 
                             if (mounted) {
                               await context
@@ -573,11 +573,11 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                     throw Exception('Erreur création facture');
                   }
                 } catch (err) {
-                  logger.e('❌ Erreur: $err');
+                  logger.e(' Erreur: $err');
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('❌ Erreur: $err')));
+                  ).showSnackBar(SnackBar(content: Text(' Erreur: $err')));
                 }
               },
               child: const Text('Créer Facture'),
@@ -586,7 +586,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
         ),
       );
     } catch (e) {
-      logger.e('❌ Erreur ouverture dialog: $e');
+      logger.e(' Erreur ouverture dialog: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
       );
@@ -600,7 +600,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       // Créer le PlanningDetails à partir du treatment map
       final planningDetail = PlanningDetails.fromJson(widget.treatment);
 
-      logger.i('✅ PlanningDetails créé: ${planningDetail.planningDetailId}');
+      logger.i(' PlanningDetails créé: ${planningDetail.planningDetailId}');
 
       // Afficher le nouveau SignalementDialog moderne
       showDialog(
@@ -608,13 +608,13 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
         builder: (ctx) => SignalementDialog(
           planningDetail: planningDetail,
           onSaved: () async {
-            logger.i('✅ Signalement enregistré');
+            logger.i(' Signalement enregistré');
 
             if (mounted) {
               await context
                   .read<PlanningDetailsRepository>()
                   .loadAllTreatmentsComplete();
-              // ✅ Recharger aussi les factures
+              //  Recharger aussi les factures
               await context.read<FactureRepository>().loadAllFactures();
             }
 
@@ -638,7 +638,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
         ),
       );
     } catch (e) {
-      logger.e('❌ Erreur ouverture dialog: $e');
+      logger.e(' Erreur ouverture dialog: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
       );
