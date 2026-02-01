@@ -46,11 +46,11 @@ class HistoriqueEvent {
       case 'facture':
         return '📄';
       case 'contrat':
-        return '📋';
+        return '';
       case 'paiement':
         return '💰';
       default:
-        return '📌';
+        return '';
     }
   }
 
