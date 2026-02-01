@@ -36,15 +36,15 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   String _getLevelIcon(LogLevel level) {
     switch (level) {
       case LogLevel.debug:
-        return '🐛';
+        return '';
       case LogLevel.info:
         return 'ℹ️';
       case LogLevel.warning:
-        return '⚠️';
+        return '';
       case LogLevel.error:
-        return '❌';
+        return '';
       case LogLevel.critical:
-        return '🔴';
+        return '';
     }
   }
 
@@ -66,9 +66,9 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     switch (level) {
       case LogLevel.error:
       case LogLevel.critical:
-        return Colors.red.withOpacity(0.05);
+        return Colors.red.withValues(alpha: 0.05);
       case LogLevel.warning:
-        return Colors.amber.withOpacity(0.05);
+        return Colors.amber.withValues(alpha: 0.05);
       case LogLevel.debug:
         return (Colors.grey[900] ?? Colors.grey[850])!;
       case LogLevel.info:
@@ -81,7 +81,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         border: Border.all(color: color, width: 1.5),
         borderRadius: BorderRadius.circular(4),
       ),
@@ -137,7 +137,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     log.exportLogs(minLevel: _filterLevel);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✅ ${log.allLogs.length} logs copiés'),
+        content: Text(' ${log.allLogs.length} logs copiés'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -446,7 +446,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.15),
+                                        color: Colors.blue.withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(3),
                                       ),
                                       child: Text(
@@ -485,10 +485,10 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(3),
                                 border: Border.all(
-                                  color: Colors.red.withOpacity(0.3),
+                                  color: Colors.red.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Text(
