@@ -283,7 +283,7 @@ class AuthRepository extends ChangeNotifier {
       await _db.execute(updateSql, [hashedPassword, _currentUser!.userId]);
 
       logger.i(
-        '✅ Mot de passe de l\'utilisateur ${_currentUser!.userId} changé avec succès',
+        ' Mot de passe de l\'utilisateur ${_currentUser!.userId} changé avec succès',
       );
       return true;
     } catch (e) {

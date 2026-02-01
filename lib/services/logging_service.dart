@@ -165,12 +165,12 @@ class LoggingService {
           enableFileLogging: false,
           maxLogsInMemory: _config.maxLogsInMemory,
         );
-        debug('⚠️ File logging disabled: $e', source: 'LoggingService');
+        debug(' File logging disabled: $e', source: 'LoggingService');
       }
     }
 
     _isInitialized = true;
-    info('✅ Logging service initialized', source: 'LoggingService');
+    info(' Logging service initialized', source: 'LoggingService');
   }
 
   /// Initialiser le dossier de logs et vérifier la rotation
@@ -388,15 +388,15 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
       LogLevel level = LogLevel.info;
       if (line.contains('VERBOSE') || line.contains('💬')) {
         level = LogLevel.debug;
-      } else if (line.contains('DEBUG') || line.contains('🐛')) {
+      } else if (line.contains('DEBUG') || line.contains('')) {
         level = LogLevel.debug;
       } else if (line.contains('INFO') || line.contains('ℹ️')) {
         level = LogLevel.info;
-      } else if (line.contains('WARNING') || line.contains('⚠️')) {
+      } else if (line.contains('WARNING') || line.contains('')) {
         level = LogLevel.warning;
-      } else if (line.contains('ERROR') || line.contains('❌')) {
+      } else if (line.contains('ERROR') || line.contains('')) {
         level = LogLevel.error;
-      } else if (line.contains('WTF') || line.contains('🔥')) {
+      } else if (line.contains('WTF') || line.contains('')) {
         level = LogLevel.critical;
       }
 

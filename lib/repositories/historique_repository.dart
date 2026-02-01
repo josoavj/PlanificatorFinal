@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 
 class HistoriqueRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();

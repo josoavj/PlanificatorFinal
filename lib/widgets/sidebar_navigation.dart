@@ -60,7 +60,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryBlue.withOpacity(0.3),
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -78,7 +78,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -103,7 +103,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                     Text(
                       'Gestion de Planning et Traitements',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
                         letterSpacing: 0.3,
@@ -189,7 +189,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                 border: Border(
                   top: BorderSide(color: Colors.grey[200]!, width: 1),
                 ),
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
               ),
               child: Consumer<AuthRepository>(
                 builder: (context, authRepository, _) {
@@ -257,18 +257,18 @@ class _SidebarNavigationState extends State<SidebarNavigation>
             widget.onItemSelected(index);
           },
           borderRadius: BorderRadius.circular(12),
-          splashColor: AppTheme.primaryBlue.withOpacity(0.1),
-          highlightColor: AppTheme.primaryBlue.withOpacity(0.05),
+          splashColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
+          highlightColor: AppTheme.primaryBlue.withValues(alpha: 0.05),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isSelected
-                  ? AppTheme.primaryBlue.withOpacity(0.1)
+                  ? AppTheme.primaryBlue.withValues(alpha: 0.1)
                   : Colors.transparent,
               border: isSelected
                   ? Border.all(
-                      color: AppTheme.primaryBlue.withOpacity(0.3),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.3),
                       width: 1.5,
                     )
                   : null,
@@ -280,7 +280,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppTheme.primaryBlue.withOpacity(0.2)
+                        ? AppTheme.primaryBlue.withValues(alpha: 0.2)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),

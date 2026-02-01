@@ -145,7 +145,7 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
             });
           }
 
-          // ✅ Afficher les données en priorité si présentes
+          //  Afficher les données en priorité si présentes
           if (allTreatments.isNotEmpty) {
             return Center(
               child: SizedBox(
@@ -1229,7 +1229,7 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: badgeColor.withOpacity(0.2),
+                                        color: badgeColor.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -1580,7 +1580,7 @@ class _CategoryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.red.withOpacity(0.3),
+                color: Colors.red.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),

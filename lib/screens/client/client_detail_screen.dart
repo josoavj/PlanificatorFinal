@@ -69,9 +69,10 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (_isEditing) {
+    return PopScope(
+      canPop: !_isEditing,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (_isEditing && !didPop) {
           final confirmed = await AppDialogs.confirm(
             context,
             title: 'Abandon des modifications',
@@ -79,9 +80,10 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
             confirmText: 'Oui, quitter',
             cancelText: 'Non, continuer',
           );
-          return confirmed ?? false;
+          if (confirmed == true && context.mounted) {
+            Navigator.of(context).pop();
+          }
         }
-        return true;
       },
       child: Scaffold(
         appBar: AppBar(

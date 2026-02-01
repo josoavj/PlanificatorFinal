@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 import '../utils/date_helper.dart';
 
 class SignalementRepository extends ChangeNotifier {
@@ -63,7 +62,7 @@ class SignalementRepository extends ChangeNotifier {
 
       await _db.execute(sql, [planningDetailsId, motif, type]);
 
-      logger.i('✅ Signalement créé: type=$type, motif=$motif');
+      logger.i(' Signalement créé: type=$type, motif=$motif');
 
       // Recharger les signalements
       await loadAllSignalements();
@@ -78,7 +77,7 @@ class SignalementRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ LOGIQUE CLÉE: Modifier la date de planning
+  ///  LOGIQUE CLÉE: Modifier la date de planning
   /// Conforme à Kivy: garder.active = modifier JUSTE cette date
   Future<bool> modifierDatePlanning({
     required int planningDetailsId,
@@ -100,7 +99,7 @@ class SignalementRepository extends ChangeNotifier {
         planningDetailsId,
       ]);
 
-      logger.i('✅ Date modifiée pour planning_details_id=$planningDetailsId');
+      logger.i(' Date modifiée pour planning_details_id=$planningDetailsId');
       await loadAllSignalements();
       return true;
     } catch (e) {
@@ -124,14 +123,14 @@ class SignalementRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // ✅ 1. Calculer l'écart de décalage EN MOIS (conforme Kivy relativedelta)
+      //  1. Calculer l'écart de décalage EN MOIS (conforme Kivy relativedelta)
       final ecartMois = _calculateMonthsDifference(
         ancienneDateModifiee,
         nouvelleDateModifiee,
       );
-      logger.i('🔄 Décalage des dates futures de $ecartMois mois');
+      logger.i(' Décalage des dates futures de $ecartMois mois');
 
-      // ✅ 2. Récupérer tous les details de ce planning
+      //  2. Récupérer tous les details de ce planning
       const getAllDetailsSQL = '''
         SELECT planning_detail_id, date_planification
         FROM PlanningDetails
@@ -140,9 +139,9 @@ class SignalementRepository extends ChangeNotifier {
       ''';
 
       final allDetails = await _db.query(getAllDetailsSQL, [planningId]);
-      logger.i('📋 Trouvé ${allDetails.length} planning details');
+      logger.i(' Trouvé ${allDetails.length} planning details');
 
-      // ✅ 3. Trouver l'index du planning detail actuellement modifié
+      //  3. Trouver l'index du planning detail actuellement modifié
       int currentIndex = 0;
       for (int i = 0; i < allDetails.length; i++) {
         if (allDetails[i]['planning_detail_id'] == planningDetailsId) {
@@ -151,7 +150,7 @@ class SignalementRepository extends ChangeNotifier {
         }
       }
 
-      // ✅ 4. Décaler TOUTES les dates à partir de currentIndex+1 du même écart EN MOIS
+      //  4. Décaler TOUTES les dates à partir de currentIndex+1 du même écart EN MOIS
       const updateDetailsSQL = '''
         UPDATE PlanningDetails 
         SET date_planification = ?
@@ -162,7 +161,7 @@ class SignalementRepository extends ChangeNotifier {
         final oldDate = DateHelper.toDateTime(
           allDetails[i]['date_planification'],
         );
-        // 🔧 CORRECTION: Ajouter l'écart en MOIS (pas en jours)
+        //  CORRECTION: Ajouter l'écart en MOIS (pas en jours)
         final newDate = _addMonthsToDate(oldDate, ecartMois);
 
         await _db.execute(updateDetailsSQL, [
@@ -175,7 +174,7 @@ class SignalementRepository extends ChangeNotifier {
         );
       }
 
-      logger.i('✅ Dates décalées avec succès (redondance inchangée)');
+      logger.i(' Dates décalées avec succès (redondance inchangée)');
       await loadAllSignalements();
       return true;
     } catch (e) {
@@ -205,23 +204,23 @@ class SignalementRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // ✅ 1. Créer le signalement
+      //  1. Créer le signalement
       await createSignalement(
         planningDetailsId: planningDetailsId,
         motif: motif,
         type: type,
       );
 
-      // ✅ 2. Modifier la date (toujours applicable)
+      //  2. Modifier la date (toujours applicable)
       await modifierDatePlanning(
         planningDetailsId: planningDetailsId,
         newDate: dateSignalement,
       );
 
-      // ✅ 3. Si "changer la redondance" = décaler TOUTES les dates futures du même écart
+      //  3. Si "changer la redondance" = décaler TOUTES les dates futures du même écart
       if (changerRedondance) {
         logger.i(
-          '🔄 MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
+          ' MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
         );
 
         await modifierRedondance(
@@ -232,7 +231,7 @@ class SignalementRepository extends ChangeNotifier {
         );
       }
 
-      logger.i('✅ Enregistrement signalement réussi');
+      logger.i(' Enregistrement signalement réussi');
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -281,7 +280,7 @@ class SignalementRepository extends ChangeNotifier {
       final results = await _db.query(sql, [planningDetailId]);
       return results.map((row) => Signalement.fromJson(row)).toList();
     } catch (e) {
-      logger.e('❌ Erreur récupérer signalements: $e');
+      logger.e(' Erreur récupérer signalements: $e');
       return [];
     }
   }
@@ -299,12 +298,12 @@ class SignalementRepository extends ChangeNotifier {
       );
       return result.isNotEmpty;
     } catch (e) {
-      logger.e('❌ Erreur mettre à jour signalement: $e');
+      logger.e(' Erreur mettre à jour signalement: $e');
       return false;
     }
   }
 
-  /// 🔧 HELPER: Calcule la différence en MOIS entre deux dates (conforme Kivy relativedelta)
+  ///  HELPER: Calcule la différence en MOIS entre deux dates (conforme Kivy relativedelta)
   /// Exemple: 01/01/2026 → 01/03/2026 = 2 mois (pas 59 jours)
   int _calculateMonthsDifference(DateTime dateStart, DateTime dateEnd) {
     int mois = 0;
@@ -334,7 +333,7 @@ class SignalementRepository extends ChangeNotifier {
     return mois;
   }
 
-  /// 🔧 HELPER: Ajoute un nombre de mois à une date (gère les débordements)
+  ///  HELPER: Ajoute un nombre de mois à une date (gère les débordements)
   /// Exemple: 01/01/2026 + 2 mois = 01/03/2026
   DateTime _addMonthsToDate(DateTime date, int mois) {
     int newMonth = date.month + mois;

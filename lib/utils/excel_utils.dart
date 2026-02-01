@@ -20,13 +20,13 @@ class FolderManager {
         try {
           if (!dir.existsSync()) {
             dir.createSync(recursive: true);
-            _logger.i('✅ Dossier créé: ${dir.path}');
+            _logger.i(' Dossier créé: ${dir.path}');
           } else {
             _logger.d('ℹ️ Dossier existe déjà: ${dir.path}');
           }
           paths.add(dir);
         } catch (e) {
-          _logger.e('❌ Erreur création dossier $nom: $e');
+          _logger.e(' Erreur création dossier $nom: $e');
           // Créer dans un dossier de secours (Documents)
           final homeDir = Platform.isWindows
               ? (envVars['USERPROFILE'] ?? '')
@@ -35,13 +35,13 @@ class FolderManager {
             p.join(homeDir, 'Documents', 'Planificator', nom),
           );
           fallbackDir.createSync(recursive: true);
-          _logger.i('✅ Dossier de secours créé: ${fallbackDir.path}');
+          _logger.i(' Dossier de secours créé: ${fallbackDir.path}');
           paths.add(fallbackDir);
         }
       }
       return paths;
     } catch (e) {
-      _logger.e('❌ Erreur initDesktopStructure: $e');
+      _logger.e(' Erreur initDesktopStructure: $e');
       rethrow;
     }
   }
@@ -58,11 +58,11 @@ class FolderManager {
     }
 
     if (home.isEmpty) {
-      _logger.w('⚠️ HOME/USERPROFILE non trouvé');
+      _logger.w(' HOME/USERPROFILE non trouvé');
       throw Exception('Cannot determine home directory');
     }
 
-    _logger.i('🏠 Home directory: $home');
+    _logger.i(' Home directory: $home');
 
     // Sur Windows, essayer Desktop d'abord
     var desktop = Directory(p.join(home, 'Desktop'));
@@ -85,7 +85,7 @@ class FolderManager {
       );
     }
 
-    _logger.i('✅ Desktop path final: ${desktop.path}');
+    _logger.i(' Desktop path final: ${desktop.path}');
     return desktop;
   }
 }
@@ -563,14 +563,14 @@ class ExcelService {
     try {
       _addSignatureToSheet(wb.worksheets[0], wb);
     } catch (e) {
-      _logger.w('⚠️ Erreur lors de l\'ajout de la signature: $e');
+      _logger.w(' Erreur lors de l\'ajout de la signature: $e');
     }
 
     final List<int> bytes = wb.saveAsStream();
     final String filePath = p.join(dir.path, fileName);
     File(filePath).writeAsBytesSync(bytes);
     wb.dispose();
-    _logger.i('✅ Fichier sauvegardé: $filePath');
+    _logger.i(' Fichier sauvegardé: $filePath');
     return filePath;
   }
 
@@ -594,7 +594,7 @@ class ExcelService {
       signatureCell.setText('Données générées via Planificator v2.1.1');
       signatureCell.cellStyle = signatureStyle;
     } catch (e) {
-      _logger.w('⚠️ Impossible d\'ajouter la signature: $e');
+      _logger.w(' Impossible d\'ajouter la signature: $e');
       // Ne pas bloquer si la signature échoue
     }
   }

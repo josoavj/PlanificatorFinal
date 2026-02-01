@@ -1,9 +1,7 @@
-import 'dart:async';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:planificator/models/planning_details.dart';
-import 'package:planificator/services/database_service.dart';
-import '../services/logging_service.dart';
+import 'package:planificator/services/index.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {
   final _db = DatabaseService();
@@ -49,7 +47,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       if (existingCheck.isNotEmpty) {
         logger.i(
-          '⚠️ PlanningDetail existe déjà: planning_id=$planningId, date=$dateStr',
+          ' PlanningDetail existe déjà: planning_id=$planningId, date=$dateStr',
         );
         return PlanningDetails(
           planningDetailId: existingCheck[0]['planning_detail_id'] as int,
@@ -67,7 +65,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       if (insertId > 0) {
         logger.i(
-          '✅ PlanningDetail créé: ID $insertId pour planning $planningId',
+          ' PlanningDetail créé: ID $insertId pour planning $planningId',
         );
 
         return PlanningDetails(
@@ -77,10 +75,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
           statut: statut,
         );
       }
-      logger.e('❌ PlanningDetail insertion retourned ID: $insertId');
+      logger.e(' PlanningDetail insertion retourned ID: $insertId');
       return null;
     } catch (e) {
-      logger.e('❌ Erreur créer planning_details: $e');
+      logger.e(' Erreur créer planning_details: $e');
       rethrow;
     }
   }
@@ -95,7 +93,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       return results.map((row) => PlanningDetails.fromJson(row)).toList();
     } catch (e) {
-      logger.e('❌ Erreur récupérer planning_details: $e');
+      logger.e(' Erreur récupérer planning_details: $e');
       return [];
     }
   }
@@ -111,14 +109,14 @@ class PlanningDetailsRepository extends ChangeNotifier {
         [newStatut, planningDetailId],
       );
 
-      logger.i('✅ Planning detail $planningDetailId statut => $newStatut');
+      logger.i(' Planning detail $planningDetailId statut => $newStatut');
 
       // IMPORTANT: Recharger les données après la mise à jour
       await loadUpcomingTreatmentsComplete();
 
       return true;
     } catch (e) {
-      logger.e('❌ Erreur mettre à jour planning_details: $e');
+      logger.e(' Erreur mettre à jour planning_details: $e');
       return false;
     }
   }
@@ -133,7 +131,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       return result.isNotEmpty;
     } catch (e) {
-      logger.e('❌ Erreur supprimer planning_details: $e');
+      logger.e(' Erreur supprimer planning_details: $e');
       return false;
     }
   }
@@ -150,10 +148,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
       );
 
       _details = results.map((row) => PlanningDetails.fromJson(row)).toList();
-      logger.i('✅ ${_details.length} détails de planning chargés');
+      logger.i(' ${_details.length} détails de planning chargés');
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur charger tous les détails: $e');
+      logger.e(' Erreur charger tous les détails: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -201,7 +199,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
         [currentYear, currentMonth],
       );
 
-      logger.i('✅ Reçu ${results.length} traitements du mois courant');
+      logger.i(' Reçu ${results.length} traitements du mois courant');
       if (results.isNotEmpty) {
         logger.d('Colonnes: ${results.first.keys.toList()}');
         logger.d('Premier résultat: ${results.first}');
@@ -218,12 +216,12 @@ class PlanningDetailsRepository extends ChangeNotifier {
       _currentMonthTreatmentsComplete = completeData;
 
       logger.i(
-        '✅ ${_currentMonthTreatments.length} traitements du mois courant chargés',
+        ' ${_currentMonthTreatments.length} traitements du mois courant chargés',
       );
       return completeData;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur charger traitements du mois: $e');
+      logger.e(' Erreur charger traitements du mois: $e');
       return [];
     } finally {
       _isLoading = false;
@@ -271,7 +269,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
         [todayStr],
       );
 
-      logger.i('✅ Reçu ${results.length} traitements à venir');
+      logger.i(' Reçu ${results.length} traitements à venir');
       if (results.isNotEmpty) {
         logger.d('Colonnes: ${results.first.keys.toList()}');
         logger.d('Premier résultat: ${results.first}');
@@ -279,19 +277,19 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       final completeData = results.cast<Map<String, dynamic>>();
 
-      // ✅ IMPORTANT: Convertir en PlanningDetails ET garder les données enrichies
+      //  IMPORTANT: Convertir en PlanningDetails ET garder les données enrichies
       _upcomingTreatments = results
           .map((row) => PlanningDetails.fromJson(row))
           .toList();
 
-      // ✅ Stocker aussi les données enrichies pour affichage
+      //  Stocker aussi les données enrichies pour affichage
       _upcomingTreatmentsComplete = completeData;
 
-      logger.i('✅ ${_upcomingTreatments.length} traitements à venir chargés');
+      logger.i(' ${_upcomingTreatments.length} traitements à venir chargés');
       return completeData;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur charger traitements à venir: $e');
+      logger.e(' Erreur charger traitements à venir: $e');
       return [];
     } finally {
       _isLoading = false;
@@ -299,7 +297,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
+  ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
   /// IMPORTANT: Charge TOUS les records SANS filtrer par date
   Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete() async {
     _isLoading = true;
@@ -331,7 +329,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
            INNER JOIN Client c ON ct.client_id = c.client_id
            ORDER BY pd.date_planification DESC''');
 
-      logger.i('✅ Reçu ${results.length} traitements (tous les statuts)');
+      logger.i(' Reçu ${results.length} traitements (tous les statuts)');
       if (results.isNotEmpty) {
         logger.d('Colonnes: ${results.first.keys.toList()}');
         logger.d(
@@ -373,12 +371,12 @@ class PlanningDetailsRepository extends ChangeNotifier {
       _allTreatmentsComplete = completeData;
 
       logger.i(
-        '✅ ${_allTreatmentsComplete.length} traitements totaux chargés (tous les statuts)',
+        ' ${_allTreatmentsComplete.length} traitements totaux chargés (tous les statuts)',
       );
       return completeData;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur charger tous les traitements: $e');
+      logger.e(' Erreur charger tous les traitements: $e');
       return [];
     } finally {
       _isLoading = false;
@@ -427,10 +425,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
         ORDER BY pd.date_planification ASC
       ''', params);
 
-      logger.i('✅ ${results.length} traitements récupérés pour $month/$year');
+      logger.i(' ${results.length} traitements récupérés pour $month/$year');
       return results.cast<Map<String, dynamic>>();
     } catch (e) {
-      logger.e('❌ Erreur récupération traitements par mois: $e');
+      logger.e(' Erreur récupération traitements par mois: $e');
       return [];
     }
   }
@@ -462,11 +460,11 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .toList();
 
       logger.i(
-        '✅ ${treatments.length} types de traitements trouvés pour client $clientId',
+        ' ${treatments.length} types de traitements trouvés pour client $clientId',
       );
       return treatments;
     } catch (e) {
-      logger.e('❌ Erreur récupération types de traitements: $e');
+      logger.e(' Erreur récupération types de traitements: $e');
       return [];
     }
   }

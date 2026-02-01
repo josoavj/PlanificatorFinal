@@ -222,7 +222,6 @@ class AppTheme {
       secondary: accentBlue,
       error: errorRed,
       surface: Colors.white,
-      background: Colors.white,
     ),
   );
 

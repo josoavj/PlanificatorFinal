@@ -33,7 +33,7 @@ class DatabaseService {
 
   bool get isConnected => _isConnected;
 
-  /// 🔒 Masque les données sensibles dans les logs
+  ///  Masque les données sensibles dans les logs
   /// Remplace les valeurs par des placeholders pour éviter d'exposer des secrets
   static String _sanitizeParamsForLogging(List<dynamic>? params) {
     if (params == null) return 'null';
@@ -98,10 +98,10 @@ class DatabaseService {
       );
 
       _isConnected = true;
-      logger.i('✅ Connexion établie avec succès');
+      logger.i(' Connexion établie avec succès');
       return true;
     } catch (e) {
-      logger.e('❌ Erreur de connexion: $e');
+      logger.e(' Erreur de connexion: $e');
       _isConnected = false;
       rethrow;
     }
@@ -132,7 +132,7 @@ class DatabaseService {
     try {
       logger.d('Query: $sql');
       if (params != null && params.isNotEmpty) {
-        // 🔒 Logs sécurisés: masquer les données sensibles
+        //  Logs sécurisés: masquer les données sensibles
         logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
@@ -157,7 +157,7 @@ class DatabaseService {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              logger.e('⏱️ Timeout de requête après 30 secondes');
+              logger.e(' Timeout de requête après 30 secondes');
               throw TimeoutException('La requête a dépassé le délai imparti');
             },
           );
@@ -190,7 +190,7 @@ class DatabaseService {
     try {
       logger.d('Execute: $sql');
       if (params != null && params.isNotEmpty) {
-        // 🔒 Logs sécurisés: masquer les données sensibles
+        //  Logs sécurisés: masquer les données sensibles
         logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
@@ -227,7 +227,7 @@ class DatabaseService {
     try {
       logger.d('Insert: $sql');
       if (params != null && params.isNotEmpty) {
-        // 🔒 Logs sécurisés: masquer les données sensibles
+        //  Logs sécurisés: masquer les données sensibles
         logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 

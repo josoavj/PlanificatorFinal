@@ -108,7 +108,7 @@ class _ExportScreenState extends State<ExportScreen> {
         clientList.add(internalKey);
         displayNames[internalKey] = displayName; // Affichage sans ID
         logger.i(
-          '✅ Client ajouté: $displayName (ID: $clientId, Cat: $categorie)',
+          ' Client ajouté: $displayName (ID: $clientId, Cat: $categorie)',
         );
       }
 
@@ -122,16 +122,16 @@ class _ExportScreenState extends State<ExportScreen> {
           // Vérifier que le client sélectionné existe encore dans la liste
           if (!clientList.contains(_selectedClient)) {
             _selectedClient = 'Tous';
-            logger.i('⚠️ Client sélectionné introuvable, reset à "Tous"');
+            logger.i(' Client sélectionné introuvable, reset à "Tous"');
           }
 
           logger.i(
-            '✅ ${clientList.length - 1} clients affichables (total: ${clientList.length} avec Tous)',
+            ' ${clientList.length - 1} clients affichables (total: ${clientList.length} avec Tous)',
           );
         });
       }
     } catch (e) {
-      logger.e('❌ Erreur lors du chargement des clients: $e');
+      logger.e(' Erreur lors du chargement des clients: $e');
       if (mounted) {
         setState(() => _isLoadingClients = false);
       }
@@ -165,11 +165,11 @@ class _ExportScreenState extends State<ExportScreen> {
           final clientName = clientId == -1
               ? 'tous les clients'
               : _selectedClient;
-          logger.i('✅ ${treatments.length - 1} traitements pour $clientName');
+          logger.i(' ${treatments.length - 1} traitements pour $clientName');
         });
       }
     } catch (e) {
-      logger.e('❌ Erreur lors du chargement des traitements: $e');
+      logger.e(' Erreur lors du chargement des traitements: $e');
     }
   }
 
@@ -582,14 +582,14 @@ class _ExportScreenState extends State<ExportScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Données actualisées'),
+          content: Text(' Données actualisées'),
           duration: Duration(seconds: 2),
           backgroundColor: Colors.green,
         ),
       );
     }
 
-    logger.i('🔄 Actualisation complète des données');
+    logger.i(' Actualisation complète des données');
   }
 
   Future<void> _generererExcel(BuildContext context) async {
@@ -852,7 +852,7 @@ class _ExportScreenState extends State<ExportScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.check_circle, color: Colors.green[600], size: 48),
-        title: Text('✅ $title'),
+        title: Text(' $title'),
         content: SelectableText(message),
         actions: [
           ElevatedButton.icon(
@@ -870,7 +870,7 @@ class _ExportScreenState extends State<ExportScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.error, color: Colors.red[600], size: 48),
-        title: Text('❌ $title'),
+        title: Text(' $title'),
         content: SelectableText(message),
         actions: [
           ElevatedButton.icon(

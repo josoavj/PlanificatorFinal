@@ -761,7 +761,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Navigator.of(ctx).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('✅ Profil mis à jour avec succès'),
+                            content: Text(' Profil mis à jour avec succès'),
                             behavior: SnackBarBehavior.floating,
                             backgroundColor: Colors.green,
                           ),
@@ -1138,7 +1138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   confirmPassword.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('❌ Tous les champs sont requis'),
+                    content: Text(' Tous les champs sont requis'),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.red,
                   ),
@@ -1151,7 +1151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (!BCrypt.checkpw(oldPassword.text, passwordHash)) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('❌ L\'ancien mot de passe est incorrect'),
+                      content: Text(' L\'ancien mot de passe est incorrect'),
                       behavior: SnackBarBehavior.floating,
                       backgroundColor: Colors.red,
                     ),
@@ -1161,7 +1161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('❌ L\'ancien mot de passe est incorrect'),
+                    content: Text(' L\'ancien mot de passe est incorrect'),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.red,
                   ),
@@ -1173,7 +1173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (newPassword.text != confirmPassword.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('❌ Les mots de passe ne correspondent pas'),
+                    content: Text(' Les mots de passe ne correspondent pas'),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.red,
                   ),
@@ -1186,7 +1186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      '⚠️ Le nouveau mot de passe doit être différent de l\'ancien',
+                      ' Le nouveau mot de passe doit être différent de l\'ancien',
                     ),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.orange,
@@ -1200,7 +1200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      '⚠️ Le mot de passe doit contenir au moins 6 caractères',
+                      ' Le mot de passe doit contenir au moins 6 caractères',
                     ),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.orange,
@@ -1221,7 +1221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      '⚠️ Le mot de passe ne doit pas contenir votre nom, prénom ou identifiant',
+                      ' Le mot de passe ne doit pas contenir votre nom, prénom ou identifiant',
                     ),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.orange,
@@ -1263,7 +1263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.of(ctx).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('✅ Mot de passe changé avec succès'),
+                    content: Text(' Mot de passe changé avec succès'),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.green,
                   ),
@@ -1272,7 +1272,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('❌ Erreur: $e'),
+                    content: Text(' Erreur: $e'),
                     behavior: SnackBarBehavior.floating,
                     backgroundColor: Colors.red,
                   ),
@@ -1451,7 +1451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.of(ctx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('✅ Configuration sauvegardée'),
+                        content: Text(' Configuration sauvegardée'),
                         backgroundColor: Colors.green,
                       ),
                     );

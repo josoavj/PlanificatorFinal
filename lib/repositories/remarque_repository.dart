@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 import '../utils/date_helper.dart';
 
 /// Repository pour la gestion des remarques
@@ -36,7 +35,7 @@ class RemarqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // ✅ 1. Créer la remarque
+      //  1. Créer la remarque
       const createRemarqueSQL = '''
         INSERT INTO Remarque 
         (client_id, planning_detail_id, facture_id, contenu, issue, action)
@@ -64,9 +63,9 @@ class RemarqueRepository extends ChangeNotifier {
         action,
       ]);
 
-      logger.i('✅ Remarque créée pour planning_detail_id=$planningDetailsId');
+      logger.i(' Remarque créée pour planning_detail_id=$planningDetailsId');
 
-      // ✅ 2. Marquer le planning detail comme "Effectué"
+      //  2. Marquer le planning detail comme "Effectué"
       const updatePlanningSQL = '''
         UPDATE PlanningDetails
         SET statut = ?
@@ -74,9 +73,9 @@ class RemarqueRepository extends ChangeNotifier {
       ''';
 
       await _db.execute(updatePlanningSQL, ['Effectué', planningDetailsId]);
-      logger.i('✅ Planning detail $planningDetailsId marqué comme Effectué');
+      logger.i(' Planning detail $planningDetailsId marqué comme Effectué');
 
-      // ✅ 3. Si payée, mettre à jour l'état de la facture
+      //  3. Si payée, mettre à jour l'état de la facture
       if (estPayee) {
         const updateFactureSQL = '''
           UPDATE Facture
@@ -93,7 +92,7 @@ class RemarqueRepository extends ChangeNotifier {
           factureId,
         ]);
 
-        logger.i('✅ Facture $factureId marquée comme payée');
+        logger.i(' Facture $factureId marquée comme payée');
       }
 
       // Recharger les remarques
@@ -152,7 +151,7 @@ class RemarqueRepository extends ChangeNotifier {
       final rows = await _db.query(sql, [planningDetailId]);
       return rows.map((row) => Remarque.fromJson(row)).toList();
     } catch (e) {
-      logger.e('❌ Erreur récupérer remarques: $e');
+      logger.e(' Erreur récupérer remarques: $e');
       return [];
     }
   }
@@ -202,7 +201,7 @@ class RemarqueRepository extends ChangeNotifier {
         factureId,
       ]);
 
-      logger.i('✅ Remarque et facture mises à jour');
+      logger.i(' Remarque et facture mises à jour');
       await loadRemarques();
       return true;
     } catch (e) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../services/logging_service.dart';
 import '../utils/excel_utils.dart';
 import '../utils/date_helper.dart';
 import '../utils/date_utils.dart' as date_utils;
@@ -18,7 +17,7 @@ class FactureRepository extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// ✅ Charge les factures d'un contrat
+  ///  Charge les factures d'un contrat
   Future<List<Facture>> loadFacturesForContrat(int contratId) async {
     try {
       const sql = '''
@@ -35,9 +34,7 @@ class FactureRepository extends ChangeNotifier {
 
       final rows = await _db.query(sql, [contratId]);
       final factures = rows.map((row) => Facture.fromMap(row)).toList();
-      logger.i(
-        '✅ ${factures.length} factures chargées pour contrat $contratId',
-      );
+      logger.i(' ${factures.length} factures chargées pour contrat $contratId');
       return factures;
     } catch (e) {
       logger.e('Erreur chargement factures contrat: $e');
@@ -86,11 +83,11 @@ class FactureRepository extends ChangeNotifier {
       _factures = rows.map((row) => Facture.fromMap(row)).toList();
 
       logger.i(
-        '✅ ${_factures.length} factures chargées pour le client $clientId avec tous détails',
+        ' ${_factures.length} factures chargées pour le client $clientId avec tous détails',
       );
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur lors du chargement des factures: $e');
+      logger.e(' Erreur lors du chargement des factures: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -140,10 +137,10 @@ class FactureRepository extends ChangeNotifier {
       final rows = await _db.query(sql);
       _factures = rows.map((row) => Facture.fromMap(row)).toList();
 
-      logger.i('✅ ${_factures.length} factures chargées avec tous détails');
+      logger.i(' ${_factures.length} factures chargées avec tous détails');
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur lors du chargement des factures: $e');
+      logger.e(' Erreur lors du chargement des factures: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -177,11 +174,11 @@ class FactureRepository extends ChangeNotifier {
       final factures = rows.map((row) => Facture.fromMap(row)).toList();
 
       logger.i(
-        '✅ ${factures.length} factures trouvées pour planning_detail_id $planningDetailId',
+        ' ${factures.length} factures trouvées pour planning_detail_id $planningDetailId',
       );
       return factures;
     } catch (e) {
-      logger.e('❌ Erreur lors du chargement des factures: $e');
+      logger.e(' Erreur lors du chargement des factures: $e');
       return [];
     }
   }
@@ -204,11 +201,11 @@ class FactureRepository extends ChangeNotifier {
 
       final rows = await _db.query(sql, [factureId]);
       logger.i(
-        '✅ ${rows.length} changements de prix trouvés pour facture_id $factureId',
+        ' ${rows.length} changements de prix trouvés pour facture_id $factureId',
       );
       return rows;
     } catch (e) {
-      logger.e('❌ Erreur lors du chargement de l\'historique des prix: $e');
+      logger.e(' Erreur lors du chargement de l\'historique des prix: $e');
       return [];
     }
   }
@@ -231,14 +228,14 @@ class FactureRepository extends ChangeNotifier {
         _factures[index] = _factures[index].copyWith(montant: newPrice);
       }
 
-      logger.i('✅ Facture $factureId mise à jour: montant=$newPrice Ar');
+      logger.i(' Facture $factureId mise à jour: montant=$newPrice Ar');
 
       // Notifier les listeners pour mettre à jour la somme totale dans l'UI
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur lors de la mise à jour: $e');
+      logger.e(' Erreur lors de la mise à jour: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -263,12 +260,12 @@ class FactureRepository extends ChangeNotifier {
         _factures[index] = _factures[index].copyWith(etat: 'Payée');
       }
 
-      logger.i('✅ Facture $factureId marquée comme payée');
+      logger.i(' Facture $factureId marquée comme payée');
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur lors du marquage: $e');
+      logger.e(' Erreur lors du marquage: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -315,13 +312,13 @@ class FactureRepository extends ChangeNotifier {
         );
       }
 
-      logger.i('✅ Référence facture $factureId mise à jour: $newReference');
+      logger.i(' Référence facture $factureId mise à jour: $newReference');
 
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur lors de la mise à jour de la référence: $e');
+      logger.e(' Erreur lors de la mise à jour de la référence: $e');
       return false;
     }
   }
@@ -368,7 +365,7 @@ class FactureRepository extends ChangeNotifier {
       // Étape 2: Calculer la différence
       final prixDiff = newMontant - oldMontant;
       logger.i(
-        '📊 Différence de prix: $prixDiff Ar (ancien: $oldMontant, nouveau: $newMontant)',
+        ' Différence de prix: $prixDiff Ar (ancien: $oldMontant, nouveau: $newMontant)',
       );
 
       // Étape 3: Récupérer toutes les factures du même traitement avec date >= dateActuelle
@@ -395,9 +392,9 @@ class FactureRepository extends ChangeNotifier {
         final ancienMontant = row['montant'] as int;
         final etat = (row['etat'] as String?)?.trim() ?? '';
 
-        // ✅ LOGIQUE: Si la facture est déjà payée, ne pas modifier le montant
+        //  LOGIQUE: Si la facture est déjà payée, ne pas modifier le montant
         if (etat == 'Payé' || etat == 'Payée') {
-          logger.i('⚠️ Facture $fId est payée, montant inchangé (état: $etat)');
+          logger.i(' Facture $fId est payée, montant inchangé (état: $etat)');
           continue; // Passer à la prochaine facture
         }
 
@@ -420,7 +417,7 @@ class FactureRepository extends ChangeNotifier {
         ]);
 
         logger.i(
-          '✅ Facture $fId mise à jour: $ancienMontant → $nouveauMontant Ar',
+          ' Facture $fId mise à jour: $ancienMontant → $nouveauMontant Ar',
         );
         updatedCount++;
       }
@@ -432,7 +429,7 @@ class FactureRepository extends ChangeNotifier {
                 ) >=
                 0 &&
             facture.montant > 0) {
-          // ✅ LOGIQUE: Ne pas modifier les factures payées
+          //  LOGIQUE: Ne pas modifier les factures payées
           if (facture.etat != 'Payé' && facture.etat != 'Payée') {
             final newMontantLocal = facture.montant + prixDiff;
             final index = _factures.indexOf(facture);
@@ -444,14 +441,14 @@ class FactureRepository extends ChangeNotifier {
       }
 
       logger.i(
-        '✅ $updatedCount facture(s) mises à jour avec la différence de $prixDiff Ar',
+        ' $updatedCount facture(s) mises à jour avec la différence de $prixDiff Ar',
       );
 
       notifyListeners();
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('❌ Erreur lors de majMontantEtHistorique: $e');
+      logger.e(' Erreur lors de majMontantEtHistorique: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -500,9 +497,9 @@ class FactureRepository extends ChangeNotifier {
     required int planningDetailId,
     required String referenceFacture,
     required int montant,
-    String? mode, // ✅ Mode peut être null (à définir plus tard)
+    String? mode, //  Mode peut être null (à définir plus tard)
     required String etat,
-    String? axe, // ✅ Axe peut être null (à définir plus tard)
+    String? axe, //  Axe peut être null (à définir plus tard)
     required DateTime dateTraitement,
   }) async {
     _isLoading = true;
@@ -510,14 +507,14 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // ✅ Vérifier si une facture existe déjà pour ce planning detail
+      //  Vérifier si une facture existe déjà pour ce planning detail
       const checkSql =
           'SELECT facture_id FROM Facture WHERE planning_detail_id = ?';
       final existing = await _db.query(checkSql, [planningDetailId]);
 
       if (existing.isNotEmpty) {
         logger.i(
-          '⚠️ Facture existe déjà pour planning_detail_id=$planningDetailId, ID=${existing[0]['facture_id']}',
+          ' Facture existe déjà pour planning_detail_id=$planningDetailId, ID=${existing[0]['facture_id']}',
         );
         return existing[0]['facture_id'] as int;
       }
@@ -664,7 +661,7 @@ class FactureRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ REPAIR FUNCTION: Régénère les factures pour un contrat
+  ///  REPAIR FUNCTION: Régénère les factures pour un contrat
   /// Utile pour corriger les factures manquantes ou erronées
   ///
   /// Étapes:
@@ -680,7 +677,7 @@ class FactureRepository extends ChangeNotifier {
     return 0;
   }
 
-  /// ✅ REPAIR FUNCTION: Régénère les factures pour un traitement spécifique
+  ///  REPAIR FUNCTION: Régénère les factures pour un traitement spécifique
   /// Utile pour corriger les factures manquantes ou erronées d'un traitement
   ///
   /// Étapes:
@@ -698,7 +695,7 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      logger.i('🔧 REPAIR: Planning + Factures pour traitement $traitementId');
+      logger.i(' REPAIR: Planning + Factures pour traitement $traitementId');
       logger.i('   💰 Montant: $montant Ar');
       logger.i('   📑 Référence: $referencePrefix');
 
@@ -741,7 +738,7 @@ class FactureRepository extends ChangeNotifier {
         final dateDebut = DateTime.parse(
           planningResult[0]['date_debut_planification'] as String,
         );
-        logger.i('   🔄 Génération des dates...');
+        logger.i('    Génération des dates...');
 
         final planningDates = _generatePlanningDates(
           dateDebut: dateDebut,
@@ -749,7 +746,7 @@ class FactureRepository extends ChangeNotifier {
           redondance: redondance,
         );
 
-        logger.i('   ✅ ${planningDates.length} dates générées');
+        logger.i('    ${planningDates.length} dates générées');
 
         for (final date in planningDates) {
           try {
@@ -760,10 +757,10 @@ class FactureRepository extends ChangeNotifier {
             await _db.execute(sqlInsert, [planningId, date.toIso8601String()]);
             planningDetailsCreated++;
             logger.i(
-              '   ✅ PlanningDetail créé: ${date.toIso8601String()} (ID Planning=$planningId)',
+              '    PlanningDetail créé: ${date.toIso8601String()} (ID Planning=$planningId)',
             );
           } catch (e) {
-            logger.e('   ❌ Erreur création PlanningDetail: $e');
+            logger.e('    Erreur création PlanningDetail: $e');
           }
         }
         logger.i('   🎉 $planningDetailsCreated Planning Details créés');
@@ -778,12 +775,10 @@ class FactureRepository extends ChangeNotifier {
       ''';
 
       final planningDetails = await _db.query(sqlGetDetails, [planningId]);
-      logger.i(
-        '   📋 Total Planning Details trouvés: ${planningDetails.length}',
-      );
+      logger.i('    Total Planning Details trouvés: ${planningDetails.length}');
 
       if (planningDetails.isEmpty) {
-        logger.w('   ⚠️ Aucun PlanningDetail trouvé! Vérifiez la création.');
+        logger.w('    Aucun PlanningDetail trouvé! Vérifiez la création.');
         return 0;
       }
 
@@ -816,7 +811,7 @@ class FactureRepository extends ChangeNotifier {
 
         if (factureId != -1) {
           facturesCreated++;
-          logger.i('   ✅ Facture créée: $ref (PD#$pdId)');
+          logger.i('    Facture créée: $ref (PD#$pdId)');
         }
         sequenceNumber++;
       }
@@ -827,7 +822,7 @@ class FactureRepository extends ChangeNotifier {
       return facturesCreated;
     } catch (e) {
       _errorMessage = 'Erreur: $e';
-      logger.e('❌ $e');
+      logger.e(' $e');
       return 0;
     } finally {
       _isLoading = false;
@@ -835,7 +830,7 @@ class FactureRepository extends ChangeNotifier {
     }
   }
 
-  /// ✅ Génère les dates de planning (utilise date_utils pour cohérence)
+  ///  Génère les dates de planning (utilise date_utils pour cohérence)
   List<DateTime> _generatePlanningDates({
     required DateTime dateDebut,
     required int dureeTraitement,

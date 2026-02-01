@@ -109,7 +109,7 @@ class _FactureScreenState extends State<FactureScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -129,7 +129,7 @@ class _FactureScreenState extends State<FactureScreen> {
                 message: 'Actualiser',
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -154,7 +154,7 @@ class _FactureScreenState extends State<FactureScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
+                  color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -173,7 +173,7 @@ class _FactureScreenState extends State<FactureScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
+                  color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -327,7 +327,7 @@ class _FactureGroupCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -435,12 +435,12 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
   }
 
   void _showModifierPrixDialog(Facture facture) {
-    // ✅ Vérifier si la facture est déjà payée
+    //  Vérifier si la facture est déjà payée
     if (facture.etat == 'Payé' || facture.etat == 'Payée') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            '❌ Impossible de modifier le prix d\'une facture payée',
+            ' Impossible de modifier le prix d\'une facture payée',
           ),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 2),
@@ -601,7 +601,7 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
                     ),
                   );
 
-                  // ✅ CORRECTION: Recharger les données directement sans délai arbitraire
+                  //  CORRECTION: Recharger les données directement sans délai arbitraire
                   if (mounted) {
                     await context.read<FactureRepository>().loadAllFactures();
                     // Rafraîchir l'écran détail
@@ -787,7 +787,7 @@ class _FactureRow extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(facture.etat).withOpacity(0.2),
+                          color: _getStatusColor(facture.etat).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
