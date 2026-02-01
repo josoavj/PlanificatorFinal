@@ -60,7 +60,7 @@ class Contrat {
 
   factory Contrat.fromMap(Map<String, dynamic> map) {
     // Fonction helper pour convertir des dates de différents formats
-    DateTime? _parseDate(dynamic value) {
+    DateTime? parseDate(dynamic value) {
       if (value is DateTime) {
         return value;
       } else if (value is String) {
@@ -77,7 +77,7 @@ class Contrat {
       }
     }
 
-    int? _parseDuree(dynamic value) {
+    int? parseDuree(dynamic value) {
       if (value is int) {
         return value;
       } else if (value is String) {
@@ -95,14 +95,14 @@ class Contrat {
       contratId: map['contrat_id'] as int,
       clientId: map['client_id'] as int,
       referenceContrat: map['reference_contrat'] as String,
-      dateContrat: _parseDate(map['date_contrat']) ?? DateTime.now(),
-      dateDebut: _parseDate(map['date_debut']) ?? DateTime.now(),
-      dateFin: _parseDate(map['date_fin']),
+      dateContrat: parseDate(map['date_contrat']) ?? DateTime.now(),
+      dateDebut: parseDate(map['date_debut']) ?? DateTime.now(),
+      dateFin: parseDate(map['date_fin']),
       statutContrat: map['statut_contrat'] as String? ?? 'Actif',
-      dureeContrat: _parseDuree(map['duree_contrat']) ?? 0,
-      duree: _parseDuree(map['duree']),
+      dureeContrat: parseDuree(map['duree_contrat']) ?? 0,
+      duree: parseDuree(map['duree']),
       categorie: map['categorie'] as String? ?? '',
-      dateAbrogation: _parseDate(map['date_abrogation']),
+      dateAbrogation: parseDate(map['date_abrogation']),
       motifAbrogation: map['motif_abrogation'] as String?,
     );
   }
