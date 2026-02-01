@@ -202,7 +202,7 @@ class DateUtils {
   /// - dateDebut: Date de début du traitement
   /// - dureeTraitement: Durée totale du traitement en mois
   /// - redondance: Fréquence d'exécution en mois (1 = chaque mois, 2 = tous les 2 mois, etc.)
-  ///              ⚠️ redondance = 0 = UNE SEULE FOIS (pas une récurrence)
+  ///               redondance = 0 = UNE SEULE FOIS (pas une récurrence)
   ///
   /// Retourne une liste de dates planifiées, en ajustant si nécessaire pour les weekends/jours fériés
   static List<DateTime> generatePlanningDates({
@@ -217,7 +217,7 @@ class DateUtils {
       return dates;
     }
 
-    // ✅ CAS SPÉCIAL: redondance = 0 = UNE SEULE FOIS
+    //  CAS SPÉCIAL: redondance = 0 = UNE SEULE FOIS
     if (redondance == 0) {
       var singleDate = adjustIfWeekendAndHoliday(dateDebut);
       dates.add(singleDate);
