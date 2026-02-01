@@ -61,12 +61,12 @@ class _ContratScreenState extends State<ContratScreen> {
       logger.d('📥 Chargement des clients via repository...');
       await clientRepository.loadClients();
       var allClients = clientRepository.clients;
-      logger.d('✅ ${allClients.length} clients via repository');
+      logger.d(' ${allClients.length} clients via repository');
 
       // Si aucun client n'a été chargé, charger directement de la BD
       if (allClients.isEmpty) {
         logger.w(
-          '⚠️ Aucun client via repository, chargement direct de la BD...',
+          ' Aucun client via repository, chargement direct de la BD...',
         );
         const sql = '''
           SELECT 
@@ -77,11 +77,11 @@ class _ContratScreenState extends State<ContratScreen> {
         ''';
         final rows = await db.query(sql);
         allClients = rows.map((row) => Client.fromMap(row)).toList();
-        logger.i('✅ ${allClients.length} clients chargés directement');
+        logger.i(' ${allClients.length} clients chargés directement');
       }
 
       if (allClients.isEmpty) {
-        logger.w('⚠️ AUCUN CLIENT TROUVÉ !');
+        logger.w(' AUCUN CLIENT TROUVÉ !');
       } else {
         for (final client in allClients) {
           logger.d(
@@ -94,11 +94,11 @@ class _ContratScreenState extends State<ContratScreen> {
       logger.d('📥 Chargement des contrats...');
       await contratsRepository.loadContrats();
       var contrats = contratsRepository.contrats;
-      logger.i('✅ ${contrats.length} contrats chargés');
+      logger.i(' ${contrats.length} contrats chargés');
 
       if (contrats.isNotEmpty) {
         for (final c in contrats.take(3)) {
-          logger.d('  📋 ${c.referenceContrat} (ClientID=${c.clientId})');
+          logger.d('   ${c.referenceContrat} (ClientID=${c.clientId})');
         }
       }
 
@@ -107,7 +107,7 @@ class _ContratScreenState extends State<ContratScreen> {
       for (final client in allClients) {
         clientMap[client.clientId] = client;
       }
-      logger.d('📊 Map créée: ${clientMap.length} clients');
+      logger.d(' Map créée: ${clientMap.length} clients');
 
       // Si un clientId est spécifié, filtrer uniquement les contrats de ce client
       if (widget.clientId != null) {
@@ -139,10 +139,10 @@ class _ContratScreenState extends State<ContratScreen> {
         });
       }
 
-      logger.i('🎯 ${result.length} contrats retournés');
+      logger.i(' ${result.length} contrats retournés');
       return result;
     } catch (e) {
-      logger.e('❌ ERREUR chargement contrats: $e');
+      logger.e(' ERREUR chargement contrats: $e');
       return [];
     }
   }
@@ -192,7 +192,7 @@ class _ContratScreenState extends State<ContratScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -212,7 +212,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 message: 'Actualiser',
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -232,7 +232,7 @@ class _ContratScreenState extends State<ContratScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: Colors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -417,7 +417,7 @@ class _ContratScreenState extends State<ContratScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -547,7 +547,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: INFORMATIONS CONTRAT
                 // ═════════════════════════════════════════
-                _buildSectionHeader('📋 INFORMATIONS CONTRAT'),
+                _buildSectionHeader(' INFORMATIONS CONTRAT'),
                 _buildDetailRow('Numéro Contrat', '#${contrat.contratId}'),
                 _buildDetailRow('Référence', contrat.referenceContrat),
                 _buildDetailRow(
@@ -573,7 +573,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: TRAITEMENTS
                 // ═════════════════════════════════════════
-                _buildSectionHeader('🔧 TRAITEMENTS ($numTraitements)'),
+                _buildSectionHeader(' TRAITEMENTS ($numTraitements)'),
                 FutureBuilder<List<Map<String, dynamic>>>(
                   future: _loadTraitements(contrat.contratId),
                   builder: (context, snapshot) {
@@ -684,7 +684,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                             decoration: BoxDecoration(
                                               color: _getStatusColor(
                                                 status.trim(),
-                                              ).withOpacity(0.2),
+                                              ).withValues(alpha: 0.2),
                                               borderRadius:
                                                   BorderRadius.circular(3),
                                             ),
@@ -715,7 +715,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: STATISTIQUES PAR TRAITEMENT
                 // ═════════════════════════════════════════
-                _buildSectionHeader('📊 STATISTIQUES PAR TRAITEMENT'),
+                _buildSectionHeader(' STATISTIQUES PAR TRAITEMENT'),
                 FutureBuilder<List<Map<String, dynamic>>>(
                   future: _loadTraitementStatistics(contrat.contratId),
                   builder: (context, snapshot) {
@@ -815,7 +815,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '📋 Historiques: ${stat['historiques'] ?? 0}',
+                                    ' Historiques: ${stat['historiques'] ?? 0}',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey[700],
@@ -874,7 +874,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 _showAbrogationDialog(contrat);
               },
               child: const Text(
-                '⚠️ Abroger',
+                ' Abroger',
                 style: TextStyle(color: Colors.orange),
               ),
             ),
@@ -1453,7 +1453,7 @@ class _ContratScreenState extends State<ContratScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('🔧 Détails Réparation'),
+        title: const Text(' Détails Réparation'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1492,7 +1492,7 @@ class _ContratScreenState extends State<ContratScreen> {
               if (prixStr.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('❌ Veuillez entrer un prix'),
+                    content: Text(' Veuillez entrer un prix'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -1515,7 +1515,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('✅ $count factures créées/restaurées'),
+                      content: Text(' $count factures créées/restaurées'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -1525,7 +1525,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('❌ Erreur: $e'),
+                      content: Text(' Erreur: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -1654,7 +1654,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '⚠️ SANS PLANNING',
+                                          ' SANS PLANNING',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
@@ -1676,7 +1676,7 @@ class _ContratScreenState extends State<ContratScreen> {
                               ),
                             )
                           else
-                            // ✅ TRAITEMENT AVEC PLANNING: Afficher les dates
+                            //  TRAITEMENT AVEC PLANNING: Afficher les dates
                             ...traitements.map((planning) {
                               final dateStr =
                                   planning['date_planification'] != null
@@ -1896,7 +1896,7 @@ class _ContratScreenState extends State<ContratScreen> {
             'planning_detail_id': null,
             'date_planification': null,
             'axe': row['axe'] as String? ?? '-',
-            'etat': '⚠️ SANS PLANNING',
+            'etat': ' SANS PLANNING',
           };
 
           if (!groupedMap.containsKey(typeTraitement)) {
@@ -1945,7 +1945,7 @@ class _ContratScreenState extends State<ContratScreen> {
     // SI PLANNING ABSENT: créer un nouveau
     if (result.isEmpty) {
       logger.i(
-        '⚠️ Aucun planning trouvé pour traitement $traitementId, création...',
+        ' Aucun planning trouvé pour traitement $traitementId, création...',
       );
       if (!mounted) return;
       _showCreatePlanningDialog(ctx, contratId, traitementId, typeTraitement);
@@ -1985,7 +1985,7 @@ class _ContratScreenState extends State<ContratScreen> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text('🔄 Modifier redondance - $typeTraitement'),
+            title: Text(' Modifier redondance - $typeTraitement'),
             content: SizedBox(
               width: 450,
               child: Column(
@@ -2176,7 +2176,7 @@ class _ContratScreenState extends State<ContratScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '⚠️ Ce traitement n\'a pas encore de planning. Créez-en un:',
+                      ' Ce traitement n\'a pas encore de planning. Créez-en un:',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -2362,7 +2362,7 @@ class _ContratScreenState extends State<ContratScreen> {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('❌ Erreur: $e'),
+                        content: Text(' Erreur: $e'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -2393,7 +2393,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final db = DatabaseService();
 
       logger.i(
-        '✨ Création planning: traitementId=$traitementId, duree=$duree, redondance=$redondance, montant=$montant',
+        ' Création planning: traitementId=$traitementId, duree=$duree, redondance=$redondance, montant=$montant',
       );
 
       // 1. Créer l'enregistrement Planning
@@ -2427,7 +2427,7 @@ class _ContratScreenState extends State<ContratScreen> {
       }
 
       final planningId = planningIdResult.first['planning_id'] as int;
-      logger.i('✅ Planning créé: ID $planningId');
+      logger.i(' Planning créé: ID $planningId');
 
       // 2. Générer les dates
       final planningDates = DateUtils.DateUtils.generatePlanningDates(
@@ -2450,7 +2450,7 @@ class _ContratScreenState extends State<ContratScreen> {
         detailsCreated++;
       }
 
-      logger.i('✅ $detailsCreated planning details créés');
+      logger.i(' $detailsCreated planning details créés');
 
       // 4. Récupérer l'axe du client
       String clientAxe = 'Centre (C)';
@@ -2466,7 +2466,7 @@ class _ContratScreenState extends State<ContratScreen> {
           clientAxe = axeResult.first['axe'] as String? ?? 'Centre (C)';
         }
       } catch (e) {
-        logger.w('⚠️ Impossible de récupérer axe: $e');
+        logger.w(' Impossible de récupérer axe: $e');
       }
 
       // 5. Créer les Factures pour chaque PlanningDetail
@@ -2500,7 +2500,7 @@ class _ContratScreenState extends State<ContratScreen> {
         facturesCreated++;
       }
 
-      logger.i('✅ $facturesCreated factures créées');
+      logger.i(' $facturesCreated factures créées');
 
       // 6. Recharger les données
       await context
@@ -2512,15 +2512,15 @@ class _ContratScreenState extends State<ContratScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '✨ Planning créé! $detailsCreated dates, $facturesCreated factures.',
+            ' Planning créé! $detailsCreated dates, $facturesCreated factures.',
           ),
           backgroundColor: Colors.green[700],
         ),
       );
 
-      logger.i('✅ Planning complètement créé');
+      logger.i(' Planning complètement créé');
     } catch (e) {
-      logger.e('❌ Erreur création planning: $e');
+      logger.e(' Erreur création planning: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red[700]),
@@ -2624,7 +2624,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('❌ Erreur: $e'),
+                    content: Text(' Erreur: $e'),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -2650,7 +2650,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final db = DatabaseService();
 
       logger.i(
-        '🔄 Régénération planning: traitementId=$traitementId, redondance=$redondance, duree=$dureeTraitement, montant=$montant',
+        ' Régénération planning: traitementId=$traitementId, redondance=$redondance, duree=$dureeTraitement, montant=$montant',
       );
 
       // Récupérer le planning existant
@@ -2660,7 +2660,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final planningResult = await db.query(sqlGetPlanning, [traitementId]);
 
       if (planningResult.isEmpty) {
-        logger.e('❌ Aucun planning trouvé pour traitementId $traitementId');
+        logger.e(' Aucun planning trouvé pour traitementId $traitementId');
         return;
       }
 
@@ -2679,14 +2679,14 @@ class _ContratScreenState extends State<ContratScreen> {
         planningId,
       ]);
       logger.i(
-        '✅ Planning mis à jour: redondance=$redondance, duree=$dureeTraitement',
+        ' Planning mis à jour: redondance=$redondance, duree=$dureeTraitement',
       );
 
       // Supprimer les planning details existants
       const sqlDeleteDetails =
           'DELETE FROM PlanningDetails WHERE planning_id = ?';
       await db.execute(sqlDeleteDetails, [planningId]);
-      logger.i('✅ Planning details supprimés');
+      logger.i(' Planning details supprimés');
 
       // Supprimer les factures associées aux details supprimés
       const sqlDeleteFactures = '''
@@ -2695,7 +2695,7 @@ class _ContratScreenState extends State<ContratScreen> {
         )
       ''';
       await db.execute(sqlDeleteFactures);
-      logger.i('✅ Factures orphelines supprimées');
+      logger.i(' Factures orphelines supprimées');
 
       // Générer les nouvelles dates
       final planningDates = DateUtils.DateUtils.generatePlanningDates(
@@ -2721,7 +2721,7 @@ class _ContratScreenState extends State<ContratScreen> {
         detailsCreated++;
       }
 
-      logger.i('✅ $detailsCreated planning details créés');
+      logger.i(' $detailsCreated planning details créés');
 
       // Créer les factures pour chaque planning detail
       const sqlGetDetails = '''
@@ -2753,7 +2753,7 @@ class _ContratScreenState extends State<ContratScreen> {
             clientAxe = axeResult.first['axe'] as String? ?? 'Centre (C)';
           }
         } catch (e) {
-          logger.w('⚠️ Impossible de récupérer axe du client: $e');
+          logger.w(' Impossible de récupérer axe du client: $e');
         }
       }
 
@@ -2761,7 +2761,7 @@ class _ContratScreenState extends State<ContratScreen> {
       for (final detail in detailsResult) {
         final planningDetailId = detail['planning_detail_id'] as int;
 
-        // ✅ UTILISER LE MONTANT SAISI MANUELLEMENT
+        //  UTILISER LE MONTANT SAISI MANUELLEMENT
         const sqlInsertFacture = '''
           INSERT INTO Facture (
             planning_detail_id,
@@ -2778,13 +2778,13 @@ class _ContratScreenState extends State<ContratScreen> {
         await db.execute(sqlInsertFacture, [
           planningDetailId,
           reference,
-          montant, // ✅ Utiliser le montant passé en paramètre
+          montant, //  Utiliser le montant passé en paramètre
           clientAxe,
         ]);
         facturesCreated++;
       }
 
-      logger.i('✅ $facturesCreated factures créées avec montant=$montant Ar');
+      logger.i(' $facturesCreated factures créées avec montant=$montant Ar');
 
       // Recharger les données
       await context
@@ -2796,13 +2796,13 @@ class _ContratScreenState extends State<ContratScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '✅ Régénération complète! $detailsCreated dates, $facturesCreated factures.',
+            ' Régénération complète! $detailsCreated dates, $facturesCreated factures.',
           ),
           backgroundColor: Colors.green[700],
         ),
       );
     } catch (e) {
-      logger.e('❌ Erreur régénération: $e');
+      logger.e(' Erreur régénération: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red[700]),
@@ -2836,7 +2836,7 @@ class _ContratScreenState extends State<ContratScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('❌ Aucun planning trouvé'),
+              content: Text(' Aucun planning trouvé'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -2871,7 +2871,7 @@ class _ContratScreenState extends State<ContratScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                '✅ Les données de planning sont intègres, aucune réparation nécessaire',
+                ' Les données de planning sont intègres, aucune réparation nécessaire',
               ),
               backgroundColor: Colors.blue,
             ),
@@ -2948,7 +2948,7 @@ class _ContratScreenState extends State<ContratScreen> {
         },
       );
     } catch (e) {
-      logger.e('❌ Erreur vérification réparation: $e');
+      logger.e(' Erreur vérification réparation: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2965,7 +2965,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final db = DatabaseService();
 
       logger.i(
-        '🔧 Réparation des données de planning pour traitementId=$traitementId avec montant=$montant',
+        ' Réparation des données de planning pour traitementId=$traitementId avec montant=$montant',
       );
 
       // Récupérer les infos du planning
@@ -2987,11 +2987,11 @@ class _ContratScreenState extends State<ContratScreen> {
       final planningResult = await db.query(sqlGetPlanning, [traitementId]);
 
       if (planningResult.isEmpty) {
-        logger.e('❌ Aucun planning trouvé');
+        logger.e(' Aucun planning trouvé');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ Aucun planning trouvé pour ce traitement'),
+            content: Text(' Aucun planning trouvé pour ce traitement'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -3010,7 +3010,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final nbDetailsActuels = planning['nb_details'] as int? ?? 0;
 
       logger.i(
-        '📋 Planning actuel: $nbDetailsActuels details, duree=$duree, redondance=$redondance',
+        ' Planning actuel: $nbDetailsActuels details, duree=$duree, redondance=$redondance',
       );
 
       // Générer les dates attendues
@@ -3025,7 +3025,7 @@ class _ContratScreenState extends State<ContratScreen> {
       // Vérifier les détails manquants
       if (nbDetailsActuels < expectedDates.length) {
         logger.i(
-          '⚠️ ${expectedDates.length - nbDetailsActuels} details manquants, régénération...',
+          ' ${expectedDates.length - nbDetailsActuels} details manquants, régénération...',
         );
 
         // Récupérer les dates existantes
@@ -3040,7 +3040,7 @@ class _ContratScreenState extends State<ContratScreen> {
             .map((r) => r['date_planification'] as String)
             .toSet();
 
-        logger.i('✅ Dates existantes: ${existingDates.length}');
+        logger.i(' Dates existantes: ${existingDates.length}');
 
         // Créer les details manquants
         int detailsCreated = 0;
@@ -3057,7 +3057,7 @@ class _ContratScreenState extends State<ContratScreen> {
         }
 
         logger.i(
-          '✅ $detailsCreated planning details créés lors de la réparation',
+          ' $detailsCreated planning details créés lors de la réparation',
         );
 
         // Récupérer l'axe du client
@@ -3076,7 +3076,7 @@ class _ContratScreenState extends State<ContratScreen> {
             clientAxe = axeResult.first['axe'] as String? ?? 'Centre (C)';
           }
         } catch (e) {
-          logger.w('⚠️ Impossible de récupérer axe du client: $e');
+          logger.w(' Impossible de récupérer axe du client: $e');
         }
 
         // Créer les factures manquantes
@@ -3117,7 +3117,7 @@ class _ContratScreenState extends State<ContratScreen> {
           facturesCreated++;
         }
 
-        logger.i('✅ $facturesCreated factures créées lors de la réparation');
+        logger.i(' $facturesCreated factures créées lors de la réparation');
 
         // Recharger les données
         await context
@@ -3129,7 +3129,7 @@ class _ContratScreenState extends State<ContratScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '✅ Réparation complète! $detailsCreated details et $facturesCreated factures créés avec montant $montant Ar.',
+              ' Réparation complète! $detailsCreated details et $facturesCreated factures créés avec montant $montant Ar.',
             ),
             backgroundColor: Colors.green[700],
           ),
@@ -3140,16 +3140,16 @@ class _ContratScreenState extends State<ContratScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              '✅ Les données sont intègres, aucune réparation nécessaire',
+              ' Les données sont intègres, aucune réparation nécessaire',
             ),
             backgroundColor: Colors.blue,
           ),
         );
       }
 
-      logger.i('✅ Réparation terminée');
+      logger.i(' Réparation terminée');
     } catch (e) {
-      logger.e('❌ Erreur réparation: $e');
+      logger.e(' Erreur réparation: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red[700]),
@@ -3242,7 +3242,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('✅ Contrat supprimé avec succès'),
+                    content: Text(' Contrat supprimé avec succès'),
                     backgroundColor: Colors.green,
                   ),
                 );
@@ -3271,7 +3271,7 @@ class _ContratScreenState extends State<ContratScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('⚠️ Abroger/Résilier le Contrat'),
+          title: const Text(' Abroger/Résilier le Contrat'),
           content: SizedBox(
             width: 550,
             child: SingleChildScrollView(
@@ -3285,7 +3285,7 @@ class _ContratScreenState extends State<ContratScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    '⚠️ ATTENTION : Cette action marquera tous les traitements futurs '
+                    ' ATTENTION : Cette action marquera tous les traitements futurs '
                     'comme "Classé sans suite" et ne peut pas être annulée.',
                     style: TextStyle(
                       color: Colors.red,
@@ -3381,7 +3381,7 @@ class _ContratScreenState extends State<ContratScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          '✅ Contrat ${contrat.referenceContrat} résilié '
+                          ' Contrat ${contrat.referenceContrat} résilié '
                           'à partir du ${DateFormat('dd/MM/yyyy').format(selectedDate!)}',
                         ),
                         backgroundColor: Colors.green,
@@ -3391,7 +3391,7 @@ class _ContratScreenState extends State<ContratScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                          '❌ Erreur lors de la résiliation du contrat',
+                          ' Erreur lors de la résiliation du contrat',
                         ),
                         backgroundColor: Colors.red,
                       ),
@@ -3908,7 +3908,7 @@ class _ContratCreationFlowScreenState
                         boxShadow: isActive
                             ? [
                                 BoxShadow(
-                                  color: Colors.blue.withOpacity(0.3),
+                                  color: Colors.blue.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   spreadRadius: 2,
                                 ),
@@ -3916,7 +3916,7 @@ class _ContratCreationFlowScreenState
                             : isCompleted
                             ? [
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(0.2),
+                                  color: Colors.green.withValues(alpha: 0.2),
                                   blurRadius: 4,
                                   spreadRadius: 1,
                                 ),
@@ -4210,7 +4210,7 @@ class _ContratCreationFlowScreenState
   Widget _buildContratInfoCard() {
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -4399,7 +4399,7 @@ class _ContratCreationFlowScreenState
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '⚠️ Pas de date de fin pour un contrat indéterminé',
+                        ' Pas de date de fin pour un contrat indéterminé',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.orange[700],
@@ -4456,7 +4456,7 @@ class _ContratCreationFlowScreenState
 
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -4763,7 +4763,7 @@ class _ContratCreationFlowScreenState
 
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -5117,7 +5117,7 @@ class _ContratCreationFlowScreenState
 
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -5300,7 +5300,7 @@ class _ContratCreationFlowScreenState
   Widget _buildResumeCard() {
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -5891,7 +5891,7 @@ class _ContratCreationFlowScreenState
       final Map<int, int> traitementMap = {};
 
       logger.i(
-        '🔧 Création des traitements et planifications pour contrat $contratId',
+        ' Création des traitements et planifications pour contrat $contratId',
       );
       logger.i('   Traitements sélectionnés: ${_selectedTreatments.length}');
       logger.i('   Planning map size: ${_treatmentPlanning.length}');
@@ -5904,7 +5904,7 @@ class _ContratCreationFlowScreenState
         logger.i('   Facture keys: ${_treatmentFactures.keys.toList()}');
       }
 
-      // ✅ Charger l'axe du client pour l'utiliser dans les factures
+      //  Charger l'axe du client pour l'utiliser dans les factures
       String? clientAxe;
       try {
         final clientRepo = context.read<ClientRepository>();
@@ -5913,10 +5913,10 @@ class _ContratCreationFlowScreenState
         );
         if (clientIndex != -1) {
           clientAxe = clientRepo.clients[clientIndex].axe;
-          logger.i('   ✅ Axe du client: $clientAxe');
+          logger.i('    Axe du client: $clientAxe');
         }
       } catch (e) {
-        logger.e('   ⚠️ Erreur récupération axe client: $e');
+        logger.e('    Erreur récupération axe client: $e');
       }
 
       for (final typeTraitementId in _selectedTreatments) {
@@ -5932,12 +5932,12 @@ class _ContratCreationFlowScreenState
 
         if (createdTraitementId == -1) {
           Logger().e(
-            '❌ Erreur création traitement pour type $typeTraitementId',
+            ' Erreur création traitement pour type $typeTraitementId',
           );
           continue;
         }
 
-        logger.i('    ✅ Traitement créé: ID $createdTraitementId');
+        logger.i('     Traitement créé: ID $createdTraitementId');
 
         traitementMap[typeTraitementId] = createdTraitementId;
 
@@ -5945,28 +5945,28 @@ class _ContratCreationFlowScreenState
         final factureData = _treatmentFactures[typeTraitementId];
 
         logger.i(
-          '    Planning data: ${planningData != null ? "✅ Présentes" : "❌ MANQUANTES"}',
+          '    Planning data: ${planningData != null ? " Présentes" : " MANQUANTES"}',
         );
         logger.i(
-          '    Facture data: ${factureData != null ? "✅ Présentes" : "❌ MANQUANTES"}',
+          '    Facture data: ${factureData != null ? " Présentes" : " MANQUANTES"}',
         );
 
-        // ✅ DEBUG: Afficher le contenu de factureData
+        //  DEBUG: Afficher le contenu de factureData
         if (factureData != null) {
           logger.i('    Facture content: $factureData');
           logger.i('    Montant value: ${factureData['montant']}');
         }
 
-        // ✅ VALIDATION: Si données manquantes, skip ce traitement
+        //  VALIDATION: Si données manquantes, skip ce traitement
         if (planningData == null) {
           logger.e(
-            '    ❌ SKIP: Planning data manquantes pour traitement $typeTraitementId',
+            '     SKIP: Planning data manquantes pour traitement $typeTraitementId',
           );
           continue;
         }
         if (factureData == null) {
           logger.e(
-            '    ❌ SKIP: Facture data manquantes pour traitement $typeTraitementId',
+            '     SKIP: Facture data manquantes pour traitement $typeTraitementId',
           );
           continue;
         }
@@ -6003,9 +6003,9 @@ class _ContratCreationFlowScreenState
 
         if (planningId != -1) {
           planningsCreated++;
-          logger.i('    ✅ Planning créé: ID $planningId');
+          logger.i('     Planning créé: ID $planningId');
 
-          // ✅ Utiliser la date de planification sélectionnée par l'utilisateur!
+          //  Utiliser la date de planification sélectionnée par l'utilisateur!
           logger.i('    🔍 DEBUG planningData: $planningData');
           logger.i(
             '    🔍 datePlanification type: ${planningData['datePlanification'].runtimeType}',
@@ -6038,11 +6038,11 @@ class _ContratCreationFlowScreenState
           );
 
           if (planningDates.isEmpty) {
-            logger.w('    ⚠️ AUCUNE DATE GÉNÉRÉE! Vérifier les paramètres!');
+            logger.w('     AUCUNE DATE GÉNÉRÉE! Vérifier les paramètres!');
             logger.i(
               '    dureeTraitement=$dureeTraitement, redondance=$redondance',
             );
-            continue; // ✅ Skip ce traitement si aucune date
+            continue; //  Skip ce traitement si aucune date
           }
 
           // Créer un PlanningDetail pour chaque date générée
@@ -6060,7 +6060,7 @@ class _ContratCreationFlowScreenState
 
             if (planningDetail != null) {
               logger.i(
-                '        ✅ PlanningDetail créé: ID ${planningDetail.planningDetailId}',
+                '         PlanningDetail créé: ID ${planningDetail.planningDetailId}',
               );
               // Créer une facture pour ce PlanningDetail
               // Référence facture: vide, sera remplie manuellement lors de l'ajout de remarque
@@ -6072,13 +6072,13 @@ class _ContratCreationFlowScreenState
                 try {
                   // Utiliser NumberFormatter pour parser les montants avec espaces
                   montant = NumberFormatter.parseMontant(montantStr);
-                  logger.i('✅ Montant parsé: $montant Ar');
+                  logger.i(' Montant parsé: $montant Ar');
                 } catch (e) {
-                  logger.e('❌ Erreur parsing montant: $montantStr - $e');
+                  logger.e(' Erreur parsing montant: $montantStr - $e');
                   montant = 0;
                 }
               } else {
-                logger.i('⚠️ Montant vide, utilisation de 0 Ar');
+                logger.i(' Montant vide, utilisation de 0 Ar');
               }
 
               try {
@@ -6098,21 +6098,21 @@ class _ContratCreationFlowScreenState
                 if (factureId != -1) {
                   facturesCreated++;
                   logger.i(
-                    '      ✅ Facture créée: ID $factureId, montant: $montant Ar',
+                    '       Facture créée: ID $factureId, montant: $montant Ar',
                   );
                 } else {
                   logger.e(
-                    '❌ Erreur lors de la création facture pour planning_detail ${planningDetail.planningDetailId}',
+                    ' Erreur lors de la création facture pour planning_detail ${planningDetail.planningDetailId}',
                   );
                 }
               } catch (e) {
-                logger.e('❌ Exception création facture: $e');
+                logger.e(' Exception création facture: $e');
               }
             }
           }
         } else {
           logger.e(
-            '❌ Erreur création planning pour traitement $createdTraitementId',
+            ' Erreur création planning pour traitement $createdTraitementId',
           );
         }
       }
@@ -6134,7 +6134,7 @@ class _ContratCreationFlowScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '✅ Contrat créé! $planningsCreated planning(s) + $facturesCreated facture(s).',
+            ' Contrat créé! $planningsCreated planning(s) + $facturesCreated facture(s).',
           ),
           backgroundColor: Colors.green[700],
           duration: const Duration(seconds: 4),
