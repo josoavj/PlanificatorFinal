@@ -3,13 +3,11 @@ import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
 import '../../services/index.dart';
-import '../../services/logging_service.dart';
 
 class DatabaseConfigScreen extends StatefulWidget {
   final VoidCallback onConfigured;
 
-  const DatabaseConfigScreen({Key? key, required this.onConfigured})
-    : super(key: key);
+  const DatabaseConfigScreen({super.key, required this.onConfigured});
 
   @override
   State<DatabaseConfigScreen> createState() => _DatabaseConfigScreenState();
@@ -82,12 +80,12 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Connexion réussie! Configuration sauvegardée.'),
+            content: Text(' Connexion réussie! Configuration sauvegardée.'),
             backgroundColor: Colors.green,
           ),
         );
 
-        logger.i('✅ Base de données configurée avec succès');
+        logger.i(' Base de données configurée avec succès');
 
         // Appeler le callback et naviguer vers login
         widget.onConfigured();
@@ -101,7 +99,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
         );
       }
     } catch (e) {
-      logger.e('❌ Erreur de connexion: $e');
+      logger.e(' Erreur de connexion: $e');
       if (!mounted) return;
       AppDialogs.error(context, message: 'Erreur: ${e.toString()}');
     } finally {
@@ -292,10 +290,10 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.infoBlue.withOpacity(0.1),
+                    color: AppTheme.infoBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppTheme.infoBlue.withOpacity(0.3),
+                      color: AppTheme.infoBlue.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
