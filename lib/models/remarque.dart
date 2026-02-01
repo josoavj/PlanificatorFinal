@@ -32,7 +32,7 @@ class Remarque {
   // Serialization from JSON (MySQL result)
   factory Remarque.fromJson(Map<String, dynamic> json) {
     // Helper pour convertir Blob en String si nécessaire
-    String? _toStr(dynamic val, [String? def]) {
+    String? toStr(dynamic val, [String? def]) {
       if (val == null) return def;
       if (val is String) return val;
       if (val is List<int>) return String.fromCharCodes(val); // Blob conversion
@@ -44,15 +44,15 @@ class Remarque {
       planningDetailId:
           json['planning_detail_id'] ?? json['id_planning_details'] ?? 0,
       factureId: json['factur_id'] ?? json['facture_id'],
-      contenu: _toStr(json['contenu']) ?? _toStr(json['remarque']),
-      probleme: _toStr(json['probleme']) ?? _toStr(json['issue']),
-      action: _toStr(json['action']),
-      modePaiement: _toStr(json['mode_paiement']) ?? _toStr(json['paiement']),
-      nomFacture: _toStr(json['nom_facture']) ?? _toStr(json['numero_facture']),
+      contenu: toStr(json['contenu']) ?? toStr(json['remarque']),
+      probleme: toStr(json['probleme']) ?? toStr(json['issue']),
+      action: toStr(json['action']),
+      modePaiement: toStr(json['mode_paiement']) ?? toStr(json['paiement']),
+      nomFacture: toStr(json['nom_facture']) ?? toStr(json['numero_facture']),
       datePayement:
-          _toStr(json['date_payement']) ?? _toStr(json['date_paiement']),
-      etablissement: _toStr(json['etablissement']) ?? _toStr(json['bank']),
-      numeroCheque: _toStr(json['numero_cheque']) ?? _toStr(json['cheque_num']),
+          toStr(json['date_payement']) ?? toStr(json['date_paiement']),
+      etablissement: toStr(json['etablissement']) ?? toStr(json['bank']),
+      numeroCheque: toStr(json['numero_cheque']) ?? toStr(json['cheque_num']),
       estPayee:
           (json['est_payee'] ?? json['is_paid'] ?? false) == true ||
           (json['est_payee'] ?? json['is_paid'] ?? false) == 1,
