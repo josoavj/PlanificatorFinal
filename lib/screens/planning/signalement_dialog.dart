@@ -84,10 +84,10 @@ class _SignalementDialogState extends State<SignalementDialog> {
         type: _type,
       );
       if (!mounted) return;
-      logger.i('✅ Signalement créé');
+      logger.i(' Signalement créé');
 
       // ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
-      logger.i('📌 Étape 2a: Modifier la date du planning courant');
+      logger.i(' Étape 2a: Modifier la date du planning courant');
       logger.i(
         '   planningDetailId=${widget.planningDetail.planningDetailId}, oldDate=$oldDate → newDate=$newDate',
       );
@@ -101,7 +101,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
       if (_changerRedondance) {
         // === MODE 1: DÉCALER TOUTES les dates futures ===
         logger.i(
-          '🔄 MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
+          ' MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
         );
         logger.i(
           '   ancienneDateModifiee=$oldDate, nouvelleDateModifiee=$newDate',
@@ -116,7 +116,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
         if (!mounted) return;
       } else {
         // === MODE 2: GARDER - on a déjà modifié JUSTE cette date en 2A ===
-        logger.i('✅ MODE GARDER: date modifiée (autres dates inchangées)');
+        logger.i(' MODE GARDER: date modifiée (autres dates inchangées)');
       }
 
       if (mounted) {
@@ -153,13 +153,13 @@ class _SignalementDialogState extends State<SignalementDialog> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Signalement: $messageEcart$modeTexte'),
+            content: Text(' Signalement: $messageEcart$modeTexte'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      logger.e('❌ Erreur signalement: $e');
+      logger.e(' Erreur signalement: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -238,7 +238,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
 
     if (direction.isEmpty) return '';
 
-    String texte = '📊 ';
+    String texte = ' ';
 
     if (mois != 0) {
       texte += '$mois mois';
@@ -332,7 +332,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
                 ),
                 const SizedBox(height: 8),
 
-                // 📊 Affichage de l'écart (jours/mois)
+                //  Affichage de l'écart (jours/mois)
                 if (_ecartText().isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(12),
