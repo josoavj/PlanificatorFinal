@@ -121,7 +121,7 @@ class AboutScreen extends StatelessWidget {
                   width: double.infinity,
                   child: Card(
                     elevation: 4,
-                    shadowColor: Colors.grey.withOpacity(0.5),
+                    shadowColor: Colors.grey.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: Colors.blue[100]!),
@@ -162,7 +162,7 @@ class AboutScreen extends StatelessWidget {
                   width: double.infinity,
                   child: Card(
                     elevation: 4,
-                    shadowColor: Colors.grey.withOpacity(0.5),
+                    shadowColor: Colors.grey.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: Colors.blue[100]!),
@@ -196,7 +196,7 @@ class AboutScreen extends StatelessWidget {
                   width: double.infinity,
                   child: Card(
                     elevation: 4,
-                    shadowColor: Colors.grey.withOpacity(0.5),
+                    shadowColor: Colors.grey.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: Colors.blue[100]!),
@@ -233,7 +233,7 @@ class AboutScreen extends StatelessWidget {
                   width: double.infinity,
                   child: Card(
                     elevation: 4,
-                    shadowColor: Colors.grey.withOpacity(0.5),
+                    shadowColor: Colors.grey.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: Colors.blue[100]!),
@@ -283,7 +283,7 @@ class AboutScreen extends StatelessWidget {
                   width: double.infinity,
                   child: Card(
                     elevation: 4,
-                    shadowColor: Colors.grey.withOpacity(0.5),
+                    shadowColor: Colors.grey.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: Colors.blue[100]!),
