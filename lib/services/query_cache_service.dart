@@ -165,7 +165,8 @@ class CacheEntry {
 
 /// Utilitaires pour générer des clés de cache cohérentes
 class CacheKeys {
-  static String clientsList() => 'clients_list';
+  static String clientsList([int? page]) =>
+      page != null ? 'clients_list_page_$page' : 'clients_list';
   static String client(int clientId) => 'client_$clientId';
   static String clientsByAxe(String axe) => 'clients_axe_$axe';
 
