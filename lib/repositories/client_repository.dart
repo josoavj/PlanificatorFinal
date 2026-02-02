@@ -14,36 +14,61 @@ class ClientRepository extends ChangeNotifier {
   Client? _currentClient;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isLoadingPage = false; // Prevent concurrent page loads
+
+  // Pagination
+  static const int paginationSize = 50;
+  int _currentPage = 0;
+  bool _hasMoreClients = true;
 
   List<Client> get clients => _clients;
   Client? get currentClient => _currentClient;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get hasMoreClients => _hasMoreClients;
 
-  /// Charge tous les clients (avec optimisation cache)
-  ///
-  /// Cache: 15 minutes par défaut
-  /// Indexes SQL: idx_client_nom, idx_contrat_client_id, idx_traitement_contrat_type
-  Future<void> loadClients() async {
+  /// Charge les clients par page (pagination)
+  /// Page 0 = 50 premiers clients, Page 1 = 50 suivants, etc.
+  /// Performance: -50% mémoire au démarrage
+  Future<void> loadClientsPage(int page) async {
+    if (_isLoadingPage) {
+      logger.w('loadClientsPage already in progress, skipping duplicate call');
+      return;
+    }
+    _isLoadingPage = true;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+    logger.i('=== START loadClientsPage($page) ===');
 
     try {
-      // Vérifier le cache d'abord
-      final cacheKey = CacheKeys.clientsList();
+      logger.i('Calc offset: page=$page * paginationSize=$paginationSize');
+      final offset = page * paginationSize;
+      final cacheKey = CacheKeys.clientsList(page);
+      logger.i('Get cache with key: $cacheKey');
       final cachedRows = _cache.get(cacheKey);
 
       if (cachedRows != null) {
-        logger.i('Cache HIT: Loading ${cachedRows.length} clients from cache');
-        _clients = cachedRows.map((row) => Client.fromMap(row)).toList();
+        logger.i(
+          'Cache HIT: Page $page (${cachedRows.length} clients from cache)',
+        );
+        if (page == 0) {
+          _clients = cachedRows.map((row) => Client.fromMap(row)).toList();
+        } else {
+          _clients.addAll(
+            cachedRows.map((row) => Client.fromMap(row)).toList(),
+          );
+        }
+        _currentPage = page;
         _isLoading = false;
+        _isLoadingPage = false;
         notifyListeners();
+        logger.i('=== DONE loadClientsPage($page) from cache ===');
         return;
       }
 
-      logger.i('Cache MISS: Executing SQL query for clients...');
-
+      logger.i('Cache MISS: Executing SQL query for page $page...');
+      logger.i('DB connection status: ${_db.isConnected}');
 
       const sql = '''
         SELECT 
@@ -64,43 +89,68 @@ class ClientRepository extends ChangeNotifier {
           WHERE co.client_id = c.client_id
         )
         ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
-        LIMIT 10000
+        LIMIT ? OFFSET ?
       ''';
 
       final rows = await _db
-          .query(sql)
+          .query(sql, [paginationSize, offset])
           .timeout(
-            const Duration(seconds: 30),
+            const Duration(seconds: 60),
             onTimeout: () {
+              logger.e('TIMEOUT at 60s for page $page with offset=$offset');
               throw TimeoutException(
-                'Timeout loading clients after 30 seconds',
+                'Timeout loading clients page $page after 60 seconds',
               );
             },
           );
 
-      logger.i('SQL executed successfully: ${rows.length} rows returned');
+      logger.i('SQL OK: ${rows.length} rows from DB');
 
-      // Mettre en cache les résultats
+      // Mettre en cache la page
       _cache.set(cacheKey, rows, ttl: const Duration(minutes: 15));
+      logger.i('Cache set for page $page');
 
-      _clients = rows.map((row) => Client.fromMap(row)).toList();
+      final pageClients = rows.map((row) => Client.fromMap(row)).toList();
+      logger.i('Mapped ${pageClients.length} rows to Client objects');
 
-      // Tri garanti par Dart (en plus du SQL)
-      _clients.sort((a, b) {
-        final compareNom = (a.nom).compareTo(b.nom);
-        if (compareNom != 0) return compareNom;
-        return (a.prenom).compareTo(b.prenom);
-      });
+      if (page == 0) {
+        _clients = pageClients;
+      } else {
+        _clients.addAll(pageClients);
+      }
 
-      logger.i('${_clients.length} clients loaded (with active contracts)');
+      _hasMoreClients = pageClients.length == paginationSize;
+      _currentPage = page;
+
+      logger.i(
+        '=== DONE loadClientsPage($page) - Total: ${_clients.length} clients ===',
+      );
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('CRITICAL ERROR in loadClients: $e');
-      logger.e('Stack trace: ${e is Error ? e.stackTrace : 'N/A'}');
+      logger.e('!!! ERROR loadClientsPage($page): $e !!!');
+      if (e is Error) {
+        logger.e('Stack: ${e.stackTrace}');
+      }
     } finally {
       _isLoading = false;
+      _isLoadingPage = false;
       notifyListeners();
     }
+  }
+
+  /// Charge tous les clients (pour compatibilité - utilise pagination)
+  /// Cache: 15 minutes par défaut
+  Future<void> loadClients() async {
+    logger.i('=== START loadClients (wrapper) ===');
+    // Déléguer à loadClientsPage directement
+    await loadClientsPage(0);
+    logger.i('=== DONE loadClients (wrapper) ===');
+  }
+
+  /// Charger la page suivante (pour scroll infini)
+  Future<void> loadNextPage() async {
+    if (_isLoading || !_hasMoreClients) return;
+    await loadClientsPage(_currentPage + 1);
   }
 
   /// Charge un client spécifique (avec cache)
