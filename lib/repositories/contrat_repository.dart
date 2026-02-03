@@ -11,18 +11,26 @@ class ContratRepository extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Pagination
+  static const int paginationSize = 30;
+  int _currentPage = 0;
+  bool _hasMoreContrats = true;
+
   List<Contrat> get contrats => _contrats;
   Contrat? get currentContrat => _currentContrat;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get hasMoreContrats => _hasMoreContrats;
 
-  /// Charge tous les contrats
-  Future<void> loadContrats() async {
+  /// Charge les contrats par page (pagination)
+  Future<void> loadContratsPage(int page) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      final offset = page * paginationSize;
+
       const sql = '''
         SELECT 
           c.contrat_id, c.client_id, c.reference_contrat, c.date_contrat, c.date_debut, c.date_fin, 
@@ -30,19 +38,41 @@ class ContratRepository extends ChangeNotifier {
         FROM Contrat c
         JOIN Client cli ON c.client_id = cli.client_id
         ORDER BY cli.nom ASC
+        LIMIT ? OFFSET ?
       ''';
 
-      final rows = await _db.query(sql);
-      _contrats = rows.map((row) => Contrat.fromMap(row)).toList();
+      final rows = await _db.query(sql, [paginationSize, offset]);
+      final pageContrats = rows.map((row) => Contrat.fromMap(row)).toList();
 
-      logger.i('${_contrats.length} contrats chargés');
+      if (page == 0) {
+        _contrats = pageContrats;
+      } else {
+        _contrats.addAll(pageContrats);
+      }
+
+      _hasMoreContrats = pageContrats.length == paginationSize;
+      _currentPage = page;
+
+      logger.i(
+        'Page $page: ${pageContrats.length} contrats chargés (total: ${_contrats.length})',
+      );
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des contrats: $e');
+      logger.e('Erreur pagination contrats: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Charge la page suivante
+  Future<void> loadNextPage() async {
+    await loadContratsPage(_currentPage + 1);
+  }
+
+  /// Charge tous les contrats (wrapper pour compatibilité)
+  Future<void> loadContrats() async {
+    await loadContratsPage(0);
   }
 
   /// Charge un contrat spécifique
