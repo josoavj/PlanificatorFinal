@@ -133,9 +133,14 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
     //  Liste des clients ou état vide
     if (filteredClients.isNotEmpty) {
-      return ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        itemCount: filteredClients.length,
+      return PaginatedListView<Client>(
+        items: filteredClients,
+        isLoading: repository.isLoading,
+        hasMore: repository.hasMoreClients,
+        onLoadMore: () {
+          logger.i('Chargement page suivante des clients');
+          repository.loadNextPage();
+        },
         itemBuilder: (context, index) {
           final client = filteredClients[index];
           return _buildClientCard(context, repository, client);
