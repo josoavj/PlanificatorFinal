@@ -133,13 +133,47 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
     //  Liste des clients ou état vide
     if (filteredClients.isNotEmpty) {
-      return ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        itemCount: filteredClients.length,
-        itemBuilder: (context, index) {
-          final client = filteredClients[index];
-          return _buildClientCard(context, repository, client);
+      // Utiliser NotificationListener pour détecter le scroll vers la fin
+      return NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo is ScrollEndNotification) {
+            final metrics = scrollInfo.metrics;
+            // Si on est à 80% du scroll et il y a plus de données, charger la page suivante
+            if (metrics.pixels >= metrics.maxScrollExtent * 0.8) {
+              if (repository.hasMoreClients && !repository.isLoading) {
+                logger.i('Scroll détecté → Chargement page suivante');
+                repository.loadNextPage();
+              }
+            }
+          }
+          return false;
         },
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          itemCount: filteredClients.length + (repository.isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            // Afficher le spinner de chargement à la fin
+            if (index == filteredClients.length) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: SizedBox(
+                    height: 40,
+                    width: 40,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+            final client = filteredClients[index];
+            return _buildClientCard(context, repository, client);
+          },
+        ),
       );
     }
 
