@@ -1,15 +1,73 @@
 import 'dart:async';
+import 'dart:collection';
 import 'package:mysql1/mysql1.dart';
 import './logging_service.dart';
 import './database_isolate_service.dart';
+
+/// Simple connection pool pour réutiliser les connexions MySQL
+class MySQLConnectionPool {
+  final int maxConnections;
+  final Queue<MySqlConnection> _availableConnections = Queue();
+  final List<MySqlConnection> _allConnections = [];
+  final ConnectionSettings _settings;
+  int _activeConnections = 0;
+
+  MySQLConnectionPool({
+    required ConnectionSettings settings,
+    this.maxConnections = 5,
+  }) : _settings = settings;
+
+  /// Obtenir une connexion du pool
+  Future<MySqlConnection> getConnection() async {
+    if (_availableConnections.isNotEmpty) {
+      return _availableConnections.removeFirst();
+    }
+
+    if (_activeConnections < maxConnections) {
+      _activeConnections++;
+      final conn = await MySqlConnection.connect(_settings);
+      _allConnections.add(conn);
+      return conn;
+    }
+
+    // Attendre qu'une connexion soit disponible
+    return Future.delayed(Duration(milliseconds: 100), () => getConnection());
+  }
+
+  /// Retourner une connexion au pool
+  void releaseConnection(MySqlConnection connection) {
+    if (_allConnections.contains(connection)) {
+      _availableConnections.addLast(connection);
+    }
+  }
+
+  /// Fermer toutes les connexions
+  Future<void> closeAll() async {
+    for (final conn in _allConnections) {
+      try {
+        await conn.close();
+      } catch (e) {
+        // Ignorer les erreurs de fermeture
+      }
+    }
+    _allConnections.clear();
+    _availableConnections.clear();
+    _activeConnections = 0;
+  }
+
+  int get poolSize => _allConnections.length;
+  int get availableCount => _availableConnections.length;
+}
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static final logger = createLoggerWithFileOutput(name: 'database_service');
 
   late MySqlConnection _connection;
+  MySQLConnectionPool? _pool;
   bool _isConnected = false;
-  bool _useIsolates = true; // Nouvelle option pour utiliser les isolates
+  bool _useIsolates = true;
+  bool _useConnectionPool = true;
 
   // Configuration de la base de données (configurable)
   late String _host;
@@ -87,21 +145,26 @@ class DatabaseService {
     try {
       logger.i('Connexion à MySQL://$_host:$_port/$_database');
 
-      _connection = await MySqlConnection.connect(
-        ConnectionSettings(
-          host: _host,
-          port: _port,
-          user: _user,
-          password: _password,
-          db: _database,
-        ),
+      final settings = ConnectionSettings(
+        host: _host,
+        port: _port,
+        user: _user,
+        password: _password,
+        db: _database,
       );
 
+      if (_useConnectionPool) {
+        logger.i('Initialisation du pool de connexions (5 connexions max)');
+        _pool = MySQLConnectionPool(settings: settings, maxConnections: 5);
+      }
+
+      _connection = await MySqlConnection.connect(settings);
+
       _isConnected = true;
-      logger.i(' Connexion établie avec succès');
+      logger.i('Connexion établie avec succès');
       return true;
     } catch (e) {
-      logger.e(' Erreur de connexion: $e');
+      logger.e('Erreur de connexion: $e');
       _isConnected = false;
       rethrow;
     }
@@ -120,11 +183,25 @@ class DatabaseService {
     }
   }
 
-  /// Exécute une requête SELECT et retourne les résultats
-  Future<List<Map<String, dynamic>>> query(
-    String sql, [
-    List<dynamic>? params,
-  ]) async {
+  /// Obtient une connexion pour exécuter une requête
+  Future<MySqlConnection> _getQueryConnection() async {
+    if (_useConnectionPool && _pool != null) {
+      logger.d('Obtenir connexion du pool');
+      return _pool!.getConnection();
+    }
+    return _connection;
+  }
+
+  /// Retourne une connexion au pool après utilisation
+  void _releaseQueryConnection(MySqlConnection conn) {
+    if (_useConnectionPool && _pool != null) {
+      logger.d('Retourner connexion au pool');
+      _pool!.releaseConnection(conn);
+    }
+  }
+
+  /// Exécute une requête SQL SELECT
+  Future<List<Map<String, dynamic>>> query(String sql, [List? params]) async {
     if (!_isConnected) {
       throw Exception('Pas de connexion à la base de données');
     }
@@ -132,7 +209,6 @@ class DatabaseService {
     try {
       logger.d('Query: $sql');
       if (params != null && params.isNotEmpty) {
-        //  Logs sécurisés: masquer les données sensibles
         logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
@@ -151,30 +227,38 @@ class DatabaseService {
         return rows;
       }
 
-      // Sinon, utiliser la connexion existante
-      Results results = await _connection
-          .query(sql, params)
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () {
-              logger.e(' Timeout de requête après 30 secondes');
-              throw TimeoutException('La requête a dépassé le délai imparti');
-            },
-          );
+      // Utiliser le pool de connexions si disponible
+      MySqlConnection? conn;
+      try {
+        conn = await _getQueryConnection();
 
-      List<Map<String, dynamic>> rows = [];
-      for (var row in results) {
-        Map<String, dynamic> map = {};
-        for (var i = 0; i < row.length; i++) {
-          // Récupérer le nom de la colonne et la valeur
-          final fieldName = results.fields[i].name ?? 'field_$i';
-          map[fieldName] = row[i];
+        Results results = await conn
+            .query(sql, params)
+            .timeout(
+              const Duration(seconds: 60),
+              onTimeout: () {
+                logger.e('Timeout de requête après 60 secondes');
+                throw TimeoutException('La requête a dépassé le délai imparti');
+              },
+            );
+
+        List<Map<String, dynamic>> rows = [];
+        for (var row in results) {
+          Map<String, dynamic> map = {};
+          for (int i = 0; i < results.fields.length; i++) {
+            final fieldName = results.fields[i].name ?? 'field_$i';
+            map[fieldName] = row[i];
+          }
+          rows.add(map);
         }
-        rows.add(map);
-      }
 
-      logger.i('Query réussie: ${rows.length} lignes retournées');
-      return rows;
+        logger.i('Query réussie: ${rows.length} lignes retournées');
+        return rows;
+      } finally {
+        if (conn != null) {
+          _releaseQueryConnection(conn);
+        }
+      }
     } catch (e) {
       logger.e('Erreur lors de la query: $e');
       rethrow;
@@ -190,7 +274,6 @@ class DatabaseService {
     try {
       logger.d('Execute: $sql');
       if (params != null && params.isNotEmpty) {
-        //  Logs sécurisés: masquer les données sensibles
         logger.d('Params: ${_sanitizeParamsForLogging(params)}');
       }
 
@@ -209,9 +292,17 @@ class DatabaseService {
         return;
       }
 
-      // Sinon, utiliser la connexion existante
-      await _connection.query(sql, params);
-      logger.i('Execution réussie');
+      // Utiliser le pool de connexions si disponible
+      MySqlConnection? conn;
+      try {
+        conn = await _getQueryConnection();
+        await conn.query(sql, params);
+        logger.i('Execution réussie');
+      } finally {
+        if (conn != null) {
+          _releaseQueryConnection(conn);
+        }
+      }
     } catch (e) {
       logger.e('Erreur lors de l\'exécution: $e');
       rethrow;
