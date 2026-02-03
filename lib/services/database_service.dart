@@ -67,7 +67,7 @@ class DatabaseService {
   MySQLConnectionPool? _pool;
   bool _isConnected = false;
   bool _useIsolates = true;
-  bool _useConnectionPool = true;
+  final bool _useConnectionPool = true;
 
   // Configuration de la base de données (configurable)
   late String _host;
@@ -135,6 +135,25 @@ class DatabaseService {
     _database = database;
   }
 
+  /// Détecte si la DB est locale ou distante
+  bool _isLocalDatabase() {
+    return _host == 'localhost' ||
+        _host == '127.0.0.1' ||
+        _host.startsWith('192.168.') ||
+        _host.startsWith('10.');
+  }
+
+  /// Obtient le nombre optimal de connexions selon la localisation
+  int _getOptimalPoolSize() {
+    if (_isLocalDatabase()) {
+      logger.i('DB locale détectée → Pool: 5 connexions');
+      return 5;
+    } else {
+      logger.i('DB distante détectée ($_host) → Pool: 10 connexions');
+      return 10;
+    }
+  }
+
   /// Établit la connexion à la base de données
   Future<bool> connect() async {
     if (_isConnected) {
@@ -144,6 +163,8 @@ class DatabaseService {
 
     try {
       logger.i('Connexion à MySQL://$_host:$_port/$_database');
+      final isLocal = _isLocalDatabase();
+      logger.i('Type DB: ${isLocal ? 'LOCAL' : 'DISTANTE'}');
 
       final settings = ConnectionSettings(
         host: _host,
@@ -154,8 +175,14 @@ class DatabaseService {
       );
 
       if (_useConnectionPool) {
-        logger.i('Initialisation du pool de connexions (5 connexions max)');
-        _pool = MySQLConnectionPool(settings: settings, maxConnections: 5);
+        final poolSize = _getOptimalPoolSize();
+        logger.i(
+          'Initialisation du pool de connexions ($poolSize connexions max)',
+        );
+        _pool = MySQLConnectionPool(
+          settings: settings,
+          maxConnections: poolSize,
+        );
       }
 
       _connection = await MySqlConnection.connect(settings);
@@ -232,12 +259,19 @@ class DatabaseService {
       try {
         conn = await _getQueryConnection();
 
+        // Adapter timeout selon type de DB
+        final timeoutDuration = _isLocalDatabase()
+            ? const Duration(seconds: 30)
+            : const Duration(seconds: 60);
+
         Results results = await conn
             .query(sql, params)
             .timeout(
-              const Duration(seconds: 60),
+              timeoutDuration,
               onTimeout: () {
-                logger.e('Timeout de requête après 60 secondes');
+                logger.e(
+                  'Timeout de requête après ${timeoutDuration.inSeconds}s',
+                );
                 throw TimeoutException('La requête a dépassé le délai imparti');
               },
             );
