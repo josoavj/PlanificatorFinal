@@ -119,7 +119,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     List<Client> filteredClients,
   ) {
     //  État de chargement
-    if (repository.isLoading) {
+    if (repository.isInitiallyLoading) {
       return const LoadingWidget(message: 'Chargement des clients...');
     }
 
