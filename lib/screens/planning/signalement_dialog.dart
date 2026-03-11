@@ -10,10 +10,10 @@ class SignalementDialog extends StatefulWidget {
   final VoidCallback onSaved;
 
   const SignalementDialog({
-    Key? key,
+    super.key,
     required this.planningDetail,
     required this.onSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<SignalementDialog> createState() => _SignalementDialogState();
