@@ -1,4 +1,5 @@
 /// Utilitaires pour la validation des emails
+library;
 
 class EmailValidator {
   /// Vérifie si un email a un format valide
