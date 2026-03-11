@@ -1,4 +1,5 @@
 /// Fichier index pour exporter tous les modèles
+library;
 export 'client.dart';
 export 'contrat.dart';
 export 'facture.dart';
