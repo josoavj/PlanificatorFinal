@@ -8,7 +8,7 @@ import '../../utils/number_formatter.dart';
 import '../../services/logging_service.dart';
 
 class FactureScreen extends StatefulWidget {
-  const FactureScreen({Key? key}) : super(key: key);
+  const FactureScreen({super.key});
 
   @override
   State<FactureScreen> createState() => _FactureScreenState();
