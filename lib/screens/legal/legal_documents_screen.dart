@@ -4,7 +4,7 @@ import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
 
 class LegalDocumentsScreen extends StatelessWidget {
-  const LegalDocumentsScreen({Key? key}) : super(key: key);
+  const LegalDocumentsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
