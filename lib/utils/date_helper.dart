@@ -1,6 +1,7 @@
 /// Utilitaire pour conversion de dates cohérente
 /// BD: YYYY-MM-DD
 /// Affichage: DD/MM/YYYY
+library;
 
 class DateHelper {
   /// Convertit une date de BD (YYYY-MM-DD ou DateTime) en format affichage (DD/MM/YYYY)
