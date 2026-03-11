@@ -8,7 +8,7 @@ import '../../widgets/index.dart';
 class FactureListScreen extends StatefulWidget {
   final int? clientId; // Si null, affiche toutes les factures
 
-  const FactureListScreen({Key? key, this.clientId}) : super(key: key);
+  const FactureListScreen({super.key, this.clientId});
 
   @override
   State<FactureListScreen> createState() => _FactureListScreenState();
@@ -665,7 +665,7 @@ class _StatColumn extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatColumn(this.label, this.value, {Key? key}) : super(key: key);
+  const _StatColumn(this.label, this.value, {super.key});
 
   @override
   Widget build(BuildContext context) {
