@@ -250,8 +250,9 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
     if (upper.startsWith('AT') || upper.contains('ANTI TERMITES')) return 'AT';
     if (upper.startsWith('NI') || upper.contains('NETTOYAGE')) return 'NI';
     if (upper.startsWith('RO') || upper.contains('RAMASSAGE')) return 'RO';
-    if (upper.startsWith('PC') || upper.contains('ANTIPARASITAIRE'))
+    if (upper.startsWith('PC') || upper.contains('ANTIPARASITAIRE')) {
       return 'PC';
+    }
 
     return 'PC'; // Par défaut
   }
@@ -1473,13 +1474,13 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                         ],
                                       ),
                                     );
-                                  }).toList(),
+                                  }),
                                 ],
                               ],
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                       const SizedBox(height: 12),
                     ],
                   ),

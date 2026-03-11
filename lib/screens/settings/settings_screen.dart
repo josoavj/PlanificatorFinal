@@ -10,7 +10,7 @@ import '../../widgets/index.dart';
 import '../legal/legal_documents_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -371,7 +371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           trailing: Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primaryBlue,
+            activeThumbColor: AppTheme.primaryBlue,
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -567,7 +567,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final nomCtrl = TextEditingController(text: user.fullName.split(' ').first);
     final emailCtrl = TextEditingController(text: user.email);
     final usernameCtrl = TextEditingController();
-    bool _isUpdating = false;
+    bool isUpdating = false;
 
     // Fetch username from database
     try {
@@ -705,7 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Annuler'),
             ),
             FilledButton(
-              onPressed: _isUpdating
+              onPressed: isUpdating
                   ? null
                   : () async {
                       if (prenomCtrl.text.isEmpty ||
@@ -746,7 +746,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       if (confirmSave != true) return;
 
-                      setState(() => _isUpdating = true);
+                      setState(() => isUpdating = true);
 
                       try {
                         await _updateUserProfile(
@@ -776,10 +776,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         );
                       } finally {
-                        setState(() => _isUpdating = false);
+                        setState(() => isUpdating = false);
                       }
                     },
-              child: _isUpdating
+              child: isUpdating
                   ? const SizedBox(
                       height: 20,
                       width: 20,

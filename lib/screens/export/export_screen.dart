@@ -9,7 +9,7 @@ import '../../services/logging_service.dart';
 final logger = createLoggerWithFileOutput(name: 'export_screen');
 
 class ExportScreen extends StatefulWidget {
-  const ExportScreen({Key? key}) : super(key: key);
+  const ExportScreen({super.key});
 
   @override
   State<ExportScreen> createState() => _ExportScreenState();
@@ -754,7 +754,7 @@ class _ExportScreenState extends State<ExportScreen> {
 
       final filePath = await _excelService.genererFactureExcel(
         data,
-        '${_selectedClient}_${_selectedMois}',
+        '${_selectedClient}_$_selectedMois',
         DateTime.now().year,
         _selectedMois == 'Tous' ? 0 : _mois.indexOf(_selectedMois),
       );

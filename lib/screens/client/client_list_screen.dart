@@ -119,7 +119,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     List<Client> filteredClients,
   ) {
     //  État de chargement
-    if (repository.isLoading) {
+    if (repository.isInitiallyLoading) {
       return const LoadingWidget(message: 'Chargement des clients...');
     }
 
@@ -1158,7 +1158,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: selectedValue,
+        initialValue: selectedValue,
         decoration: InputDecoration(
           labelText: 'Axe',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -1186,7 +1186,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: selectedValue,
+        initialValue: selectedValue,
         decoration: InputDecoration(
           labelText: 'Catégorie',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

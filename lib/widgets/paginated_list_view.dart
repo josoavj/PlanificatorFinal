@@ -15,7 +15,7 @@ class PaginatedListView<T> extends StatelessWidget {
   final bool reverse;
 
   const PaginatedListView({
-    Key? key,
+    super.key,
     required this.items,
     required this.itemBuilder,
     required this.isLoading,
@@ -24,7 +24,7 @@ class PaginatedListView<T> extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(vertical: 4),
     this.scrollDirection = Axis.vertical,
     this.reverse = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

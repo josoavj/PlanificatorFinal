@@ -11,11 +11,11 @@ class RemarqueDialog extends StatefulWidget {
   final VoidCallback onSaved;
 
   const RemarqueDialog({
-    Key? key,
+    super.key,
     required this.planningDetail,
     required this.facture,
     required this.onSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<RemarqueDialog> createState() => _RemarqueDialogState();
@@ -393,7 +393,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
 
                   // Mode de paiement
                   DropdownButtonFormField(
-                    value: _modePaiement,
+                    initialValue: _modePaiement,
                     decoration: const InputDecoration(
                       labelText: 'Mode de paiement',
                       border: OutlineInputBorder(),

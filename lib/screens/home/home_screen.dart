@@ -15,7 +15,7 @@ import '../export/export_screen.dart';
 final logger = createLoggerWithFileOutput(name: 'home_screen');
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _DashboardTab extends StatefulWidget {
-  const _DashboardTab({Key? key}) : super(key: key);
+  const _DashboardTab({super.key});
 
   @override
   State<_DashboardTab> createState() => _DashboardTabState();

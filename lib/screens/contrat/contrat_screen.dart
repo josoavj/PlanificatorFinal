@@ -2004,7 +2004,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
                   // Sélecteur de redondance
                   DropdownButtonFormField<String>(
-                    value: selectedRedondance,
+                    initialValue: selectedRedondance,
                     decoration: InputDecoration(
                       labelText: 'Nouvelle redondance',
                       border: OutlineInputBorder(
@@ -2243,7 +2243,7 @@ class _ContratScreenState extends State<ContratScreen> {
                     const SizedBox(height: 12),
                     // Redondance
                     DropdownButtonFormField<String>(
-                      value: selectedRedondance,
+                      initialValue: selectedRedondance,
                       decoration: InputDecoration(
                         labelText: 'Redondance',
                         border: OutlineInputBorder(
@@ -3461,7 +3461,7 @@ class _ContratScreenState extends State<ContratScreen> {
 class _ContratCreationFlowScreen extends StatefulWidget {
   final int? clientId;
 
-  const _ContratCreationFlowScreen({Key? key, this.clientId}) : super(key: key);
+  const _ContratCreationFlowScreen({super.key, this.clientId});
 
   @override
   State<_ContratCreationFlowScreen> createState() =>
@@ -3504,7 +3504,7 @@ class _ContratCreationFlowScreenState
   Map<int, Map<String, dynamic>> _treatmentFactures = {};
 
   // Controllers de montant par traitement (pour éviter les resets lors des rebuilds)
-  Map<int, TextEditingController> _montantControllers = {};
+  final Map<int, TextEditingController> _montantControllers = {};
 
   @override
   void initState() {
@@ -4412,7 +4412,7 @@ class _ContratCreationFlowScreenState
             const SizedBox(height: 16),
             // Catégorie (Nouveau / Renouvellement)
             DropdownButtonFormField<String>(
-              value: _categorie.text,
+              initialValue: _categorie.text,
               decoration: InputDecoration(
                 labelText: 'Catégorie du contrat',
                 border: OutlineInputBorder(
@@ -4473,7 +4473,7 @@ class _ContratCreationFlowScreenState
 
             // Catégorie client
             DropdownButtonFormField<String>(
-              value:
+              initialValue:
                   [
                     'Particulier',
                     'Organisation',
@@ -6355,7 +6355,7 @@ class _ContratCreationFlowScreenState
             _DetailRow('Redondance', redondanceLabel), //  Ajouter la redondance
             _DetailRow(
               'Factures',
-              '${facture['reference']?.toString() != null ? 'Oui' : 'À créer'}',
+              facture['reference']?.toString() != null ? 'Oui' : 'À créer',
             ),
             _DetailRow('Remarques', 'À vérifier'),
             _DetailRow('Historiques', 'À charger'),

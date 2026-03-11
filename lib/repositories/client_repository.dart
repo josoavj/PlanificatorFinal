@@ -27,6 +27,10 @@ class ClientRepository extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasMoreClients => _hasMoreClients;
 
+  /// Retourne true seulement si c'est le chargement initial (pas d'aucunes données)
+  /// Utilisé pour montrer le LoadingWidget, pas pour le spinner de pagination
+  bool get isInitiallyLoading => _isLoading && _clients.isEmpty;
+
   /// Charge les clients par page (pagination)
   /// Page 0 = 50 premiers clients, Page 1 = 50 suivants, etc.
   /// Performance: -50% mémoire au démarrage
