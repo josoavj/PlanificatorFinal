@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:planificator/screens/home/home_screen.dart';
@@ -65,9 +67,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
       // Si aucun client n'a été chargé, charger directement de la BD
       if (allClients.isEmpty) {
-        logger.w(
-          ' Aucun client via repository, chargement direct de la BD...',
-        );
+        logger.w(' Aucun client via repository, chargement direct de la BD...');
         const sql = '''
           SELECT 
             client_id, nom, prenom, email, telephone, adresse, 
@@ -584,6 +584,19 @@ class _ContratScreenState extends State<ContratScreen> {
                       );
                     }
 
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Erreur: ${snapshot.error}',
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    }
+
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.all(8.0),
@@ -723,6 +736,19 @@ class _ContratScreenState extends State<ContratScreen> {
                       return const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Erreur: ${snapshot.error}',
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
                       );
                     }
 
@@ -917,7 +943,19 @@ class _ContratScreenState extends State<ContratScreen> {
         WHERE t.contrat_id = ?
         GROUP BY t.traitement_id
       ''';
-      return await db.query(sql, [contratId]);
+      return await db
+          .query(sql, [contratId])
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e(
+                'TIMEOUT at 30s for _loadTraitements contratId=$contratId',
+              );
+              throw TimeoutException(
+                'Timeout loading treatments for contract $contratId after 30 seconds',
+              );
+            },
+          );
     } catch (e) {
       logger.e('Erreur chargement traitements: $e');
       return [];
@@ -926,6 +964,23 @@ class _ContratScreenState extends State<ContratScreen> {
 
   /// Charger les statistiques pour chaque traitement
   Future<List<Map<String, dynamic>>> _loadTraitementStatistics(
+    int contratId,
+  ) async {
+    return await _loadTraitementStatisticsInternal(contratId).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () {
+        logger.e(
+          'TIMEOUT at 60s for _loadTraitementStatistics contratId=$contratId',
+        );
+        throw TimeoutException(
+          'Timeout loading treatment statistics for contract $contratId after 60 seconds',
+        );
+      },
+    );
+  }
+
+  /// Implémentation interne de _loadTraitementStatistics
+  Future<List<Map<String, dynamic>>> _loadTraitementStatisticsInternal(
     int contratId,
   ) async {
     try {
@@ -1142,7 +1197,24 @@ class _ContratScreenState extends State<ContratScreen> {
               }
 
               if (snapshot.hasError) {
-                return Text('Erreur: ${snapshot.error}');
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 32,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Erreur: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                );
               }
 
               final facturesGrouped = snapshot.data ?? {};
@@ -1155,6 +1227,30 @@ class _ContratScreenState extends State<ContratScreen> {
                     if (traitementSnapshot.connectionState ==
                         ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (traitementSnapshot.hasError) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 32,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Erreur: ${traitementSnapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
                     }
 
                     final traitements = traitementSnapshot.data ?? [];
@@ -1410,7 +1506,19 @@ class _ContratScreenState extends State<ContratScreen> {
         ORDER BY tt.typeTraitement ASC, f.date_traitement ASC
       ''';
 
-      final rows = await db.query(sql, [contratId]);
+      final rows = await db
+          .query(sql, [contratId])
+          .timeout(
+            const Duration(seconds: 40),
+            onTimeout: () {
+              logger.e(
+                'TIMEOUT at 40s for _loadFacturesGroupedByTraitement contratId=$contratId',
+              );
+              throw TimeoutException(
+                'Timeout loading invoices for contract $contratId after 40 seconds',
+              );
+            },
+          );
 
       final groupedMap = <String, List<Map<String, dynamic>>>{};
 
@@ -1562,7 +1670,27 @@ class _ContratScreenState extends State<ContratScreen> {
                   }
 
                   if (snapshot.hasError) {
-                    return Text('Erreur: ${snapshot.error}');
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 32,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Erreur: ${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   }
 
                   final groupedTreatments = snapshot.data ?? {};
@@ -1856,7 +1984,19 @@ class _ContratScreenState extends State<ContratScreen> {
         ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
       ''';
 
-      final rows = await database.query(sql, [contratId]);
+      final rows = await database
+          .query(sql, [contratId])
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e(
+                'TIMEOUT at 45s for _loadContratPlanningsByType contratId=$contratId',
+              );
+              throw TimeoutException(
+                'Timeout loading contract plannings for contract $contratId after 45 seconds',
+              );
+            },
+          );
 
       final groupedMap = <String, List<Map<String, dynamic>>>{};
       final treatmentIds = <int>{}; // Tracker pour éviter les doublons
@@ -3178,7 +3318,19 @@ class _ContratScreenState extends State<ContratScreen> {
         FROM Client
         WHERE client_id = ?
       ''';
-      final rows = await db.query(sql, [clientId]);
+      final rows = await db
+          .query(sql, [clientId])
+          .timeout(
+            const Duration(seconds: 25),
+            onTimeout: () {
+              logger.e(
+                'TIMEOUT at 25s for _loadClientForContrat clientId=$clientId',
+              );
+              throw TimeoutException(
+                'Timeout loading client for contract after 25 seconds',
+              );
+            },
+          );
       if (rows.isNotEmpty) {
         return Client.fromMap(rows[0]);
       }
@@ -3461,7 +3613,7 @@ class _ContratScreenState extends State<ContratScreen> {
 class _ContratCreationFlowScreen extends StatefulWidget {
   final int? clientId;
 
-  const _ContratCreationFlowScreen({super.key, this.clientId});
+  const _ContratCreationFlowScreen({this.clientId});
 
   @override
   State<_ContratCreationFlowScreen> createState() =>
@@ -5931,9 +6083,7 @@ class _ContratCreationFlowScreenState
             );
 
         if (createdTraitementId == -1) {
-          Logger().e(
-            ' Erreur création traitement pour type $typeTraitementId',
-          );
+          Logger().e(' Erreur création traitement pour type $typeTraitementId');
           continue;
         }
 
