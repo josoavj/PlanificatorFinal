@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
@@ -41,7 +42,15 @@ class ContratRepository extends ChangeNotifier {
         LIMIT ? OFFSET ?
       ''';
 
-      final rows = await _db.query(sql, [paginationSize, offset]);
+      final rows = await _db
+          .query(sql, [paginationSize, offset])
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading contrats page $page');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       final pageContrats = rows.map((row) => Contrat.fromMap(row)).toList();
 
       if (page == 0) {
@@ -90,7 +99,15 @@ class ContratRepository extends ChangeNotifier {
         WHERE contrat_id = ?
       ''';
 
-      final row = await _db.queryOne(sql, [contratId]);
+      final row = await _db
+          .queryOne(sql, [contratId])
+          .timeout(
+            const Duration(seconds: 25),
+            onTimeout: () {
+              logger.e('Timeout loading contrat $contratId');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       if (row != null) {
         _currentContrat = Contrat.fromMap(row);
         logger.i('Contrat $contratId chargé');
