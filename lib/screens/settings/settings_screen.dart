@@ -837,12 +837,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 if (snapshot.hasError) {
                   return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        'Erreur: ${snapshot.error}',
-                        style: const TextStyle(color: Colors.red),
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 32,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Erreur: ${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
