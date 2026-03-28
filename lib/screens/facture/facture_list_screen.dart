@@ -665,7 +665,7 @@ class _StatColumn extends StatelessWidget {
   final String label;
   final String value;
 
-  const _StatColumn(this.label, this.value, {super.key});
+  const _StatColumn(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
