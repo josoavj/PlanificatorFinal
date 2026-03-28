@@ -761,6 +761,32 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
           List<Facture> factures = [];
           Map<int, List<Map<String, dynamic>>> priceHistories = {};
 
+          // Afficher le loading
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // Gérer les erreurs
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Erreur: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
           if (snapshot.connectionState == ConnectionState.done &&
               snapshot.hasData) {
             remarques = (snapshot.data!['remarques'] ?? []) as List<Remarque>;
@@ -1230,7 +1256,9 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: badgeColor.withValues(alpha: 0.2),
+                                        color: badgeColor.withValues(
+                                          alpha: 0.2,
+                                        ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(

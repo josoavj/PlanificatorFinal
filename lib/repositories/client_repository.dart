@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
@@ -193,7 +192,17 @@ class ClientRepository extends ChangeNotifier {
         GROUP BY c.client_id
       ''';
 
-      final row = await _db.queryOne(sql, [clientId]);
+      final row = await _db
+          .queryOne(sql, [clientId])
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e('TIMEOUT at 30s for loadClient($clientId)');
+              throw TimeoutException(
+                'Timeout loading client $clientId after 30 seconds',
+              );
+            },
+          );
       if (row != null) {
         // Mettre en cache le résultat
         _cache.set(cacheKey, row, ttl: const Duration(minutes: 15));
@@ -438,7 +447,15 @@ class ClientRepository extends ChangeNotifier {
       ''';
 
       final searchTerm = '%$query%';
-      final rows = await _db.query(sql, [searchTerm, searchTerm, searchTerm]);
+      final rows = await _db
+          .query(sql, [searchTerm, searchTerm, searchTerm])
+          .timeout(
+            const Duration(seconds: 40),
+            onTimeout: () {
+              logger.e('Timeout searching clients for query: $query');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       _clients = rows.map((row) => Client.fromMap(row)).toList();
 
       // Tri garantis par Dart (en plus du SQL)
@@ -521,7 +538,15 @@ class ClientRepository extends ChangeNotifier {
   Future<bool> emailExists(String email) async {
     try {
       const sql = 'SELECT client_id FROM Client WHERE email = ?';
-      final row = await _db.queryOne(sql, [email]);
+      final row = await _db
+          .queryOne(sql, [email])
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              logger.e('Timeout checking email existence: $email');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       return row != null;
     } catch (e) {
       logger.e('Erreur lors de la vérification de l\'email: $e');

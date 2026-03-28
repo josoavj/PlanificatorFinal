@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
@@ -38,7 +39,15 @@ class HistoriqueRepository extends ChangeNotifier {
         LIMIT 5000
       ''';
 
-      final rows = await _db.query(sql);
+      final rows = await _db
+          .query(sql)
+          .timeout(
+            const Duration(seconds: 50),
+            onTimeout: () {
+              logger.e('Timeout loading all historique events');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       _events = rows.map((row) {
         return HistoriqueEvent(
           historiqueId: row['historique_id'] as int? ?? 0,
@@ -127,7 +136,15 @@ class HistoriqueRepository extends ChangeNotifier {
         ORDER BY h.date_historique DESC
       ''';
 
-      final rows = await _db.query(sql, [clientId]);
+      final rows = await _db
+          .query(sql, [clientId])
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading historique for client $clientId');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       _events = rows.map((row) {
         return HistoriqueEvent(
           historiqueId: row['historique_id'] as int? ?? 0,
@@ -293,7 +310,15 @@ class HistoriqueRepository extends ChangeNotifier {
       ''';
 
       final searchTerm = '%$query%';
-      final rows = await _db.query(sql, [searchTerm, searchTerm]);
+      final rows = await _db
+          .query(sql, [searchTerm, searchTerm])
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e('Timeout searching historique for query: $query');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
 
       logger.i(

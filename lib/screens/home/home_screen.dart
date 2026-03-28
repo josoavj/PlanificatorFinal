@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _DashboardTab extends StatefulWidget {
-  const _DashboardTab({super.key});
+  const _DashboardTab();
 
   @override
   State<_DashboardTab> createState() => _DashboardTabState();

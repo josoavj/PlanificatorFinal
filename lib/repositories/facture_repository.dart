@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
@@ -32,7 +33,15 @@ class FactureRepository extends ChangeNotifier {
         ORDER BY cl.nom ASC
       ''';
 
-      final rows = await _db.query(sql, [contratId]);
+      final rows = await _db
+          .query(sql, [contratId])
+          .timeout(
+            const Duration(seconds: 40),
+            onTimeout: () {
+              logger.e('Timeout loading factures for contrat $contratId');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       final factures = rows.map((row) => Facture.fromMap(row)).toList();
       logger.i(' ${factures.length} factures chargées pour contrat $contratId');
       return factures;
@@ -79,7 +88,15 @@ class FactureRepository extends ChangeNotifier {
         ORDER BY cl.nom ASC
       ''';
 
-      final rows = await _db.query(sql, [clientId]);
+      final rows = await _db
+          .query(sql, [clientId])
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading factures for client $clientId');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       _factures = rows.map((row) => Facture.fromMap(row)).toList();
 
       logger.i(
@@ -134,7 +151,15 @@ class FactureRepository extends ChangeNotifier {
         LIMIT 10000
       ''';
 
-      final rows = await _db.query(sql);
+      final rows = await _db
+          .query(sql)
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              logger.e('Timeout loading all factures');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       _factures = rows.map((row) => Facture.fromMap(row)).toList();
 
       logger.i(' ${_factures.length} factures chargées avec tous détails');
@@ -170,7 +195,17 @@ class FactureRepository extends ChangeNotifier {
         ORDER BY f.date_traitement DESC
       ''';
 
-      final rows = await _db.query(sql, [planningDetailId]);
+      final rows = await _db
+          .query(sql, [planningDetailId])
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e(
+                'Timeout loading factures for planning_detail_id $planningDetailId',
+              );
+              throw TimeoutException('Database query timeout');
+            },
+          );
       final factures = rows.map((row) => Facture.fromMap(row)).toList();
 
       logger.i(
@@ -199,7 +234,17 @@ class FactureRepository extends ChangeNotifier {
         ORDER BY change_date ASC
       ''';
 
-      final rows = await _db.query(sql, [factureId]);
+      final rows = await _db
+          .query(sql, [factureId])
+          .timeout(
+            const Duration(seconds: 25),
+            onTimeout: () {
+              logger.e(
+                'Timeout loading price history for facture_id $factureId',
+              );
+              throw TimeoutException('Database query timeout');
+            },
+          );
       logger.i(
         ' ${rows.length} changements de prix trouvés pour facture_id $factureId',
       );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:planificator/models/planning_details.dart';
@@ -40,10 +41,20 @@ class PlanningDetailsRepository extends ChangeNotifier {
     try {
       // Vérifier si la date existe déjà pour ce planning
       final dateStr = datePlanification.toIso8601String().split('T')[0];
-      final existingCheck = await _db.query(
-        'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?',
-        [planningId, dateStr],
-      );
+      final existingCheck = await _db
+          .query(
+            'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?',
+            [planningId, dateStr],
+          )
+          .timeout(
+            const Duration(seconds: 25),
+            onTimeout: () {
+              logger.e(
+                'Timeout checking existing planning_details for planning_id $planningId',
+              );
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       if (existingCheck.isNotEmpty) {
         logger.i(
@@ -86,10 +97,20 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// Récupérer détails d'un planning
   Future<List<PlanningDetails>> getPlanningDetails(int planningId) async {
     try {
-      final results = await _db.query(
-        'SELECT * FROM PlanningDetails WHERE planning_id = ? ORDER BY date_planification',
-        [planningId],
-      );
+      final results = await _db
+          .query(
+            'SELECT * FROM PlanningDetails WHERE planning_id = ? ORDER BY date_planification',
+            [planningId],
+          )
+          .timeout(
+            const Duration(seconds: 25),
+            onTimeout: () {
+              logger.e(
+                'Timeout loading planning_details for planning_id $planningId',
+              );
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       return results.map((row) => PlanningDetails.fromJson(row)).toList();
     } catch (e) {
@@ -143,9 +164,17 @@ class PlanningDetailsRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final results = await _db.query(
-        'SELECT * FROM PlanningDetails ORDER BY date_planification DESC',
-      );
+      final results = await _db
+          .query(
+            'SELECT * FROM PlanningDetails ORDER BY date_planification DESC',
+          )
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading all planning_details');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       _details = results.map((row) => PlanningDetails.fromJson(row)).toList();
       logger.i(' ${_details.length} détails de planning chargés');
@@ -176,8 +205,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
       );
 
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
-      final results = await _db.query(
-        '''SELECT 
+      final results = await _db
+          .query(
+            '''SELECT 
              pd.planning_detail_id,
              DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
              CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) as traitement,
@@ -196,8 +226,15 @@ class PlanningDetailsRepository extends ChangeNotifier {
            AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
            ORDER BY pd.date_planification ASC
            LIMIT 5000''',
-        [currentYear, currentMonth],
-      );
+            [currentYear, currentMonth],
+          )
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              logger.e('Timeout loading current month treatments');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       logger.i(' Reçu ${results.length} traitements du mois courant');
       if (results.isNotEmpty) {
@@ -245,8 +282,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
       );
 
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
-      final results = await _db.query(
-        '''SELECT 
+      final results = await _db
+          .query(
+            '''SELECT 
              pd.planning_detail_id,
              pd.planning_id,
              DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
@@ -266,8 +304,15 @@ class PlanningDetailsRepository extends ChangeNotifier {
            AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
            ORDER BY pd.date_planification ASC
            LIMIT 10000''',
-        [todayStr],
-      );
+            [todayStr],
+          )
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              logger.e('Timeout loading upcoming treatments');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       logger.i(' Reçu ${results.length} traitements à venir');
       if (results.isNotEmpty) {
@@ -308,7 +353,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
       logger.i('🔍 Chargement COMPLET tous les traitements (passés + futurs)');
 
       // Requête SANS filtre de date - récupère TOUS les traitements
-      final results = await _db.query('''SELECT 
+      final results = await _db
+          .query('''SELECT 
              pd.planning_detail_id,
              pd.planning_id,
              DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
@@ -327,7 +373,14 @@ class PlanningDetailsRepository extends ChangeNotifier {
            LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
            INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
            INNER JOIN Client c ON ct.client_id = c.client_id
-           ORDER BY pd.date_planification DESC''');
+           ORDER BY pd.date_planification DESC''')
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              logger.e('Timeout loading all treatments complete');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       logger.i(' Reçu ${results.length} traitements (tous les statuts)');
       if (results.isNotEmpty) {
@@ -406,7 +459,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
         params.add(treatmentType);
       }
 
-      final results = await _db.query('''
+      final results = await _db
+          .query('''
         SELECT 
           pd.date_planification AS `Date du traitement`,
           tt.typeTraitement AS `Traitement concerné`,
@@ -423,7 +477,14 @@ class PlanningDetailsRepository extends ChangeNotifier {
         INNER JOIN Client c ON co.client_id = c.client_id
         $whereClause
         ORDER BY pd.date_planification ASC
-      ''', params);
+      ''', params)
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading treatments by month and client');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       logger.i(' ${results.length} traitements récupérés pour $month/$year');
       return results.cast<Map<String, dynamic>>();
@@ -436,15 +497,16 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// Récupère les types de traitements uniques pour un client (ou tous si clientId == -1)
   Future<List<String>> getTreatmentTypesForClient(int clientId) async {
     try {
-      final results = await _db.query(
-        clientId == -1
-            ? '''
+      final results = await _db
+          .query(
+            clientId == -1
+                ? '''
         SELECT DISTINCT tt.typeTraitement
         FROM Traitement t
         INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
         ORDER BY tt.typeTraitement ASC
       '''
-            : '''
+                : '''
         SELECT DISTINCT tt.typeTraitement
         FROM Traitement t
         INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
@@ -452,8 +514,15 @@ class PlanningDetailsRepository extends ChangeNotifier {
         WHERE co.client_id = ?
         ORDER BY tt.typeTraitement ASC
       ''',
-        clientId == -1 ? [] : [clientId],
-      );
+            clientId == -1 ? [] : [clientId],
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e('Timeout loading treatment types for client $clientId');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       final treatments = results
           .map((r) => (r['typeTraitement'] as String?) ?? 'N/A')

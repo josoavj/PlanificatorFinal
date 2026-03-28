@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../models/index.dart';
@@ -61,7 +62,15 @@ class AuthRepository extends ChangeNotifier {
         WHERE username = ?
       ''';
 
-      final row = await _db.queryOne(sql, [username]);
+      final row = await _db
+          .queryOne(sql, [username])
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              logger.e('Timeout querying user account for login: $username');
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       if (row == null) {
         _errorMessage = 'Nom d\'utilisateur ou mot de passe incorrect';
@@ -109,7 +118,17 @@ class AuthRepository extends ChangeNotifier {
     try {
       // Vérifier si le username existe déjà
       const checkSql = 'SELECT id_compte FROM Account WHERE username = ?';
-      final existing = await _db.queryOne(checkSql, [username]);
+      final existing = await _db
+          .queryOne(checkSql, [username])
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              logger.e(
+                'Timeout checking existing username for registration: $username',
+              );
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       if (existing != null) {
         _errorMessage = 'Ce nom d\'utilisateur est déjà utilisé';
@@ -126,15 +145,25 @@ class AuthRepository extends ChangeNotifier {
       ''';
 
       final hashedPassword = _hashPassword(password);
-      final userId = await _db.insert(insertSql, [
-        username,
-        email,
-        nom,
-        prenom,
-        hashedPassword,
-        'Utilisateur',
-        DateTime.now().toIso8601String(),
-      ]);
+      final userId = await _db
+          .insert(insertSql, [
+            username,
+            email,
+            nom,
+            prenom,
+            hashedPassword,
+            'Utilisateur',
+            DateTime.now().toIso8601String(),
+          ])
+          .timeout(
+            const Duration(seconds: 25),
+            onTimeout: () {
+              logger.e(
+                'Timeout inserting new user account for registration: $username',
+              );
+              throw TimeoutException('Database query timeout');
+            },
+          );
 
       _currentUser = User(
         userId: userId,

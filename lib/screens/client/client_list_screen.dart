@@ -606,6 +606,19 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         );
                       }
 
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'Erreur: ${snapshot.error}',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      }
+
                       if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.all(8.0),
@@ -697,7 +710,19 @@ class _ClientListScreenState extends State<ClientListScreen> {
         WHERE c.client_id = ?
         ORDER BY tt.typeTraitement ASC
       ''';
-      return await database.query(sql, [clientId]);
+      return await database
+          .query(sql, [clientId])
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e(
+                'TIMEOUT at 30s for _loadTraitementsByClient clientId=$clientId',
+              );
+              throw TimeoutException(
+                'Timeout loading treatments for client $clientId after 30 seconds',
+              );
+            },
+          );
     } catch (e) {
       logger.e('Erreur chargement traitements du client: $e');
       return [];
@@ -720,7 +745,24 @@ class _ClientListScreenState extends State<ClientListScreen> {
               }
 
               if (snapshot.hasError) {
-                return Text('Erreur: ${snapshot.error}');
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 32,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Erreur: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                );
               }
 
               final groupedTreatments = snapshot.data ?? {};
@@ -910,7 +952,19 @@ class _ClientListScreenState extends State<ClientListScreen> {
         ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
       ''';
 
-      final rows = await database.query(sql, [clientId]);
+      final rows = await database
+          .query(sql, [clientId])
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e(
+                'TIMEOUT at 45s for _loadClientTreatmentsByType clientId=$clientId',
+              );
+              throw TimeoutException(
+                'Timeout loading treatment types for client $clientId after 45 seconds',
+              );
+            },
+          );
 
       final groupedMap = <String, List<Map<String, dynamic>>>{};
 

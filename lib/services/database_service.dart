@@ -18,20 +18,38 @@ class MySQLConnectionPool {
   }) : _settings = settings;
 
   /// Obtenir une connexion du pool
-  Future<MySqlConnection> getConnection() async {
-    if (_availableConnections.isNotEmpty) {
-      return _availableConnections.removeFirst();
-    }
+  /// SÉCURITÉ: Timeout si pas de connexion disponible après 30s
+  Future<MySqlConnection> getConnection({
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final startTime = DateTime.now();
 
-    if (_activeConnections < maxConnections) {
-      _activeConnections++;
-      final conn = await MySqlConnection.connect(_settings);
-      _allConnections.add(conn);
-      return conn;
-    }
+    while (true) {
+      // Chercher une connexion disponible
+      if (_availableConnections.isNotEmpty) {
+        return _availableConnections.removeFirst();
+      }
 
-    // Attendre qu'une connexion soit disponible
-    return Future.delayed(Duration(milliseconds: 100), () => getConnection());
+      // Créer une nouvelle connexion si possible
+      if (_activeConnections < maxConnections) {
+        _activeConnections++;
+        final conn = await MySqlConnection.connect(_settings);
+        _allConnections.add(conn);
+        return conn;
+      }
+
+      // Vérifier le timeout
+      if (DateTime.now().difference(startTime) > timeout) {
+        throw TimeoutException(
+          'Aucune connexion disponible après ${timeout.inSeconds}s '
+          '(Pool: ${_allConnections.length}/${maxConnections}, '
+          'Disponible: ${_availableConnections.length})',
+        );
+      }
+
+      // Attendre avant de réessayer
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
   }
 
   /// Retourner une connexion au pool
@@ -77,11 +95,13 @@ class DatabaseService {
   late String _database;
 
   DatabaseService._internal() {
-    // Valeurs par défaut
-    _host = 'localhost';
+    /// SÉCURITÉ: Pas de credentials par défaut
+    /// Les valeurs sont null jusqu'à ce que l'utilisateur les configure
+    /// Cela évite les failles de sécurité dues aux identifiants par défaut
+    _host = 'localhost'; // Valeur par défaut sûre (pas d'accès réseau)
     _port = 3306;
-    _user = 'root';
-    _password = 'root';
+    _user = ''; // Pas d'identifiant par défaut
+    _password = ''; // Pas de mot de passe par défaut
     _database = 'Planificator';
   }
 
@@ -197,10 +217,19 @@ class DatabaseService {
     }
   }
 
-  /// Ferme la connexion à la base de données
+  /// Ferme la connexion à la base de données et le pool entièrement
+  /// SÉCURITÉ: Fermer correctement toutes les ressources
   Future<void> close() async {
     if (_isConnected) {
       try {
+        // Fermer le pool d'abord
+        if (_pool != null) {
+          await _pool!.closeAll();
+          _pool = null;
+          logger.i('Pool de connexions fermé');
+        }
+
+        // Puis fermer la connexion principale
         await _connection.close();
         _isConnected = false;
         logger.i('Connexion fermée');

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
@@ -76,7 +77,15 @@ class _ExportScreenState extends State<ExportScreen> {
       ''';
 
       logger.i('📥 Chargement des clients depuis la DB...');
-      final rows = await db.query(sql);
+      final rows = await db
+          .query(sql)
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading clients from database');
+              throw TimeoutException('Database query timeout');
+            },
+          );
       logger.i('📦 ${rows.length} clients trouvés en DB');
 
       final clientMap = <String, int>{'Tous': -1};

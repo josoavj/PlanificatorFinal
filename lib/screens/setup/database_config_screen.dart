@@ -14,15 +14,64 @@ class DatabaseConfigScreen extends StatefulWidget {
 }
 
 class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
-  final _hostController = TextEditingController(text: 'localhost');
-  final _portController = TextEditingController(text: '3306');
-  final _userController = TextEditingController(text: 'root');
-  final _passwordController = TextEditingController(text: 'root');
-  final _databaseController = TextEditingController(text: 'Planificator');
+  /// SÉCURITÉ: Pas de valeurs par défaut dangereuses (pas de 'root'/'root')
+  /// Les champs vides forcent l'utilisateur à entrer ses propres identifiants
+  final _hostController = TextEditingController();
+  final _portController = TextEditingController();
+  final _userController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _databaseController = TextEditingController();
   final logger = createLoggerWithFileOutput(name: 'database_config_screen');
 
   bool _isLoading = false;
   bool _showPassword = false;
+
+  /// Validation des inputs avant connexion
+  String? _validateInputs() {
+    final host = _hostController.text.trim();
+    final port = _portController.text.trim();
+    final user = _userController.text.trim();
+    final password = _passwordController.text;
+    final database = _databaseController.text.trim();
+
+    // Validation du host
+    if (host.isEmpty) {
+      return 'Le host ne peut pas être vide';
+    }
+
+    // Validation du port
+    if (port.isEmpty) {
+      return 'Le port ne peut pas être vide';
+    }
+
+    int? portNumber;
+    try {
+      portNumber = int.parse(port);
+    } catch (e) {
+      return 'Le port doit être un nombre valide';
+    }
+
+    if (portNumber < 1 || portNumber > 65535) {
+      return 'Le port doit être entre 1 et 65535';
+    }
+
+    // Validation de l'utilisateur
+    if (user.isEmpty) {
+      return 'L\'utilisateur ne peut pas être vide';
+    }
+
+    // Validation du mot de passe
+    if (password.isEmpty) {
+      return 'Le mot de passe ne peut pas être vide';
+    }
+
+    // Validation de la base de données
+    if (database.isEmpty) {
+      return 'Le nom de la base de données ne peut pas être vide';
+    }
+
+    return null; // Aucune erreur
+  }
 
   @override
   void initState() {
@@ -50,6 +99,14 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
   }
 
   Future<void> _testConnection() async {
+    // Valider les inputs
+    final validationError = _validateInputs();
+    if (validationError != null) {
+      if (!mounted) return;
+      AppDialogs.error(context, message: validationError);
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -57,11 +114,11 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
 
       // Mettre à jour les paramètres du DatabaseService
       db.updateConnectionSettings(
-        host: _hostController.text,
-        port: int.parse(_portController.text),
-        user: _userController.text,
-        password: _passwordController.text,
-        database: _databaseController.text,
+        host: _hostController.text.trim(),
+        port: int.parse(_portController.text.trim()),
+        user: _userController.text.trim(),
+        password: _passwordController.text, // Ne pas trimmer le mot de passe
+        database: _databaseController.text.trim(),
       );
 
       final connected = await db.connect();
@@ -71,11 +128,11 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
       if (connected) {
         // Sauvegarder la configuration
         await DatabaseConfig().saveConfig(
-          host: _hostController.text,
-          port: int.parse(_portController.text),
-          user: _userController.text,
+          host: _hostController.text.trim(),
+          port: int.parse(_portController.text.trim()),
+          user: _userController.text.trim(),
           password: _passwordController.text,
-          database: _databaseController.text,
+          database: _databaseController.text.trim(),
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -171,8 +228,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                 TextField(
                   controller: _hostController,
                   decoration: InputDecoration(
-                    labelText: 'Host',
-                    hintText: 'localhost',
+                    labelText: 'Host *',
+                    hintText: 'ex: localhost, 192.168.1.100',
                     prefixIcon: const Icon(Icons.storage),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -186,8 +243,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                 TextField(
                   controller: _portController,
                   decoration: InputDecoration(
-                    labelText: 'Port',
-                    hintText: '3306',
+                    labelText: 'Port *',
+                    hintText: 'ex: 3306',
                     prefixIcon: const Icon(Icons.numbers),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -202,8 +259,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                 TextField(
                   controller: _userController,
                   decoration: InputDecoration(
-                    labelText: 'Utilisateur',
-                    hintText: 'root',
+                    labelText: 'Utilisateur *',
+                    hintText: 'ex: admin',
                     prefixIcon: const Icon(Icons.person),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -217,8 +274,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                 TextField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Mot de passe',
-                    hintText: 'Votre mot de passe',
+                    labelText: 'Mot de passe *',
+                    hintText: 'Votre mot de passe sécurisé',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -241,8 +298,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                 TextField(
                   controller: _databaseController,
                   decoration: InputDecoration(
-                    labelText: 'Base de données',
-                    hintText: 'Planificator',
+                    labelText: 'Base de données *',
+                    hintText: 'ex: Planificator',
                     prefixIcon: const Icon(Icons.dataset),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
