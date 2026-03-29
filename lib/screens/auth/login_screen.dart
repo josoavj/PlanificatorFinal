@@ -92,12 +92,35 @@ class _LoginScreenState extends State<LoginScreen>
                       // Username Field
                       TextFormField(
                         controller: _usernameController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Nom d\'utilisateur',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.person, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.person,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -106,7 +129,6 @@ class _LoginScreenState extends State<LoginScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Nom d\'utilisateur requis';
@@ -119,16 +141,28 @@ class _LoginScreenState extends State<LoginScreen>
                       // Password Field
                       TextFormField(
                         controller: _passwordController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Mot de passe',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.lock, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
                               size: 18,
+                              color: Colors.black54,
                             ),
                             onPressed: () {
                               setState(() {
@@ -138,6 +172,18 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -146,7 +192,6 @@ class _LoginScreenState extends State<LoginScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         obscureText: _obscurePassword,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
