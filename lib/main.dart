@@ -40,11 +40,16 @@ void main() async {
   // Configurer le logger global pour envoyer tous les logs au fichier
   log.configureGlobalLogger(logger);
 
-  log.info(' Application démarrée', source: 'main');
+  log.info('Application démarrée', source: 'main');
+
+  // Initialiser le provider de thème
+  final themeProvider = ThemeProvider();
+  await themeProvider.initialize();
+  log.info('Provider de thème initialisé', source: 'main');
 
   // Initialiser le service de notifications
   await notifications.initialize();
-  log.info(' Service de notifications initialisé', source: 'main');
+  log.info('Service de notifications initialisé', source: 'main');
 
   // Initialiser les données de locale pour intl
   await initializeDateFormatting('fr_FR', null);
@@ -151,6 +156,9 @@ class _MyAppState extends State<MyApp> {
 
     return MultiProvider(
       providers: [
+        // Provider du thème (doit être en premier pour être disponible partout)
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..initialize()),
+
         // Repositories
         ChangeNotifierProvider(create: (_) => AuthRepository()),
         ChangeNotifierProvider(create: (_) => ClientRepository()),
@@ -164,24 +172,30 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => SignalementRepository()),
         ChangeNotifierProvider(create: (_) => NotificationRepository()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        locale: const Locale('fr', 'FR'),
-        home: _isConfigured
-            ? _AuthGate()
-            : DatabaseConfigScreen(onConfigured: _onConfigured),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/clients': (context) => const ClientListScreen(),
-          '/contrats': (context) => const ContratScreen(),
-          '/factures': (context) => const FactureScreen(),
-          '/planning': (context) => const PlanningScreen(),
-          '/historique': (context) => const HistoriqueScreen(),
-          '/about': (context) => const AboutScreen(),
-          '/settings': (context) => const SettingsScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            themeMode: themeProvider.themeMode,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            locale: const Locale('fr', 'FR'),
+            home: _isConfigured
+                ? _AuthGate()
+                : DatabaseConfigScreen(onConfigured: _onConfigured),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegisterScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/clients': (context) => const ClientListScreen(),
+              '/contrats': (context) => const ContratScreen(),
+              '/factures': (context) => const FactureScreen(),
+              '/planning': (context) => const PlanningScreen(),
+              '/historique': (context) => const HistoriqueScreen(),
+              '/about': (context) => const AboutScreen(),
+              '/settings': (context) => const SettingsScreen(),
+            },
+          );
         },
       ),
     );
