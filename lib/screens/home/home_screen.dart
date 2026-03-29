@@ -95,8 +95,19 @@ class _DashboardTabState extends State<_DashboardTab> {
   void initState() {
     super.initState();
     _planningDetailsRepo = context.read<PlanningDetailsRepository>();
-    // Les données sont déjà préchargées dans _AuthGate
-    // Ne pas recharger ici pour éviter le double rendu
+    // Charger les données automatiquement au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        try {
+          logger.i(' Dashboard: Chargement automatique des données...');
+          await _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
+          await _planningDetailsRepo.loadUpcomingTreatmentsComplete();
+          logger.i(' Dashboard: Données chargées avec succès');
+        } catch (e) {
+          logger.e(' Dashboard: Erreur chargement: $e');
+        }
+      }
+    });
   }
 
   Future<void> _loadData() async {
