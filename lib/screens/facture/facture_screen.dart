@@ -58,12 +58,12 @@ class _FactureScreenState extends State<FactureScreen> {
   /// Construit l'en-tête avec gradient et barre de recherche
   Widget _buildHeader(BuildContext context, List<Facture> factures) {
     final filteredFactures = _filterFacturesBySearch(factures);
-    // Compter le nombre de traitements uniques
-    final treatments = <String>{};
+
+    // Compter le nombre de groupes client-traitement distincts (comme affichés dans la liste)
+    final groupKeys = <String>{};
     for (final f in filteredFactures) {
-      if (f.typeTreatment != null && f.typeTreatment!.isNotEmpty) {
-        treatments.add(f.typeTreatment!);
-      }
+      final key = '${f.clientFullName} - ${f.typeTreatment ?? 'N/A'}';
+      groupKeys.add(key);
     }
 
     return Container(
@@ -177,7 +177,7 @@ class _FactureScreenState extends State<FactureScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${treatments.length} ${treatments.length > 1 ? 'traitements' : 'traitement'}',
+                  '${groupKeys.length} ${groupKeys.length > 1 ? 'traitements' : 'traitement'}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -439,9 +439,7 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
     if (facture.etat == 'Payé' || facture.etat == 'Payée') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            ' Impossible de modifier le prix d\'une facture payée',
-          ),
+          content: Text(' Impossible de modifier le prix d\'une facture payée'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 2),
         ),
@@ -787,7 +785,9 @@ class _FactureRow extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(facture.etat).withValues(alpha: 0.2),
+                          color: _getStatusColor(
+                            facture.etat,
+                          ).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

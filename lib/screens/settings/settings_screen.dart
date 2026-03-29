@@ -18,7 +18,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
-  bool _darkModeEnabled = false;
   bool _autoSaveEnabled = true;
   String _language = 'fr';
 
@@ -87,9 +86,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.brightness_4_outlined,
                       title: 'Mode sombre',
                       subtitle: 'Utiliser le thème sombre',
-                      value: _darkModeEnabled,
+                      value: context.watch<ThemeProvider>().isDarkMode,
                       onChanged: (value) {
-                        setState(() => _darkModeEnabled = value);
+                        context.read<ThemeProvider>().toggleTheme();
                       },
                     ),
                     _buildModernSwitchCard(

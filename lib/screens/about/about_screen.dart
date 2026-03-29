@@ -59,9 +59,9 @@ class AboutScreen extends StatelessWidget {
                     children: [
                       _buildInfoRow('Version', 'v2.1.1'),
                       const SizedBox(height: 12),
-                      _buildInfoRow('Build', '20260120-001'),
+                      _buildInfoRow('Build', '20260329-002'),
                       const SizedBox(height: 12),
-                      _buildInfoRow('Dernière mise à jour', '20 janvier 2026'),
+                      _buildInfoRow('Dernière mise à jour', '29 mars 2026'),
                       const SizedBox(height: 12),
                       _buildInfoRow(
                         'Support',
@@ -142,13 +142,16 @@ class AboutScreen extends StatelessWidget {
                           const SizedBox(height: 12),
                           Text(
                             'Planificator est une application moderne conçue pour faciliter la gestion efficace de vos planifications et traitements. '
-                            'Elle vous permet de suivre, organiser et analyser vos rendez-vous et traitements avec une interface intuitive et des outils puissants.\n\n'
-                            'Avec Planificator, vous pouvez:\n'
-                            '• Gérer vos clients et contrats\n'
-                            '• Planifier vos traitements et rendez-vous\n'
-                            '• Suivre l\'historique des interventions\n'
-                            '• Analyser votre planning avec un calendrier interactif\n'
-                            '• Synchroniser avec une base de données MySQL',
+                            'Elle vous permet de suivre, organiser et analyser vos clients, contrats, factures et traitements avec une interface intuitive et des outils puissants.\n\n'
+                            'Fonctionnalités principales:\n'
+                            '• Gestion complète des clients et catégories\n'
+                            '• Suivi des contrats et de leur statut\n'
+                            '• Planification détaillée des traitements\n'
+                            '• Génération et suivi des factures\n'
+                            '• Historique des interventions et signalements\n'
+                            '• Calendrier interactif avec vue mensuelle\n'
+                            '• Synchronisation temps réel avec base de données MySQL\n'
+                            '• Mode sombre avec design glassmorphism iOS',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
@@ -181,10 +184,17 @@ class AboutScreen extends StatelessWidget {
                                 ),
                           ),
                           const SizedBox(height: 12),
-                          _buildTechItem('Framework', 'Flutter 3.x'),
-                          _buildTechItem('Langage', 'Dart 3.0+'),
+                          _buildTechItem('Framework', 'Flutter 3.16+'),
+                          _buildTechItem('Langage', 'Dart 3.1+'),
                           _buildTechItem('Gestion d\'état', 'Provider 6.0.0+'),
-                          _buildTechItem('Base de données', 'MySQL / MariaDB'),
+                          _buildTechItem(
+                            'Base de données',
+                            'MySQL 8.0+ / MariaDB',
+                          ),
+                          _buildTechItem(
+                            'Plateforme',
+                            'Windows, Linux, Web, Mobile',
+                          ),
                         ],
                       ),
                     ),

@@ -175,200 +175,362 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // En-tête
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [AppTheme.primaryBlue, AppTheme.accentBlue],
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // En-tête
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.primaryBlue, AppTheme.accentBlue],
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: const Icon(
+                        Icons.storage,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Configuration Base de Données',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Configurez votre connexion MySQL/MariaDB',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Formulaire
+                    Text(
+                      'Informations de connexion',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Host
+                    TextField(
+                      controller: _hostController,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Host *',
+                        labelStyle: const TextStyle(color: Colors.grey),
+                        floatingLabelStyle: const TextStyle(
+                          color: AppTheme.primaryBlue,
+                        ),
+                        hintText: 'ex: localhost, 192.168.1.100',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.storage,
+                          color: Colors.black54,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
                           ),
                         ),
-                        padding: const EdgeInsets.all(16),
-                        child: const Icon(
-                          Icons.storage,
-                          size: 48,
-                          color: Colors.white,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Configuration Base de Données',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                        textAlign: TextAlign.center,
+                      enabled: !_isLoading,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Port
+                    TextField(
+                      controller: _portController,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Configurez votre connexion MySQL/MariaDB',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                      decoration: InputDecoration(
+                        labelText: 'Port *',
+                        labelStyle: const TextStyle(color: Colors.grey),
+                        floatingLabelStyle: const TextStyle(
+                          color: AppTheme.primaryBlue,
                         ),
-                        textAlign: TextAlign.center,
+                        hintText: 'ex: 3306',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.numbers,
+                          color: Colors.black54,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Formulaire
-                Text(
-                  'Informations de connexion',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Host
-                TextField(
-                  controller: _hostController,
-                  decoration: InputDecoration(
-                    labelText: 'Host *',
-                    hintText: 'ex: localhost, 192.168.1.100',
-                    prefixIcon: const Icon(Icons.storage),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      keyboardType: TextInputType.number,
+                      enabled: !_isLoading,
                     ),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                // Port
-                TextField(
-                  controller: _portController,
-                  decoration: InputDecoration(
-                    labelText: 'Port *',
-                    hintText: 'ex: 3306',
-                    prefixIcon: const Icon(Icons.numbers),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // User
-                TextField(
-                  controller: _userController,
-                  decoration: InputDecoration(
-                    labelText: 'Utilisateur *',
-                    hintText: 'ex: admin',
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
-
-                // Password
-                TextField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe *',
-                    hintText: 'Votre mot de passe sécurisé',
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _showPassword ? Icons.visibility : Icons.visibility_off,
+                    // User
+                    TextField(
+                      controller: _userController,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
                       ),
-                      onPressed: () {
-                        setState(() => _showPassword = !_showPassword);
-                      },
+                      decoration: InputDecoration(
+                        labelText: 'Utilisateur *',
+                        labelStyle: const TextStyle(color: Colors.grey),
+                        floatingLabelStyle: const TextStyle(
+                          color: AppTheme.primaryBlue,
+                        ),
+                        hintText: 'ex: admin',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.person,
+                          color: Colors.black54,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      enabled: !_isLoading,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  obscureText: !_showPassword,
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                // Database
-                TextField(
-                  controller: _databaseController,
-                  decoration: InputDecoration(
-                    labelText: 'Base de données *',
-                    hintText: 'ex: Planificator',
-                    prefixIcon: const Icon(Icons.dataset),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    // Password
+                    TextField(
+                      controller: _passwordController,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Mot de passe *',
+                        labelStyle: const TextStyle(color: Colors.grey),
+                        floatingLabelStyle: const TextStyle(
+                          color: AppTheme.primaryBlue,
+                        ),
+                        hintText: 'Votre mot de passe sécurisé',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Colors.black54,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.black54,
+                          ),
+                          onPressed: () {
+                            setState(() => _showPassword = !_showPassword);
+                          },
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      obscureText: !_showPassword,
+                      enabled: !_isLoading,
                     ),
-                  ),
-                  enabled: !_isLoading,
-                ),
-                const SizedBox(height: 32),
+                    const SizedBox(height: 16),
 
-                // Bouton de test
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _testConnection,
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Icon(Icons.link),
-                    label: Text(
-                      _isLoading
-                          ? 'Connexion en cours...'
-                          : 'Tester la connexion',
-                      style: const TextStyle(fontSize: 16),
+                    // Database
+                    TextField(
+                      controller: _databaseController,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 16,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Base de données *',
+                        labelStyle: const TextStyle(color: Colors.grey),
+                        floatingLabelStyle: const TextStyle(
+                          color: AppTheme.primaryBlue,
+                        ),
+                        hintText: 'ex: Planificator',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.dataset,
+                          color: Colors.black54,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      enabled: !_isLoading,
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      shape: RoundedRectangleBorder(
+                    const SizedBox(height: 32),
+
+                    // Bouton de test
+                    SizedBox(
+                      width: 300,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _testConnection,
+                        icon: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Icon(Icons.link),
+                        label: Text(
+                          _isLoading
+                              ? 'Connexion en cours...'
+                              : 'Tester la connexion',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.infoBlue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.infoBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppTheme.infoBlue.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info, color: AppTheme.infoBlue),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Cette configuration ne s\'affiche qu\'une seule fois. Vous pourrez la modifier dans les paramètres de l\'application.',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppTheme.infoBlue),
+                        border: Border.all(
+                          color: AppTheme.infoBlue.withValues(alpha: 0.3),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info, color: AppTheme.infoBlue),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Cette configuration ne s\'affiche qu\'une seule fois. Vous pourrez la modifier dans les paramètres de l\'application.',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppTheme.infoBlue),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

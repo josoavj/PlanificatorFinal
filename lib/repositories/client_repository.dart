@@ -85,7 +85,12 @@ class ClientRepository extends ChangeNotifier {
           COALESCE(c.nif, '') as nif, 
           COALESCE(c.stat, '') as stat, 
           COALESCE(c.axe, '') as axe,
-          0 as treatment_count
+          COALESCE((
+            SELECT COUNT(*)
+            FROM Traitement t
+            INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
+            WHERE co.client_id = c.client_id
+          ), 0) as treatment_count
         FROM Client c
         WHERE EXISTS (
           SELECT 1 FROM Contrat co 

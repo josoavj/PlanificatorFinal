@@ -135,12 +135,35 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Username Field
                       TextFormField(
                         controller: _usernameController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Nom d\'utilisateur',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.person, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.person,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -149,7 +172,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Nom d\'utilisateur requis';
@@ -165,12 +187,35 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Email Field
                       TextFormField(
                         controller: _emailController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Email',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.email, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.email,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -179,7 +224,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -196,12 +240,35 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Nom Field
                       TextFormField(
                         controller: _nomController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Nom',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.badge, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.badge,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -210,7 +277,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Nom requis';
@@ -223,12 +289,35 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Prenom Field
                       TextFormField(
                         controller: _prenomController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Prénom',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.badge, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.badge,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -237,7 +326,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Prénom requis';
@@ -250,16 +338,28 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Password Field
                       TextFormField(
                         controller: _passwordController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Mot de passe',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.lock, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
                               size: 18,
+                              color: Colors.black54,
                             ),
                             onPressed: () {
                               setState(() {
@@ -269,6 +369,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -277,7 +389,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         obscureText: _obscurePassword,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -294,16 +405,28 @@ class _RegisterScreenState extends State<RegisterScreen>
                       // Confirm Password Field
                       TextFormField(
                         controller: _confirmPasswordController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Confirmer mot de passe',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.lock, size: 18),
+                          hintStyle: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.lock,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirmPassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
                               size: 18,
+                              color: Colors.black54,
                             ),
                             onPressed: () {
                               setState(() {
@@ -314,6 +437,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -322,7 +457,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             horizontal: 14,
                           ),
                         ),
-                        style: const TextStyle(fontSize: 13),
                         obscureText: _obscureConfirmPassword,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
