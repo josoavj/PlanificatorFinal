@@ -40,6 +40,7 @@ Les documents sont accessibles via :
 ### Conformité
 
 ✅ **Conforme avec :**
+
 - RGPD (Règlement Général sur la Protection des Données)
 - CCPA (California Consumer Privacy Act)
 - PIPEDA (Loi de protection des renseignements personnels)
@@ -49,7 +50,8 @@ Les documents sont accessibles via :
 ### Contact
 
 **APEXNova Labs**
-- Email: contact@apexnova-labs.com
+
+- Email: <contact@apexnova-labs.com>
 - Localisation: Madagascar
 - Délai de réponse: 10 jours ouvrables
 
