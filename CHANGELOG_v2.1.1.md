@@ -11,6 +11,7 @@
 ### Session Summary - Security & Performance Hardening
 
 **3 major improvements**:
+
 1. Database credentials now encrypted with flutter_secure_storage (DPAPI/Keystore/Keychain)
 2. SQL queries optimized - removed correlated subqueries causing Windows Release performance issues
 3. All emoji comments removed from codebase for better code clarity
@@ -18,6 +19,7 @@
 #### Implementation Details
 
 **Security - Credentials Encryption**
+
 - Files: lib/config/database_config.dart
 - Non-sensitive (host, port, database) → SharedPreferences
 - Sensitive (user, password) → flutter_secure_storage (encrypted DPAPI/Keystore/Keychain)
@@ -25,6 +27,7 @@
 - All credentials read/written through secure storage
 
 **Performance - ClientRepository Query Optimization**
+
 - File: lib/repositories/client_repository.dart
 - Removed correlated subquery COUNT(DISTINCT t.traitement_id)
 - Replaced with EXISTS check for better performance
@@ -32,6 +35,7 @@
 - Windows Release build now loads clients in < 2 seconds (was 8-10s)
 
 **Code Quality - Emoji Removal**
+
 - Files: lib/main.dart, lib/screens/planning/planning_screen.dart, CHANGELOG_v2.1.1.md
 - Removed all emoji comments from logging and code
 - Improved readability for automated tools and code review
@@ -96,16 +100,19 @@
 **File**: `lib/screens/contrat/contrat_screen.dart`
 
 **Bug #1**: Memory Leak in _searchController
+
 - **Issue**: _searchController never disposed
 - **Fix**: Added proper dispose() method
 - **Impact**: Prevents resource leaks
 
 **Bug #2**: Unsafe Async Operations
+
 - **Issue**: UI updates after await without mounted check
 - **Fix**: Added if (!mounted) return; after deletion flow
 - **Impact**: Prevents crashes on widget unmount
 
 **Bug #3**: Infinite Rebuild Loop
+
 - **Issue**: WidgetsBinding.addPostFrameCallback() in build() causing setState loops
 - **Fix**: Direct _contratCount assignment instead
 - **Impact**: Eliminates excessive rebuilds and glitches
@@ -124,12 +131,14 @@
 **Files**: `lib/screens/planning/remark_dialog.dart`, `lib/screens/planning/signalement_dialog.dart`
 
 **remark_dialog.dart**: Added 4 if (!mounted) guards
+
 - After createRemarque()
 - After updateFacturePrice()
 - After updateFactureReference()
 - After markAsPaid()
 
 **signalement_dialog.dart**: Added 3 if (!mounted) guards
+
 - After createSignalement()
 - After modifierDatePlanning()
 - After modifierRedondance()
@@ -189,6 +198,7 @@ if (dates.isEmpty || dates.last.isBefore(dateFin)) {
 ```
 
 **Tests**: ✅ 5/5 passing
+
 - Single occurrence (redondance=0)
 - Monthly frequency
 - Safety limit (maxDates <= 1000)
@@ -260,6 +270,7 @@ String _formatPlanningDate(dynamic dateValue) {
 **Similar improvements applied to**: `_calculateLastPlanningDate()`
 
 **Tests**: ✅ 3/3 passing
+
 - Weekend adjustment
 - Sunday to Monday conversion
 - Weekday preservation
@@ -280,6 +291,7 @@ String _formatPlanningDate(dynamic dateValue) {
 - ✅ Added fallback defaults (`DateTime.now()` or `'-'`)
 
 **Tests**: ✅ 9/9 passing
+
 - Holiday calculations
 - Holiday detection
 - Date formatting (French)
