@@ -55,6 +55,7 @@
 - 🔍 Rechercher et filtrer rapidement vos données
 
 ### Objectifs Principaux
+
 - 🎯 Centraliser la gestion des contrats et factures
 - 📱 Offrir une expérience mobile fluide et intuitive
 - 🔐 Garantir la fiabilité et la précision des données
@@ -68,98 +69,110 @@
 ### Actuellement Disponibles ✅
 
 #### 🔐 Authentification & Sécurité
-  - Système de **connexion sécurisée**
-    - Hash des mots de passe avec bcrypt
-    - Validation des identifiants
-    - Sessions utilisateur persistantes
-  - **Système d'enregistrement** (inscription)
-    - Création de nouveaux comptes
-    - Validation des données
-  - Protection des données sensibles
+
+- Système de **connexion sécurisée**
+  - Hash des mots de passe avec bcrypt
+  - Validation des identifiants
+  - Sessions utilisateur persistantes
+- **Système d'enregistrement** (inscription)
+  - Création de nouveaux comptes
+  - Validation des données
+- Protection des données sensibles
 
 #### 📋 Gestion des Clients
-  - Création, édition et suppression de clients
-  - Support des catégories (Particulier, Organisation, Société)
-  - Gestion complète : NIF, STAT, Adresse, Téléphone, Email
-  - Classification par axe géographique (Nord, Sud, Est, Ouest, Centre)
-  - Comptage précis des traitements par client
-  - Recherche et filtrage des clients
+
+- Création, édition et suppression de clients
+- Support des catégories (Particulier, Organisation, Société)
+- Gestion complète : NIF, STAT, Adresse, Téléphone, Email
+- Classification par axe géographique (Nord, Sud, Est, Ouest, Centre)
+- Comptage précis des traitements par client
+- Recherche et filtrage des clients
 
 #### 📄 Gestion des Contrats
-  - Création de contrats avec sélection multiple de traitements
-  - Support des contrats déterminés (date fin) et indéterminés
-  - Affichage complet : numéro, référence, dates, durée
-  - Gestion des traitements associés avec détails
-  - Rechargement automatique après création
-  - Vue complète des contrats actifs et archivés
+
+- Création de contrats avec sélection multiple de traitements
+- Support des contrats déterminés (date fin) et indéterminés
+- Affichage complet : numéro, référence, dates, durée
+- Gestion des traitements associés avec détails
+- Rechargement automatique après création
+- Vue complète des contrats actifs et archivés
 
 #### 💰 Gestion des Factures
-  - Recherche moderne : par client, traitement, date
-  - Groupement intelligent par client-traitement
-  - Affichage du montant total, payé et non payé
-  - Tri des factures par date décroissante (récentes en premier)
-  - **Modification de prix en cascade** :
-    - Change le prix d'une facture
-    - Applique automatiquement à toutes les factures suivantes du même traitement
-    - Crée une piste d'audit dans `Historique_prix`
-  - Validation des montants (positifs uniquement)
-  - Gestion automatique des espaces dans les entrées
-  - États des factures (payée, partiellement payée, impayée)
+
+- Recherche moderne : par client, traitement, date
+- Groupement intelligent par client-traitement
+- Affichage du montant total, payé et non payé
+- Tri des factures par date décroissante (récentes en premier)
+- **Modification de prix en cascade** :
+  - Change le prix d'une facture
+  - Applique automatiquement à toutes les factures suivantes du même traitement
+  - Crée une piste d'audit dans `Historique_prix`
+- Validation des montants (positifs uniquement)
+- Gestion automatique des espaces dans les entrées
+- États des factures (payée, partiellement payée, impayée)
 
 #### 📅 Gestion du Planning
-  - Calendrier interactif avec `table_calendar`
-  - Affichage des traitements prévus et en cours
-  - Filtrage par état (À venir, En cours, Effectué)
-  - Génération automatique des dates de planning
-  - Bouton de rafraîchissement flottant
-  - Vue détaillée des plannings avec statuts
+
+- Calendrier interactif avec `table_calendar`
+- Affichage des traitements prévus et en cours
+- Filtrage par état (À venir, En cours, Effectué)
+- Génération automatique des dates de planning
+- Bouton de rafraîchissement flottant
+- Vue détaillée des plannings avec statuts
 
 #### 🏠 Tableau de Bord (Home)
-  - Vue "En cours" : traitements du mois actuel
-  - Vue "À venir" : traitements futurs (sans redondance 1 mois)
-  - Affichage : dates, noms, états et axes
-  - **Bouton de rafraîchissement** pour mise à jour en temps réel
-  - Charge tous les statuts (pas seulement "À venir")
+
+- Vue "En cours" : traitements du mois actuel
+- Vue "À venir" : traitements futurs (sans redondance 1 mois)
+- Affichage : dates, noms, états et axes
+- **Bouton de rafraîchissement** pour mise à jour en temps réel
+- Charge tous les statuts (pas seulement "À venir")
 
 #### 📊 Historique & Audit
-  - Suivi complet de toutes les actions
-  - Affichage des modifications de prix avec ancien/nouveau montant
-  - Piste d'audit pour conformité
-  - Historique des traitements et modifications
+
+- Suivi complet de toutes les actions
+- Affichage des modifications de prix avec ancien/nouveau montant
+- Piste d'audit pour conformité
+- Historique des traitements et modifications
 
 #### 📤 Export de Données
-  - **Export en Excel**
-    - Export des factures par client-traitement
-    - Formatting automatique avec en-têtes
-    - Support des montants et dates formatés
-  - **Export de rapports**
-    - Données complètes des factures
-    - Historique des modifications
-    - Statistiques de gestion
+
+- **Export en Excel**
+  - Export des factures par client-traitement
+  - Formatting automatique avec en-têtes
+  - Support des montants et dates formatés
+- **Export de rapports**
+  - Données complètes des factures
+  - Historique des modifications
+  - Statistiques de gestion
 
 #### 🔧 Paramètres & Configuration
-  - Gestion des préférences utilisateur
-  - Configuration de la base de données
-  - Paramètres d'affichage
-  - Gestion des notifications
+
+- Gestion des préférences utilisateur
+- Configuration de la base de données
+- Paramètres d'affichage
+- Gestion des notifications
 
 #### ℹ️ À Propos
-  - Informations de l'application
-  - Numéro de version actuel
-  - Droits d'auteur et crédits
-  - Liens utiles
+
+- Informations de l'application
+- Numéro de version actuel
+- Droits d'auteur et crédits
+- Liens utiles
 
 #### 📬 Remarques & Signalements
-  - Ajout de remarques sur les traitements
-  - Signalement de problèmes ou d'anomalies
-  - Suivi des commentaires utilisateur
-  - Piste d'audit des signalements
+
+- Ajout de remarques sur les traitements
+- Signalement de problèmes ou d'anomalies
+- Suivi des commentaires utilisateur
+- Piste d'audit des signalements
 
 #### 🔔 Notifications
-  - **Notifications locales** intégrées
-  - Alertes planifiées pour les traitements
-  - Rappels des factures impayées
-  - Gestion des événements avec timezone
+
+- **Notifications locales** intégrées
+- Alertes planifiées pour les traitements
+- Rappels des factures impayées
+- Gestion des événements avec timezone
 
 ---
 
@@ -193,6 +206,7 @@
 ```
 
 ### Stack Technologique
+
 - **Framework** : Flutter 3.x
 - **Langage** : Dart 3.x
 - **Gestion d'état** : Provider (MultiProvider pattern)
@@ -293,6 +307,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 ```
 
 **Fonctionnalités Clés** :
+
 - 🔢 Accepte les espaces : "50 000" → 50000
 - ✅ Montants positifs uniquement (pas de négatifs)
 - 🎯 Validation robuste avec regex
@@ -303,6 +318,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 ## 📱 Écrans Principaux
 
 ### 🔐 Authentification
+
 - **Écran de Connexion**
   - Formulaire de connexion sécurisée
   - Validation des identifiants
@@ -316,6 +332,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
   - Retour à la connexion
 
 ### 🏠 Accueil (Home)
+
 - Deux tables côte à côte : "En cours" et "À venir"
 - ⚡ Bouton de rafraîchissement flottant
 - 📊 Affichage dynamique avec filtrage par statut
@@ -323,6 +340,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 - **Champs affichés** : Date, Nom traitement, État, Axe
 
 ### 📋 Gestion des Contrats
+
 - 📑 Liste des contrats avec filtrage par client
 - 🔍 Détails complets d'un contrat :
   - Numéro contrat (#ID)
@@ -337,6 +355,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 - 📊 Résumé : nombre de clients, contrats et traitements
 
 ### 💰 Factures
+
 - 🔍 **Onglet de Recherche Moderne**
   - Filtrage par client
   - Filtrage par traitement
@@ -354,6 +373,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
   - Affichage du montant et de l'état
 
 ### 📅 Planning
+
 - 🗓️ Calendrier interactif avec `table_calendar`
 - 📍 Génération automatique des dates de planning
 - 🔄 Filtrage par statut (À venir, En cours, Effectué)
@@ -361,6 +381,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 - 📊 Vue détaillée des événements planifiés
 
 ### 📊 Historique
+
 - 📖 Affichage complet de tous les historiques
 - 🔄 Tri par date décroissante (récentes en premier)
 - 📝 Détails des modifications :
@@ -371,12 +392,14 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 - 🔍 Recherche et filtrage par client/traitement
 
 ### 📬 Remarques & Signalements
+
 - ➕ Ajout de remarques sur les traitements
 - 🚩 Signalement de problèmes
 - 💬 Gestion des commentaires
 - 🔔 Suivi des signalements
 
 ### 📤 Export de Données
+
 - 📊 **Export en Excel**
   - Export des factures complètes
   - Formatting professionnel
@@ -387,6 +410,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
   - État des factures par client
 
 ### 🔧 Paramètres
+
 - ⚙️ Configuration générale
 - 🗄️ Gestion de la base de données
 - 🎨 Préférences d'affichage
@@ -394,6 +418,7 @@ final isValid2 = NumberFormatter.isValidMontant("abc");     // → false
 - 🔔 Configuration des alertes
 
 ### ℹ️ À Propos
+
 - 📋 Informations de l'application
 - 🔢 Numéro de version
 - 👨‍💻 Informations de l'auteur
@@ -433,6 +458,7 @@ WHERE co.contrat_id IS NOT NULL
 ```
 
 **Avantages** ✨:
+
 - `SELECT DISTINCT` universellement supporté (tous les versions MySQL)
 - `WHERE` clause au lieu de `HAVING` (plus robuste, moins d'erreurs)
 - Subquery pour COUNT (évite les problèmes GROUP BY + strict mode)
@@ -441,6 +467,7 @@ WHERE co.contrat_id IS NOT NULL
 ### Enhancements v2.1.1 ✨
 
 **About Screen Improvements** :
+
 - ✅ Build number display: `20260120-001`
 - ✅ Last update date: `20 janvier 2026`
 - ✅ Support email: `support@planificator.app` (clickable mailto)
@@ -448,6 +475,7 @@ WHERE co.contrat_id IS NOT NULL
 - ✅ Info box with reusable `_buildInfoRow()` component
 
 **Code Quality** :
+
 - ✅ Improved logging with platform-specific formatting
 - ✅ Enhanced error handling in repositories
 - ✅ Windows-specific SQL patterns tested and validated
@@ -468,12 +496,14 @@ WHERE co.contrat_id IS NOT NULL
 ### Installation
 
 #### 1️⃣ Cloner le dépôt
+
 ```bash
 git clone https://github.com/josoavj/PlanificatorFinal.git
 cd planificator
 ```
 
 #### 2️⃣ Installer les dépendances
+
 ```bash
 flutter pub get
 ```
@@ -490,12 +520,14 @@ mysql -u root -p < scripts/Migration.sql
 ```
 
 #### 4️⃣ Vérifier l'installation
+
 ```bash
 flutter doctor
 flutter analyze
 ```
 
 #### 5️⃣ Lancer l'application
+
 ```bash
 # Sur Linux (desktop)
 flutter run -d linux
@@ -585,6 +617,7 @@ flutter_lints: ^2.0.0
 ## � Fonctionnalités Avancées
 
 ### 💾 Gestion Avancée de la Base de Données
+
 - **MySQL Connection Pooling**
   - Connexions persistantes optimisées
   - Gestion automatique des erreurs de connexion
@@ -597,6 +630,7 @@ flutter_lints: ^2.0.0
   - Pagination pour les grandes listes
 
 ### 📊 Utilitaires Avancés
+
 - **NumberFormatter avec Validation**
   - Parsing intelligent des montants (accepte les espaces)
   - Formatting avec séparateurs
@@ -610,6 +644,7 @@ flutter_lints: ^2.0.0
   - Support des fuseau horaires
 
 ### 🔐 Sécurité Renforcée
+
 - **Authentification**
   - Hash bcrypt pour les mots de passe
   - Sessions utilisateur persistantes
@@ -622,6 +657,7 @@ flutter_lints: ^2.0.0
   - Identification de l'utilisateur
 
 ### 📱 Notifications Intelligentes
+
 - **Notifications Locales**
   - Alertes planifiées pour les traitements
   - Rappels des factures impayées
@@ -629,6 +665,7 @@ flutter_lints: ^2.0.0
   - Gestion en arrière-plan avec workmanager
 
 ### 📊 Rapports & Analytics
+
 - **Génération de Rapports**
   - Export Excel professionnel
   - Statistiques de gestion
@@ -736,6 +773,7 @@ Veuillez vous assurer que votre code suit les guidelines du projet et que tous l
 ## 🐛 Signaler un Bug
 
 Si vous trouvez un bug, veuillez ouvrir une [issue GitHub](https://github.com/josoavj/PlanificatorFinal/issues) avec :
+
 - Description détaillée du bug
 - Étapes pour reproduire le problème
 - Version de l'application
