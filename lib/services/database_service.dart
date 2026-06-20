@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 import 'package:mysql1/mysql1.dart';
 import './logging_service.dart';
 import './database_isolate_service.dart';
+import './smart_cache_manager.dart';
+import '../utils/windows_profiler.dart';
 
 /// Simple connection pool pour réutiliser les connexions MySQL
 class MySQLConnectionPool {
@@ -120,7 +123,7 @@ class DatabaseService {
       final sanitized = params.map((param) {
         // Si c'est un String long (possiblement un hash), le masquer
         if (param is String && param.length > 20) {
-          return '[MASKED:${param.length}chars]';
+          return '[MASKED:$param.length chars]';
         }
         // Masquer les valeurs ressemblant à des hash bcrypt (60 chars)
         if (param is String && param.startsWith('\$2')) {
@@ -256,114 +259,87 @@ class DatabaseService {
     }
   }
 
-  /// Exécute une requête SQL SELECT
-  Future<List<Map<String, dynamic>>> query(String sql, [List? params]) async {
+  /// Exécute une requête SQL SELECT avec support du Cache
+  Future<List<Map<String, dynamic>>> query(String sql, [List? params, bool useCache = true]) async {
     if (!_isConnected) {
       throw Exception('Pas de connexion à la base de données');
     }
 
+    // 1. Tenter de récupérer depuis le cache
+    final cache = SmartCacheManager();
+    if (useCache) {
+      final cachedData = cache.get(sql, params);
+      if (cachedData != null) return cachedData;
+    }
+
     try {
       logger.d('Query: $sql');
-      if (params != null && params.isNotEmpty) {
-        logger.d('Params: ${_sanitizeParamsForLogging(params)}');
-      }
+      
+      List<Map<String, dynamic>> rows = [];
 
-      // Utiliser les isolates si activés (recommandé pour Windows)
-      if (_useIsolates) {
-        final rows = await DatabaseIsolateService.executeQuery(
-          sql,
-          params,
-          _host,
-          _port,
-          _user,
-          _password,
-          _database,
-        );
-        logger.i('Query réussie via isolate: ${rows.length} lignes retournées');
-        return rows;
-      }
+      // PERFORMANCE: Mesurer le temps sur Desktop
+      final profilerName = 'SQL Query: ${sql.substring(0, Math.min(20, sql.length))}';
+      final metric = Platform.isWindows ? WindowsProfiler.start(profilerName) : null;
 
-      // Utiliser le pool de connexions si disponible
-      MySqlConnection? conn;
       try {
-        conn = await _getQueryConnection();
+        // 2. Décider si on utilise un Isolate ou la connexion directe
+        // PERFORMANCE: Sur les petites requêtes, l'Isolate est plus lent à cause du handshake TCP
+        bool shouldShowIsolate = _useIsolates && !sql.toLowerCase().contains('limit 1');
 
-        // Adapter timeout selon type de DB
-        final timeoutDuration = _isLocalDatabase()
-            ? const Duration(seconds: 30)
-            : const Duration(seconds: 60);
+        if (shouldShowIsolate) {
+          rows = await DatabaseIsolateService.executeQuery(
+            sql, params, _host, _port, _user, _password, _database,
+          );
+        } else {
+          MySqlConnection? conn;
+          try {
+            conn = await _getQueryConnection();
+            Results results = await conn.query(sql, params).timeout(const Duration(seconds: 30));
 
-        Results results = await conn
-            .query(sql, params)
-            .timeout(
-              timeoutDuration,
-              onTimeout: () {
-                logger.e(
-                  'Timeout de requête après ${timeoutDuration.inSeconds}s',
-                );
-                throw TimeoutException('La requête a dépassé le délai imparti');
-              },
-            );
-
-        List<Map<String, dynamic>> rows = [];
-        for (var row in results) {
-          Map<String, dynamic> map = {};
-          for (int i = 0; i < results.fields.length; i++) {
-            final fieldName = results.fields[i].name ?? 'field_$i';
-            map[fieldName] = row[i];
+            for (var row in results) {
+              Map<String, dynamic> map = {};
+              for (int i = 0; i < results.fields.length; i++) {
+                map[results.fields[i].name ?? 'field_$i'] = row[i];
+              }
+              rows.add(map);
+            }
+          } finally {
+            if (conn != null) _releaseQueryConnection(conn);
           }
-          rows.add(map);
         }
-
-        logger.i('Query réussie: ${rows.length} lignes retournées');
-        return rows;
       } finally {
-        if (conn != null) {
-          _releaseQueryConnection(conn);
-        }
+        metric?.end();
       }
+
+      // 3. Mettre en cache pour la prochaine fois
+      if (useCache && rows.isNotEmpty) {
+        cache.set(sql, params, rows);
+      }
+
+      return rows;
     } catch (e) {
       logger.e('Erreur lors de la query: $e');
       rethrow;
     }
   }
 
-  /// Exécute une requête INSERT/UPDATE/DELETE
+  /// Exécute une requête INSERT/UPDATE/DELETE et invalide le cache
   Future<void> execute(String sql, [List<dynamic>? params]) async {
-    if (!_isConnected) {
-      throw Exception('Pas de connexion à la base de données');
-    }
+    if (!_isConnected) throw Exception('Pas de connexion à la base de données');
 
     try {
-      logger.d('Execute: $sql');
-      if (params != null && params.isNotEmpty) {
-        logger.d('Params: ${_sanitizeParamsForLogging(params)}');
-      }
+      // Invalider le cache car les données vont changer
+      SmartCacheManager().invalidateAll();
 
-      // Utiliser les isolates si activés
       if (_useIsolates) {
-        await DatabaseIsolateService.executeUpdate(
-          sql,
-          params,
-          _host,
-          _port,
-          _user,
-          _password,
-          _database,
-        );
-        logger.i('Execution réussie via isolate');
-        return;
-      }
-
-      // Utiliser le pool de connexions si disponible
-      MySqlConnection? conn;
-      try {
-        conn = await _getQueryConnection();
-        await conn.query(sql, params);
-        logger.i('Execution réussie');
-      } finally {
-        if (conn != null) {
-          _releaseQueryConnection(conn);
+        await DatabaseIsolateService.executeUpdate(sql, params, _host, _port, _user, _password, _database);
+      } else {
+        MySqlConnection? conn;
+        try {
+          conn = await _getQueryConnection();
+          await conn.query(sql, params);
+        } finally {
+          if (conn != null) _releaseQueryConnection(conn);
         }
       }
     } catch (e) {
