@@ -14,6 +14,7 @@ import '../../widgets/index.dart';
 import '../../utils/date_utils.dart' as DateUtils;
 import '../../utils/date_helper.dart';
 import '../../utils/number_formatter.dart';
+import '../../core/sql_queries.dart';
 import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
 
@@ -68,14 +69,7 @@ class _ContratScreenState extends State<ContratScreen> {
       // Si aucun client n'a été chargé, charger directement de la BD
       if (allClients.isEmpty) {
         logger.w(' Aucun client via repository, chargement direct de la BD...');
-        const sql = '''
-          SELECT 
-            client_id, nom, prenom, email, telephone, adresse, 
-            categorie, nif, stat, axe
-          FROM Client
-          ORDER BY nom ASC
-        ''';
-        final rows = await db.query(sql);
+        final rows = await db.query(SqlQueries.getAllClientsBasic);
         allClients = rows.map((row) => Client.fromMap(row)).toList();
         logger.i(' ${allClients.length} clients chargés directement');
       }
@@ -125,9 +119,7 @@ class _ContratScreenState extends State<ContratScreen> {
         final client = clientMap[contrat.clientId];
 
         // Récupérer nombre de traitements pour ce contrat
-        const treatmentSql =
-            'SELECT COUNT(*) as count FROM Traitement WHERE contrat_id = ?';
-        final treatmentRows = await db.query(treatmentSql, [contrat.contratId]);
+        final treatmentRows = await db.query(SqlQueries.countTreatmentsByContrat, [contrat.contratId]);
         final numTraitements = treatmentRows.isNotEmpty
             ? (treatmentRows[0]['count'] as int? ?? 0)
             : 0;
@@ -931,20 +923,8 @@ class _ContratScreenState extends State<ContratScreen> {
   Future<List<Map<String, dynamic>>> _loadTraitements(int contratId) async {
     try {
       final db = DatabaseService();
-      const sql = '''
-        SELECT DISTINCT t.traitement_id, t.contrat_id, tt.typeTraitement as nom,
-               tt.categorieTraitement as type,
-               COALESCE(GROUP_CONCAT(DISTINCT pd.statut), 'Pas de planifications') as statuts,
-               COUNT(DISTINCT pd.planning_detail_id) as planning_count
-        FROM Traitement t
-        LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
-        LEFT JOIN PlanningDetails pd ON p.planning_id = pd.planning_id
-        WHERE t.contrat_id = ?
-        GROUP BY t.traitement_id
-      ''';
       return await db
-          .query(sql, [contratId])
+          .query(SqlQueries.getTraitementsDetailedByContrat, [contratId])
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -1002,10 +982,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
         try {
           // Compter les planifications
-          const sqlPlannings = '''
-            SELECT COUNT(*) as count FROM Planning WHERE traitement_id = ?
-          ''';
-          final planningsResult = await db.query(sqlPlannings, [traitementId]);
+          final planningsResult = await db.query(SqlQueries.countPlanningDetailsByTreatment, [traitementId]);
           plannings =
               (planningsResult.isNotEmpty
                   ? planningsResult[0]['count'] as int?
@@ -1018,13 +995,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
         try {
           // Compter les factures
-          const sqlFactures = '''
-            SELECT COUNT(*) as count FROM Facture f
-            INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-            INNER JOIN Planning p ON pd.planning_id = p.planning_id
-            WHERE p.traitement_id = ?
-          ''';
-          final facturesResult = await db.query(sqlFactures, [traitementId]);
+          final facturesResult = await db.query(SqlQueries.countFacturesByTreatment, [traitementId]);
           factures =
               (facturesResult.isNotEmpty
                   ? facturesResult[0]['count'] as int?
@@ -1037,13 +1008,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
         try {
           // Compter les remarques via planning_detail_id
-          const sqlRemarques = '''
-            SELECT COUNT(*) as count FROM Remarque r
-            INNER JOIN PlanningDetails pd ON r.planning_detail_id = pd.planning_detail_id
-            INNER JOIN Planning p ON pd.planning_id = p.planning_id
-            WHERE p.traitement_id = ?
-          ''';
-          final remarquesResult = await db.query(sqlRemarques, [traitementId]);
+          final remarquesResult = await db.query(SqlQueries.countRemarquesByTreatment, [traitementId]);
           remarques =
               (remarquesResult.isNotEmpty
                   ? remarquesResult[0]['count'] as int?
@@ -1056,16 +1021,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
         try {
           // Compter les historiques (table Historique, pas HistoriqueEvent)
-          const sqlHistoriques = '''
-            SELECT COUNT(*) as count FROM Historique h
-            WHERE h.facture_id IN (
-              SELECT f.facture_id FROM Facture f
-              INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-              INNER JOIN Planning p ON pd.planning_id = p.planning_id
-              WHERE p.traitement_id = ?
-            )
-          ''';
-          final historiquesResult = await db.query(sqlHistoriques, [
+          final historiquesResult = await db.query(SqlQueries.countHistoriqueByTreatment, [
             traitementId,
           ]);
           historiques =
@@ -1080,13 +1036,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
         try {
           // Calculer le montant total (montant est un double)
-          const sqlMontant = '''
-            SELECT COALESCE(SUM(CAST(f.montant AS DECIMAL(10,2))), 0) as total FROM Facture f
-            INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-            INNER JOIN Planning p ON pd.planning_id = p.planning_id
-            WHERE p.traitement_id = ?
-          ''';
-          final montantResult = await db.query(sqlMontant, [traitementId]);
+          final montantResult = await db.query(SqlQueries.sumMontantByTreatment, [traitementId]);
           montantTotal = montantResult.isNotEmpty
               ? (montantResult[0]['total'] as num?)?.toInt() ?? 0
               : 0;
@@ -1098,10 +1048,7 @@ class _ContratScreenState extends State<ContratScreen> {
         // Récupérer la redondance du planning pour ce traitement
         int redondance = 1; // Défaut: mensuel
         try {
-          const sqlRedondance = '''
-            SELECT redondance FROM Planning WHERE traitement_id = ? LIMIT 1
-          ''';
-          final redondanceResult = await db.query(sqlRedondance, [
+          final redondanceResult = await db.query(SqlQueries.getRedondanceByTreatment, [
             traitementId,
           ]);
           if (redondanceResult.isNotEmpty) {
@@ -1445,15 +1392,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final db = DatabaseService();
 
       // Récupérer le traitement ID pour ce type
-      const sql = '''
-        SELECT t.traitement_id, t.contrat_id
-        FROM Traitement t
-        INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        WHERE t.contrat_id = ? AND tt.typeTraitement = ?
-        LIMIT 1
-      ''';
-
-      final results = await db.query(sql, [contrat.contratId, traitementType]);
+      final results = await db.query(SqlQueries.getTreatmentIdByType, [contrat.contratId, traitementType]);
 
       if (results.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1490,24 +1429,8 @@ class _ContratScreenState extends State<ContratScreen> {
   _loadFacturesGroupedByTraitement(int contratId) async {
     try {
       final db = DatabaseService();
-      const sql = '''
-        SELECT DISTINCT 
-          f.facture_id, 
-          f.montant, 
-          f.date_traitement,
-          f.etat,
-          tt.typeTraitement
-        FROM Facture f
-        INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        INNER JOIN Planning p ON pd.planning_id = p.planning_id
-        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-        INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        WHERE t.contrat_id = ?
-        ORDER BY tt.typeTraitement ASC, f.date_traitement ASC
-      ''';
-
       final rows = await db
-          .query(sql, [contratId])
+          .query(SqlQueries.getFacturesGroupedByTraitement, [contratId])
           .timeout(
             const Duration(seconds: 40),
             onTimeout: () {
