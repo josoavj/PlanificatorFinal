@@ -122,7 +122,7 @@ class LegalDocumentsScreen extends StatelessWidget {
               title: 'Conditions d\'Utilisation',
               description:
                   'Lisez les termes et conditions régissant l\'utilisation '
-                  'de l\'application Planificator.',
+                  'de la plateforme Planificator.',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
