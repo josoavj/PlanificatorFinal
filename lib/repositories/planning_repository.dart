@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 
 class PlanningRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -24,14 +25,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          planningId, contratId, titre, description, dateDebut, dateFin
-        FROM Planning
-        ORDER BY dateDebut DESC
-      ''';
-
-      final rows = await _db.query(sql);
+      final rows = await _db.query(SqlQueries.getAllPlanningsLegacy);
       _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
 
       logger.i('${_events.length} événements chargés');
@@ -51,15 +45,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          planningId, contratId, titre, description, dateDebut, dateFin
-        FROM Planning
-        WHERE contratId = ?
-        ORDER BY dateDebut ASC
-      ''';
-
-      final rows = await _db.query(sql, [contratId]);
+      final rows = await _db.query(SqlQueries.getPlanningsByContratLegacy, [contratId]);
       _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
 
       logger.i(
@@ -84,15 +70,7 @@ class PlanningRepository extends ChangeNotifier {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      const sql = '''
-        SELECT 
-          planningId, contratId, titre, description, dateDebut, dateFin
-        FROM Planning
-        WHERE dateDebut >= ? AND dateDebut < ?
-        ORDER BY dateDebut ASC
-      ''';
-
-      final rows = await _db.query(sql, [
+      final rows = await _db.query(SqlQueries.getPlanningsByDateRangeLegacy, [
         startOfDay.toIso8601String(),
         endOfDay.toIso8601String(),
       ]);
@@ -120,15 +98,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          planningId, contratId, titre, description, dateDebut, dateFin
-        FROM Planning
-        WHERE dateDebut >= ? AND dateDebut <= ?
-        ORDER BY dateDebut ASC
-      ''';
-
-      final rows = await _db.query(sql, [
+      final rows = await _db.query(SqlQueries.getPlanningsByDateRangeLegacy, [
         startDate.toIso8601String(),
         endDate.toIso8601String(),
       ]);
@@ -151,14 +121,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          planningId, contratId, titre, description, dateDebut, dateFin
-        FROM Planning
-        WHERE planningId = ?
-      ''';
-
-      final row = await _db.queryOne(sql, [planningId]);
+      final row = await _db.queryOne(SqlQueries.getPlanningByIdLegacy, [planningId]);
       if (row != null) {
         _currentEvent = PlanningEvent.fromMap(row);
         logger.i('Événement $planningId chargé');
@@ -187,12 +150,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        INSERT INTO Planning (contratId, titre, description, dateDebut, dateFin)
-        VALUES (?, ?, ?, ?, ?)
-      ''';
-
-      final id = await _db.insert(sql, [
+      final id = await _db.insert(SqlQueries.createPlanningLegacy, [
         contratId,
         titre,
         description,
@@ -229,13 +187,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        UPDATE Planning
-        SET contratId = ?, titre = ?, description = ?, dateDebut = ?, dateFin = ?
-        WHERE planningId = ?
-      ''';
-
-      await _db.execute(sql, [
+      await _db.execute(SqlQueries.updatePlanningLegacy, [
         event.contratId,
         event.titre,
         event.description,
@@ -271,9 +223,7 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Planning WHERE planningId = ?';
-
-      await _db.execute(sql, [planningId]);
+      await _db.execute(SqlQueries.deletePlanningLegacy, [planningId]);
 
       _events.removeWhere((e) => e.planningId == planningId);
 
@@ -312,16 +262,8 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          planningId, contratId, titre, description, dateDebut, dateFin
-        FROM Planning
-        WHERE titre LIKE ? OR description LIKE ?
-        ORDER BY dateDebut DESC
-      ''';
-
       final searchTerm = '%$query%';
-      final rows = await _db.query(sql, [searchTerm, searchTerm]);
+      final rows = await _db.query(SqlQueries.searchPlanningsLegacy, [searchTerm, searchTerm]);
       _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
 
       logger.i(
@@ -354,13 +296,7 @@ class PlanningRepository extends ChangeNotifier {
 
     try {
       //  1. Créer le planning dans la BD
-      const createPlanningSQL = '''
-        INSERT INTO Planning 
-        (traitementId, date_debut_planification, moisDebut, moisFin, duree_traitement, redondance, date_fin_planification)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      ''';
-
-      final planning = await _db.query(createPlanningSQL, [
+      final planning = await _db.query(SqlQueries.createPlanning, [
         traitementId,
         debut.toIso8601String().split('T')[0],
         moisDebut,
@@ -380,18 +316,12 @@ class PlanningRepository extends ChangeNotifier {
       logger.i(' Planning créé: ID $planningId');
 
       //  2. Créer planning_details pour chaque date
-      const createDetailsSQL = '''
-        INSERT INTO PlanningDetails 
-        (planning_id, date_planification, statut)
-        VALUES (?, ?, ?)
-      ''';
-
       int facturesCreated = 0;
 
       for (final planningDate in planningDates) {
         try {
           // Créer planning_detail
-          final details = await _db.query(createDetailsSQL, [
+          final details = await _db.query(SqlQueries.insertPlanningDetailWithStatut, [
             planningId,
             planningDate.toIso8601String().split('T')[0],
             'À venir',
@@ -404,13 +334,7 @@ class PlanningRepository extends ChangeNotifier {
           }
 
           //  3. Créer facture pour chaque détail
-          const createFactureSQL = '''
-            INSERT INTO Facture 
-            (planning_detail_id, montant, date_traitement, etat, axe)
-            VALUES (?, ?, ?, ?, ?)
-          ''';
-
-          await _db.execute(createFactureSQL, [
+          await _db.execute(SqlQueries.createFacture, [
             detailId,
             montant.toInt(), // Convertir double en int
             planningDate.toIso8601String().split('T')[0],
@@ -462,9 +386,7 @@ class PlanningRepository extends ChangeNotifier {
   }) async {
     try {
       //  Vérifier si un planning existe déjà pour ce traitement
-      const checkSql =
-          'SELECT planning_id FROM Planning WHERE traitementId = ?';
-      final existing = await _db.query(checkSql, [traitementId]);
+      final existing = await _db.query(SqlQueries.checkPlanningExistence, [traitementId]);
 
       if (existing.isNotEmpty) {
         logger.i(
@@ -484,13 +406,7 @@ class PlanningRepository extends ChangeNotifier {
           : dateDebutPlanification.day;
       final dateFinPlanification = DateTime(year, newMonth, day);
 
-      const sql = '''
-        INSERT INTO Planning 
-        (traitementId, date_debut_planification, moisDebut, moisFin, duree_traitement, redondance, date_fin_planification)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      ''';
-
-      final planningId = await _db.insert(sql, [
+      final planningId = await _db.insert(SqlQueries.createPlanning, [
         traitementId,
         dateDebutPlanification.toIso8601String().split('T')[0],
         moisDebut,
