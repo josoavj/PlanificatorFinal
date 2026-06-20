@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 
 class AuthRepository extends ChangeNotifier {
   final DatabaseService _db;
@@ -55,15 +56,8 @@ class AuthRepository extends ChangeNotifier {
         }
       }
 
-      const sql = '''
-        SELECT 
-          id_compte as userId, email, nom, prenom, password, type_compte, date_creation as createdAt
-        FROM Account
-        WHERE username = ?
-      ''';
-
       final row = await _db
-          .queryOne(sql, [username])
+          .queryOne(SqlQueries.login, [username])
           .timeout(
             const Duration(seconds: 20),
             onTimeout: () {
@@ -116,10 +110,8 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Vérifier si le username existe déjà
-      const checkSql = 'SELECT id_compte FROM Account WHERE username = ?';
       final existing = await _db
-          .queryOne(checkSql, [username])
+          .queryOne(SqlQueries.checkUsername, [username])
           .timeout(
             const Duration(seconds: 20),
             onTimeout: () {
