@@ -1,162 +1,74 @@
-/// Smart Cache Manager pour Windows
-///
-/// Gère le cache des résultats de requête pour éviter
-/// les reloads inutiles et améliorer la réactivité
-///
-/// Utilise une stratégie LRU (Least Recently Used) pour
-/// éviter la saturation mémoire sur Windows
-library;
+import './logging_service.dart';
 
-import 'dart:developer' show log;
+/// Gère le cache des requêtes SQL pour éviter les appels réseau inutiles.
+class SmartCacheManager {
+  static final SmartCacheManager _instance = SmartCacheManager._internal();
+  factory SmartCacheManager() => _instance;
+  SmartCacheManager._internal();
 
-class CacheEntry<T> {
-  final T data;
-  final DateTime timestamp;
-  DateTime lastAccessed;
-  int accessCount;
+  final logger = createLoggerWithFileOutput(name: 'smart_cache_manager');
 
-  CacheEntry({required this.data, required this.timestamp})
-    : lastAccessed = DateTime.now(),
-      accessCount = 0;
+  // Stockage du cache : Map<Clé_Requête, Résultat>
+  final Map<String, _CacheEntry> _cache = {};
 
-  bool isExpired(Duration ttl) {
-    return DateTime.now().difference(timestamp) > ttl;
-  }
+  // Durée de vie par défaut du cache (ex: 5 minutes)
+  Duration defaultTTL = const Duration(minutes: 5);
 
-  void markAccessed() {
-    lastAccessed = DateTime.now();
-    accessCount++;
-  }
-}
-
-class SmartCacheManager<K, V> {
-  final int maxSize;
-  final Duration defaultTtl;
-  final Map<K, CacheEntry<V>> _cache = {};
-
-  SmartCacheManager({
-    this.maxSize = 100,
-    this.defaultTtl = const Duration(minutes: 10),
-  });
-
-  /// Récupérer depuis le cache
-  V? get(K key, {bool markAccessed = true}) {
+  /// Récupère une donnée du cache ou retourne null si expiré/inexistant
+  List<Map<String, dynamic>>? get(String sql, List<dynamic>? params) {
+    final key = _generateKey(sql, params);
     final entry = _cache[key];
 
-    if (entry == null) {
-      return null;
+    if (entry != null && !entry.isExpired) {
+      logger.d('Cache HIT for: ${sql.substring(0, Math.min(30, sql.length))}...');
+      return entry.data;
     }
 
-    if (entry.isExpired(defaultTtl)) {
+    if (entry != null && entry.isExpired) {
+      logger.d('Cache EXPIRED for key: $key');
       _cache.remove(key);
-      return null;
     }
 
-    if (markAccessed) {
-      entry.markAccessed();
-    }
-
-    return entry.data;
+    return null;
   }
 
-  /// Stocker dans le cache
-  void set(K key, V value) {
-    if (_cache.length >= maxSize) {
-      _evictLRU();
-    }
-
-    _cache[key] = CacheEntry<V>(data: value, timestamp: DateTime.now());
+  /// Ajoute des données au cache
+  void set(String sql, List<dynamic>? params, List<Map<String, dynamic>> data, {Duration? ttl}) {
+    final key = _generateKey(sql, params);
+    _cache[key] = _CacheEntry(
+      data: data,
+      expiry: DateTime.now().add(ttl ?? defaultTTL),
+    );
   }
 
-  /// Invalider une clé
-  void invalidate(K key) {
-    _cache.remove(key);
-  }
-
-  /// Invalider toutes les clés commençant par un préfixe
-  void invalidatePrefix(String prefix) {
-    if (K is String) {
-      _cache.removeWhere((key, _) => (key as String).startsWith(prefix));
-    }
-  }
-
-  /// Vider tout le cache
-  void clear() {
+  /// Invalide tout le cache (utile après un INSERT/UPDATE/DELETE massif)
+  void invalidateAll() {
     _cache.clear();
+    logger.i('Global cache invalidated');
   }
 
-  /// Éviction LRU (Least Recently Used)
-  void _evictLRU() {
-    if (_cache.isEmpty) return;
-
-    final lruKey = _cache.entries
-        .reduce(
-          (a, b) => a.value.lastAccessed.isBefore(b.value.lastAccessed) ? a : b,
-        )
-        .key;
-
-    _cache.remove(lruKey);
+  /// Invalide spécifiquement les requêtes liées à une table
+  void invalidateTable(String tableName) {
+    final tableLower = tableName.toLowerCase();
+    _cache.removeWhere((key, value) => key.toLowerCase().contains(tableLower));
+    logger.d('Cache invalidated for table: $tableName');
   }
 
-  /// Statistiques du cache
-  Map<String, dynamic> stats() => {
-    'size': _cache.length,
-    'maxSize': maxSize,
-    'usage': _cache.values.map((e) => e.accessCount).fold(0, (a, b) => a + b),
-    'avgAccessCount': _cache.isEmpty
-        ? 0
-        : _cache.values.map((e) => e.accessCount).fold(0, (a, b) => a + b) /
-              _cache.length,
-  };
-
-  /// Enregistrer les stats
-  void logStats() {
-    final statsMap = stats();
-    final size = statsMap['size'];
-    final maxSize = statsMap['maxSize'];
-    final usage = statsMap['usage'];
-    final avg = (statsMap['avgAccessCount'] as double).toStringAsFixed(1);
-    log('CACHE | Size: $size/$maxSize | Accesses: $usage | Avg: $avg');
+  String _generateKey(String sql, List<dynamic>? params) {
+    return '$sql|${params?.join(',') ?? ''}';
   }
 }
 
-/// Cache Managers pour différentes ressources
-class AppCacheManagers {
-  static final client = SmartCacheManager<int, Map<String, dynamic>>(
-    maxSize: 50,
-    defaultTtl: const Duration(minutes: 15),
-  );
+class _CacheEntry {
+  final List<Map<String, dynamic>> data;
+  final DateTime expiry;
 
-  static final contrat = SmartCacheManager<int, Map<String, dynamic>>(
-    maxSize: 50,
-    defaultTtl: const Duration(minutes: 15),
-  );
+  _CacheEntry({required this.data, required this.expiry});
 
-  static final search = SmartCacheManager<String, List<Map<String, dynamic>>>(
-    maxSize: 30,
-    defaultTtl: const Duration(minutes: 10),
-  );
+  bool get isExpired => DateTime.now().isAfter(expiry);
+}
 
-  static final planning = SmartCacheManager<String, List<Map<String, dynamic>>>(
-    maxSize: 20,
-    defaultTtl: const Duration(minutes: 5),
-  );
-
-  static void clearAll() {
-    client.clear();
-    contrat.clear();
-    search.clear();
-    planning.clear();
-  }
-
-  static void logAllStats() {
-    log('CLIENT CACHE:');
-    client.logStats();
-    log('CONTRAT CACHE:');
-    contrat.logStats();
-    log('SEARCH CACHE:');
-    search.logStats();
-    log('PLANNING CACHE:');
-    planning.logStats();
-  }
+// Helper simple pour limiter la longueur des chaînes dans les logs
+class Math {
+  static int min(int a, int b) => a < b ? a : b;
 }
