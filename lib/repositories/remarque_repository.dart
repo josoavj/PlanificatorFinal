@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../utils/date_helper.dart';
+import '../core/sql_queries.dart';
 
 /// Repository pour la gestion des remarques
 /// Conforme à Kivy create_remarque() - crée remarque + met à jour état planning + facture
@@ -36,17 +37,11 @@ class RemarqueRepository extends ChangeNotifier {
 
     try {
       //  1. Créer la remarque
-      const createRemarqueSQL = '''
-        INSERT INTO Remarque 
-        (client_id, planning_detail_id, facture_id, contenu, issue, action)
-        VALUES (?, ?, ?, ?, ?, ?)
-      ''';
-
       // Récupérer clientId depuis la BD
       int clientId = 0;
       try {
         final result = await _db.queryOne(
-          'SELECT c.client_id FROM Client c JOIN Contrat ct ON c.client_id = ct.client_id JOIN Traitement t ON ct.contrat_id = t.contrat_id JOIN Planning p ON t.traitement_id = p.traitement_id JOIN PlanningDetails pd ON p.planning_id = pd.planning_id WHERE pd.planning_detail_id = ?',
+          SqlQueries.getClientIdFromPlanningDetail,
           [planningDetailsId],
         );
         clientId = result?['client_id'] as int? ?? 0;
@@ -54,7 +49,7 @@ class RemarqueRepository extends ChangeNotifier {
         clientId = 0;
       }
 
-      await _db.execute(createRemarqueSQL, [
+      await _db.execute(SqlQueries.createRemarque, [
         clientId,
         planningDetailsId,
         factureId,
@@ -66,24 +61,12 @@ class RemarqueRepository extends ChangeNotifier {
       logger.i(' Remarque créée pour planning_detail_id=$planningDetailsId');
 
       //  2. Marquer le planning detail comme "Effectué"
-      const updatePlanningSQL = '''
-        UPDATE PlanningDetails
-        SET statut = ?
-        WHERE planning_detail_id = ?
-      ''';
-
-      await _db.execute(updatePlanningSQL, ['Effectué', planningDetailsId]);
+      await _db.execute(SqlQueries.updatePlanningDetailStatut, ['Effectué', planningDetailsId]);
       logger.i(' Planning detail $planningDetailsId marqué comme Effectué');
 
       //  3. Si payée, mettre à jour l'état de la facture
       if (estPayee) {
-        const updateFactureSQL = '''
-          UPDATE Facture
-          SET etat = ?, mode = ?, numero_cheque = ?, date_cheque = ?, etablissement_payeur = ?
-          WHERE facture_id = ?
-        ''';
-
-        await _db.execute(updateFactureSQL, [
+        await _db.execute(SqlQueries.updateFactureFull, [
           'Payé',
           modePaiement,
           numeroCheque,
@@ -115,15 +98,7 @@ class RemarqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          r.remarque_id, r.client_id, r.planning_detail_id, r.facture_id, r.contenu, 
-          r.issue, r.action, r.date_remarque
-        FROM Remarque r
-        ORDER BY r.date_remarque DESC
-      ''';
-
-      final rows = await _db.query(sql);
+      final rows = await _db.query(SqlQueries.getAllRemarquesDetailed);
       _remarques = rows.map((row) => Remarque.fromJson(row)).toList();
 
       logger.i('${_remarques.length} remarques chargées');
@@ -139,16 +114,7 @@ class RemarqueRepository extends ChangeNotifier {
   /// Charge les remarques pour un planning detail
   Future<List<Remarque>> getRemarques(int planningDetailId) async {
     try {
-      const sql = '''
-        SELECT 
-          r.remarque_id, r.client_id, r.planning_detail_id, r.facture_id, r.contenu, 
-          r.issue, r.action, r.date_remarque
-        FROM Remarque r
-        WHERE r.planning_detail_id = ?
-        ORDER BY r.date_remarque DESC
-      ''';
-
-      final rows = await _db.query(sql, [planningDetailId]);
+      final rows = await _db.query(SqlQueries.getRemarquesByPlanningDetail, [planningDetailId]);
       return rows.map((row) => Remarque.fromJson(row)).toList();
     } catch (e) {
       logger.e(' Erreur récupérer remarques: $e');
@@ -173,13 +139,7 @@ class RemarqueRepository extends ChangeNotifier {
     try {
       // Mettre à jour remarque - Remarque n'a pas ces colonnes
       // On ne peut modifier que contenu, issue, action dans Remarque
-      const updateRemarqueSQL = '''
-        UPDATE Remarque
-        SET contenu = ?, issue = ?, action = ?
-        WHERE remarque_id = ?
-      ''';
-
-      await _db.execute(updateRemarqueSQL, [
+      await _db.execute(SqlQueries.updateRemarqueBasic, [
         'Paiement effectué',
         null,
         'Facture marquée comme payée',
@@ -187,13 +147,7 @@ class RemarqueRepository extends ChangeNotifier {
       ]);
 
       // Mettre à jour facture
-      const updateFactureSQL = '''
-        UPDATE Facture
-        SET etat = ?, mode = ?, numero_cheque = ?, date_cheque = ?
-        WHERE facture_id = ?
-      ''';
-
-      await _db.execute(updateFactureSQL, [
+      await _db.execute(SqlQueries.updateFacturePaymentOnly, [
         'Payé',
         modePaiement,
         numeroCheque,
@@ -221,8 +175,7 @@ class RemarqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Remarque WHERE remarque_id = ?';
-      await _db.execute(sql, [remarqueId]);
+      await _db.execute(SqlQueries.deleteRemarque, [remarqueId]);
 
       logger.i('Remarque $remarqueId supprimée');
       await loadRemarques();
