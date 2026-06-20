@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 
 class ContratRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -32,18 +33,8 @@ class ContratRepository extends ChangeNotifier {
     try {
       final offset = page * paginationSize;
 
-      const sql = '''
-        SELECT 
-          c.contrat_id, c.client_id, c.reference_contrat, c.date_contrat, c.date_debut, c.date_fin, 
-          c.statut_contrat, c.duree_contrat, c.duree, c.categorie
-        FROM Contrat c
-        JOIN Client cli ON c.client_id = cli.client_id
-        ORDER BY cli.nom ASC
-        LIMIT ? OFFSET ?
-      ''';
-
       final rows = await _db
-          .query(sql, [paginationSize, offset])
+          .query(SqlQueries.getContratsPaginated, [paginationSize, offset])
           .timeout(
             const Duration(seconds: 45),
             onTimeout: () {
@@ -91,16 +82,8 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          contrat_id, client_id, reference_contrat, date_contrat, date_debut, date_fin, 
-          statut_contrat, duree_contrat, duree, categorie
-        FROM Contrat
-        WHERE contrat_id = ?
-      ''';
-
       final row = await _db
-          .queryOne(sql, [contratId])
+          .queryOne(SqlQueries.getContratById, [contratId])
           .timeout(
             const Duration(seconds: 25),
             onTimeout: () {
@@ -149,12 +132,7 @@ class ContratRepository extends ChangeNotifier {
             12 * (dateFin.year - dateDebut.year);
       }
 
-      const sql = '''
-        INSERT INTO Contrat (client_id, reference_contrat, date_contrat, date_debut, date_fin, statut_contrat, duree_contrat, duree, categorie)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ''';
-
-      final id = await _db.insert(sql, [
+      final id = await _db.insert(SqlQueries.createContrat, [
         clientId,
         referenceContrat,
         dateContrat.toIso8601String(),
@@ -209,13 +187,7 @@ class ContratRepository extends ChangeNotifier {
             12 * (contrat.dateFin!.year - contrat.dateDebut.year);
       }
 
-      const sql = '''
-        UPDATE Contrat 
-        SET client_id = ?, reference_contrat = ?, date_contrat = ?, date_debut = ?, date_fin = ?, statut_contrat = ?, duree_contrat = ?, duree = ?, categorie = ?
-        WHERE contrat_id = ?
-      ''';
-
-      await _db.execute(sql, [
+      await _db.execute(SqlQueries.updateContrat, [
         contrat.clientId,
         contrat.referenceContrat,
         contrat.dateContrat.toIso8601String(),
@@ -257,9 +229,7 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Contrat WHERE contrat_id = ?';
-
-      await _db.execute(sql, [contratId]);
+      await _db.execute(SqlQueries.deleteContrat, [contratId]);
 
       _contrats.removeWhere((c) => c.contratId == contratId);
 
@@ -306,17 +276,8 @@ class ContratRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          c.contrat_id, c.client_id, c.reference_contrat, c.date_contrat, c.date_debut, c.date_fin, c.statut_contrat, c.duree_contrat, c.duree, c.categorie
-        FROM Contrat c
-        JOIN Client cli ON c.client_id = cli.client_id
-        WHERE cli.nom LIKE ? OR cli.prenom LIKE ?
-        ORDER BY cli.nom ASC
-      ''';
-
       final searchTerm = '%$query%';
-      final rows = await _db.query(sql, [searchTerm, searchTerm]);
+      final rows = await _db.query(SqlQueries.searchContrats, [searchTerm, searchTerm]);
       _contrats = rows.map((row) => Contrat.fromMap(row)).toList();
 
       logger.i(
@@ -338,12 +299,7 @@ class ContratRepository extends ChangeNotifier {
     required int typeTraitementId,
   }) async {
     try {
-      const sql = '''
-        INSERT INTO Traitement (contrat_id, id_type_traitement)
-        VALUES (?, ?)
-      ''';
-
-      final id = await _db.insert(sql, [contratId, typeTraitementId]);
+      final id = await _db.insert(SqlQueries.createTraitement, [contratId, typeTraitementId]);
 
       logger.i('Traitement créé avec l\'ID: $id pour contrat $contratId');
       return id;
@@ -366,16 +322,7 @@ class ContratRepository extends ChangeNotifier {
 
     try {
       // 1. Mettre à jour le contrat avec la date d'abrogation
-      final updateContratSql = '''
-        UPDATE Contrat 
-        SET statut_contrat = 'Résilié', 
-            date_abrogation = ?, 
-            motif_abrogation = ?,
-            date_fin = ?
-        WHERE contrat_id = ?
-      ''';
-
-      await _db.execute(updateContratSql, [
+      await _db.execute(SqlQueries.abrogateContrat, [
         abrogationDate.toString().split(' ')[0], // Format YYYY-MM-DD
         motif,
         abrogationDate.toString().split(' ')[0], // Mettre à jour date_fin
@@ -385,20 +332,14 @@ class ContratRepository extends ChangeNotifier {
       logger.i('Contrat $contratId marqué comme Résilié à $abrogationDate');
 
       // 2. Trouver tous les traitements du contrat
-      final treatementsSql = '''
-        SELECT traitement_id FROM Traitement WHERE contrat_id = ?
-      ''';
-      final treatments = await _db.query(treatementsSql, [contratId]);
+      final treatments = await _db.query(SqlQueries.getTreatmentsByContrat, [contratId]);
 
       // 3. Pour chaque traitement, marquer les plannings futurs comme 'Classé sans suite'
       for (final treatment in treatments) {
         final treatmentId = treatment['traitement_id'];
 
         // Récupérer tous les plannings futurs pour ce traitement
-        final planningsSql = '''
-          SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?
-        ''';
-        final plannings = await _db.query(planningsSql, [
+        final plannings = await _db.query(SqlQueries.getFuturePlanningsByTreatment, [
           treatmentId,
           abrogationDate.toString().split(' ')[0],
         ]);
@@ -407,13 +348,7 @@ class ContratRepository extends ChangeNotifier {
         for (final planning in plannings) {
           final planningId = planning['planning_id'];
 
-          final updatePlanningDetailsSql = '''
-            UPDATE PlanningDetails 
-            SET statut = 'Classé sans suite'
-            WHERE planning_id = ?
-          ''';
-
-          await _db.execute(updatePlanningDetailsSql, [planningId]);
+          await _db.execute(SqlQueries.updatePlanningDetailsStatusByPlanning, [planningId]);
 
           logger.i(
             'Planning $planningId marqué comme Classé sans suite pour traitement $treatmentId',
