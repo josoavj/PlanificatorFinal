@@ -40,7 +40,7 @@ void main() async {
   // Configurer le logger global pour envoyer tous les logs au fichier
   log.configureGlobalLogger(logger);
 
-  log.info('Application démarrée', source: 'main');
+  log.info('Plateforme démarrée', source: 'main');
 
   // Initialiser le provider de thème
   final themeProvider = ThemeProvider();
