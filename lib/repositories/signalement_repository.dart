@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../utils/date_helper.dart';
+import '../core/sql_queries.dart';
 
 class SignalementRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -22,14 +23,7 @@ class SignalementRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          signalement_id, planning_detail_id, motif, type
-        FROM Signalement
-        ORDER BY signalement_id DESC
-      ''';
-
-      final rows = await _db.query(sql);
+      final rows = await _db.query(SqlQueries.getAllSignalements);
       _signalements = rows.map((row) => Signalement.fromJson(row)).toList();
 
       logger.i('${_signalements.length} signalements chargés');
@@ -54,14 +48,7 @@ class SignalementRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        INSERT INTO Signalement 
-        (planning_detail_id, motif, type)
-        VALUES (?, ?, ?)
-      ''';
-
-      await _db.execute(sql, [planningDetailsId, motif, type]);
-
+      await _db.execute(SqlQueries.createSignalement, [planningDetailsId, motif, type]);
       logger.i(' Signalement créé: type=$type, motif=$motif');
 
       // Recharger les signalements
@@ -88,13 +75,7 @@ class SignalementRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        UPDATE PlanningDetails 
-        SET date_planification = ?
-        WHERE planning_detail_id = ?
-      ''';
-
-      await _db.execute(sql, [
+      await _db.execute(SqlQueries.updatePlanningDate, [
         DateHelper.toDbFormat(newDate),
         planningDetailsId,
       ]);
@@ -131,14 +112,7 @@ class SignalementRepository extends ChangeNotifier {
       logger.i(' Décalage des dates futures de $ecartMois mois');
 
       //  2. Récupérer tous les details de ce planning
-      const getAllDetailsSQL = '''
-        SELECT planning_detail_id, date_planification
-        FROM PlanningDetails
-        WHERE planning_id = ?
-        ORDER BY date_planification ASC
-      ''';
-
-      final allDetails = await _db.query(getAllDetailsSQL, [planningId]);
+      final allDetails = await _db.query(SqlQueries.getPlanningDetailsByPlanningId, [planningId]);
       logger.i(' Trouvé ${allDetails.length} planning details');
 
       //  3. Trouver l'index du planning detail actuellement modifié
@@ -151,12 +125,6 @@ class SignalementRepository extends ChangeNotifier {
       }
 
       //  4. Décaler TOUTES les dates à partir de currentIndex+1 du même écart EN MOIS
-      const updateDetailsSQL = '''
-        UPDATE PlanningDetails 
-        SET date_planification = ?
-        WHERE planning_detail_id = ?
-      ''';
-
       for (int i = currentIndex + 1; i < allDetails.length; i++) {
         final oldDate = DateHelper.toDateTime(
           allDetails[i]['date_planification'],
@@ -164,7 +132,7 @@ class SignalementRepository extends ChangeNotifier {
         //  CORRECTION: Ajouter l'écart en MOIS (pas en jours)
         final newDate = _addMonthsToDate(oldDate, ecartMois);
 
-        await _db.execute(updateDetailsSQL, [
+        await _db.execute(SqlQueries.updatePlanningDate, [
           DateHelper.toDbFormat(newDate),
           allDetails[i]['planning_detail_id'],
         ]);
