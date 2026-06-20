@@ -109,14 +109,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
 
-                // Section App
+                // Section Plateforme
                 _buildSection(
-                  title: 'Application',
+                  title: 'Plateforme',
                   children: [
                     _buildModernCard(
                       icon: Icons.info_outline,
                       title: 'À propos',
-                      subtitle: 'Informations sur l\'application',
+                      subtitle: 'Informations sur la plateforme',
                       onTap: () => _showAboutDialog(context),
                     ),
                     _buildModernCard(
@@ -1315,14 +1315,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: 'Planificator',
-      applicationVersion: '1.1.0',
+      applicationVersion: '2.1.1',
       applicationIcon: const Icon(Icons.calendar_today, size: 64),
       children: const [
         SizedBox(height: 16),
         Text(
-          'Application de gestion de clients et de factures.\n\n'
+          'Plateforme de gestion de clients et de factures.\n\n'
           'Développé avec Flutter et MySQL.\n\n'
-          'Version 1.1.0 - 2024',
+          'Version 2.1.1 - 2026',
         ),
       ],
     );

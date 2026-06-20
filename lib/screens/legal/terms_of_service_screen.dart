@@ -25,20 +25,20 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               title: '1. Acceptation des Conditions',
               content:
-                  'En accédant et en utilisant l\'application Planificator (ci-après "l\'Application"), '
+                  'En accédant et en utilisant la plateforme Planificator (ci-après "la Plateforme"), '
                   'vous acceptez de respecter et d\'être lié par ces Conditions d\'Utilisation. '
-                  'Si vous n\'acceptez pas ces conditions, veuillez ne pas utiliser l\'Application.',
+                  'Si vous n\'acceptez pas ces conditions, veuillez ne pas utiliser la Plateforme.',
             ),
             _buildSection(
               title: '2. Licence d\'Utilisation',
               content:
                   'APEXNova Labs vous accorde une licence non exclusive, non transférable et révocable '
-                  'pour utiliser l\'Application à des fins professionnelles et personnelles légitimes.\n\n'
+                  'pour utiliser la Plateforme à des fins professionnelles et personnelles légitimes.\n\n'
                   'Vous vous engagez à :\n'
                   '• Ne pas copier, modifier ou créer des ouvrages dérivés\n'
                   '• Ne pas désassembler, décompiler ou ingénierie inverse\n'
-                  '• Ne pas utiliser l\'Application pour des activités illégales\n'
-                  '• Ne pas revendre ou louer l\'Application\n'
+                  '• Ne pas utiliser la Plateforme pour des activités illégales\n'
+                  '• Ne pas revendre ou louer la Plateforme\n'
                   '• Ne pas transférer la licence à des tiers',
             ),
             _buildSection(
@@ -71,7 +71,7 @@ class TermsOfServiceScreen extends StatelessWidget {
               title: '5. Contenu Utilisateur',
               content:
                   'Vous détenez la propriété de tout contenu que vous créez ou téléchargez. '
-                  'En le mettant à disposition via l\'Application, vous accordez à APEXNova Labs '
+                  'En le mettant à disposition via la Plateforme, vous accordez à APEXNova Labs '
                   'une licence mondiale, royale-free et perpétuelle pour :\n\n'
                   '• Héberger et stocker votre contenu\n'
                   '• Analyser vos données pour améliorer le service\n'
@@ -81,7 +81,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               title: '6. Propriété Intellectuelle',
               content:
-                  'L\'Application et tout son contenu (logos, textes, graphiques, code) '
+                  'La Plateforme et tout son contenu (logos, textes, graphiques, code) '
                   'sont la propriété exclusive d\'APEXNova Labs ou de ses fournisseurs. '
                   'Tous les droits d\'auteur, brevets et droits de propriété intellectuelle sont réservés.\n\n'
                   'Vous n\'avez aucun droit de copier, reproduire ou distribuer ce contenu '
@@ -90,7 +90,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               title: '7. Limitation de Responsabilité',
               content:
-                  'L\'Application est fournie "telle quelle" sans garanties de toute sorte. '
+                  'La Plateforme est fournie "telle quelle" sans garanties de toute sorte. '
                   'APEXNova Labs ne sera pas responsable de :\n\n'
                   '• Les pertes directes, indirectes ou consécutives\n'
                   '• Les perte de données ou d\'informations\n'
@@ -98,12 +98,12 @@ class TermsOfServiceScreen extends StatelessWidget {
                   '• Les interruptions de service non prévisibles\n'
                   '• Les erreurs de l\'utilisateur\n\n'
                   'La responsabilité totale d\'APEXNova Labs ne dépassera pas le montant '
-                  'que vous avez payé pour l\'Application au cours des 12 derniers mois.',
+                  'que vous avez payé pour la Plateforme au cours des 12 derniers mois.',
             ),
             _buildSection(
               title: '8. Exonération de Garantie',
               content:
-                  'L\'APPLICATION EST FOURNIE "TEL QUE" SANS GARANTIE D\'AUCUNE SORTE. '
+                  'LA PLATEFORME EST FOURNIE "TEL QU" SANS GARANTIE D\'AUCUNE SORTE. '
                   'APEXNOVA LABS REJETTE EXPRESSÉMENT TOUTE GARANTIE, EXPRESSE OU IMPLICITE, '
                   'NOTAMMENT CELLES DE QUALITÉ MARCHANDE, D\'ADAPTATION À UN USAGE PARTICULIER '
                   'ET D\'ABSENCE DE CONTREFAÇON.',
@@ -113,28 +113,28 @@ class TermsOfServiceScreen extends StatelessWidget {
               content:
                   'Vous acceptez de dégager, défendre et indemniser APEXNova Labs et ses '
                   'dirigeants, employés et agents contre toute réclamation, dommage ou frais '
-                  'résultant de votre violation de ces conditions ou de votre utilisation de l\'Application.',
+                  'résultant de votre violation de ces conditions ou de votre utilisation de la Plateforme.',
             ),
             _buildSection(
               title: '10. Résiliation',
               content:
-                  'APEXNova Labs peut résilier votre accès à l\'Application à tout moment, '
+                  'APEXNova Labs peut résilier votre accès à la Plateforme à tout moment, '
                   'sans avertissement préalable, si vous :\n\n'
                   '• Violez ces conditions\n'
                   '• Engagez des activités illégales\n'
                   '• Abusez du service\n'
                   '• Mettez en danger la sécurité ou les droits d\'autres utilisateurs\n\n'
-                  'Vous pouvez résilier votre compte à tout moment en utilisant les paramètres de l\'Application.',
+                  'Vous pouvez résilier votre compte à tout moment en utilisant les paramètres de la Plateforme.',
             ),
             _buildSection(
               title: '11. Modifications des Services',
               content:
                   'APEXNova Labs se réserve le droit de :\n\n'
-                  '• Modifier ou améliorer l\'Application\n'
+                  '• Modifier ou améliorer la Plateforme\n'
                   '• Ajouter ou supprimer des fonctionnalités\n'
                   '• Changer les conditions de service\n'
                   '• Suspendre ou arrêter le service\n\n'
-                  'Nous vous notifierons des changements substantiels par email ou via l\'Application.',
+                  'Nous vous notifierons des changements substantiels par email ou via la Plateforme.',
             ),
             _buildSection(
               title: '12. Loi Applicable',
@@ -155,7 +155,7 @@ class TermsOfServiceScreen extends StatelessWidget {
               content:
                   'Ces Conditions d\'Utilisation, ainsi que notre Politique de Confidentialité, '
                   'constituent l\'accord complet entre vous et APEXNova Labs concernant l\'utilisation '
-                  'de l\'Application. Tous les accords antérieurs sont annulés et remplacés par ces conditions.',
+                  'de la Plateforme. Tous les accords antérieurs sont annulés et remplacés par ces conditions.',
             ),
             _buildSection(
               title: '15. Nous Contacter',

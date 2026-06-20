@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 
 /// Repository pour gérer les notifications de traitements
 class NotificationRepository extends ChangeNotifier {
@@ -53,30 +54,7 @@ class NotificationRepository extends ChangeNotifier {
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       final dateStr = tomorrow.toIso8601String().split('T')[0];
 
-      const sql = '''
-        SELECT 
-          pd.planning_detail_id,
-          pd.planning_id,
-          pd.date_planification,
-          pd.statut,
-          tt.typeTraitement,
-          c.nom,
-          c.prenom,
-          c.telephone,
-          c.email,
-          p.traitement_id
-        FROM PlanningDetails pd
-        JOIN Planning p ON pd.planning_id = p.planning_id
-        JOIN Traitement t ON p.traitement_id = t.traitement_id
-        JOIN Contrat co ON t.contrat_id = co.contrat_id
-        JOIN Client c ON co.client_id = c.client_id
-        JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        WHERE DATE(pd.date_planification) = ?
-        AND pd.statut NOT IN ('Effectué')
-        ORDER BY pd.date_planification ASC
-      ''';
-
-      final rows = await _db.query(sql, [dateStr]);
+      final rows = await _db.query(SqlQueries.getNextDayTreatmentsDetailed, [dateStr]);
       _treatments = rows;
       final count = _treatments.length;
 
@@ -175,31 +153,7 @@ class NotificationRepository extends ChangeNotifier {
       final tomorrow = DateTime.now().add(const Duration(days: 1));
       final dateStr = tomorrow.toIso8601String().split('T')[0];
 
-      const sql = '''
-        SELECT 
-          pd.planning_detail_id,
-          pd.planning_id,
-          pd.date_planification,
-          pd.statut,
-          tt.typeTraitement,
-          c.nom,
-          c.prenom,
-          c.telephone,
-          c.email,
-          c.adresse,
-          p.traitement_id
-        FROM PlanningDetails pd
-        JOIN Planning p ON pd.planning_id = p.planning_id
-        JOIN Traitement t ON p.traitement_id = t.traitement_id
-        JOIN Contrat co ON t.contrat_id = co.contrat_id
-        JOIN Client c ON co.client_id = c.client_id
-        JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        WHERE DATE(pd.date_planification) = ?
-        AND pd.statut NOT IN ('Effectué')
-        ORDER BY pd.date_planification ASC
-      ''';
-
-      final rows = await _db.query(sql, [dateStr]);
+      final rows = await _db.query(SqlQueries.getNextDayTreatmentsWithDetails, [dateStr]);
       _treatments = rows;
 
       log.info(
@@ -234,13 +188,7 @@ class NotificationRepository extends ChangeNotifier {
 
       final today = DateTime.now().toIso8601String().split('T')[0];
 
-      const sql = '''
-        SELECT COUNT(*) as count
-        FROM PlanningDetails
-        WHERE DATE(date_planification) = ?
-      ''';
-
-      final rows = await _db.query(sql, [today]);
+      final rows = await _db.query(SqlQueries.countTodayTreatments, [today]);
       final count = rows.isNotEmpty ? (rows[0]['count'] as int? ?? 0) : 0;
 
       log.info(

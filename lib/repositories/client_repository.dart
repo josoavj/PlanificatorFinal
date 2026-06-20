@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 import '../services/query_cache_service.dart';
 
 class ClientRepository extends ChangeNotifier {
@@ -73,35 +74,8 @@ class ClientRepository extends ChangeNotifier {
       logger.i('Cache MISS: Executing SQL query for page $page...');
       logger.i('DB connection status: ${_db.isConnected}');
 
-      const sql = '''
-        SELECT 
-          c.client_id, 
-          COALESCE(c.nom, 'Sans nom') as nom, 
-          COALESCE(c.prenom, '') as prenom, 
-          COALESCE(c.email, '') as email, 
-          COALESCE(c.telephone, '') as telephone, 
-          COALESCE(c.adresse, '') as adresse, 
-          COALESCE(c.categorie, '') as categorie, 
-          COALESCE(c.nif, '') as nif, 
-          COALESCE(c.stat, '') as stat, 
-          COALESCE(c.axe, '') as axe,
-          COALESCE((
-            SELECT COUNT(*)
-            FROM Traitement t
-            INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-            WHERE co.client_id = c.client_id
-          ), 0) as treatment_count
-        FROM Client c
-        WHERE EXISTS (
-          SELECT 1 FROM Contrat co 
-          WHERE co.client_id = c.client_id
-        )
-        ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
-        LIMIT ? OFFSET ?
-      ''';
-
       final rows = await _db
-          .query(sql, [paginationSize, offset])
+          .query(SqlQueries.getClientsPaginated, [paginationSize, offset])
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -185,20 +159,8 @@ class ClientRepository extends ChangeNotifier {
 
       logger.i('Cache MISS: Executing SQL query for client $clientId');
 
-      const sql = '''
-        SELECT 
-          c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
-          c.categorie, c.nif, c.stat, c.axe, c.date_ajout,
-          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
-        FROM Client c
-        LEFT JOIN Contrat co ON c.client_id = co.client_id
-        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
-        WHERE c.client_id = ?
-        GROUP BY c.client_id
-      ''';
-
       final row = await _db
-          .queryOne(sql, [clientId])
+          .queryOne(SqlQueries.getClientById, [clientId])
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -234,13 +196,7 @@ class ClientRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        INSERT INTO Client (nom, prenom, email, telephone, adresse, 
-                           categorie, nif, stat, axe, date_ajout)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ''';
-
-      final id = await _db.insert(sql, [
+      final id = await _db.insert(SqlQueries.createClient, [
         client.nom,
         client.prenom,
         client.email,
@@ -278,14 +234,7 @@ class ClientRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        UPDATE Client
-        SET nom = ?, prenom = ?, email = ?, telephone = ?, adresse = ?,
-            categorie = ?, nif = ?, stat = ?, axe = ?
-        WHERE client_id = ?
-      ''';
-
-      await _db.execute(sql, [
+      await _db.execute(SqlQueries.updateClient, [
         client.nom,
         client.prenom,
         client.email,
@@ -437,23 +386,9 @@ class ClientRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          c.client_id, c.nom, c.prenom, c.email, c.telephone, c.adresse,
-          c.categorie, c.nif, c.stat, c.axe,
-          COALESCE(COUNT(DISTINCT t.traitement_id), 0) as treatment_count
-        FROM Client c
-        LEFT JOIN Contrat co ON c.client_id = co.client_id
-        LEFT JOIN Traitement t ON co.contrat_id = t.contrat_id
-        WHERE c.nom LIKE ? OR c.prenom LIKE ? OR c.email LIKE ?
-        GROUP BY c.client_id
-        HAVING COUNT(DISTINCT co.contrat_id) > 0
-        ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
-      ''';
-
       final searchTerm = '%$query%';
       final rows = await _db
-          .query(sql, [searchTerm, searchTerm, searchTerm])
+          .query(SqlQueries.searchClients, [searchTerm, searchTerm, searchTerm])
           .timeout(
             const Duration(seconds: 40),
             onTimeout: () {

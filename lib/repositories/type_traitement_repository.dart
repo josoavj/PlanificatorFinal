@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 
 class TypeTraitementRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -35,8 +36,7 @@ class TypeTraitementRepository extends ChangeNotifier {
 
     try {
       // Charger depuis la BD
-      final query = 'SELECT * FROM TypeTraitement ORDER BY id_type_traitement';
-      final results = await _db.query(query);
+      final results = await _db.query(SqlQueries.getAllTypeTraitements);
 
       if (results.isEmpty) {
         // Si aucun résultat, initialiser la liste prédéfinie (fallback)

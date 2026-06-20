@@ -3,6 +3,7 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:planificator/models/planning_details.dart';
 import 'package:planificator/services/index.dart';
+import 'package:planificator/core/sql_queries.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {
   final _db = DatabaseService();
@@ -43,7 +44,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
       final dateStr = datePlanification.toIso8601String().split('T')[0];
       final existingCheck = await _db
           .query(
-            'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?',
+            SqlQueries.checkExistingPlanningDetail,
             [planningId, dateStr],
           )
           .timeout(
@@ -70,7 +71,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       // Utiliser insert() au lieu de query() pour les INSERT
       final insertId = await _db.insert(
-        'INSERT INTO PlanningDetails (planning_id, date_planification, statut) VALUES (?, ?, ?)',
+        SqlQueries.insertPlanningDetailWithStatut,
         [planningId, dateStr, statut],
       );
 
@@ -99,7 +100,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
     try {
       final results = await _db
           .query(
-            'SELECT * FROM PlanningDetails WHERE planning_id = ? ORDER BY date_planification',
+            SqlQueries.getPlanningDetailsByPlanningId,
             [planningId],
           )
           .timeout(
@@ -126,7 +127,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
   ) async {
     try {
       await _db.execute(
-        'UPDATE PlanningDetails SET statut = ? WHERE planning_detail_id = ?',
+        SqlQueries.updatePlanningDetailStatut,
         [newStatut, planningDetailId],
       );
 
@@ -146,7 +147,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
   Future<bool> deletePlanningDetails(int planningDetailsId) async {
     try {
       final result = await _db.query(
-        'DELETE FROM PlanningDetails WHERE planning_detail_id = ?',
+        SqlQueries.deletePlanningDetail,
         [planningDetailsId],
       );
 
@@ -166,7 +167,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
     try {
       final results = await _db
           .query(
-            'SELECT * FROM PlanningDetails ORDER BY date_planification DESC',
+            SqlQueries.getAllPlanningDetails,
           )
           .timeout(
             const Duration(seconds: 45),
@@ -207,25 +208,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db
           .query(
-            '''SELECT 
-             pd.planning_detail_id,
-             DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
-             CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) as traitement,
-             COALESCE(pd.statut, 'Non planifié') as etat,
-             COALESCE(c.axe, 'Non défini') as axe,
-             COALESCE(tt.categorieTraitement, '') as categorieTraitement,
-             COALESCE(c.categorie, '') as categorie
-           FROM PlanningDetails pd
-           INNER JOIN Planning p ON pd.planning_id = p.planning_id
-           INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-           LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-           INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
-           INNER JOIN Client c ON ct.client_id = c.client_id
-           WHERE YEAR(pd.date_planification) = ?
-           AND MONTH(pd.date_planification) = ?
-           AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
-           ORDER BY pd.date_planification ASC
-           LIMIT 5000''',
+            SqlQueries.getCurrentMonthTreatmentsComplete,
             [currentYear, currentMonth],
           )
           .timeout(
@@ -284,26 +267,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db
           .query(
-            '''SELECT 
-             pd.planning_detail_id,
-             pd.planning_id,
-             DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
-             pd.date_planification,
-             CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) as traitement,
-             COALESCE(pd.statut, 'Non planifié') as etat,
-             COALESCE(c.axe, 'Non défini') as axe,
-             COALESCE(tt.categorieTraitement, '') as categorieTraitement,
-             COALESCE(c.categorie, '') as categorie
-           FROM PlanningDetails pd
-           INNER JOIN Planning p ON pd.planning_id = p.planning_id
-           INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-           LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-           INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
-           INNER JOIN Client c ON ct.client_id = c.client_id
-           WHERE pd.date_planification >= ?
-           AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
-           ORDER BY pd.date_planification ASC
-           LIMIT 10000''',
+            SqlQueries.getUpcomingTreatmentsComplete,
             [todayStr],
           )
           .timeout(
@@ -354,26 +318,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       // Requête SANS filtre de date - récupère TOUS les traitements
       final results = await _db
-          .query('''SELECT 
-             pd.planning_detail_id,
-             pd.planning_id,
-             DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
-             pd.date_planification,
-             CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
-             pd.statut as etat,
-             c.axe,
-             tt.categorieTraitement,
-             tt.id_type_traitement,
-             c.client_id,
-             ct.contrat_id,
-             c.categorie
-           FROM PlanningDetails pd
-           INNER JOIN Planning p ON pd.planning_id = p.planning_id
-           INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-           LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-           INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
-           INNER JOIN Client c ON ct.client_id = c.client_id
-           ORDER BY pd.date_planification DESC''')
+          .query(SqlQueries.getAllTreatmentsComplete)
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -460,24 +405,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
       }
 
       final results = await _db
-          .query('''
-        SELECT 
-          pd.date_planification AS `Date du traitement`,
-          tt.typeTraitement AS `Traitement concerné`,
-          tt.categorieTraitement AS `Catégorie du traitement`,
-          CONCAT(c.nom, ' ', c.prenom) AS `Client concerné`,
-          c.categorie AS `Catégorie du client`,
-          c.axe AS `Axe du client`,
-          pd.statut AS `Etat traitement`
-        FROM PlanningDetails pd
-        INNER JOIN Planning p ON pd.planning_id = p.planning_id
-        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-        LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-        INNER JOIN Client c ON co.client_id = c.client_id
-        $whereClause
-        ORDER BY pd.date_planification ASC
-      ''', params)
+          .query(
+            '${SqlQueries.getTreatmentsByMonthAndClientBase} $whereClause ORDER BY pd.date_planification ASC',
+            params,
+          )
           .timeout(
             const Duration(seconds: 45),
             onTimeout: () {
@@ -500,20 +431,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
       final results = await _db
           .query(
             clientId == -1
-                ? '''
-        SELECT DISTINCT tt.typeTraitement
-        FROM Traitement t
-        INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        ORDER BY tt.typeTraitement ASC
-      '''
-                : '''
-        SELECT DISTINCT tt.typeTraitement
-        FROM Traitement t
-        INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-        WHERE co.client_id = ?
-        ORDER BY tt.typeTraitement ASC
-      ''',
+                ? SqlQueries.getDistinctTreatmentTypes
+                : SqlQueries.getDistinctTreatmentTypesByClient,
             clientId == -1 ? [] : [clientId],
           )
           .timeout(

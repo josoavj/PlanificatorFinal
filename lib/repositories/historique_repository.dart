@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
+import '../core/sql_queries.dart';
 
 class HistoriqueRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -23,24 +24,8 @@ class HistoriqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          h.historique_id,
-          h.date_historique as date,
-          COALESCE(f.facture_id, 0) as facture_id,
-          COALESCE(pd.date_planification, '2000-01-01') as date_planification,
-          COALESCE(h.contenu, 'Événement') as description,
-          COALESCE(h.issue, 'Non défini') as issue,
-          COALESCE(h.action, 'Aucune') as action
-        FROM Historique h
-        LEFT JOIN Facture f ON h.facture_id = f.facture_id
-        LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
-        ORDER BY h.date_historique DESC
-        LIMIT 5000
-      ''';
-
       final rows = await _db
-          .query(sql)
+          .query(SqlQueries.getAllHistoriqueDetailed)
           .timeout(
             const Duration(seconds: 50),
             onTimeout: () {
@@ -75,21 +60,7 @@ class HistoriqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          h.historique_id,
-          h.date_historique as date,
-          COALESCE(h.contenu, 'Événement') as description,
-          COALESCE(h.issue, 'Non défini') as issue,
-          COALESCE(h.action, 'Aucune') as action
-        FROM Historique h
-        LEFT JOIN Facture f ON h.facture_id = f.facture_id
-        WHERE f.axe = ? OR COALESCE(f.axe, ?) = ?
-        ORDER BY h.date_historique DESC
-        LIMIT 2000
-      ''';
-
-      final rows = await _db.query(sql, [categorie]);
+      final rows = await _db.query(SqlQueries.getHistoriqueByCategory, [categorie, categorie, categorie]);
       _events = rows.map((row) {
         return HistoriqueEvent(
           historiqueId: row['historique_id'] as int? ?? 0,
@@ -117,27 +88,8 @@ class HistoriqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          h.historique_id,
-          h.date_historique as date,
-          h.contenu as description,
-          h.issue,
-          h.action
-        FROM Historique h
-        LEFT JOIN Facture f ON h.facture_id = f.facture_id
-        LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
-        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        LEFT JOIN Traitement t ON p.planning_id IN (
-          SELECT DISTINCT planning_id FROM PlanningDetails WHERE planning_detail_id = pd.planning_detail_id
-        )
-        LEFT JOIN Contrat c ON t.contrat_id = c.contrat_id
-        WHERE c.client_id = ?
-        ORDER BY h.date_historique DESC
-      ''';
-
       final rows = await _db
-          .query(sql, [clientId])
+          .query(SqlQueries.getHistoriqueByClient, [clientId])
           .timeout(
             const Duration(seconds: 45),
             onTimeout: () {
@@ -175,15 +127,7 @@ class HistoriqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          historiqueId, type, description, date, details
-        FROM Historique
-        WHERE date >= ? AND date <= ?
-        ORDER BY date DESC
-      ''';
-
-      final rows = await _db.query(sql, [
+      final rows = await _db.query(SqlQueries.getHistoriqueByDateRange, [
         startDate.toIso8601String(),
         endDate.toIso8601String(),
       ]);
@@ -206,12 +150,7 @@ class HistoriqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        INSERT INTO Historique (type, description, date, details)
-        VALUES (?, ?, ?, ?)
-      ''';
-
-      final id = await _db.insert(sql, [
+      final id = await _db.insert(SqlQueries.createHistoriqueEvent, [
         type,
         description,
         DateTime.now().toIso8601String(),
@@ -301,17 +240,9 @@ class HistoriqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          historiqueId, type, description, date, details
-        FROM Historique
-        WHERE description LIKE ? OR details LIKE ?
-        ORDER BY date DESC
-      ''';
-
       final searchTerm = '%$query%';
       final rows = await _db
-          .query(sql, [searchTerm, searchTerm])
+          .query(SqlQueries.searchHistorique, [searchTerm, searchTerm])
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -351,9 +282,7 @@ class HistoriqueRepository extends ChangeNotifier {
     try {
       final cutoffDate = DateTime.now().subtract(Duration(days: days));
 
-      const sql = 'DELETE FROM Historique WHERE date < ?';
-
-      await _db.execute(sql, [cutoffDate.toIso8601String()]);
+      await _db.execute(SqlQueries.deleteOldHistorique, [cutoffDate.toIso8601String()]);
 
       // Recharger les événements
       await loadAllEvents();
