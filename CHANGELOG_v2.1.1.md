@@ -1,8 +1,39 @@
 # Planificator v2.1.1 - Bug Fix & Refactoring Changelog
 
-**Release Date**: 2024-12-20 | **Last Updated**: 2026-01-31  
+**Release Date**: 2024-12-20 | **Last Updated**: 2026-02-01  
 **Version**: 2.1.1  
 **Status**: PRODUCTION READY
+
+---
+
+## Final Infrastructure & Performance Hardening (2026-02-01)
+
+### Session Summary - Industrialization
+
+**4 major architectural improvements**:
+
+1. **Smart Cache Implementation** : Implementation of a global SQL cache manager. Repeated read queries (SELECT) are now instantaneous (0ms latency).
+2. **SQL Centralization** : All SQL scripts moved to `lib/core/sql_queries.dart`. Unified maintenance and schema protection.
+3. **Advanced Connection Pooling** : Implementation of a pool of reusable MySQL connections to eliminate repetitive authentication delays.
+4. **Log Sanitization** : Added a security filter that masks passwords and bcrypt hashes in the application log files.
+
+#### Implementation Details
+
+**Architecture - SQL Centralization**
+- File: `lib/core/sql_queries.dart`
+- 100% of SQL scripts from Repositories (Clients, Contrats, Factures, Planning, etc.) moved to constants.
+- Decoupling of business logic and data storage.
+
+**Performance - Smart Cache & Pooling**
+- Files: `lib/services/smart_cache_manager.dart`, `lib/services/database_service.dart`
+- `SmartCacheManager` handles TTL and automatic invalidation on UPDATE/INSERT.
+- Connection Pool optimized (5-10 active connections).
+- Isolate logic refined: compute() is now only used for heavy data processing to avoid main thread jitter.
+
+**Security - Log Sanitization**
+- File: `lib/services/database_service.dart`
+- Regex-based masking for sensitive parameters in query logs.
+- Automatic resource cleanup on app shutdown.
 
 ---
 
