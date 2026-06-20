@@ -5,6 +5,7 @@ import '../services/index.dart';
 import '../utils/excel_utils.dart';
 import '../utils/date_helper.dart';
 import '../utils/date_utils.dart' as date_utils;
+import '../core/sql_queries.dart';
 
 class FactureRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -21,20 +22,8 @@ class FactureRepository extends ChangeNotifier {
   ///  Charge les factures d'un contrat
   Future<List<Facture>> loadFacturesForContrat(int contratId) async {
     try {
-      const sql = '''
-        SELECT DISTINCT f.*
-        FROM Facture f
-        INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        INNER JOIN Planning p ON pd.planning_id = p.planning_id
-        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-        INNER JOIN Client cl ON co.client_id = cl.client_id
-        WHERE t.contrat_id = ?
-        ORDER BY cl.nom ASC
-      ''';
-
       final rows = await _db
-          .query(sql, [contratId])
+          .query(SqlQueries.getFacturesByContrat, [contratId])
           .timeout(
             const Duration(seconds: 40),
             onTimeout: () {
@@ -57,39 +46,8 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        SELECT 
-          f.facture_id,
-          f.planning_detail_id,
-          f.reference_facture,
-          f.montant,
-          f.mode,
-          f.etablissement_payeur,
-          f.date_cheque,
-          f.numero_cheque,
-          f.date_traitement,
-          f.etat,
-          f.axe,
-          cl.client_id,
-          cl.nom as clientNom,
-          cl.prenom as clientPrenom,
-          cl.categorie as clientCategorie,
-          tt.typeTraitement as typeTreatment,
-          pd.date_planification as datePlanification,
-          pd.statut as etatPlanning
-        FROM Facture f
-        INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        INNER JOIN Planning p ON pd.planning_id = p.planning_id
-        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-        LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-        INNER JOIN Client cl ON co.client_id = cl.client_id
-        WHERE cl.client_id = ?
-        ORDER BY cl.nom ASC
-      ''';
-
       final rows = await _db
-          .query(sql, [clientId])
+          .query(SqlQueries.getFacturesByClientDetailed, [clientId])
           .timeout(
             const Duration(seconds: 45),
             onTimeout: () {
@@ -120,39 +78,8 @@ class FactureRepository extends ChangeNotifier {
     try {
       // Requête optimisée: utilise INNER JOIN pour les liens critiques
       // et LEFT JOIN pour les données optionnelles
-      const sql = '''
-        SELECT 
-          f.facture_id,
-          f.planning_detail_id,
-          f.reference_facture,
-          f.montant,
-          f.mode,
-          f.etablissement_payeur,
-          f.date_cheque,
-          f.numero_cheque,
-          f.date_traitement,
-          f.etat,
-          f.axe,
-          COALESCE(cl.client_id, 0) as client_id,
-          COALESCE(cl.nom, 'Non associé') as clientNom,
-          COALESCE(cl.prenom, '') as clientPrenom,
-          COALESCE(cl.categorie, '') as clientCategorie,
-          COALESCE(tt.typeTraitement, 'Non défini') as typeTreatment,
-          COALESCE(pd.date_planification, '2000-01-01') as datePlanification,
-          COALESCE(pd.statut, 'Non planifié') as etatPlanning
-        FROM Facture f
-        INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        INNER JOIN Planning p ON pd.planning_id = p.planning_id
-        INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-        LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-        INNER JOIN Client cl ON co.client_id = cl.client_id
-        ORDER BY COALESCE(cl.nom, 'Z') ASC
-        LIMIT 10000
-      ''';
-
       final rows = await _db
-          .query(sql)
+          .query(SqlQueries.getAllFacturesDetailed)
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -177,26 +104,8 @@ class FactureRepository extends ChangeNotifier {
     int planningDetailId,
   ) async {
     try {
-      const sql = '''
-        SELECT 
-          f.facture_id,
-          f.planning_detail_id,
-          f.reference_facture,
-          f.montant,
-          f.mode,
-          f.etablissement_payeur,
-          f.date_cheque,
-          f.numero_cheque,
-          f.date_traitement,
-          f.etat,
-          f.axe
-        FROM Facture f
-        WHERE f.planning_detail_id = ?
-        ORDER BY f.date_traitement DESC
-      ''';
-
       final rows = await _db
-          .query(sql, [planningDetailId])
+          .query(SqlQueries.getFacturesByPlanningDetail, [planningDetailId])
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -221,21 +130,8 @@ class FactureRepository extends ChangeNotifier {
   /// Récupère l'historique des changements de prix d'une facture
   Future<List<Map<String, dynamic>>> getPriceHistory(int factureId) async {
     try {
-      const sql = '''
-        SELECT 
-          history_id,
-          facture_id,
-          old_amount,
-          new_amount,
-          change_date,
-          changed_by
-        FROM Historique_prix
-        WHERE facture_id = ?
-        ORDER BY change_date ASC
-      ''';
-
       final rows = await _db
-          .query(sql, [factureId])
+          .query(SqlQueries.getPriceHistory, [factureId])
           .timeout(
             const Duration(seconds: 25),
             onTimeout: () {
@@ -263,9 +159,7 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'UPDATE Facture SET montant = ? WHERE facture_id = ?';
-
-      await _db.execute(sql, [newPrice, factureId]);
+      await _db.execute(SqlQueries.updateFacturePrice, [newPrice, factureId]);
 
       // Mettre à jour dans la liste locale
       final index = _factures.indexWhere((f) => f.factureId == factureId);
@@ -295,9 +189,7 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'UPDATE Facture SET etat = ? WHERE facture_id = ?';
-
-      await _db.execute(sql, ['Payée', factureId]);
+      await _db.execute(SqlQueries.markFactureAsPaid, ['Payée', factureId]);
 
       // Mettre à jour dans la liste
       final index = _factures.indexWhere((f) => f.factureId == factureId);
@@ -324,12 +216,9 @@ class FactureRepository extends ChangeNotifier {
     String newReference,
   ) async {
     try {
-      const sql =
-          'UPDATE Facture SET reference_facture = ? WHERE facture_id = ?';
-
       // Envoyer null à la BD si vide, sinon la nouvelle valeur
       final refValue = newReference.isEmpty ? null : newReference;
-      await _db.execute(sql, [refValue, factureId]);
+      await _db.execute(SqlQueries.updateFactureReference, [refValue, factureId]);
 
       // Mettre à jour dans la liste locale
       final index = _factures.indexWhere((f) => f.factureId == factureId);
@@ -386,15 +275,7 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Étape 1: Récupérer la facture et sa date
-      const getFactureSql = '''
-        SELECT f.facture_id, f.date_traitement, pd.planning_id, p.traitement_id
-        FROM Facture f
-        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        WHERE f.facture_id = ?
-      ''';
-
-      final factureRows = await _db.query(getFactureSql, [factureId]);
+      final factureRows = await _db.query(SqlQueries.getFactureAndTreatmentInfo, [factureId]);
       if (factureRows.isEmpty) {
         throw Exception('Facture non trouvée');
       }
@@ -414,16 +295,7 @@ class FactureRepository extends ChangeNotifier {
       );
 
       // Étape 3: Récupérer toutes les factures du même traitement avec date >= dateActuelle
-      const getOtherFacturesSql = '''
-        SELECT f.facture_id, f.montant, f.date_traitement, f.etat
-        FROM Facture f
-        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        WHERE p.traitement_id = ? AND f.date_traitement >= ?
-        ORDER BY f.date_traitement DESC
-      ''';
-
-      final otherFactures = await _db.query(getOtherFacturesSql, [
+      final otherFactures = await _db.query(SqlQueries.getOtherFacturesByTreatmentFromDate, [
         traitementId,
         dateTraitement,
       ]);
@@ -446,15 +318,10 @@ class FactureRepository extends ChangeNotifier {
         final nouveauMontant = ancienMontant + prixDiff;
 
         // Mettre à jour le montant
-        const updateSql = 'UPDATE Facture SET montant = ? WHERE facture_id = ?';
-        await _db.execute(updateSql, [nouveauMontant, fId]);
+        await _db.execute(SqlQueries.updateFacturePrice, [nouveauMontant, fId]);
 
         // Créer une entrée historique
-        const historiqueSql = '''
-          INSERT INTO Historique_prix (facture_id, old_amount, new_amount, change_date)
-          VALUES (?, ?, ?, ?)
-        ''';
-        await _db.execute(historiqueSql, [
+        await _db.execute(SqlQueries.createPriceHistoryEntry, [
           fId,
           ancienMontant,
           nouveauMontant,
@@ -512,12 +379,7 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = '''
-        INSERT INTO Facture (planning_detail_id, montant, mode, date_traitement, etat, axe)
-        VALUES (?, ?, ?, ?, 'Non payé', 'Centre (C)')
-      ''';
-
-      final id = await _db.insert(sql, [
+      final id = await _db.insert(SqlQueries.createFacture, [
         planningDetailId,
         montant,
         mode,
@@ -553,9 +415,7 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       //  Vérifier si une facture existe déjà pour ce planning detail
-      const checkSql =
-          'SELECT facture_id FROM Facture WHERE planning_detail_id = ?';
-      final existing = await _db.query(checkSql, [planningDetailId]);
+      final existing = await _db.query(SqlQueries.checkFactureExistence, [planningDetailId]);
 
       if (existing.isNotEmpty) {
         logger.i(
@@ -564,12 +424,7 @@ class FactureRepository extends ChangeNotifier {
         return existing[0]['facture_id'] as int;
       }
 
-      const sql = '''
-        INSERT INTO Facture (planning_detail_id, reference_facture, montant, mode, date_traitement, etat, axe)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      ''';
-
-      final id = await _db.insert(sql, [
+      final id = await _db.insert(SqlQueries.createFactureComplete, [
         planningDetailId,
         referenceFacture.isEmpty ? null : referenceFacture,
         montant,
@@ -600,9 +455,7 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Facture WHERE facture_id = ?';
-
-      await _db.execute(sql, [factureId]);
+      await _db.execute(SqlQueries.deleteFacture, [factureId]);
 
       _factures.removeWhere((f) => f.factureId == factureId);
 
@@ -638,33 +491,7 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Charger les données complètes: Facture + Planning + TypeTraitement
-      const sql = '''
-        SELECT 
-          f.facture_id,
-          f.date_traitement as factureDate,
-          f.montant,
-          f.etat as factureStat,
-          f.mode,
-          f.etablissement_payeur,
-          f.numero_cheque,
-          pd.date_planification as datePlanification,
-          pd.statut as planningState,
-          tt.typeTraitement as traitement,
-          c.nom,
-          c.prenom
-        FROM Facture f
-        LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-        LEFT JOIN Planning p ON pd.planning_id = p.planning_id
-        LEFT JOIN Traitement t ON p.planning_id IN (
-          SELECT DISTINCT planning_id FROM PlanningDetails WHERE planning_detail_id = pd.planning_detail_id
-        )
-        LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        LEFT JOIN Contrat c ON t.contrat_id = c.contrat_id
-        WHERE c.client_id = ?
-        ORDER BY f.date_traitement DESC
-      ''';
-
-      final rows = await _db.query(sql, [clientId]);
+      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [clientId]); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
 
       // Préparer les données pour Excel
       final List<Map<String, dynamic>> excelData = [];
@@ -745,24 +572,11 @@ class FactureRepository extends ChangeNotifier {
       logger.i('   📑 Référence: $referencePrefix');
 
       // 1. Récupérer l'axe et le Planning
-      const sqlGetAxe = '''
-        SELECT DISTINCT cl.axe
-        FROM Traitement t
-        INNER JOIN Contrat c ON t.contrat_id = c.contrat_id
-        INNER JOIN Client cl ON c.client_id = cl.client_id
-        WHERE t.traitement_id = ?
-      ''';
-
-      final axeResult = await _db.query(sqlGetAxe, [traitementId]);
+      final axeResult = await _db.query(SqlQueries.getClientAxeByTreatment, [traitementId]);
       if (axeResult.isEmpty) throw Exception('Traitement non trouvé');
       final axe = axeResult[0]['axe'] as String;
 
-      const sqlGetPlanning = '''
-        SELECT p.planning_id, p.date_debut_planification, p.duree_traitement, p.redondance
-        FROM Planning p WHERE p.traitement_id = ? LIMIT 1
-      ''';
-
-      final planningResult = await _db.query(sqlGetPlanning, [traitementId]);
+      final planningResult = await _db.query(SqlQueries.getPlanningByTreatment, [traitementId]);
       if (planningResult.isEmpty) throw Exception('Planning non trouvé');
 
       final planningId = planningResult[0]['planning_id'] as int;
@@ -773,9 +587,7 @@ class FactureRepository extends ChangeNotifier {
       );
 
       // 2. Créer les PlanningDetails manquants
-      const sqlCountDetails =
-          'SELECT COUNT(*) as count FROM PlanningDetails WHERE planning_id = ?';
-      final countResult = await _db.query(sqlCountDetails, [planningId]);
+      final countResult = await _db.query(SqlQueries.countPlanningDetails, [planningId]);
       final existingCount = (countResult[0]['count'] as int?) ?? 0;
 
       int planningDetailsCreated = 0;
@@ -795,11 +607,7 @@ class FactureRepository extends ChangeNotifier {
 
         for (final date in planningDates) {
           try {
-            const sqlInsert = '''
-              INSERT INTO PlanningDetails (planning_id, date_planification)
-              VALUES (?, ?)
-            ''';
-            await _db.execute(sqlInsert, [planningId, date.toIso8601String()]);
+            await _db.execute(SqlQueries.insertPlanningDetail, [planningId, date.toIso8601String()]);
             planningDetailsCreated++;
             logger.i(
               '    PlanningDetail créé: ${date.toIso8601String()} (ID Planning=$planningId)',
@@ -814,12 +622,7 @@ class FactureRepository extends ChangeNotifier {
       }
 
       // 3. Créer les factures
-      const sqlGetDetails = '''
-        SELECT DISTINCT pd.planning_detail_id, pd.date_planification
-        FROM PlanningDetails pd WHERE pd.planning_id = ? ORDER BY pd.date_planification ASC
-      ''';
-
-      final planningDetails = await _db.query(sqlGetDetails, [planningId]);
+      final planningDetails = await _db.query(SqlQueries.getPlanningDetailsByPlanningIdOrdered, [planningId]);
       logger.i('    Total Planning Details trouvés: ${planningDetails.length}');
 
       if (planningDetails.isEmpty) {
@@ -834,9 +637,7 @@ class FactureRepository extends ChangeNotifier {
         final pdId = pd['planning_detail_id'] as int;
         final dateStr = pd['date_planification'] as String;
 
-        const sqlCheck =
-            'SELECT facture_id FROM Facture WHERE planning_detail_id = ?';
-        final existing = await _db.query(sqlCheck, [pdId]);
+        final existing = await _db.query(SqlQueries.checkFactureExistence, [pdId]);
 
         if (existing.isNotEmpty && !deleteExisting) {
           logger.i('   ⏭️ Facture existe pour PD #$pdId');
