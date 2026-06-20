@@ -1,29 +1,44 @@
-# Changelog - Planificator
+# Planificator - Changelog Global
 
-Toutes les modifications notables de ce projet seront documentées dans ce fichier.
+Ce fichier centralise toutes les évolutions, corrections de bugs et optimisations de la plateforme Planificator.
 
-## [2.2.0] - 2024-05-22
-
-### 🚀 Performance & Fluidité
-- **Système de Cache Intelligent (Smart Cache)** : Implémentation d'un gestionnaire de cache pour les requêtes SQL. Les données déjà chargées s'affichent désormais instantanément (0ms de latence au retour sur un écran).
-- **Optimisation du Connection Pooling** : Mise en place d'un pool de connexions MySQL réutilisables, réduisant les délais d'authentification et de handshake TCP de 300ms par requête.
-- **Gestion Hybride des Isolates** : Algorithme de décision intelligent pour l'utilisation des Isolates. Les requêtes lourdes restent asynchrones pour ne pas bloquer l'UI, tandis que les petites requêtes sont optimisées pour éviter le surcoût de création de thread.
-- **Réduction de la Consommation Data** : Le cache limite drastiquement les échanges réseau avec la base de données.
-
-### 🛡️ Sécurité
-- **Sanitisation des Logs** : Implémentation d'un filtre de sécurité masquant automatiquement les données sensibles (hashs bcrypt, mots de passe, clés) dans les fichiers de logs.
-- **Renforcement des Requêtes** : Migration complète vers des requêtes paramétrées pour une protection totale contre les injections SQL.
-- **Gestion Propre des Ressources** : Fermeture systématique et sécurisée des connexions DB lors du cycle de vie de l'application.
-
-### 🧹 Architecture & Clean Code
-- **Centralisation du SQL** : Création de `lib/core/sql_queries.dart`. Toutes les requêtes du projet sont désormais regroupées, facilitant la maintenance et l'évolution du schéma de base de données.
-- **Refactoring des Repositories** : Nettoyage intégral de tous les repositories (Clients, Contrats, Factures, Planning, Signalements) pour séparer la logique métier du stockage des données.
-- **Zéro Erreur d'Analyse** : Correction de tous les avertissements et erreurs `flutter analyze` pour une base de code saine.
+**Version Actuelle**: 2.1.1  
+**Statut**: PRODUCTION READY  
+**Dernière mise à jour**: 2026-02-01
 
 ---
 
-## [2.1.1] - Précédent
-- Initialisation de la version stable 2.1.1.
-- Gestion des contrats et planning de traitements.
-- Export Excel des factures.
-- Système de notifications locales.
+## [2.1.1] - Industrialisation & Performance (2026-02-01)
+
+### 🚀 Optimisations Majeures
+- **Smart Cache System** : Implémentation d'un gestionnaire de cache SQL global. Les requêtes de lecture répétées (SELECT) sont désormais instantanées (0ms de latence).
+- **SQL Centralization** : Déplacement de 100% des scripts SQL vers `lib/core/sql_queries.dart`. Maintenance unifiée et protection du schéma.
+- **Advanced Connection Pooling** : Mise en place d'un pool de connexions MySQL réutilisables (5-10 connexions), éliminant les délais d'authentification à chaque requête.
+- **Gestion Hybride des Isolates** : Optimisation de `compute()`. L'Isolate n'est utilisé que pour les traitements lourds, évitant la surcharge sur les petites requêtes.
+
+### 🛡️ Sécurité & Stabilité
+- **Log Sanitization** : Masquage automatique des données sensibles (mots de passe, hashs bcrypt) dans les logs de la plateforme.
+- **Requêtes Paramétrées** : Généralisation des paramètres `?` pour une protection totale contre les injections SQL.
+- **Zéro Erreur d'Analyse** : Nettoyage complet des avertissements `flutter analyze`.
+
+---
+
+## Sécurité & Durcissement (2026-01-31)
+- **Chiffrement des identifiants** : Utilisation de `flutter_secure_storage` (DPAPI/Keystore) pour les credentials de la base de données.
+- **Optimisation Windows** : Suppression des sous-requêtes corrélées impactant les performances sur les builds Release Windows.
+- **Nettoyage Code** : Suppression de tous les emojis dans les commentaires techniques pour une meilleure lisibilité par les outils d'audit.
+
+---
+
+## Refactoring & Corrections (2026-01-17)
+- **Standardisation des Modèles** : Formatage uniforme "Nom Prénom" pour les clients et factures.
+- **Optimisation des Jointures** : Passage en `INNER JOIN` pour les listes clients afin de n'afficher que les comptes actifs.
+- **Sécurité Async** : Ajout de guards `mounted` dans tous les dialogues (Remarque, Signalement) pour éviter les crashs lors de fermetures rapides.
+- **Tri Alphabétique** : Implémentation du tri local pour les factures et clients.
+
+---
+
+## Corrections Critiques - Session Initiale (2024-12-20)
+- **Fix Boucle Infinie** : Correction de l'algorithme de génération des dates de planning (`lib/utils/date_utils.dart`).
+- **Fix Typage Dates** : Correction des erreurs de parsing DateTime sur les contrats.
+- **Tests Unitaires** : Ajout de 17 tests couvrant les cas limites des calculs de dates.
