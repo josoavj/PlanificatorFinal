@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' show log;
 
-/// Provider pour gérer le thème de l'application (light/dark)
+/// Provider pour gérer le thème de la plateforme (light/dark)
 ///
 /// Persiste le choix utilisateur dans SharedPreferences et
 /// notifie les écouteurs lors du changement de thème
