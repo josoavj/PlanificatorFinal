@@ -520,7 +520,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Cette configuration ne s\'affiche qu\'une seule fois. Vous pourrez la modifier dans les paramètres de l\'application.',
+                              'Cette configuration ne s\'affiche qu\'une seule fois. Vous pourrez la modifier dans les paramètres de la plateforme.',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: AppTheme.infoBlue),
                             ),
