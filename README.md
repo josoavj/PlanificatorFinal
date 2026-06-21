@@ -146,4 +146,4 @@ La sécurité est une priorité majeure de la plateforme. Pour plus de détails 
 ## 📄 Licence
 Ce projet est sous licence **MIT**.
 
-**Dernière mise à jour** : 1er Février 2026
+**Dernière mise à jour** : 20 Juin 2026
