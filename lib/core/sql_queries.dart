@@ -576,26 +576,28 @@ class SqlQueries {
 
   static const String getHistoriqueByDateRange = '''
     SELECT 
-      historiqueId, type, description, date, details
-    FROM Historique
-    WHERE date >= ? AND date <= ?
-    ORDER BY date DESC
+      h.historique_id, h.date_historique as date, h.facture_id, h.planning_detail_id,
+      h.contenu as description, h.issue, h.action
+    FROM Historique h
+    WHERE h.date_historique >= ? AND h.date_historique <= ?
+    ORDER BY h.date_historique DESC
   ''';
 
   static const String createHistoriqueEvent = '''
-    INSERT INTO Historique (type, description, date, details)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO Historique (facture_id, planning_detail_id, signalement_id, contenu, issue, action)
+    VALUES (?, ?, ?, ?, ?, ?)
   ''';
 
   static const String searchHistorique = '''
     SELECT 
-      historiqueId, type, description, date, details
-    FROM Historique
-    WHERE description LIKE ? OR details LIKE ?
-    ORDER BY date DESC
+      h.historique_id, h.date_historique as date, h.facture_id, h.planning_detail_id,
+      h.contenu as description, h.issue, h.action
+    FROM Historique h
+    WHERE h.contenu LIKE ? OR h.issue LIKE ? OR h.action LIKE ?
+    ORDER BY h.date_historique DESC
   ''';
 
-  static const String deleteOldHistorique = 'DELETE FROM Historique WHERE date < ?';
+  static const String deleteOldHistorique = 'DELETE FROM Historique WHERE date_historique < ?';
 
   // --- NOTIFICATIONS ---
   static const String getNextDayTreatmentsDetailed = '''
