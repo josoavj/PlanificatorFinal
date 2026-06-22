@@ -36,14 +36,18 @@ class User {
 
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      userId: map['userId'] as int,
-      email: map['email'] as String,
+      userId: map['userId'] as int? ?? map['user_id'] as int? ?? 0,
+      email: map['email'] as String? ?? '',
       nom: map['nom'] as String? ?? '',
       prenom: map['prenom'] as String? ?? '',
       isAdmin:
-          (map['isAdmin'] as int?) == 1 || (map['isAdmin'] as bool?) == true,
-      token: map['password'] as String? ?? '',
-      createdAt: _parseDateTime(map['createdAt']),
+          (map['isAdmin'] as int?) == 1 || 
+          (map['isAdmin'] as bool?) == true ||
+          (map['is_admin'] as int?) == 1 ||
+          map['type_compte'] == 'Administrateur' ||
+          map['type_comte'] == 'Administrateur', // Gestion de la typo
+      token: map['password'] as String? ?? map['token'] as String? ?? '',
+      createdAt: _parseDateTime(map['createdAt'] ?? map['date_creation']),
     );
   }
 
