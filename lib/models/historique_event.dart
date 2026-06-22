@@ -1,113 +1,96 @@
+/// Modèle HistoriqueEvent
+/// Représente une entrée dans l'historique technique des traitements.
+/// Aligné sur la table SQL 'Historique'.
 class HistoriqueEvent {
   final int historiqueId;
-  final String type; // 'client', 'facture', 'contrat', 'paiement', 'autre'
-  final String description;
+  final int factureId;
+  final int? planningDetailId;
+  final int? signalementId;
   final DateTime date;
-  final String details; // JSON ou format clé:valeur
+  final String contenu;
+  final String? issue;
+  final String action;
+
+  // Données de jointure optionnelles
+  final DateTime? datePlanification;
 
   HistoriqueEvent({
     required this.historiqueId,
-    required this.type,
-    required this.description,
+    required this.factureId,
+    this.planningDetailId,
+    this.signalementId,
     required this.date,
-    required this.details,
+    required this.contenu,
+    this.issue,
+    required this.action,
+    this.datePlanification,
   });
 
   factory HistoriqueEvent.fromMap(Map<String, dynamic> map) {
     return HistoriqueEvent(
-      historiqueId: map['historiqueId'] as int,
-      type: map['type'] as String,
-      description: map['description'] as String,
-      date: DateTime.parse(map['date'] as String),
-      details: map['details'] as String,
+      historiqueId: map['historique_id'] as int? ?? 0,
+      factureId: map['facture_id'] as int? ?? 0,
+      planningDetailId: map['planning_detail_id'] as int?,
+      signalementId: map['signalement_id'] as int?,
+      date: map['date'] != null
+          ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      contenu: map['description'] ?? map['contenu'] ?? '', // Support des alias SQL
+      issue: map['issue'] as String?,
+      action: map['action'] as String? ?? 'Aucune',
+      datePlanification: map['date_planification'] != null
+          ? DateTime.tryParse(map['date_planification'].toString())
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'historiqueId': historiqueId,
-      'type': type,
-      'description': description,
-      'date': date.toIso8601String(),
-      'details': details,
+      'historique_id': historiqueId,
+      'facture_id': factureId,
+      'planning_detail_id': planningDetailId,
+      'signalement_id': signalementId,
+      'date_historique': date.toIso8601String(),
+      'contenu': contenu,
+      'issue': issue,
+      'action': action,
     };
   }
 
-  @override
-  String toString() {
-    return 'HistoriqueEvent(historiqueId: $historiqueId, type: $type, description: $description, date: $date)';
-  }
+  /// Alias pour la description (compatibilité UI)
+  String get description => contenu;
 
-  /// Icône basée sur le type
-  String get icon {
-    switch (type) {
-      case 'client':
-        return '👤';
-      case 'facture':
-        return '📄';
-      case 'contrat':
-        return '';
-      case 'paiement':
-        return '💰';
-      default:
-        return '';
-    }
-  }
+  /// Détails formatés (compatibilité UI)
+  String get details => '${issue ?? ''} | Action: $action'.trim();
 
-  /// Couleur basée sur le type
-  int get colorValue {
-    switch (type) {
-      case 'client':
-        return 0xFF2196F3; // Bleu
-      case 'facture':
-        return 0xFF4CAF50; // Vert
-      case 'contrat':
-        return 0xFFFFC107; // Orange
-      case 'paiement':
-        return 0xFF8BC34A; // Vert clair
-      default:
-        return 0xFF757575; // Gris
-    }
-  }
+  /// Icône basée sur le contenu ou l'état
+  String get icon => issue != null && issue!.isNotEmpty ? '⚠️' : '✅';
 
-  /// Format de date lisible
+  /// Couleur basée sur la présence d'un problème
+  int get colorValue => (issue != null && issue!.isNotEmpty) 
+      ? 0xFFF44336 // Rouge (Erreur/Issue)
+      : 0xFF4CAF50; // Vert (Succès)
+
   String get formattedDate {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        if (difference.inMinutes == 0) {
-          return 'À l\'instant';
-        }
-        return 'Il y a ${difference.inMinutes} minute(s)';
+        return 'Il y a ${difference.inMinutes} min';
       }
       return 'Il y a ${difference.inHours}h';
     } else if (difference.inDays == 1) {
       return 'Hier';
     } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays} jour(s)';
+      return 'Il y a ${difference.inDays} jours';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
 
-  /// Temps exact (HH:mm)
-  String get timeString {
-    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  /// Si l'événement est d'aujourd'hui
-  bool get isToday {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-  }
-
-  /// Si l'événement est récent (moins de 24h)
-  bool get isRecent {
-    final oneDayAgo = DateTime.now().subtract(const Duration(days: 1));
-    return date.isAfter(oneDayAgo);
+  @override
+  String toString() {
+    return 'Historique(id: $historiqueId, date: $date, contenu: $contenu)';
   }
 }

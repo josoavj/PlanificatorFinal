@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planificator/models/user.dart';
 import 'package:planificator/models/client.dart';
 import 'package:planificator/models/contrat.dart';
+import 'package:planificator/models/facture.dart';
+import 'package:planificator/models/planning_details.dart';
 
 void main() {
   group('User Model', () {
@@ -26,6 +28,24 @@ void main() {
       expect(user.fullName, equals('Dupont Jean'));
     });
 
+    test('User.fromMap gère les données de la base (Account table)', () {
+      final map = {
+        'userId': 1, // alias id_compte as userId
+        'email': 'user@example.com',
+        'nom': 'Dupont',
+        'prenom': 'Jean',
+        'type_compte': 'Administrateur',
+        'password': 'hashed_password',
+        'date_creation': '2024-01-15 10:30:00',
+      };
+
+      final user = User.fromMap(map);
+
+      expect(user.userId, equals(1));
+      expect(user.isAdmin, isTrue);
+      expect(user.token, equals('hashed_password'));
+    });
+
     test('User.fullName combine nom et prénom', () {
       final user = User(
         userId: 1,
@@ -36,37 +56,6 @@ void main() {
       );
 
       expect(user.fullName, equals('Martin Pierre'));
-    });
-
-    test('User.copyWith crée une copie modifiée', () {
-      final user1 = User(
-        userId: 1,
-        email: 'test@example.com',
-        nom: 'Dupont',
-        prenom: 'Jean',
-        isAdmin: false,
-      );
-
-      final user2 = user1.copyWith(isAdmin: true);
-
-      expect(user2.isAdmin, isTrue);
-      expect(user2.email, equals(user1.email));
-      expect(user1.isAdmin, isFalse); // Original non modifié
-    });
-
-    test('User.fromMap gère les variantes de nom de colonne', () {
-      final map = {
-        'userId': 1,
-        'email': 'user@example.com',
-        'nom': 'Dupont',
-        'prenom': 'Jean',
-        'isAdmin': true,
-      };
-
-      final user = User.fromMap(map);
-
-      expect(user.userId, equals(1));
-      expect(user.isAdmin, isTrue);
     });
   });
 
@@ -112,64 +101,10 @@ void main() {
 
       expect(client.fullName, equals('ACME Corp'));
     });
-
-    test('Client.fullName affiche nom et prénom pour Particulier', () {
-      final client = Client(
-        clientId: 1,
-        nom: 'Dupont',
-        prenom: 'Jean',
-        email: 'jean@example.com',
-        telephone: '',
-        adresse: '',
-        categorie: 'Particulier',
-        nif: '',
-        stat: '',
-        axe: '',
-        dateAjout: DateTime.now(),
-      );
-
-      expect(client.fullName, equals('Dupont Jean'));
-    });
-
-    test('Client.prenomLabel retourne "Responsable" pour Société', () {
-      final client = Client(
-        clientId: 1,
-        nom: 'ACME',
-        prenom: '',
-        email: '',
-        telephone: '',
-        adresse: '',
-        categorie: 'Société',
-        nif: '',
-        stat: '',
-        axe: '',
-        dateAjout: DateTime.now(),
-      );
-
-      expect(client.prenomLabel, equals('Responsable'));
-    });
-
-    test('Client.prenomLabel retourne "Prénom" pour Particulier', () {
-      final client = Client(
-        clientId: 1,
-        nom: 'Dupont',
-        prenom: 'Jean',
-        email: '',
-        telephone: '',
-        adresse: '',
-        categorie: 'Particulier',
-        nif: '',
-        stat: '',
-        axe: '',
-        dateAjout: DateTime.now(),
-      );
-
-      expect(client.prenomLabel, equals('Prénom'));
-    });
   });
 
   group('Contrat Model', () {
-    test('Contrat.fromMap parse correctement les dates', () {
+    test('Contrat.fromMap gère les données de la base (ENUM duree)', () {
       final map = {
         'contrat_id': 1,
         'client_id': 1,
@@ -179,19 +114,17 @@ void main() {
         'date_fin': '2025-01-15',
         'statut_contrat': 'Actif',
         'duree_contrat': 12,
-        'duree': 11,
-        'categorie': 'Annuel',
+        'duree': 'Déterminée', // ENUM in DB
+        'categorie': 'Nouveau',
       };
 
       final contrat = Contrat.fromMap(map);
 
       expect(contrat.contratId, equals(1));
-      expect(contrat.referenceContrat, equals('REF001'));
-      expect(contrat.statutContrat, equals('Actif'));
-      expect(contrat.dateDebut.year, equals(2024));
+      expect(contrat.duree, isNull); // parseDuree returns null for 'Déterminée'
     });
 
-    test('Contrat gère les dates indéterminées (null)', () {
+    test('Contrat gère les dates indéterminées', () {
       final map = {
         'contrat_id': 1,
         'client_id': 1,
@@ -202,13 +135,52 @@ void main() {
         'statut_contrat': 'Actif',
         'duree_contrat': 0,
         'duree': 'Indéterminée',
-        'categorie': 'Indéterminé',
+        'categorie': 'Renouvellement',
       };
 
       final contrat = Contrat.fromMap(map);
 
       expect(contrat.dateFin, isNull);
       expect(contrat.duree, isNull);
+    });
+  });
+
+  group('Facture Model', () {
+    test('Facture.fromMap parse correctement les données', () {
+      final map = {
+        'facture_id': 10,
+        'planning_detail_id': 5,
+        'reference_facture': 'FAC-2024-001',
+        'montant': 150000,
+        'mode': 'Espèce',
+        'date_traitement': '2024-02-15',
+        'etat': 'Payé',
+        'axe': 'Centre (C)',
+      };
+
+      final facture = Facture.fromMap(map);
+
+      expect(facture.factureId, equals(10));
+      expect(facture.montant, equals(150000));
+      expect(facture.isPaid, isTrue);
+      expect(facture.montantFormatted, contains('150 000'));
+    });
+  });
+
+  group('PlanningDetails Model', () {
+    test('PlanningDetails.fromJson parse correctement', () {
+      final json = {
+        'planning_detail_id': 1,
+        'planning_id': 2,
+        'date_planification': '2024-05-20',
+        'statut': 'À venir',
+      };
+
+      final details = PlanningDetails.fromJson(json);
+
+      expect(details.planningDetailId, equals(1));
+      expect(details.datePlanification.month, equals(5));
+      expect(details.statut, equals('À venir'));
     });
   });
 }

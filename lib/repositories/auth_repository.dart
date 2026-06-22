@@ -197,7 +197,7 @@ class AuthRepository extends ChangeNotifier {
     try {
       const sql = '''
         SELECT 
-          id_compte as userId, email, nom, prenom, password, type_comte, date_creation as createdAt
+          id_compte as userId, email, nom, prenom, password, type_compte, date_creation as createdAt
         FROM Account
         WHERE id_compte = ?
       ''';
