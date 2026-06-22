@@ -16,8 +16,7 @@ class HistoriqueRepository extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  /// Charge tous les événements d'historique avec données de factures
-  /// Utilise la vraie table Historique pour les données complètes
+  /// Charge tous les événements d'historique (interventions techniques)
   Future<void> loadAllEvents() async {
     _isLoading = true;
     _errorMessage = null;
@@ -33,17 +32,9 @@ class HistoriqueRepository extends ChangeNotifier {
               throw TimeoutException('Database query timeout');
             },
           );
-      _events = rows.map((row) {
-        return HistoriqueEvent(
-          historiqueId: row['historique_id'] as int? ?? 0,
-          type: 'historique',
-          description: row['description'] ?? 'Événement',
-          date: DateTime.tryParse(row['date'].toString()) ?? DateTime.now(),
-          details: '${row['issue'] ?? ''} | Action: ${row['action'] ?? ''}',
-        );
-      }).toList();
+      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
 
-      logger.i('${_events.length} événements d\'historique chargés');
+      logger.i('${_events.length} interventions d\'historique chargées');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors du chargement de l\'historique: $e');
@@ -53,35 +44,27 @@ class HistoriqueRepository extends ChangeNotifier {
     }
   }
 
-  /// Charge les événements d'historique filtrés par type/catégorie
-  Future<void> loadEventsByCategory(String categorie) async {
+  /// Charge les événements d'historique filtrés par axe (région)
+  Future<void> loadEventsByAxe(String axe) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final rows = await _db.query(SqlQueries.getHistoriqueByCategory, [categorie, categorie, categorie]);
-      _events = rows.map((row) {
-        return HistoriqueEvent(
-          historiqueId: row['historique_id'] as int? ?? 0,
-          type: 'historique_categorie',
-          description: row['description'] ?? 'Événement',
-          date: DateTime.tryParse(row['date'].toString()) ?? DateTime.now(),
-          details: '${row['issue'] ?? ''} | Action: ${row['action'] ?? ''}',
-        );
-      }).toList();
+      final rows = await _db.query(SqlQueries.getHistoriqueByCategory, [axe, axe, axe]);
+      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
 
-      logger.i('${_events.length} événements de catégorie $categorie chargés');
+      logger.i('${_events.length} événements pour l\'axe $axe chargés');
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement de l\'historique: $e');
+      logger.e('Erreur lors du chargement par axe: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// Charge les événements d'historique pour un client
+  /// Charge l'historique pour un client spécifique
   Future<void> loadEventsForClient(int clientId) async {
     _isLoading = true;
     _errorMessage = null;
@@ -97,80 +80,58 @@ class HistoriqueRepository extends ChangeNotifier {
               throw TimeoutException('Database query timeout');
             },
           );
-      _events = rows.map((row) {
-        return HistoriqueEvent(
-          historiqueId: row['historique_id'] as int? ?? 0,
-          type: 'historique_client',
-          description: row['description'] ?? 'Événement',
-          date: DateTime.tryParse(row['date'].toString()) ?? DateTime.now(),
-          details: '${row['issue'] ?? ''} | Action: ${row['action'] ?? ''}',
-        );
-      }).toList();
+      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
 
       logger.i('${_events.length} événements du client $clientId chargés');
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement de l\'historique: $e');
+      logger.e('Erreur lors du chargement client: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// Charge les événements d'historique pour une plage de dates
-  Future<void> loadEventsByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final rows = await _db.query(SqlQueries.getHistoriqueByDateRange, [
-        startDate.toIso8601String(),
-        endDate.toIso8601String(),
-      ]);
-      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
-
-      logger.i('${_events.length} événements trouvés');
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement de l\'historique: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Enregistre un nouvel événement d'historique
-  Future<int> logEvent(String type, String description, String details) async {
+  /// Enregistre une nouvelle intervention dans l'historique
+  Future<int> logIntervention({
+    required int factureId,
+    int? planningDetailId,
+    int? signalementId,
+    required String contenu,
+    String? issue,
+    required String action,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
       final id = await _db.insert(SqlQueries.createHistoriqueEvent, [
-        type,
-        description,
-        DateTime.now().toIso8601String(),
-        details,
+        factureId,
+        planningDetailId,
+        signalementId,
+        contenu,
+        issue,
+        action,
       ]);
 
       final newEvent = HistoriqueEvent(
         historiqueId: id,
-        type: type,
-        description: description,
+        factureId: factureId,
+        planningDetailId: planningDetailId,
+        signalementId: signalementId,
         date: DateTime.now(),
-        details: details,
+        contenu: contenu,
+        issue: issue,
+        action: action,
       );
       _events.insert(0, newEvent);
 
-      logger.i('Événement d\'historique créé: $type');
+      logger.i('Nouvelle entrée d\'historique créée (ID: $id)');
       return id;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la création de l\'événement: $e');
+      logger.e('Erreur lors de la création de l\'historique: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -178,62 +139,7 @@ class HistoriqueRepository extends ChangeNotifier {
     }
   }
 
-  /// Enregistre la création d'un client
-  Future<void> logClientCreation(int clientId, String clientName) async {
-    await logEvent(
-      'client',
-      'Nouveau client créé',
-      'clientId:$clientId,nom:$clientName',
-    );
-  }
-
-  /// Enregistre la modification d'un client
-  Future<void> logClientUpdate(int clientId, String clientName) async {
-    await logEvent(
-      'client',
-      'Client modifié',
-      'clientId:$clientId,nom:$clientName',
-    );
-  }
-
-  /// Enregistre la suppression d'un client
-  Future<void> logClientDeletion(int clientId, String clientName) async {
-    await logEvent(
-      'client',
-      'Client supprimé',
-      'clientId:$clientId,nom:$clientName',
-    );
-  }
-
-  /// Enregistre la création d'une facture
-  Future<void> logFactureCreation(int factureId, double montant) async {
-    await logEvent(
-      'facture',
-      'Nouvelle facture créée',
-      'factureId:$factureId,montant:$montant',
-    );
-  }
-
-  /// Enregistre le paiement d'une facture
-  Future<void> logFacturePayment(int factureId, double montant) async {
-    await logEvent(
-      'paiement',
-      'Facture payée',
-      'factureId:$factureId,montant:$montant',
-    );
-  }
-
-  /// Enregistre la création d'un contrat
-  Future<void> logContratCreation(int contratId) async {
-    await logEvent('contrat', 'Nouveau contrat créé', 'contratId:$contratId');
-  }
-
-  /// Enregistre la fin d'un contrat
-  Future<void> logContratEnd(int contratId) async {
-    await logEvent('contrat', 'Contrat terminé', 'contratId:$contratId');
-  }
-
-  /// Recherche dans l'historique
+  /// Recherche dans l'historique (contenu, issue ou action)
   Future<void> searchEvents(String query) async {
     _isLoading = true;
     _errorMessage = null;
@@ -242,7 +148,7 @@ class HistoriqueRepository extends ChangeNotifier {
     try {
       final searchTerm = '%$query%';
       final rows = await _db
-          .query(SqlQueries.searchHistorique, [searchTerm, searchTerm])
+          .query(SqlQueries.searchHistorique, [searchTerm, searchTerm, searchTerm])
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -252,9 +158,7 @@ class HistoriqueRepository extends ChangeNotifier {
           );
       _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
 
-      logger.i(
-        '${_events.length} événements trouvés pour la recherche: $query',
-      );
+      logger.i('${_events.length} résultats pour: $query');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors de la recherche: $e');
@@ -262,15 +166,6 @@ class HistoriqueRepository extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  /// Récupère les statistiques d'historique
-  Map<String, int> getStatistics() {
-    final stats = <String, int>{};
-    for (final event in _events) {
-      stats[event.type] = (stats[event.type] ?? 0) + 1;
-    }
-    return stats;
   }
 
   /// Nettoie l'historique plus ancien que X jours
@@ -281,13 +176,9 @@ class HistoriqueRepository extends ChangeNotifier {
 
     try {
       final cutoffDate = DateTime.now().subtract(Duration(days: days));
-
       await _db.execute(SqlQueries.deleteOldHistorique, [cutoffDate.toIso8601String()]);
-
-      // Recharger les événements
       await loadAllEvents();
-
-      logger.i('Événements plus vieux que $days jours supprimés');
+      logger.i('Nettoyage effectué: événements avant $days jours supprimés');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors du nettoyage: $e');
