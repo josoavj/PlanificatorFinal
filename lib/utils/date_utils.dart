@@ -61,20 +61,20 @@ class DateUtils {
   static Map<String, DateTime> getHolidaysForYear(int year) {
     final holidays = <String, DateTime>{
       // Jours fériés fixes à Madagascar
-      "Jour de l'an": DateTime(year, 1, 1),
-      "Fête nationale": DateTime(year, 6, 26), // Indépendance Madagascar
-      "Assomption": DateTime(year, 8, 15),
-      "Toussaint": DateTime(year, 11, 1),
-      "Noël": DateTime(year, 12, 25),
+      'Jour de l\'an': DateTime(year, 1, 1),
+      'Fête nationale': DateTime(year, 6, 26), // Indépendance Madagascar
+      'Assomption': DateTime(year, 8, 15),
+      'Toussaint': DateTime(year, 11, 1),
+      'Noël': DateTime(year, 12, 25),
     };
 
     // Calcul des jours fériés variables basés sur Pâques
     final easter = calculateEaster(year);
     holidays.addAll({
-      "Pâques": easter,
-      "Lundi de Pâques": easter.add(const Duration(days: 1)),
-      "Ascension": easter.add(const Duration(days: 39)),
-      "Lundi de Pentecôte": easter.add(const Duration(days: 50)),
+      'Pâques': easter,
+      'Lundi de Pâques': easter.add(const Duration(days: 1)),
+      'Ascension': easter.add(const Duration(days: 39)),
+      'Lundi de Pentecôte': easter.add(const Duration(days: 50)),
     });
 
     return holidays;
