@@ -300,41 +300,34 @@ class FactureRepository extends ChangeNotifier {
         dateTraitement,
       ]);
 
-      // Étape 4: Mettre à jour tous les montants et créer l'historique
+      // Étape 4: Mettre à jour tous les montants et créer l'historique dans une TRANSACTION
       int updatedCount = 0;
       final now = DateTime.now();
 
-      for (final row in otherFactures) {
-        final fId = row['facture_id'] as int;
-        final ancienMontant = row['montant'] as int;
-        final etat = (row['etat'] as String?)?.trim() ?? '';
+      await _db.transaction((conn) async {
+        for (final row in otherFactures) {
+          final fId = row['facture_id'] as int;
+          final ancienMontant = row['montant'] as int;
+          final etat = (row['etat'] as String?)?.trim() ?? '';
 
-        //  LOGIQUE: Si la facture est déjà payée, ne pas modifier le montant
-        if (etat == 'Payé' || etat == 'Payée') {
-          logger.i(' Facture $fId est payée, montant inchangé (état: $etat)');
-          continue; // Passer à la prochaine facture
+          if (etat == 'Payé' || etat == 'Payée') continue;
+
+          final nouveauMontant = ancienMontant + prixDiff;
+
+          // Utiliser la connexion de la transaction directement
+          await conn.query(SqlQueries.updateFacturePrice, [nouveauMontant, fId]);
+          await conn.query(SqlQueries.createPriceHistoryEntry, [
+            fId,
+            ancienMontant,
+            nouveauMontant,
+            now.toIso8601String(),
+          ]);
+
+          updatedCount++;
         }
+      });
 
-        final nouveauMontant = ancienMontant + prixDiff;
-
-        // Mettre à jour le montant
-        await _db.execute(SqlQueries.updateFacturePrice, [nouveauMontant, fId]);
-
-        // Créer une entrée historique
-        await _db.execute(SqlQueries.createPriceHistoryEntry, [
-          fId,
-          ancienMontant,
-          nouveauMontant,
-          now.toIso8601String(),
-        ]);
-
-        logger.i(
-          ' Facture $fId mise à jour: $ancienMontant → $nouveauMontant Ar',
-        );
-        updatedCount++;
-      }
-
-      // Étape 5: Mettre à jour la liste locale
+      // Étape 5: Mettre à jour la liste locale seulement si la transaction a réussi
       for (final facture in _factures) {
         if (facture.dateTraitement.compareTo(
                   DateTime.parse(dateTraitement.toString()),
@@ -400,13 +393,14 @@ class FactureRepository extends ChangeNotifier {
 
   /// Version complète pour créer une facture avec tous les paramètres
   /// Évite les doublons - vérifie si la facture existe déjà pour ce planning detail
+  /// Sécurise l'axe en le récupérant automatiquement si absent
   Future<int> createFactureComplete({
     required int planningDetailId,
     required String referenceFacture,
     required int montant,
-    String? mode, //  Mode peut être null (à définir plus tard)
+    String? mode,
     required String etat,
-    String? axe, //  Axe peut être null (à définir plus tard)
+    String? axe,
     required DateTime dateTraitement,
   }) async {
     _isLoading = true;
@@ -414,16 +408,39 @@ class FactureRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      //  Vérifier si une facture existe déjà pour ce planning detail
-      final existing = await _db.query(SqlQueries.checkFactureExistence, [planningDetailId]);
+      // 1. Vérifier si une facture existe déjà
+      final existing =
+          await _db.query(SqlQueries.checkFactureExistence, [planningDetailId]);
 
       if (existing.isNotEmpty) {
         logger.i(
-          ' Facture existe déjà pour planning_detail_id=$planningDetailId, ID=${existing[0]['facture_id']}',
+          ' Facture existe déjà pour planning_detail_id=$planningDetailId',
         );
         return existing[0]['facture_id'] as int;
       }
 
+      // 2. SÉCURISATION DE L'AXE: Si l'axe est absent, on le récupère du client
+      String finalAxe = axe ?? 'Centre (C)';
+      if (axe == null || axe.isEmpty || axe == 'Non défini') {
+        try {
+          final axeResult = await _db
+              .queryOne(SqlQueries.getClientIdFromPlanningDetail, [planningDetailId]);
+          if (axeResult != null) {
+            // Note: getClientIdFromPlanningDetail ne renvoie que client_id.
+            // On va utiliser une requête plus complète ou enchaîner.
+            final clientInfo = await _db
+                .queryOne(SqlQueries.getClientById, [axeResult['client_id']]);
+            if (clientInfo != null && clientInfo['axe'] != null) {
+              finalAxe = clientInfo['axe'] as String;
+              logger.i(' Axe récupéré automatiquement du client: $finalAxe');
+            }
+          }
+        } catch (e) {
+          logger.w(' Impossible de récupérer l\'axe auto, utilisation du défaut: $e');
+        }
+      }
+
+      // 3. Insertion
       final id = await _db.insert(SqlQueries.createFactureComplete, [
         planningDetailId,
         referenceFacture.isEmpty ? null : referenceFacture,
@@ -431,16 +448,14 @@ class FactureRepository extends ChangeNotifier {
         mode,
         dateTraitement.toIso8601String().split('T')[0],
         etat,
-        axe,
+        finalAxe,
       ]);
 
-      logger.i(
-        'Facture créée avec l\'ID: $id (planning_detail_id: $planningDetailId, montant: $montant)',
-      );
+      logger.i(' Facture créée ID: $id avec axe: $finalAxe');
       return id;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la création facture: $e');
+      logger.e(' Erreur lors de la création facture: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -568,104 +583,71 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       logger.i(' REPAIR: Planning + Factures pour traitement $traitementId');
-      logger.i('   💰 Montant: $montant Ar');
-      logger.i('   📑 Référence: $referencePrefix');
+      
+      // On regroupe tout dans une seule transaction pour éviter les données partielles
+      return await _db.transaction((conn) async {
+        // 1. Récupérer l'axe et le Planning
+        final axeRes = await conn.query(SqlQueries.getClientAxeByTreatment, [traitementId]);
+        if (axeRes.isEmpty) throw Exception('Traitement non trouvé');
+        final axe = axeRes.first['axe'] as String;
 
-      // 1. Récupérer l'axe et le Planning
-      final axeResult = await _db.query(SqlQueries.getClientAxeByTreatment, [traitementId]);
-      if (axeResult.isEmpty) throw Exception('Traitement non trouvé');
-      final axe = axeResult[0]['axe'] as String;
+        final planRes = await conn.query(SqlQueries.getPlanningByTreatment, [traitementId]);
+        if (planRes.isEmpty) throw Exception('Planning non trouvé');
+        final pRow = planRes.first;
 
-      final planningResult = await _db.query(SqlQueries.getPlanningByTreatment, [traitementId]);
-      if (planningResult.isEmpty) throw Exception('Planning non trouvé');
+        final planningId = pRow['planning_id'] as int;
+        final dureeTraitement = pRow['duree_traitement'] as int;
+        final redondance = pRow['redondance'] as int;
 
-      final planningId = planningResult[0]['planning_id'] as int;
-      final dureeTraitement = planningResult[0]['duree_traitement'] as int;
-      final redondance = planningResult[0]['redondance'] as int;
-      logger.i(
-        '   📅 Planning: ID=$planningId, Durée=$dureeTraitement, Redondance=$redondance',
-      );
+        // 2. Créer les PlanningDetails manquants
+        final countRes = await conn.query(SqlQueries.countPlanningDetails, [planningId]);
+        final existingCount = (countRes.first['count'] as int?) ?? 0;
 
-      // 2. Créer les PlanningDetails manquants
-      final countResult = await _db.query(SqlQueries.countPlanningDetails, [planningId]);
-      final existingCount = (countResult[0]['count'] as int?) ?? 0;
+        int planningDetailsCreated = 0;
+        if (existingCount == 0) {
+          final dateDebut = DateTime.parse(pRow['date_debut_planification'] as String);
+          final planningDates = _generatePlanningDates(
+            dateDebut: dateDebut,
+            dureeTraitement: dureeTraitement,
+            redondance: redondance,
+          );
 
-      int planningDetailsCreated = 0;
-      if (existingCount == 0) {
-        final dateDebut = DateTime.parse(
-          planningResult[0]['date_debut_planification'] as String,
-        );
-        logger.i('    Génération des dates...');
-
-        final planningDates = _generatePlanningDates(
-          dateDebut: dateDebut,
-          dureeTraitement: dureeTraitement,
-          redondance: redondance,
-        );
-
-        logger.i('    ${planningDates.length} dates générées');
-
-        for (final date in planningDates) {
-          try {
-            await _db.execute(SqlQueries.insertPlanningDetail, [planningId, date.toIso8601String()]);
+          for (final date in planningDates) {
+            await conn.query(SqlQueries.insertPlanningDetail, [planningId, date.toIso8601String()]);
             planningDetailsCreated++;
-            logger.i(
-              '    PlanningDetail créé: ${date.toIso8601String()} (ID Planning=$planningId)',
-            );
-          } catch (e) {
-            logger.e('    Erreur création PlanningDetail: $e');
           }
         }
-        logger.i('   🎉 $planningDetailsCreated Planning Details créés');
-      } else {
-        logger.i('   ℹ️ $existingCount Planning Details existent déjà');
-      }
 
-      // 3. Créer les factures
-      final planningDetails = await _db.query(SqlQueries.getPlanningDetailsByPlanningIdOrdered, [planningId]);
-      logger.i('    Total Planning Details trouvés: ${planningDetails.length}');
+        // 3. Créer les factures
+        final pdRows = await conn.query(SqlQueries.getPlanningDetailsByPlanningIdOrdered, [planningId]);
+        int facturesCreated = 0;
+        int sequenceNumber = 1;
 
-      if (planningDetails.isEmpty) {
-        logger.w('    Aucun PlanningDetail trouvé! Vérifiez la création.');
-        return 0;
-      }
+        for (final pd in pdRows) {
+          final pdId = pd['planning_detail_id'] as int;
+          final dateStr = pd['date_planification'] as String;
 
-      int facturesCreated = 0;
-      int sequenceNumber = 1;
+          final checkFac = await conn.query(SqlQueries.checkFactureExistence, [pdId]);
+          if (checkFac.isNotEmpty && !deleteExisting) continue;
 
-      for (final pd in planningDetails) {
-        final pdId = pd['planning_detail_id'] as int;
-        final dateStr = pd['date_planification'] as String;
+          final ref = '$referencePrefix-$sequenceNumber';
+          await conn.query(SqlQueries.createFactureComplete, [
+            pdId,
+            ref,
+            montant,
+            null,
+            dateStr,
+            'À venir',
+            axe,
+          ]);
 
-        final existing = await _db.query(SqlQueries.checkFactureExistence, [pdId]);
-
-        if (existing.isNotEmpty && !deleteExisting) {
-          logger.i('   ⏭️ Facture existe pour PD #$pdId');
-          continue;
-        }
-
-        final ref = '$referencePrefix-$sequenceNumber';
-        final factureId = await createFactureComplete(
-          planningDetailId: pdId,
-          referenceFacture: ref,
-          montant: montant,
-          mode: null,
-          etat: 'À venir',
-          axe: axe,
-          dateTraitement: DateTime.parse(dateStr),
-        );
-
-        if (factureId != -1) {
           facturesCreated++;
-          logger.i('    Facture créée: $ref (PD#$pdId)');
+          sequenceNumber++;
         }
-        sequenceNumber++;
-      }
 
-      logger.i(
-        '🎉 TERMINÉ: $planningDetailsCreated PD + $facturesCreated factures',
-      );
-      return facturesCreated;
+        logger.i('🎉 TRANSACTION RÉUSSIE: $planningDetailsCreated PD + $facturesCreated factures');
+        return facturesCreated;
+      });
     } catch (e) {
       _errorMessage = 'Erreur: $e';
       logger.e(' $e');
