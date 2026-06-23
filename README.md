@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge" alt="Desktop Platforms">
-  <img src="https://img.shields.io/badge/Version-2.2.0-green?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.1.1-green?style=for-the-badge" alt="Version">
 </p>
 
 <h1 align="center">📊 Planificator Desktop</h1>
@@ -22,7 +22,7 @@
 ## 📋 Table des Matières
 
 - [📖 À Propos](#-à-propos)
-- [💎 Fiabilité Financière (v2.2.0)](#-fiabilité-financière-v220)
+- [💎 Fiabilité Financière (v2.1.1)](#-fiabilité-financière-v211)
 - [🚀 Architecture Industrielle](#-architecture-industrielle)
 - [✨ Fonctionnalités](#-fonctionnalités)
 - [🏗️ Architecture Logicielle](#-architecture-logicielle)
@@ -38,11 +38,11 @@
 
 ## 📖 À Propos
 
-**Planificator** est une plateforme Flutter native pour Desktop (Windows, macOS, Linux) conçue pour la gestion intensive des contrats et de la facturation. En version **2.2.0**, elle met l'accent sur l'intégrité absolue des données financières et la fluidité de navigation.
+**Planificator** est une plateforme Flutter native pour Desktop (Windows, macOS, Linux) conçue pour la gestion intensive des contrats et de la facturation. En version **2.1.1**, elle met l'accent sur l'intégrité absolue des données financières et la fluidité de navigation.
 
 ---
 
-## 💎 Fiabilité Financière (v2.2.0)
+## 💎 Fiabilité Financière (v2.1.1)
 
 La version actuelle introduit des garanties SGBDR essentielles pour la gestion comptable :
 
