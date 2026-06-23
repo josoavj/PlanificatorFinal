@@ -94,7 +94,6 @@ class _RegisterScreenState extends State<RegisterScreen>
             key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Logo arrondi
                 ClipRRect(
