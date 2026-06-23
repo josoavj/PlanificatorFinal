@@ -27,7 +27,7 @@ class Signalement {
       id: json['id_signalement'] ?? json['signalement_id'],
       planningDetailId:
           json['planning_detail_id'] ?? json['id_planning_details'] ?? 0,
-      motif: toStr(json['motif'], ''),
+      motif: toStr(json['motif']),
       type: toStr(json['type'], 'décalage'),
       dateSignalement: json['date_signalement'] != null
           ? DateTime.parse(json['date_signalement'].toString())
