@@ -76,7 +76,7 @@ class AppDialogs {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(null),
+            onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Annuler'),
           ),
           ElevatedButton(
