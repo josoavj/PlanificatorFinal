@@ -45,7 +45,7 @@ class MySQLConnectionPool {
       if (DateTime.now().difference(startTime) > timeout) {
         throw TimeoutException(
           'Aucune connexion disponible après ${timeout.inSeconds}s '
-          '(Pool: ${_allConnections.length}/${maxConnections}, '
+          '(Pool: ${_allConnections.length}/$maxConnections, '
           'Disponible: ${_availableConnections.length})',
         );
       }
@@ -399,6 +399,27 @@ class DatabaseService {
   Future<dynamic> queryValue(String sql, [List<dynamic>? params]) async {
     var result = await queryOne(sql, params);
     return result?.values.first;
+  }
+
+  /// Exécute un ensemble d'opérations dans une transaction SQL unique.
+  /// SÉCURITÉ: En cas d'erreur, un ROLLBACK automatique est effectué.
+  /// IMPORTANT: Les transactions n'utilisent PAS les isolates pour garantir la cohérence.
+  Future<T> transaction<T>(Future<T> Function(MySqlConnection conn) action) async {
+    if (!_isConnected) await connect();
+
+    MySqlConnection? conn;
+    try {
+      conn = await _getQueryConnection();
+      final result = await conn.transaction((ctx) async {
+        return await action(conn!);
+      });
+      return result as T;
+    } catch (e) {
+      logger.e('Erreur dans la transaction SQL: $e');
+      rethrow;
+    } finally {
+      if (conn != null) _releaseQueryConnection(conn);
+    }
   }
 
   /// Teste la connexion
