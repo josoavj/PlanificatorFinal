@@ -529,16 +529,16 @@ class SqlQueries {
     SELECT 
       h.historique_id,
       h.date_historique as date,
-      COALESCE(f.facture_id, 0) as facture_id,
-      COALESCE(pd.date_planification, '2000-01-01') as date_planification,
-      COALESCE(h.contenu, 'Événement') as description,
-      COALESCE(h.issue, 'Non défini') as issue,
-      COALESCE(h.action, 'Aucune') as action
+      h.facture_id,
+      pd.date_planification,
+      h.contenu as description,
+      h.issue,
+      h.action
     FROM Historique h
     LEFT JOIN Facture f ON h.facture_id = f.facture_id
     LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
     ORDER BY h.date_historique DESC
-    LIMIT 5000
+    LIMIT ? OFFSET ?
   ''';
 
   static const String getHistoriqueByCategory = '''
