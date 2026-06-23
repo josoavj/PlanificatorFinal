@@ -11,7 +11,7 @@ import 'dart:convert';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
-import '../../utils/date_utils.dart' as DateUtils;
+import '../../utils/date_utils.dart' as date_utils;
 import '../../utils/date_helper.dart';
 import '../../utils/number_formatter.dart';
 import '../../core/sql_queries.dart';
@@ -2493,7 +2493,7 @@ class _ContratScreenState extends State<ContratScreen> {
       logger.i(' Planning créé: ID $planningId');
 
       // 2. Générer les dates
-      final planningDates = DateUtils.DateUtils.generatePlanningDates(
+      final planningDates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: dateDebut,
         dureeTraitement: duree,
         redondance: redondance,
@@ -2761,7 +2761,7 @@ class _ContratScreenState extends State<ContratScreen> {
       logger.i(' Factures orphelines supprimées');
 
       // Générer les nouvelles dates
-      final planningDates = DateUtils.DateUtils.generatePlanningDates(
+      final planningDates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: datePlanification,
         dureeTraitement: dureeTraitement,
         redondance: redondance,
@@ -2918,7 +2918,7 @@ class _ContratScreenState extends State<ContratScreen> {
           : DateTime.now();
 
       // Générer les dates attendues pour vérifier
-      final expectedDates = DateUtils.DateUtils.generatePlanningDates(
+      final expectedDates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: dateDebut,
         dureeTraitement: duree,
         redondance: redondance,
@@ -3077,7 +3077,7 @@ class _ContratScreenState extends State<ContratScreen> {
       );
 
       // Générer les dates attendues
-      final expectedDates = DateUtils.DateUtils.generatePlanningDates(
+      final expectedDates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: dateDebut,
         dureeTraitement: duree,
         redondance: redondance,
@@ -6100,7 +6100,7 @@ class _ContratCreationFlowScreenState
           );
 
           // Générer les dates du planning automatiquement
-          final planningDates = DateUtils.DateUtils.generatePlanningDates(
+          final planningDates = date_utils.DateUtils.generatePlanningDates(
             dateDebut: datePlanificationSelected,
             dureeTraitement: dureeTraitement,
             redondance: redondance,

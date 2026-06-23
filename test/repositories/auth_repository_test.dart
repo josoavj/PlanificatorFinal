@@ -1,12 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:planificator/repositories/auth_repository.dart';
 import 'package:planificator/services/database_service.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'package:mysql1/mysql1.dart';
 
-@GenerateMocks([DatabaseService])
-import 'auth_repository_test.mocks.dart';
+// Mock manuel pour DatabaseService
+class MockDatabaseService extends Mock implements DatabaseService {
+  @override
+  bool get isConnected => super.noSuchMethod(Invocation.getter(#isConnected), returnValue: false);
+  
+  @override
+  Future<Map<String, dynamic>?> queryOne(String? sql, [List<dynamic>? params]) =>
+      super.noSuchMethod(Invocation.method(#queryOne, [sql, params]), 
+      returnValue: Future<Map<String, dynamic>?>.value(null));
+}
 
 void main() {
   late AuthRepository authRepository;
@@ -24,8 +32,6 @@ void main() {
     });
 
     test('logout clears current user', () {
-      // Manual set (if we could, but it's private)
-      // For now, just test the logout logic
       authRepository.logout();
       expect(authRepository.isAuthenticated, isFalse);
       expect(authRepository.currentUser, isNull);

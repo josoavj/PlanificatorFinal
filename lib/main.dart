@@ -30,9 +30,6 @@ void main() async {
   await log.initialize(
     config: LoggingConfig(
       enableFileLogging: true,
-      maxLogsInMemory: 1000,
-      maxFileSize: 5, // 5 MB
-      maxLogFiles: 10,
       minPersistLevel: LogLevel.info, // Persister à partir de INFO
     ),
   );
@@ -52,7 +49,7 @@ void main() async {
   log.info('Service de notifications initialisé', source: 'main');
 
   // Initialiser les données de locale pour intl
-  await initializeDateFormatting('fr_FR', null);
+  await initializeDateFormatting('fr_FR');
 
   // Définir la locale par défaut pour intl (DateFormat)
   Intl.defaultLocale = 'fr_FR';

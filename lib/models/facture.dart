@@ -73,22 +73,26 @@ class Facture {
   }
 
   factory Facture.fromMap(Map<String, dynamic> map) {
-    // Gérer dateTraitement qui peut être DateTime ou String
+    // Gérer dateTraitement de manière robuste
     DateTime parsedDateTraitement;
-    final dateValue = map['date_traitement'];
-    if (dateValue is DateTime) {
-      parsedDateTraitement = dateValue;
-    } else if (dateValue is String) {
-      parsedDateTraitement = DateTime.parse(dateValue);
-    } else {
+    try {
+      final dateValue = map['date_traitement'];
+      if (dateValue is DateTime) {
+        parsedDateTraitement = dateValue;
+      } else if (dateValue is String && dateValue.isNotEmpty) {
+        parsedDateTraitement = DateTime.parse(dateValue);
+      } else {
+        parsedDateTraitement = DateTime.now();
+      }
+    } catch (e) {
       parsedDateTraitement = DateTime.now();
     }
 
     return Facture(
-      factureId: map['facture_id'] as int,
-      planningDetailsId: map['planning_detail_id'] as int,
+      factureId: map['facture_id'] as int? ?? 0,
+      planningDetailsId: map['planning_detail_id'] as int? ?? 0,
       referenceFacture: map['reference_facture'] as String?,
-      montant: map['montant'] as int,
+      montant: map['montant'] as int? ?? 0,
       mode: map['mode'] as String?,
       etablissementPayeur: map['etablissement_payeur'] as String?,
       dateCheque: map['date_cheque'] != null
@@ -97,7 +101,7 @@ class Facture {
       numeroCheque: map['numero_cheque'] as String?,
       dateTraitement: parsedDateTraitement,
       etat: map['etat'] as String? ?? 'Non payé',
-      axe: map['axe'] as String,
+      axe: map['axe'] as String? ?? 'Centre (C)',
       clientId: map['client_id'] as int?,
       clientNom: map['clientNom'] as String?,
       clientPrenom: map['clientPrenom'] as String?,

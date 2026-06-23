@@ -89,7 +89,7 @@ class ClientRepository extends ChangeNotifier {
       logger.i('SQL OK: ${rows.length} rows from DB');
 
       // Mettre en cache la page
-      _cache.set(cacheKey, rows, ttl: const Duration(minutes: 15));
+      _cache.set(cacheKey, rows);
       logger.i('Cache set for page $page');
 
       final pageClients = rows.map((row) => Client.fromMap(row)).toList();
@@ -172,7 +172,7 @@ class ClientRepository extends ChangeNotifier {
           );
       if (row != null) {
         // Mettre en cache le résultat
-        _cache.set(cacheKey, row, ttl: const Duration(minutes: 15));
+        _cache.set(cacheKey, row);
         _currentClient = Client.fromMap(row);
         logger.i('Client $clientId loaded');
       } else {
