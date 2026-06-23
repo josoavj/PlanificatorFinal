@@ -183,7 +183,6 @@ class AppTheme {
       primary: primaryBlue,
       secondary: accentBlue,
       error: errorRed,
-      surface: Colors.white,
     ),
   );
 
