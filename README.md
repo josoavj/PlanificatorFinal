@@ -1,9 +1,10 @@
 <p align="center">
-  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/logo/Logo-Planificator.ico" alt="LevelMind Logo" width="150"/>
+  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/logo/Logo-Planificator.ico" alt="Planificator Logo" width="150"/>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge" alt="Desktop Platforms">
+  <img src="https://img.shields.io/badge/Version-2.1.1-green?style=for-the-badge" alt="Version">
 </p>
 
 <h1 align="center">📊 Planificator Desktop</h1>
@@ -13,7 +14,7 @@
 </p>
 
 <p align="center">
-  Organisez efficacement vos interventions, suivez vos clients et gérez votre facturation avec une performance de niveau production.
+  Organisez efficacement vos interventions, suivez vos clients et gérez votre facturation avec une fiabilité de niveau production.
 </p>
 
 ---
@@ -21,7 +22,8 @@
 ## 📋 Table des Matières
 
 - [📖 À Propos](#-à-propos)
-- [🚀 Architecture Industrielle (v2.1.1)](#-architecture-industrielle-v211)
+- [💎 Fiabilité Financière (v2.1.1)](#-fiabilité-financière-v211)
+- [🚀 Architecture Industrielle](#-architecture-industrielle)
 - [✨ Fonctionnalités](#-fonctionnalités)
 - [🏗️ Architecture Logicielle](#-architecture-logicielle)
 - [💾 Base de Données](#-base-de-données)
@@ -36,19 +38,28 @@
 
 ## 📖 À Propos
 
-**Planificator** est une plateforme Flutter native pour Desktop (Windows, macOS, Linux) conçue pour la gestion intensive des contrats et de la facturation. En version **2.1.1**, elle a été entièrement industrialisée pour offrir une fluidité instantanée et une sécurité renforcée.
+**Planificator** est une plateforme Flutter native pour Desktop (Windows, macOS, Linux) conçue pour la gestion intensive des contrats et de la facturation. En version **2.1.1**, elle met l'accent sur l'intégrité absolue des données financières et la fluidité de navigation.
 
 ---
 
-## 🚀 Architecture Industrielle (v2.1.1)
+## 💎 Fiabilité Financière (v2.1.1)
 
-La version actuelle intègre des optimisations majeures pour la performance et la maintenance de la plateforme :
+La version actuelle introduit des garanties SGBDR essentielles pour la gestion comptable :
 
-- **⚡ Smart Cache System** : Cache SQL global éliminant les latences réseau sur les requêtes répétées (affichage instantané).
-- **🗄️ SQL Centralization** : 100% des scripts SQL centralisés dans `lib/core/sql_queries.dart` pour une maintenance simplifiée.
-- **🔌 Advanced Pooling** : Pool de connexions MySQL réutilisables (5-10 flux), supprimant les délais d'authentification à chaque action.
-- **🛡️ Log Sanitization** : Masquage automatique des données sensibles (mots de passe, hashs) dans les journaux de la plateforme.
-- **🧵 Hybrid Isolates** : Utilisation intelligente des Isolates Dart pour les calculs lourds sans surcharger les petites requêtes.
+- **🛡️ Atomic Transactions** : Utilisation systématique de `START TRANSACTION / COMMIT` pour les opérations multi-tables. Soit tout est enregistré, soit rien ne l'est, évitant toute corruption de données.
+- **📈 Scalable Historique** : Système de **Lazy Loading** (pagination) permettant de consulter des millions d'interventions sans ralentissement de l'interface.
+- **🎯 Axe/Région Automatisé** : Attribution intelligente de la zone géographique aux factures basée sur la fiche client, fiabilisant les rapports statistiques.
+- **🏗️ Robust Parsing** : Protection contre les données corrompues via un système de parsing résilient, garantissant la stabilité de l'application en environnement réel.
+
+---
+
+## 🚀 Architecture Industrielle
+
+- **⚡ Smart Cache System** : Cache SQL global éliminant les latences réseau.
+- **🗄️ SQL Centralization** : Scripts SQL centralisés dans `lib/core/sql_queries.dart`.
+- **🔌 Advanced Pooling** : Pool de connexions MySQL réutilisables, supprimant les délais d'authentification.
+- **🛡️ Log Sanitization** : Masquage automatique des données sensibles (mots de passe, hashs).
+- **🧵 Hybrid Isolates** : Utilisation intelligente des Isolates Dart pour les calculs lourds.
 
 ---
 
@@ -56,8 +67,8 @@ La version actuelle intègre des optimisations majeures pour la performance et l
 
 ### 🔐 Sécurité & Authentification
 - Connexion sécurisée avec hash **BCrypt**.
-- Chiffrement des identifiants base de données via **Secure Storage** (Keystore/Keychain).
-- Protection contre les injections SQL via requêtes paramétrées systématiques.
+- Chiffrement des identifiants base de données via **Secure Storage**.
+- Protection contre les injections SQL via requêtes paramétrées.
 
 ### 📋 Gestion des Clients & Contrats
 - Cycle de vie complet : Création, édition, catégories et axes géographiques.
@@ -65,14 +76,13 @@ La version actuelle intègre des optimisations majeures pour la performance et l
 - Gestion multi-traitements par contrat.
 
 ### 💰 Facturation Avancée
-- Modification de prix **en cascade** sur les interventions futures.
-- Suivi des états de paiement (Payé, À venir, En retard).
+- Modification de prix **en cascade** protégée par transaction.
+- Suivi des états de paiement (Payé, À venir, Non payé).
 - Historique complet des modifications de tarifs.
 
 ### 📅 Planning & Signalements
 - Calendrier interactif et prévisions mensuelles.
 - Système de signalement pour décaler ou avancer des interventions.
-- Logique complexe de **redondance** (décalage intelligent des dates futures).
 
 ---
 
@@ -81,9 +91,9 @@ La version actuelle intègre des optimisations majeures pour la performance et l
 ```
 lib/
 ├── core/           # SQL centralisé, thèmes et constantes
-├── models/         # Modèles de données (Client, Facture, Contrat...)
-├── repositories/   # Logique métier et accès données (Pattern Repo)
-├── services/       # Moteur de base de données, Cache, Logging
+├── models/         # Modèles de données robustes
+├── repositories/   # Logique métier et transactions SQL
+├── services/       # Moteur de base de données, Pool et Cache
 ├── screens/        # Interface utilisateur (UI)
 └── utils/          # Helpers (Dates, Formattage, Excel)
 ```
@@ -94,16 +104,16 @@ lib/
 
 ### Relations Principales
 - **Client** ↔ **Contrat** ↔ **Traitement** ↔ **Planning** ↔ **Facture**.
-- Table **Historique** pour l'audit de toutes les actions.
-- Table **Remarque** pour les retours d'interventions.
+- Table **Historique** technique pour le suivi des interventions.
+- Table **Remarque** pour les retours terrain.
 
 ---
 
 ## 🔧 Utilitaires
 
-- **ExcelService** : Génération professionnelle de rapports de facturation et de planning.
-- **LoggingService** : Système de log rotatif avec persistance sur fichier.
-- **NotificationService** : Rappels locaux pour les interventions du lendemain.
+- **ExcelService** : Génération de rapports professionnels.
+- **LoggingService** : Système de log rotatif persistant.
+- **NotificationService** : Rappels locaux pour les interventions.
 
 ---
 
@@ -114,10 +124,7 @@ lib/
 2. `flutter pub get`.
 3. Configurer votre serveur MySQL (Version ≥ 8.0).
 4. Importer `scripts/Planificator.sql`.
-5. Lancer la plateforme : `flutter run`.
-
-### Configuration Initiale
-Au premier lancement, la plateforme vous demandera les identifiants de votre base de données. Ces identifiants seront stockés de manière chiffrée sur votre appareil.
+5. Lancer : `flutter run`.
 
 ---
 
@@ -126,16 +133,15 @@ Au premier lancement, la plateforme vous demandera les identifiants de votre bas
 | Composant | État | Completude |
 |-----------|------|-----------|
 | Architecture | ✅ Industrialisée | 100% |
-| Performance | ✅ Optimisée | 100% |
+| Intégrité DB | ✅ Transactionnelle | 100% |
 | Sécurité | ✅ Renforcée | 100% |
-| UI/UX | ✅ Stable | 95% |
-| Base de Données | ✅ Indexée | 100% |
+| UI/UX | ✅ Stable / Pagé | 100% |
 
 ---
 
 ## 🔒 Sécurité
 
-La sécurité est une priorité majeure de la plateforme. Pour plus de détails sur les mesures implémentées (chiffrement, protection contre les injections, etc.), veuillez consulter le fichier [SECURITY.md](./SECURITY.md).
+La sécurité est une priorité majeure. Consultez le fichier [SECURITY.md](./SECURITY.md) pour les détails techniques.
 
 ## 👨‍💻 Auteur
 
@@ -146,4 +152,4 @@ La sécurité est une priorité majeure de la plateforme. Pour plus de détails 
 ## 📄 Licence
 Ce projet est sous licence **MIT**.
 
-**Dernière mise à jour** : 20 Juin 2026
+**Dernière mise à jour** : 25 Juin 2026
