@@ -13,13 +13,7 @@ class DatabaseConfig {
   final logger = createLoggerWithFileOutput(name: 'database_config');
 
   late SharedPreferences _prefs;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      keyCipherAlgorithm:
-          KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
-      storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
-    ),
-  );
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   bool _initialized = false;
 
   String? _host;
