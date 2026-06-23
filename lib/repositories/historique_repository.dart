@@ -12,29 +12,52 @@ class HistoriqueRepository extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  bool _hasMore = true;
+  int _currentPage = 0;
+  static const int pageSize = 50;
+
   List<HistoriqueEvent> get events => _events;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get hasMore => _hasMore;
 
-  /// Charge tous les événements d'historique (interventions techniques)
-  Future<void> loadAllEvents() async {
+  /// Charge tous les événements d'historique avec pagination
+  Future<void> loadAllEvents({bool refresh = false}) async {
+    if (refresh) {
+      _currentPage = 0;
+      _hasMore = true;
+    }
+
+    if (!_hasMore && !refresh) return;
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      final offset = _currentPage * pageSize;
       final rows = await _db
-          .query(SqlQueries.getAllHistoriqueDetailed)
+          .query(SqlQueries.getAllHistoriqueDetailed, [pageSize, offset])
           .timeout(
             const Duration(seconds: 50),
             onTimeout: () {
-              logger.e('Timeout loading all historique events');
+              logger.e('Timeout loading historique page $_currentPage');
               throw TimeoutException('Database query timeout');
             },
           );
-      _events = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
+      
+      final newEvents = rows.map((row) => HistoriqueEvent.fromMap(row)).toList();
 
-      logger.i('${_events.length} interventions d\'historique chargées');
+      if (refresh) {
+        _events = newEvents;
+      } else {
+        _events.addAll(newEvents);
+      }
+
+      _hasMore = newEvents.length == pageSize;
+      _currentPage++;
+
+      logger.i('${newEvents.length} interventions d\'historique chargées (Total: ${_events.length})');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors du chargement de l\'historique: $e');
@@ -42,6 +65,11 @@ class HistoriqueRepository extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Charge la page suivante
+  Future<void> loadNextPage() async {
+    await loadAllEvents();
   }
 
   /// Charge les événements d'historique filtrés par axe (région)
