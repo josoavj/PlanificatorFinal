@@ -8,7 +8,7 @@ Ce fichier centralise toutes les évolutions, corrections de bugs et optimisatio
 
 ---
 
-## [2.1.1] - Fiabilité Financière & Robustesse (2026-06-25)
+## [2.1.1] - Fiabilité Financière & Industrialisation (2026-06-25)
 
 ### 💎 Intégrité des Données (SGBDR)
 - **Atomic SQL Transactions** : Implémentation du support des transactions (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) pour garantir que les opérations financières complexes soient atomiques.
@@ -19,21 +19,14 @@ Ce fichier centralise toutes les évolutions, corrections de bugs et optimisatio
 - **Infinite Scrolling (Lazy Loading)** : L'historique des interventions utilise désormais une pagination (paquets de 50) pour un affichage instantané, peu importe le nombre d'entrées en base.
 - **Axe/Région Automatisé** : Détection intelligente de l'axe géographique du client lors de la création de factures, garantissant des statistiques régionales exactes.
 - **Robust Model Parsing** : Ajout de protections `try-catch` et de valeurs de secours dans les modèles (Facture, User) pour éviter les crashs en cas de données corrompues en production.
+- **Smart Cache System** : Implémentation d'un gestionnaire de cache SQL global pour des lectures instantanées.
+- **Advanced Connection Pooling** : Pool de connexions MySQL réutilisables (5-10 connexions).
 
 ### 🛠️ Maintenance & Qualité Code
 - **Analyse Statique Rigoureuse** : Correction de plus de 120 avertissements `flutter analyze` (redondances, dépréciations, conventions de nommage).
 - **Refactoring des Tests** : Mise à jour de la suite de tests unitaires pour correspondre au schéma réel de la base de données de production.
 - **Mocking Système** : Ajout de mocks manuels pour les tests unitaires afin de faciliter l'intégration continue sans dépendances de build lourdes.
-
----
-
-## [2.1.1] - Industrialisation & Performance (2026-02-01)
-
-### 🚀 Optimisations Majeures
-- **Smart Cache System** : Implémentation d'un gestionnaire de cache SQL global.
 - **SQL Centralization** : Déplacement de 100% des scripts SQL vers `lib/core/sql_queries.dart`.
-- **Advanced Connection Pooling** : Pool de connexions MySQL réutilisables (5-10 connexions).
-- **Gestion Hybride des Isolates** : Optimisation de `compute()` selon la charge.
 
 ### 🛡️ Sécurité & Stabilité
 - **Log Sanitization** : Masquage automatique des données sensibles dans les logs.
