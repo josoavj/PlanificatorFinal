@@ -154,7 +154,7 @@ class ContratRepository extends ChangeNotifier {
         dateFin: dateFin,
         statutContrat: statutContrat,
         dureeContrat: dureeContrat ?? 0,
-        duree: duree,
+        dureeType: dureeStatus,
         categorie: categorie,
       );
       _contrats.add(newContrat);
@@ -195,7 +195,7 @@ class ContratRepository extends ChangeNotifier {
         contrat.dateFin?.toIso8601String(),
         contrat.statutContrat,
         dureeContrat,
-        contrat.duree,
+        contrat.dureeType,
         contrat.categorie,
         contrat.contratId,
       ]);
@@ -344,14 +344,14 @@ class ContratRepository extends ChangeNotifier {
           abrogationDate.toString().split(' ')[0],
         ]);
 
-        // Marquer chaque planning et ses détails comme 'Classé sans suite'
+        // Supprimer chaque planning et ses détails futurs
         for (final planning in plannings) {
           final planningId = planning['planning_id'];
 
-          await _db.execute(SqlQueries.updatePlanningDetailsStatusByPlanning, [planningId]);
+          await _db.execute(SqlQueries.deleteFuturePlanningDetailsByPlanning, [planningId]);
 
           logger.i(
-            'Planning $planningId marqué comme Classé sans suite pour traitement $treatmentId',
+            'Détails futurs du planning $planningId supprimés pour traitement $treatmentId',
           );
         }
       }
