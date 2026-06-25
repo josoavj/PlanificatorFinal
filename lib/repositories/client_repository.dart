@@ -273,90 +273,74 @@ class ClientRepository extends ChangeNotifier {
   /// Supprime un client avec cascade: contrats → planning → planning_details → factures → remarques
   ///
   /// Invalide le cache après suppression
-  /// Conforme à Kivy delete_client() (lignes 915-950)
+  /// Utilisé TRANSACTION pour garantir l'intégrité
   Future<void> deleteClient(int clientId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // 1. Récupérer tous les contrats du client
-      const getContratsSQL = '''
-        SELECT contrat_id
-        FROM Contrat
-        WHERE client_id = ?
-      ''';
+      await _db.transaction((conn) async {
+        // 1. Récupérer tous les contrats du client
+        final contrats = await conn.query(
+          'SELECT contrat_id FROM Contrat WHERE client_id = ?',
+          [clientId],
+        );
 
-      final contrats = await _db.query(getContratsSQL, [clientId]);
-      logger.i('Found ${contrats.length} contracts for client $clientId');
+        // 2. Pour chaque contrat, supprimer en cascade
+        for (final contrat in contrats) {
+          final contratId = contrat['contrat_id'] as int;
 
-      // 2. Pour chaque contrat, supprimer en cascade
-      for (final contrat in contrats) {
-        final contratId = contrat['contrat_id'] as int;
+          // Récupérer les plannings du contrat
+          final plannings = await conn.query(
+            '''
+            SELECT planning_id FROM Planning 
+            WHERE traitement_id IN (SELECT traitement_id FROM Traitement WHERE contrat_id = ?)
+            ''',
+            [contratId],
+          );
 
-        // Supprimer tous les planning du contrat
-        const getPlanningSQL = '''
-          SELECT planning_id
-          FROM Planning
-          WHERE traitement_id IN (SELECT traitement_id FROM Traitement WHERE contrat_id = ?)
-        ''';
+          for (final planning in plannings) {
+            final planningId = planning['planning_id'] as int;
 
-        final plannings = await _db.query(getPlanningSQL, [contratId]);
+            // Suppression en cascade (l'ordre est important si FK non CASCADE en DB)
+            // Note: Planificator.sql a ON DELETE CASCADE sur la plupart des FK
+            // Mais on nettoie ici pour être sûr ou gérer les tables sans CASCADE.
 
-        for (final planning in plannings) {
-          final planningId = planning['planning_id'] as int;
+            await conn.query(
+              'DELETE FROM Remarque WHERE planning_detail_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
+              [planningId],
+            );
 
-          // Supprimer les remarques de tous les planning details
-          const getRemarquesSQL = '''
-            SELECT r.remarque_id
-            FROM Remarque r
-            JOIN PlanningDetails pd ON r.planning_details_id = pd.planning_detail_id
-            WHERE pd.planning_id = ?
-          ''';
+            await conn.query(
+              'DELETE FROM Signalement WHERE planning_detail_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
+              [planningId],
+            );
 
-          final remarques = await _db.query(getRemarquesSQL, [planningId]);
-          for (final remarque in remarques) {
-            await _db.execute('DELETE FROM Remarque WHERE remarque_id = ?', [
-              remarque['remarque_id'],
+            await conn.query(
+              'DELETE FROM Facture WHERE planning_detail_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
+              [planningId],
+            );
+
+            await conn.query(
+              'DELETE FROM PlanningDetails WHERE planning_id = ?',
+              [planningId],
+            );
+
+            await conn.query('DELETE FROM Planning WHERE planning_id = ?', [
+              planningId,
             ]);
           }
 
-          // Supprimer les signalements
-          await _db.execute(
-            'DELETE FROM Signalement WHERE planning_details_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
-            [planningId],
-          );
-
-          // Supprimer les factures
-          await _db.execute(
-            'DELETE FROM Facture WHERE planning_details_id IN (SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ?)',
-            [planningId],
-          );
-
-          // Supprimer les planning details
-          await _db.execute(
-            'DELETE FROM PlanningDetails WHERE planning_id = ?',
-            [planningId],
-          );
-
-          // Supprimer le planning
-          await _db.execute('DELETE FROM Planning WHERE planning_id = ?', [
-            planningId,
+          // Supprimer le contrat
+          await conn.query('DELETE FROM Contrat WHERE contrat_id = ?', [
+            contratId,
           ]);
-
-          logger.i('Planning $planningId deleted (with cascade)');
         }
 
-        // Supprimer le contrat
-        await _db.execute('DELETE FROM Contrat WHERE contrat_id = ?', [
-          contratId,
-        ]);
-
-        logger.i('Contract $contratId deleted');
-      }
-
-      // 3. Supprimer le client
-      await _db.execute('DELETE FROM Client WHERE client_id = ?', [clientId]);
+        // 3. Supprimer le client
+        await conn.query('DELETE FROM Client WHERE client_id = ?', [clientId]);
+      });
 
       _clients.removeWhere((c) => c.clientId == clientId);
 
@@ -364,15 +348,13 @@ class ClientRepository extends ChangeNotifier {
         _currentClient = null;
       }
 
-      logger.i(
-        'Client $clientId deleted successfully (with all contracts and associated data)',
-      );
+      logger.i('Client $clientId supprimé avec succès via transaction');
 
       // Invalider le cache après suppression
       _cache.invalidateByEntity('client', entityId: clientId);
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Error deleting client: $e');
+      logger.e('Erreur lors de la suppression du client: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
