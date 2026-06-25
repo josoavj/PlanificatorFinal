@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
 
@@ -8,275 +7,11 @@ class PlanningRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
   final logger = createLoggerWithFileOutput(name: 'planning_repository');
 
-  List<PlanningEvent> _events = [];
-  PlanningEvent? _currentEvent;
   bool _isLoading = false;
   String? _errorMessage;
 
-  List<PlanningEvent> get events => _events;
-  PlanningEvent? get currentEvent => _currentEvent;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-
-  /// Charge tous les événements
-  Future<void> loadEvents() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final rows = await _db.query(SqlQueries.getAllPlanningsLegacy);
-      _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
-
-      logger.i('${_events.length} événements chargés');
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des événements: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Charge les événements d'un contrat
-  Future<void> loadEventsForContrat(int contratId) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final rows = await _db.query(SqlQueries.getPlanningsByContratLegacy, [contratId]);
-      _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
-
-      logger.i(
-        '${_events.length} événements chargés pour le contrat $contratId',
-      );
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des événements: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Charge les événements d'une date spécifique
-  Future<void> loadEventsByDate(DateTime date) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
-
-      final rows = await _db.query(SqlQueries.getPlanningsByDateRangeLegacy, [
-        startOfDay.toIso8601String(),
-        endOfDay.toIso8601String(),
-      ]);
-      _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
-
-      logger.i(
-        '${_events.length} événements trouvés pour ${date.toIso8601String().split('T')[0]}',
-      );
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des événements: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Charge les événements entre deux dates
-  Future<void> loadEventsByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final rows = await _db.query(SqlQueries.getPlanningsByDateRangeLegacy, [
-        startDate.toIso8601String(),
-        endDate.toIso8601String(),
-      ]);
-      _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
-
-      logger.i('${_events.length} événements trouvés');
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement des événements: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Charge un événement spécifique
-  Future<void> loadEvent(int planningId) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final row = await _db.queryOne(SqlQueries.getPlanningByIdLegacy, [planningId]);
-      if (row != null) {
-        _currentEvent = PlanningEvent.fromMap(row);
-        logger.i('Événement $planningId chargé');
-      } else {
-        _errorMessage = 'Événement non trouvé';
-      }
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors du chargement de l\'événement: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Crée un nouvel événement
-  Future<int> createEvent(
-    int contratId,
-    String titre,
-    String description,
-    DateTime dateDebut,
-    DateTime dateFin,
-  ) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final id = await _db.insert(SqlQueries.createPlanningLegacy, [
-        contratId,
-        titre,
-        description,
-        dateDebut.toIso8601String(),
-        dateFin.toIso8601String(),
-      ]);
-
-      final newEvent = PlanningEvent(
-        planningId: id,
-        contratId: contratId,
-        titre: titre,
-        description: description,
-        dateDebut: dateDebut,
-        dateFin: dateFin,
-      );
-      _events.add(newEvent);
-
-      logger.i('Événement créé avec l\'ID: $id');
-      return id;
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors de la création: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Met à jour un événement
-  Future<void> updateEvent(PlanningEvent event) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      await _db.execute(SqlQueries.updatePlanningLegacy, [
-        event.contratId,
-        event.titre,
-        event.description,
-        event.dateDebut.toIso8601String(),
-        event.dateFin.toIso8601String(),
-        event.planningId,
-      ]);
-
-      // Mettre à jour dans la liste
-      final index = _events.indexWhere((e) => e.planningId == event.planningId);
-      if (index != -1) {
-        _events[index] = event;
-      }
-
-      if (_currentEvent?.planningId == event.planningId) {
-        _currentEvent = event;
-      }
-
-      logger.i('Événement ${event.planningId} mis à jour');
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors de la mise à jour: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Supprime un événement
-  Future<void> deleteEvent(int planningId) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      await _db.execute(SqlQueries.deletePlanningLegacy, [planningId]);
-
-      _events.removeWhere((e) => e.planningId == planningId);
-
-      if (_currentEvent?.planningId == planningId) {
-        _currentEvent = null;
-      }
-
-      logger.i('Événement $planningId supprimé');
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors de la suppression: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Récupère les événements à venir
-  List<PlanningEvent> getUpcomingEvents() {
-    final now = DateTime.now();
-    return _events.where((e) => e.dateDebut.isAfter(now)).toList()
-      ..sort((a, b) => a.dateDebut.compareTo(b.dateDebut));
-  }
-
-  /// Récupère les événements passés
-  List<PlanningEvent> getPastEvents() {
-    final now = DateTime.now();
-    return _events.where((e) => e.dateFin.isBefore(now)).toList()
-      ..sort((a, b) => b.dateDebut.compareTo(a.dateDebut));
-  }
-
-  /// Recherche des événements
-  Future<void> searchEvents(String query) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final searchTerm = '%$query%';
-      final rows = await _db.query(SqlQueries.searchPlanningsLegacy, [searchTerm, searchTerm]);
-      _events = rows.map((row) => PlanningEvent.fromMap(row)).toList();
-
-      logger.i(
-        '${_events.length} événements trouvés pour la recherche: $query',
-      );
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e('Erreur lors de la recherche: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
 
   Future<bool> savePlanningComplete({
     required int traitementId,
@@ -295,88 +30,71 @@ class PlanningRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      //  1. Créer le planning dans la BD
-      final planning = await _db.query(SqlQueries.createPlanning, [
-        traitementId,
-        debut.toIso8601String().split('T')[0],
-        moisDebut,
-        moisFin ?? 0,
-        12,
-        redondance,
-        dateFinContrat.toIso8601String().split('T')[0],
-      ]);
+      // Utilisation d'une TRANSACTION pour garantir l'atomicité
+      return await _db.transaction((conn) async {
+        // 1. Créer le planning dans la BD
+        final planning = await conn.query(SqlQueries.createPlanning, [
+          traitementId,
+          debut.toIso8601String().split('T')[0],
+          moisDebut,
+          moisFin ?? 0,
+          12,
+          redondance,
+          dateFinContrat.toIso8601String().split('T')[0],
+        ]);
 
-      if (planning.isEmpty) {
-        throw Exception('Erreur création planning');
-      }
+        if (planning.isEmpty) {
+          throw Exception('Erreur création planning');
+        }
 
-      int planningId = planning[0]['planning_id'] ?? 0;
-      if (planningId == 0) throw Exception('Planning ID non défini');
+        int planningId = planning.first['planning_id'] ?? 0;
+        if (planningId == 0) throw Exception('Planning ID non défini');
 
-      logger.i(' Planning créé: ID $planningId');
+        logger.i(' Planning créé: ID $planningId');
 
-      //  2. Créer planning_details pour chaque date
-      int facturesCreated = 0;
+        // 2. Créer planning_details pour chaque date
+        int facturesCreated = 0;
 
-      for (final planningDate in planningDates) {
-        try {
+        for (final planningDate in planningDates) {
           // Créer planning_detail
-          final details = await _db.query(SqlQueries.insertPlanningDetailWithStatut, [
+          final details = await conn.query(SqlQueries.insertPlanningDetailWithStatut, [
             planningId,
             planningDate.toIso8601String().split('T')[0],
             'À venir',
           ]);
 
-          int detailId = details[0]['planning_detail_id'] ?? 0;
+          int detailId = details.first['planning_detail_id'] ?? 0;
           if (detailId == 0) {
             logger.w(' Impossible de créer planning_detail pour $planningDate');
             continue;
           }
 
-          //  3. Créer facture pour chaque détail
-          await _db.execute(SqlQueries.createFacture, [
+          // 3. Créer facture pour chaque détail
+          await conn.query(SqlQueries.createFacture, [
             detailId,
-            montant.toInt(), // Convertir double en int
+            montant.toInt(),
             planningDate.toIso8601String().split('T')[0],
             'Non payé',
             axeClient,
           ]);
 
           facturesCreated++;
-          logger.i(' Facture $facturesCreated créée pour $planningDate');
-        } catch (e) {
-          logger.e(' Erreur création facture pour $planningDate: $e');
-          continue; // Continuer avec la prochaine date
         }
-      }
 
-      logger.i(' Planning complet créé: $facturesCreated factures');
-      return true;
+        logger.i(' Planning complet créé avec succès: $facturesCreated factures');
+        return true;
+      });
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur savePlanningComplete: $e');
-      rethrow;
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  ///  NOUVEAU : Extraire redondance depuis fréquence (conforme à main.py)
-  /// "une seule fois" → 0
-  /// "1 mois" → 1
-  /// "2 mois" → 2
-  /// "3 mois" → 3, etc.
-  /// Créer un planning pour un traitement avec génération automatique des détails
-  ///
-  /// Paramètres:
-  /// - traitementId: ID du traitement
-  /// - dateDebutPlanification: Date de début de la planification
-  /// - moisDebut: Mois de début (1-12)
-  /// - dureeTraitement: Durée totale du traitement en mois
-  /// - redondance: Fréquence d'exécution en mois
-  ///
-  /// Retourne l'ID du planning créé, ou -1 en cas d'erreur
+  /// Créer un planning pour un traitement
   Future<int> createPlanning({
     required int traitementId,
     required DateTime dateDebutPlanification,
@@ -385,7 +103,6 @@ class PlanningRepository extends ChangeNotifier {
     required int redondance,
   }) async {
     try {
-      //  Vérifier si un planning existe déjà pour ce traitement
       final existing = await _db.query(SqlQueries.checkPlanningExistence, [traitementId]);
 
       if (existing.isNotEmpty) {
@@ -395,8 +112,6 @@ class PlanningRepository extends ChangeNotifier {
         return existing[0]['planning_id'] as int;
       }
 
-      // Calculer les dates de fin en fonction de la durée
-      // Pour 12 mois: ajouter 11 mois (janvier + 11 = décembre)
       final month = dateDebutPlanification.month - 1 + (dureeTraitement - 1);
       final year = dateDebutPlanification.year + (month ~/ 12);
       final newMonth = (month % 12) + 1;
@@ -434,13 +149,11 @@ class PlanningRepository extends ChangeNotifier {
         return int.parse(parts[0]);
       }
     } catch (e) {
-      // Utiliser le logger global
       Logger().e(' Erreur parsing frequency: $e');
     }
     return 1; // Défaut: 1 mois
   }
 
-  ///  NOUVEAU : Valider montant (remove spaces: "1 234" → 1234)
   static int cleanMontant(String montantStr) {
     return int.parse(montantStr.replaceAll(' ', '').replaceAll('Ar', ''));
   }

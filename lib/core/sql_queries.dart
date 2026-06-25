@@ -160,10 +160,9 @@ class SqlQueries {
 
   static const String getFuturePlanningsByTreatment = 'SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?';
 
-  static const String updatePlanningDetailsStatusByPlanning = '''
-    UPDATE PlanningDetails 
-    SET statut = 'Classé sans suite'
-    WHERE planning_id = ?
+  static const String deleteFuturePlanningDetailsByPlanning = '''
+    DELETE FROM PlanningDetails 
+    WHERE planning_id = ? AND statut = 'À venir'
   ''';
 
   // --- FACTURES ---
@@ -505,16 +504,6 @@ class SqlQueries {
     WHERE co.client_id = ?
     ORDER BY tt.typeTraitement ASC
   ''';
-
-  // --- PLANNING EVENTS (Legacy?) ---
-  static const String getAllPlanningsLegacy = 'SELECT planningId, contratId, titre, description, dateDebut, dateFin FROM Planning ORDER BY dateDebut DESC';
-  static const String getPlanningsByContratLegacy = 'SELECT planningId, contratId, titre, description, dateDebut, dateFin FROM Planning WHERE contratId = ? ORDER BY dateDebut ASC';
-  static const String getPlanningsByDateRangeLegacy = 'SELECT planningId, contratId, titre, description, dateDebut, dateFin FROM Planning WHERE dateDebut >= ? AND dateDebut < ? ORDER BY dateDebut ASC';
-  static const String getPlanningByIdLegacy = 'SELECT planningId, contratId, titre, description, dateDebut, dateFin FROM Planning WHERE planningId = ?';
-  static const String createPlanningLegacy = 'INSERT INTO Planning (contratId, titre, description, dateDebut, dateFin) VALUES (?, ?, ?, ?, ?)';
-  static const String updatePlanningLegacy = 'UPDATE Planning SET contratId = ?, titre = ?, description = ?, dateDebut = ?, dateFin = ? WHERE planningId = ?';
-  static const String deletePlanningLegacy = 'DELETE FROM Planning WHERE planningId = ?';
-  static const String searchPlanningsLegacy = 'SELECT planningId, contratId, titre, description, dateDebut, dateFin FROM Planning WHERE titre LIKE ? OR description LIKE ? ORDER BY dateDebut DESC';
 
   // --- PLANNING NEW ---
   static const String createPlanning = '''
