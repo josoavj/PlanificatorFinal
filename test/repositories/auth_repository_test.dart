@@ -3,7 +3,6 @@ import 'package:mockito/mockito.dart';
 import 'package:planificator/repositories/auth_repository.dart';
 import 'package:planificator/services/database_service.dart';
 import 'package:bcrypt/bcrypt.dart';
-import 'package:mysql1/mysql1.dart';
 
 // Mock manuel pour DatabaseService
 class MockDatabaseService extends Mock implements DatabaseService {
