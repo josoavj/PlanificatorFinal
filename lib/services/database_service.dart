@@ -283,8 +283,16 @@ class DatabaseService {
 
       try {
         // 2. Décider si on utilise un Isolate ou la connexion directe
-        // PERFORMANCE: Sur les petites requêtes, l'Isolate est plus lent à cause du handshake TCP
-        bool shouldShowIsolate = _useIsolates && !sql.toLowerCase().contains('limit 1');
+        // PERFORMANCE: L'Isolate est coûteux (ouverture d'une nouvelle connexion MySQL).
+        // On ne l'utilise que pour les grosses requêtes SELECT (> 100 caractères ou mots clés de listes).
+        // Les petites requêtes sont plus rapides en direct via le pool de connexions.
+        bool isLikelyHeavy = sql.length > 100 || 
+                           sql.toLowerCase().contains('join') || 
+                           sql.toLowerCase().contains('detailed');
+        
+        bool shouldShowIsolate = _useIsolates && 
+                                !sql.toLowerCase().contains('limit 1') && 
+                                isLikelyHeavy;
 
         if (shouldShowIsolate) {
           rows = await DatabaseIsolateService.executeQuery(
