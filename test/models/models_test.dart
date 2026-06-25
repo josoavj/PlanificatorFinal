@@ -121,7 +121,7 @@ void main() {
       final contrat = Contrat.fromMap(map);
 
       expect(contrat.contratId, equals(1));
-      expect(contrat.duree, isNull); // parseDuree returns null for 'Déterminée'
+      expect(contrat.dureeType, equals('Déterminée'));
     });
 
     test('Contrat gère les dates indéterminées', () {
@@ -141,7 +141,7 @@ void main() {
       final contrat = Contrat.fromMap(map);
 
       expect(contrat.dateFin, isNull);
-      expect(contrat.duree, isNull);
+      expect(contrat.dureeType, equals('Indéterminée'));
     });
   });
 
