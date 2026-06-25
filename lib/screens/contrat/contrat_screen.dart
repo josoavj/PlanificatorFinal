@@ -210,14 +210,9 @@ class _ContratScreenState extends State<ContratScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.white),
                     onPressed: () {
-                      _searchQuery = '';
-                      _searchController.clear();
-                      _reloadData();
-                    },
-                  ),
-                ),
+                      _reloadData();}
               ),
-            ],
+              ))],
           ),
           const SizedBox(height: 12),
           // Badge nombre de contrats
@@ -558,8 +553,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 _buildDetailRow('Catégorie', contrat.categorie),
                 _buildDetailRow('Statut', contrat.statutContrat),
                 _buildDetailRow('Durée Totale', '${contrat.dureeContrat} mois'),
-                if (contrat.duree != null)
-                  _buildDetailRow('Durée Restante', '${contrat.duree} mois'),
+                _buildDetailRow('Type de durée', contrat.dureeType),
                 const SizedBox(height: 16),
 
                 // ═════════════════════════════════════════
@@ -2415,7 +2409,7 @@ class _ContratScreenState extends State<ContratScreen> {
                           dateDebut: DateTime.now(),
                           dateFin: null,
                           statutContrat: '',
-                          duree: null,
+                          dureeType: 'Déterminée',
                           categorie: '',
                           dureeContrat: 0,
                         ),
@@ -2677,7 +2671,7 @@ class _ContratScreenState extends State<ContratScreen> {
                       dateDebut: DateTime.now(),
                       dateFin: null,
                       statutContrat: '',
-                      duree: null,
+                      dureeType: 'Déterminée',
                       categorie: '',
                       dureeContrat: 0,
                     ),
