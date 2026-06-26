@@ -31,6 +31,7 @@
 - [🚀 Démarrage Rapide](#-démarrage-rapide)
 - [📊 État du Projet](#-état-du-projet)
 - [🔒 Sécurité](#-sécurité)
+- [🧪 Tests Automatisés](#-tests-automatisés)
 - [👨‍💻 Auteur](#-auteur)
 - [📄 Licence](#-licence)
 
@@ -142,6 +143,15 @@ lib/
 ## 🔒 Sécurité
 
 La sécurité est une priorité majeure. Consultez le fichier [SECURITY.md](./SECURITY.md) pour les détails techniques.
+
+## 🧪 Tests Automatisés
+
+La plateforme dispose d'une suite de tests complète (70+) couvrant la logique métier, financière et calendaire.
+Pour plus d'informations sur la couverture des tests, consultez le fichier [TESTS.md](./TESTS.md).
+
+```bash
+flutter test
+```
 
 ## 👨‍💻 Auteur
 
