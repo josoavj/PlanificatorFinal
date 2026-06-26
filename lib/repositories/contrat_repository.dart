@@ -5,13 +5,17 @@ import '../services/index.dart';
 import '../core/sql_queries.dart';
 
 class ContratRepository extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
   final logger = createLoggerWithFileOutput(name: 'contrat_repository');
 
   List<Contrat> _contrats = [];
   Contrat? _currentContrat;
   bool _isLoading = false;
   String? _errorMessage;
+
+  // Constructeur avec injection optionnelle
+  ContratRepository({DatabaseService? databaseService})
+    : _db = databaseService ?? DatabaseService();
 
   // Pagination
   static const int paginationSize = 30;
