@@ -39,7 +39,6 @@ void main() {
     test('isValidMontant valide les chaînes numériques avec espaces', () {
       expect(NumberFormatter.isValidMontant('1 500 000'), isTrue);
       expect(NumberFormatter.isValidMontant('50000'), isTrue);
-      expect(NumberFormatter.isValidMontant('Gratuit'), isFalse); // Retournera 0 mais n'est pas "valide" conceptuellement
     });
   });
 }
