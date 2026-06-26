@@ -8,12 +8,16 @@ import '../utils/date_utils.dart' as date_utils;
 import '../core/sql_queries.dart';
 
 class FactureRepository extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
   final logger = createLoggerWithFileOutput(name: 'facture_repository');
 
   List<Facture> _factures = [];
   bool _isLoading = false;
   String? _errorMessage;
+
+  // Constructeur avec injection optionnelle
+  FactureRepository({DatabaseService? databaseService})
+    : _db = databaseService ?? DatabaseService();
 
   List<Facture> get factures => _factures;
   bool get isLoading => _isLoading;
