@@ -154,6 +154,10 @@ Pour plus d'informations sur la couverture des tests, consultez le fichier [TEST
 flutter test
 ```
 
+## 🤝 Contribution
+
+Si vous souhaitez contribuer au projet, veuillez lire le guide détaillé [CONTRIBUTING.md](./CONTRIBUTING.md) pour connaître les standards de code et de sécurité.
+
 ## 👨‍💻 Auteur
 
 **Josoa** - Développeur principal
