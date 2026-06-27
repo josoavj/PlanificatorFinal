@@ -32,6 +32,7 @@
 - [📊 État du Projet](#-état-du-projet)
 - [🔒 Sécurité](#-sécurité)
 - [🧪 Tests Automatisés](#-tests-automatisés)
+- [🤝 Contribution](#-contribution)
 - [👨‍💻 Auteur](#-auteur)
 - [📄 Licence](#-licence)
 
