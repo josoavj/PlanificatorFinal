@@ -14,8 +14,8 @@ void main() {
 
   group('ContratRepository - Business Logic', () {
     test('getContractDurationInMonths calcule correctement la différence de mois', () {
-      final start = DateTime(2024, 1, 1);
-      final end = DateTime(2025, 1, 1); // Exactement 12 mois
+      final start = DateTime(2024);
+      final end = DateTime(2025); // Exactement 12 mois
       
       final contrat = Contrat(
         contratId: 1,
@@ -35,7 +35,7 @@ void main() {
     });
 
     test('getContractDurationInMonths retourne 0 pour les contrats indéterminés', () {
-      final start = DateTime(2024, 1, 1);
+      final start = DateTime(2024);
       
       final contrat = Contrat(
         contratId: 1,
@@ -43,7 +43,6 @@ void main() {
         referenceContrat: 'REF',
         dateContrat: start,
         dateDebut: start,
-        dateFin: null, // Indéterminé
         statutContrat: 'Actif',
         dureeContrat: 0,
         dureeType: 'Indéterminée',
