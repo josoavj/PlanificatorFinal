@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
 import 'package:logger/logger.dart' as logger_pkg;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -195,7 +194,6 @@ class LoggingService {
       if (!await _currentLogFile!.exists()) {
         await _currentLogFile!.writeAsString(
           _getLogFileHeader(),
-          encoding: const Utf8Codec(),
         );
       }
 
@@ -298,7 +296,6 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
       await _currentLogFile!.writeAsString(
         '$logLine\n',
         mode: FileMode.append,
-        encoding: const Utf8Codec(),
       );
     } catch (e) {
       // Ignorer silencieusement les erreurs d'écriture fichier
@@ -519,7 +516,7 @@ Résumé des Logs:
     }
     try {
       // Lire avec UTF-8 pour Windows (évite les problèmes d'encodage)
-      return await _currentLogFile!.readAsString(encoding: const Utf8Codec());
+      return await _currentLogFile!.readAsString();
     } catch (e) {
       return null;
     }
