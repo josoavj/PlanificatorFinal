@@ -10,7 +10,6 @@ void main() {
       expect(paths[1].path, contains('Traitements'));
     });
   });
-}
 
   group('ExcelService - Data Formatting', () {
     // Test de la logique interne (méthodes privées non testables directement sans modification)
