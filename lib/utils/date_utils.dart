@@ -61,10 +61,10 @@ class DateUtils {
   static Map<String, DateTime> getHolidaysForYear(int year) {
     final holidays = <String, DateTime>{
       // Jours fériés fixes à Madagascar
-      'Jour de l\'an': DateTime(year, 1, 1),
+      'Jour de l\'an': DateTime(year),
       'Fête nationale': DateTime(year, 6, 26), // Indépendance Madagascar
       'Assomption': DateTime(year, 8, 15),
-      'Toussaint': DateTime(year, 11, 1),
+      'Toussaint': DateTime(year, 11),
       'Noël': DateTime(year, 12, 25),
     };
 
