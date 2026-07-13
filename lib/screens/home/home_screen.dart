@@ -307,7 +307,6 @@ class _DashboardTabState extends State<_DashboardTab> {
     //  PRIORITÉ: Afficher les données si présentes, ignorer le spinner
     if (treatments.isNotEmpty) {
       return SingleChildScrollView(
-        scrollDirection: Axis.vertical,
         child: SizedBox(
           width: double.infinity,
           child: DataTable(
