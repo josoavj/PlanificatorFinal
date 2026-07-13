@@ -382,7 +382,6 @@ class AboutScreen extends StatelessWidget {
           border: Border.all(color: Colors.blue[200]!),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Avatar
             CircleAvatar(
@@ -509,7 +508,6 @@ class AboutScreen extends StatelessWidget {
           border: Border.all(color: Colors.amber[200]!),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Avatar
             CircleAvatar(
