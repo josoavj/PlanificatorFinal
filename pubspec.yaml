@@ -1,5 +1,5 @@
 name: planificator
-description: "Planificator Desktop - Système Industriel de Gestion de Contrats et Factures"
+description: "Planificator Desktop - Plateforme de gestion et suivi de planning clients"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
