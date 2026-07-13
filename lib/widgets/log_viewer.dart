@@ -294,7 +294,6 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    flex: 1,
                     child: TextField(
                       controller: _filterCtrl,
                       style: const TextStyle(color: Colors.white, fontSize: 12),
