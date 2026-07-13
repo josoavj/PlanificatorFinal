@@ -192,7 +192,6 @@ class _ExportScreenState extends State<ExportScreen> {
             constraints: const BoxConstraints(maxWidth: 700),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Titre principal
                 Text(
@@ -402,7 +401,6 @@ class _ExportScreenState extends State<ExportScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -413,14 +411,12 @@ class _ExportScreenState extends State<ExportScreen> {
                               size: 28,
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Export réussi !',
-                                style: TextStyle(
-                                  color: Colors.green[700],
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                            Text(
+                              'Export réussi !',
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                           ],
@@ -486,7 +482,6 @@ class _ExportScreenState extends State<ExportScreen> {
               value: value,
               underline: const SizedBox(),
               isExpanded: true,
-              isDense: false,
               itemHeight: 56,
               menuMaxHeight: 400,
               items: items.map((String item) {
