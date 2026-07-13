@@ -39,7 +39,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 // Subtitle
                 Text(
-                  'Plateforme de Gestion de Planning et de Traitements',
+                  'Gestion et suivi de planning clients',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
@@ -141,8 +141,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Planificator est une plateforme moderne conçue pour faciliter la gestion efficace de vos planifications et traitements. '
-                            'Elle vous permet de suivre, organiser et analyser vos clients, contrats, factures et traitements avec une interface intuitive et des outils puissants.\n\n'
+                            'Planificator est une plateforme moderne conçue pour faciliter la gestion et le suivi efficace de vos plannings clients. '
+                            'Elle vous permet d\'organiser et analyser vos interventions, clients et factures avec une interface intuitive et des outils puissants.\n\n'
                             'Fonctionnalités principales:\n'
                             '• Gestion complète des clients et catégories\n'
                             '• Suivi des contrats et de leur statut\n'
