@@ -36,6 +36,7 @@ class AppTheme {
     brightness: Brightness.light,
     primaryColor: primaryBlue,
     scaffoldBackgroundColor: Colors.white,
+    fontFamily: GoogleFonts.poppins().fontFamily,
 
     // AppBar
     appBarTheme: const AppBarTheme(
@@ -204,6 +205,7 @@ class AppTheme {
     brightness: Brightness.dark,
     primaryColor: accentBlue,
     scaffoldBackgroundColor: darkBg,
+    fontFamily: GoogleFonts.poppins().fontFamily,
 
     // AppBar avec glassmorphism
     appBarTheme: AppBarTheme(
