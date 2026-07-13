@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -36,14 +35,7 @@ class NotificationService {
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
       const DarwinInitializationSettings iosSettings =
-          DarwinInitializationSettings(
-            requestAlertPermission: true,
-            requestBadgePermission: true,
-            requestSoundPermission: true,
-            defaultPresentAlert: true,
-            defaultPresentBadge: true,
-            defaultPresentSound: true,
-          );
+          DarwinInitializationSettings();
 
       const LinuxInitializationSettings linuxSettings =
           LinuxInitializationSettings(defaultActionName: 'Open notification');
@@ -63,7 +55,6 @@ class NotificationService {
       if (Platform.isAndroid || Platform.isIOS) {
         await Workmanager().initialize(
           callbackDispatcher,
-          isInDebugMode: kDebugMode,
         );
         log.info('WorkManager initialisé', source: 'NotificationService');
       } else {
@@ -100,15 +91,9 @@ class NotificationService {
             'planificator_channel',
             'Planificator Notifications',
             importance: Importance.max,
-            priority: Priority.high,
-            enableVibration: true,
           );
 
-      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      );
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
       const NotificationDetails notificationDetails = NotificationDetails(
         android: androidDetails,
@@ -174,15 +159,9 @@ class NotificationService {
             'planificator_daily_channel',
             'Planificator Daily Notifications',
             importance: Importance.max,
-            priority: Priority.high,
-            enableVibration: true,
           );
 
-      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      );
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
       const NotificationDetails notificationDetails = NotificationDetails(
         android: androidDetails,
