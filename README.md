@@ -7,10 +7,10 @@
   <img src="https://img.shields.io/badge/Version-2.1.1-green?style=for-the-badge" alt="Version">
 </p>
 
-<h1 align="center">📊 Planificator Desktop</h1>
+<h1 align="center">Planificator</h1>
 
 <p align="center">
-  <strong>Plateforme Industrielle de Gestion pour Environnements Desktop</strong>
+  <strong>Plateforme de Gestion de planning et services</strong>
 </p>
 
 <p align="center">

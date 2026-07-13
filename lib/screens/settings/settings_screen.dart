@@ -1495,7 +1495,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Voulez-vous vraiment vider toutes les données en cache ? '
           'Cela n\'affectera pas vos données en ligne.',
       confirmText: 'Vider',
-      cancelText: 'Annuler',
     ).then((confirmed) {
       if (confirmed == true) {
         ScaffoldMessenger.of(
@@ -1511,7 +1510,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: 'Déconnexion',
       message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
       confirmText: 'Déconnexion',
-      cancelText: 'Annuler',
     ).then((confirmed) {
       if (confirmed == true) {
         context.read<AuthRepository>().logout();
@@ -1530,7 +1528,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Cette action est irréversible. Tous vos données seront supprimées. '
           'Êtes-vous sûr ?',
       confirmText: 'Supprimer définitivement',
-      cancelText: 'Annuler',
     ).then((confirmed) async {
       if (confirmed == true) {
         try {
@@ -1561,7 +1558,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (!context.mounted) return;
           AppDialogs.error(
             context,
-            title: 'Erreur',
             message: 'Erreur lors de la suppression du compte: $e',
           );
         }
@@ -1610,7 +1606,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: 'Effacer les logs',
       message: 'Supprimer tous les logs en mémoire et sur disque ?',
       confirmText: 'Effacer',
-      cancelText: 'Annuler',
     ).then((confirmed) async {
       if (confirmed == true) {
         log.clear();

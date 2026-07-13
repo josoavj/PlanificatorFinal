@@ -187,7 +187,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Colors.grey[200]!, width: 1),
+                  top: BorderSide(color: Colors.grey[200]!),
                 ),
                 color: Colors.white.withValues(alpha: 0.5),
               ),

@@ -400,7 +400,7 @@ class _ContratScreenState extends State<ContratScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
+              border: Border.all(color: Colors.grey[200]!),
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
@@ -611,7 +611,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                 ? Colors.red[50]
                                 : Colors.grey[100],
                             border: hasClassedSansSuite
-                                ? Border.all(color: Colors.red[200]!, width: 1)
+                                ? Border.all(color: Colors.red[200]!)
                                 : null,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1534,7 +1534,6 @@ class _ContratScreenState extends State<ContratScreen> {
                       traitementId: traitementId,
                       montant: prix,
                       referencePrefix: referenceController.text,
-                      deleteExisting: false,
                     );
 
                 if (mounted) {
@@ -1681,7 +1680,6 @@ class _ContratScreenState extends State<ContratScreen> {
                                 color: Colors.orange[50],
                                 border: Border.all(
                                   color: Colors.orange[300]!,
-                                  width: 1,
                                 ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
@@ -2407,7 +2405,6 @@ class _ContratScreenState extends State<ContratScreen> {
                           referenceContrat: '',
                           dateContrat: DateTime.now(),
                           dateDebut: DateTime.now(),
-                          dateFin: null,
                           statutContrat: '',
                           dureeType: 'Déterminée',
                           categorie: '',
@@ -2669,7 +2666,6 @@ class _ContratScreenState extends State<ContratScreen> {
                       referenceContrat: '',
                       dateContrat: DateTime.now(),
                       dateDebut: DateTime.now(),
-                      dateFin: null,
                       statutContrat: '',
                       dureeType: 'Déterminée',
                       categorie: '',
@@ -4408,39 +4404,38 @@ class _ContratCreationFlowScreenState
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ListTile(
-                          title: const Text(
-                            'Déterminée',
-                            style: TextStyle(fontSize: 12),
+                  RadioGroup<bool>(
+                    groupValue: _isDeterminee,
+                    onChanged: (value) =>
+                        setState(() => _isDeterminee = value ?? false),
+                    child: Row(
+                      children: const [
+                        Expanded(
+                          child: ListTile(
+                            title: Text(
+                              'Déterminée',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            leading: Radio<bool>(
+                              value: true,
+                            ),
+                            contentPadding: EdgeInsets.zero,
                           ),
-                          leading: Radio<bool>(
-                            value: true,
-                            groupValue: _isDeterminee,
-                            onChanged: (value) =>
-                                setState(() => _isDeterminee = value ?? false),
-                          ),
-                          contentPadding: EdgeInsets.zero,
                         ),
-                      ),
-                      Expanded(
-                        child: ListTile(
-                          title: const Text(
-                            'Indéterminée',
-                            style: TextStyle(fontSize: 12),
+                        Expanded(
+                          child: ListTile(
+                            title: Text(
+                              'Indéterminée',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            leading: Radio<bool>(
+                              value: false,
+                            ),
+                            contentPadding: EdgeInsets.zero,
                           ),
-                          leading: Radio<bool>(
-                            value: false,
-                            groupValue: _isDeterminee,
-                            onChanged: (value) =>
-                                setState(() => _isDeterminee = value ?? true),
-                          ),
-                          contentPadding: EdgeInsets.zero,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   // Si déterminée : afficher date de fin obligatoire
@@ -5693,10 +5688,9 @@ class _ContratCreationFlowScreenState
               });
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+              padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Checkbox(
                     value: isSelected,
@@ -6119,7 +6113,7 @@ class _ContratCreationFlowScreenState
 
             final planningDetail = await context
                 .read<PlanningDetailsRepository>()
-                .createPlanningDetails(planningId, date, statut: 'À venir');
+                .createPlanningDetails(planningId, date);
 
             logger.i(
               '      🔍 Planning detail null? ${planningDetail == null}',
@@ -6155,8 +6149,6 @@ class _ContratCreationFlowScreenState
                       planningDetailId: planningDetail.planningDetailId,
                       referenceFacture: '', // Vide - sera rempli manuellement
                       montant: montant,
-                      mode:
-                          null, // Mode à définir plus tard (pas de valeur par défaut)
                       etat: 'À venir',
                       axe: clientAxe,
                       dateTraitement: date,
@@ -6204,7 +6196,6 @@ class _ContratCreationFlowScreenState
             ' Contrat créé! $planningsCreated planning(s) + $facturesCreated facture(s).',
           ),
           backgroundColor: Colors.green[700],
-          duration: const Duration(seconds: 4),
         ),
       );
 

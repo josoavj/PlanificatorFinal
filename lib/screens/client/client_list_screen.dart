@@ -284,7 +284,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!, width: 1),
+              border: Border.all(color: Colors.grey[200]!),
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
@@ -1077,7 +1077,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                       decoration: BoxDecoration(
                         color: Colors.blue[50],
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue[200]!, width: 1),
+                        border: Border.all(color: Colors.blue[200]!),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1106,7 +1106,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                       decoration: BoxDecoration(
                         color: Colors.amber[50],
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber[200]!, width: 1),
+                        border: Border.all(color: Colors.amber[200]!),
                       ),
                       child: Row(
                         children: [

@@ -43,7 +43,7 @@ class NumberFormatter {
       parts.add(reversed[i]);
     }
 
-    final formatted = parts.reversed.join('');
+    final formatted = parts.reversed.join();
     return isNegative ? '-$formatted' : formatted;
   }
 

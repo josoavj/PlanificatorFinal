@@ -36,7 +36,7 @@ void main() {
 
   group('DateUtils - Planning Generation', () {
     test('generatePlanningDates génère le bon nombre de dates pour un contrat mensuel', () {
-      final start = DateTime(2024, 1, 1);
+      final start = DateTime(2024);
       final dates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: start,
         dureeTraitement: 12,
@@ -49,7 +49,7 @@ void main() {
     });
 
     test('generatePlanningDates respecte la redondance trimestrielle', () {
-      final start = DateTime(2024, 1, 1);
+      final start = DateTime(2024);
       final dates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: start,
         dureeTraitement: 12,
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('generatePlanningDates avec redondance 0 (Une seule fois)', () {
-      final start = DateTime(2024, 1, 1);
+      final start = DateTime(2024);
       final dates = date_utils.DateUtils.generatePlanningDates(
         dateDebut: start,
         dureeTraitement: 12,

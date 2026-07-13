@@ -276,18 +276,14 @@ class _CalendarWidget extends StatelessWidget {
           calendarStyle: CalendarStyle(
             selectedDecoration: BoxDecoration(
               color: AppTheme.primaryBlue,
-              shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
               color: AppTheme.accentBlue,
-              shape: BoxShape.circle,
             ),
-            markersMaxCount: 3,
           ),
-          headerStyle: HeaderStyle(
+          headerStyle: const HeaderStyle(
             formatButtonVisible: false,
             titleCentered: true,
-            titleTextStyle: Theme.of(context).textTheme.titleLarge!,
           ),
         ),
       ),
@@ -353,7 +349,7 @@ class _PlanningCard extends StatelessWidget {
     final textColor = isEffectue ? Colors.green[900] : Colors.orange[900];
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       color: bgColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
@@ -507,7 +503,6 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                         referenceFacture:
                             'FAC-${DateTime.now().millisecondsSinceEpoch}',
                         montant: 0,
-                        mode: null,
                         etat: 'À venir',
                         axe: widget.treatment['axe'] ?? '',
                         dateTraitement: planningDetail.datePlanification,
@@ -711,8 +706,6 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détail du Planning'),
-        elevation: 1,
-        centerTitle: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(30),
@@ -832,7 +825,6 @@ class _DetailRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Text(
             label,

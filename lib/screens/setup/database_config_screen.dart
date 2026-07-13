@@ -179,7 +179,6 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 500),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // En-tête
                     Container(
@@ -246,14 +245,12 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -293,14 +290,12 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -341,14 +336,12 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -399,14 +392,12 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -447,14 +438,12 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                             color: Colors.grey,
-                            width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(

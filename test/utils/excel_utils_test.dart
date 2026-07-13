@@ -2,14 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planificator/utils/excel_utils.dart';
 
 void main() {
-  late ExcelService excelService;
-
-  setUp(() {
-    // Note: FolderManager.initDesktopStructure() sera appelé à l'initialisation
-    // Dans un environnement CI (GitHub Actions), cela pourrait échouer si les dossiers ne sont pas créables
-    excelService = ExcelService();
-  });
-
   group('ExcelService - Path Logic', () {
     test('initDesktopStructure crée les dossiers nécessaires', () {
       final paths = FolderManager.initDesktopStructure();

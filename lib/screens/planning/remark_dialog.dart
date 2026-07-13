@@ -342,9 +342,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                 if (widget.facture.montant == 0) ...[
                   TextField(
                     controller: _montantCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: false,
-                    ),
+                    keyboardType: const TextInputType.numberWithOptions(),
                     decoration: const InputDecoration(
                       labelText: 'Montant (Ar) - OBLIGATOIRE',
                       border: OutlineInputBorder(),

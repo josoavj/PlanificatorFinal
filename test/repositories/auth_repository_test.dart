@@ -12,7 +12,7 @@ class MockDatabaseService extends Mock implements DatabaseService {
   @override
   Future<Map<String, dynamic>?> queryOne(String? sql, [List<dynamic>? params]) =>
       super.noSuchMethod(Invocation.method(#queryOne, [sql, params]), 
-      returnValue: Future<Map<String, dynamic>?>.value(null));
+      returnValue: Future<Map<String, dynamic>?>.value());
 }
 
 void main() {

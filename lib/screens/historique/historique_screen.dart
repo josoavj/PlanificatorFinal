@@ -631,7 +631,6 @@ class _PlanningCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Expanded(child: _DetailRow('État', etat)),
                         const SizedBox(width: 8),

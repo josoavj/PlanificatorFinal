@@ -27,12 +27,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialiser le service de logging
-  await log.initialize(
-    config: LoggingConfig(
-      enableFileLogging: true,
-      minPersistLevel: LogLevel.info, // Persister à partir de INFO
-    ),
-  );
+  await log.initialize();
 
   // Configurer le logger global pour envoyer tous les logs au fichier
   log.configureGlobalLogger(logger);

@@ -1,21 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:planificator/repositories/facture_repository.dart';
 import 'package:planificator/models/facture.dart';
-import 'auth_repository_test.dart'; // Pour réutiliser MockDatabaseService
 
 void main() {
-  late FactureRepository repository;
-  late MockDatabaseService mockDatabase;
-
-  setUp(() {
-    mockDatabase = MockDatabaseService();
-    // Nous supposons que FactureRepository accepte une injection de DB pour les tests
-    // Si ce n'est pas le cas, il faudrait modifier le constructeur comme on l'a fait pour AuthRepository
-    repository = FactureRepository(); 
-  });
-
-  group('FactureRepository - Logic', () {
+  group('Facture - Model logic', () {
     test('getTotalPaid calcule correctement la somme des factures payées', () {
       // On injecte manuellement des factures dans la liste privée pour tester la logique Dart
       // Note: Dans un vrai test unitaire, on testerait via les méthodes publiques
