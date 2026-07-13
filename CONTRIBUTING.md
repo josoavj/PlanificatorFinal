@@ -1,10 +1,10 @@
-# 🤝 Guide de Contribution - Planificator
+# Guide de Contribution - Planificator
 
 Merci de l'intérêt que vous portez à la plateforme Planificator ! Ce document définit les standards techniques et le flux de travail pour assurer la stabilité de l'application en production.
 
 ---
 
-## 🚀 1. Configuration de l'environnement
+## 1. Configuration de l'environnement
 
 1.  **Flutter SDK** : Assurez-vous d'utiliser la version mentionnée dans le `pubspec.yaml`.
 2.  **Base de données** : Installez MySQL (≥ 8.0). Importez le schéma initial depuis `scripts/Planificator.sql`.
@@ -15,12 +15,14 @@ Merci de l'intérêt que vous portez à la plateforme Planificator ! Ce document
 
 ---
 
-## 🏗️ 2. Architecture & Standards de Code
+## 2. Architecture & Standards de Code
 
 ### Modèle Repository
+
 Toute la logique de données doit passer par les classes dans `lib/repositories/`. Ne faites jamais de requêtes SQL directement dans les Widgets (Screens).
 
 ### Intégrité SGBDR (Transactions)
+
 Pour toute opération impliquant plusieurs requêtes liées (ex: mise à jour d'un contrat + suppression de plannings), vous **devez** utiliser une transaction :
 ```dart
 await _db.transaction((conn) async {
@@ -30,11 +32,12 @@ await _db.transaction((conn) async {
 ```
 
 ### SQL Centralisé
+
 N'écrivez pas de chaînes SQL brutes dans les repositories. Ajoutez vos requêtes dans `lib/core/sql_queries.dart`.
 
 ---
 
-## 🧪 3. Standards de Test
+## 3. Standards de Test
 
 La plateforme repose sur une suite de tests unitaires (70+). Toute nouvelle fonctionnalité **doit** s'accompagner de son fichier de test dans le dossier `test/`.
 
@@ -43,7 +46,7 @@ La plateforme repose sur une suite de tests unitaires (70+). Toute nouvelle fonc
 
 ---
 
-## 🌿 4. Workflow Git
+## 4. Workflow Git
 
 1.  **Branches** : Travaillez toujours sur une branche de fonctionnalité (ex: `feature/ma-fonctionnalite`) basée sur la branche de version actuelle (ex: `2.1.1`).
 2.  **Commits** : Utilisez des messages clairs et préfixés :
@@ -55,16 +58,17 @@ La plateforme repose sur une suite de tests unitaires (70+). Toute nouvelle fonc
 
 ---
 
-## 📝 5. Documentation
+## 5. Documentation
 
 À chaque modification importante :
+
 - Mettez à jour le **`README.md`** si nécessaire.
 - Ajoutez une entrée précise dans le **`CHANGELOG.md`** sous la version actuelle.
 - Vérifiez que les notes de **`SECURITY.md`** sont toujours exactes si vous touchez à l'authentification ou à la DB.
 
 ---
 
-## ✅ 6. Liste de contrôle avant soumission
+## 6. Liste de contrôle avant soumission
 
 - [ ] `flutter analyze` ne remonte aucune erreur.
 - [ ] `flutter test` passe à 100%.
