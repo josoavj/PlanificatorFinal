@@ -12,7 +12,7 @@ class FolderManager {
       final desktop = _getDesktopPath();
       _logger.i('📁 Desktop trouvé: ${desktop.path}');
 
-      final dossiers = ["Factures", "Traitements"];
+      final dossiers = ['Factures', 'Traitements'];
       List<Directory> paths = [];
 
       for (var nom in dossiers) {
@@ -49,12 +49,12 @@ class FolderManager {
   static final Map<String, String> envVars = Platform.environment;
 
   static Directory _getDesktopPath() {
-    String home = "";
+    String home = '';
 
     if (Platform.isWindows) {
-      home = envVars['USERPROFILE'] ?? "";
+      home = envVars['USERPROFILE'] ?? '';
     } else if (Platform.isLinux || Platform.isMacOS) {
-      home = envVars['HOME'] ?? "";
+      home = envVars['HOME'] ?? '';
     }
 
     if (home.isEmpty) {
@@ -117,7 +117,7 @@ class ExcelService {
 
     final Workbook workbook = Workbook();
     final Worksheet sheet = workbook.worksheets[0];
-    sheet.name = "Factures $clientFullName $reportPeriod";
+    sheet.name = 'Factures $clientFullName $reportPeriod';
 
     int currentRow = 1;
     currentRow = _insertClientHeader(sheet, data, clientFullName, currentRow);
@@ -126,7 +126,7 @@ class ExcelService {
     sheet.getRangeByIndex(currentRow, 1, currentRow, 9).merge();
     sheet
         .getRangeByIndex(currentRow, 1)
-        .setText("Rapport de Facturation pour la période : $reportPeriod");
+        .setText('Rapport de Facturation pour la période : $reportPeriod');
     sheet.getRangeByIndex(currentRow, 1).cellStyle = _getHeaderStyle(workbook);
     currentRow += 2;
 
@@ -144,7 +144,7 @@ class ExcelService {
     return _saveFile(
       workbook,
       paths[0],
-      "Rapport_Factures_${safeName}_$reportPeriod.xlsx",
+      'Rapport_Factures_${safeName}_$reportPeriod.xlsx',
     );
   }
 
@@ -173,14 +173,14 @@ class ExcelService {
     if (month == 0) {
       // Tous les mois (annuel)
       titleText = "Rapport de Facturation pour l'année : $year";
-      filename = "$safeName-Annuel-$year.xlsx";
+      filename = '$safeName-Annuel-$year.xlsx';
     } else {
       // Mois spécifique
       final String monthNameFr = DateFormat.MMMM(
         'fr_FR',
       ).format(DateTime(year, month)).toUpperCase();
-      titleText = "Facture du mois de : $monthNameFr $year";
-      filename = "$safeName-$monthNameFr-$year.xlsx";
+      titleText = 'Facture du mois de : $monthNameFr $year';
+      filename = '$safeName-$monthNameFr-$year.xlsx';
     }
 
     sheet.getRangeByIndex(currentRow, 1, currentRow, 9).merge();
@@ -219,16 +219,16 @@ class ExcelService {
     sheet.getRangeByIndex(1, 1, 1, 7).merge();
     sheet
         .getRangeByIndex(1, 1)
-        .setText("Rapport des Traitements du mois de $monthNameFr $year");
+        .setText('Rapport des Traitements du mois de $monthNameFr $year');
     sheet.getRangeByIndex(1, 1).cellStyle = _getHeaderStyle(workbook);
 
     sheet
         .getRangeByIndex(3, 1)
-        .setText("Nombre total de traitements ce mois-ci : ${data.length}");
+        .setText('Nombre total de traitements ce mois-ci : ${data.length}');
     sheet.getRangeByIndex(3, 1).cellStyle.bold = true;
 
     if (data.isEmpty) {
-      sheet.getRangeByIndex(5, 1).setText("Aucun traitement trouvé.");
+      sheet.getRangeByIndex(5, 1).setText('Aucun traitement trouvé.');
     } else {
       List<String> headers = data[0].keys.toList();
       // Écriture headers
@@ -274,7 +274,7 @@ class ExcelService {
     for (int i = 1; i <= 10; i++) {
       sheet.autoFitColumn(i);
     }
-    return _saveFile(workbook, paths[1], "traitements-$monthNameFr-$year.xlsx");
+    return _saveFile(workbook, paths[1], 'traitements-$monthNameFr-$year.xlsx');
   }
 
   // --- MÉTHODES PRIVÉES (LOGIQUE INTERNE) ---
@@ -287,19 +287,19 @@ class ExcelService {
   ) {
     if (data.isEmpty) return row;
     final info = data[0];
-    String displayName = "${info['client_nom']} ${info['client_prenom']}";
+    String displayName = '${info['client_nom']} ${info['client_prenom']}';
     if (info['client_categorie'] != 'Particulier') {
       displayName =
-          "${info['client_nom']} (Responsable: ${info['client_prenom'] ?? 'N/A'})";
+          '${info['client_nom']} (Responsable: ${info['client_prenom'] ?? 'N/A'})';
     }
 
     final List<List<String>> rows = [
-      ["Client :", displayName],
-      ["N° Contrat :", info['Référence Contrat']?.toString() ?? 'N/A'],
-      ["Adresse :", info['client_adresse']?.toString() ?? 'N/A'],
-      ["Téléphone :", info['client_telephone']?.toString() ?? 'N/A'],
-      ["Catégorie Client :", info['client_categorie']?.toString() ?? 'N/A'],
-      ["Axe Client :", info['client_axe']?.toString() ?? 'N/A'],
+      ['Client :', displayName],
+      ['N° Contrat :', info['Référence Contrat']?.toString() ?? 'N/A'],
+      ['Adresse :', info['client_adresse']?.toString() ?? 'N/A'],
+      ['Téléphone :', info['client_telephone']?.toString() ?? 'N/A'],
+      ['Catégorie Client :', info['client_categorie']?.toString() ?? 'N/A'],
+      ['Axe Client :', info['client_axe']?.toString() ?? 'N/A'],
     ];
 
     for (var r in rows) {
@@ -340,7 +340,7 @@ class ExcelService {
     for (var item in data) {
       String details = _formatPaymentDetails(item);
       List<dynamic> rowData = [
-        item['Numéro Facture'] ?? "Aucun",
+        item['Numéro Facture'] ?? 'Aucun',
         item['Date de Planification'] ?? 'N/A',
         isMonthly ? item['Date de traitement'] : item['Date de Facturation'],
         isMonthly ? item['Traitement (Type)'] : item['Type de Traitement'],
@@ -455,7 +455,7 @@ class ExcelService {
 
     // Afficher les totaux par type de traitement
     if (totalByTreatment.isNotEmpty) {
-      sheet.getRangeByIndex(row, 1).setText("Totaux par Type de Traitement :");
+      sheet.getRangeByIndex(row, 1).setText('Totaux par Type de Traitement :');
       sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
       row += 2;
 
@@ -473,14 +473,14 @@ class ExcelService {
     row++;
 
     // Afficher les totaux généraux
-    sheet.getRangeByIndex(row, 1).setText("Montant Total Facturé :");
+    sheet.getRangeByIndex(row, 1).setText('Montant Total Facturé :');
     sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
     sheet.getRangeByIndex(row, 9).setText(_formatMontant(total));
     sheet.getRangeByIndex(row, 9).cellStyle.bold = true;
     sheet.getRangeByIndex(row, 9).cellStyle.backColor = '#FFF2CC';
     row++;
 
-    sheet.getRangeByIndex(row, 1).setText("Montant Total Payé :");
+    sheet.getRangeByIndex(row, 1).setText('Montant Total Payé :');
     sheet.getRangeByIndex(row, 1).cellStyle.bold = true;
     sheet.getRangeByIndex(row, 9).setText(_formatMontant(paid));
     sheet.getRangeByIndex(row, 9).cellStyle.bold = true;
