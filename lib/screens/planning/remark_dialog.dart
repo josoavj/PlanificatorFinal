@@ -4,6 +4,7 @@ import 'package:planificator/models/index.dart';
 import 'package:planificator/repositories/remarque_repository.dart';
 import 'package:planificator/repositories/facture_repository.dart';
 import 'package:planificator/utils/date_helper.dart';
+import '../../utils/app_snackbars.dart';
 
 class RemarqueDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -71,22 +72,16 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     // Validation
     if (_estPayee) {
       if (_modePaiement == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veuillez choisir un mode de paiement')),
-        );
+        AppSnackBars.showWarning(context, 'Veuillez choisir un mode de paiement');
         return;
       }
       if (_datePayementCtrl.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veuillez remplir la date de paiement')),
-        );
+        AppSnackBars.showWarning(context, 'Veuillez remplir la date de paiement');
         return;
       }
       if (_modePaiement == 'Cheque' &&
           (_etablissementCtrl.text.isEmpty || _numeroChequeCtrl.text.isEmpty)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veuillez remplir les infos chèque')),
-        );
+        AppSnackBars.showWarning(context, 'Veuillez remplir les infos chèque');
         return;
       }
     }
@@ -99,12 +94,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
         final montant = int.tryParse(_montantCtrl.text) ?? 0;
         if (montant == 0) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(' Veuillez entrer un montant valide'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppSnackBars.showWarning(context, 'Veuillez entrer un montant valide');
           return;
         }
       }

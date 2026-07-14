@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../repositories/index.dart';
 import '../../models/index.dart';
 import '../../widgets/index.dart';
+import '../../utils/app_snackbars.dart';
 
 class FactureListScreen extends StatefulWidget {
   final int? clientId; // Si null, affiche toutes les factures
@@ -554,18 +555,14 @@ class _FactureDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.print),
             onPressed: () {
               // TODO: Implémenter l'impression
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Impression en cours...')),
-              );
+              AppSnackBars.showInfo(context, 'Impression en cours...');
             },
           ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
               // TODO: Implémenter l'édition
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Édition en cours...')),
-              );
+              AppSnackBars.showInfo(context, 'Édition en cours...');
             },
           ),
         ],

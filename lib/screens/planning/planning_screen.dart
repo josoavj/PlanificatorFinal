@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../services/logging_service.dart';
 import 'signalement_dialog.dart';
 import 'remark_dialog.dart';
+import '../../utils/app_snackbars.dart';
 
 class PlanningScreen extends StatefulWidget {
   const PlanningScreen({super.key});
@@ -543,15 +544,9 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                             }
 
                             if (mounted) {
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Remarque & Facture ajoutées avec succès',
-                                  ),
-                                  backgroundColor: Colors.green,
-                                  duration: Duration(seconds: 2),
-                                ),
+                              AppSnackBars.showSuccess(
+                                context,
+                                'Remarque & Facture ajoutées avec succès',
                               );
                             }
 
@@ -570,9 +565,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                 } catch (err) {
                   logger.e(' Erreur: $err');
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(' Erreur: $err')));
+                  AppSnackBars.showError(context, ' Erreur: $err');
                 }
               },
               child: const Text('Créer Facture'),
@@ -582,9 +575,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       );
     } catch (e) {
       logger.e(' Erreur ouverture dialog: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-      );
+      AppSnackBars.showError(context, 'Erreur: $e');
     }
   }
 
@@ -615,14 +606,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
 
             // Afficher le succès
             if (mounted) {
-              ScaffoldMessenger.of(context).clearSnackBars();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Signalement enregistré avec succès'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
+              AppSnackBars.showSuccess(context, 'Signalement enregistré avec succès');
             }
 
             // Fermer l'écran de détail APRÈS le rechargement confirmé
@@ -634,9 +618,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       );
     } catch (e) {
       logger.e(' Erreur ouverture dialog: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
-      );
+      AppSnackBars.showError(context, 'Erreur: $e');
     }
   }
 

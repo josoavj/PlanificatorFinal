@@ -4,6 +4,7 @@ import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import '../../utils/password_validator.dart';
 import 'login_screen.dart';
+import '../../utils/app_snackbars.dart';
 
 /// Écran d'inscription moderne et intuitif
 class RegisterScreen extends StatefulWidget {
@@ -95,21 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle_outline, color: Colors.white),
-              SizedBox(width: 12),
-              Text('Compte créé avec succès ! Connectez-vous.'),
-            ],
-          ),
-          backgroundColor: AppTheme.successGreen,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(20),
-        ),
-      );
+      AppSnackBars.showSuccess(context, 'Compte créé avec succès ! Connectez-vous.');
       Navigator.of(context).pushReplacementNamed('/login');
     } else {
       _showErrorSnackBar(authRepository.errorMessage ?? 'Erreur d\'inscription');
@@ -117,21 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(20),
-      ),
-    );
+    AppSnackBars.showError(context, message);
   }
 
   @override

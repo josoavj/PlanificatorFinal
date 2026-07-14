@@ -18,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  String? _errorMessage;
 
   @override
   bool get wantKeepAlive => true;
@@ -30,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _handleLogin() async {
+    setState(() => _errorMessage = null);
     if (!_formKey.currentState!.validate()) return;
 
     final authRepository = context.read<AuthRepository>();
@@ -43,26 +45,10 @@ class _LoginScreenState extends State<LoginScreen>
     if (success) {
       Navigator.of(context).pushReplacementNamed('/home');
     } else {
-      _showErrorSnackBar(authRepository.errorMessage ?? 'Identifiants incorrects');
+      setState(() {
+        _errorMessage = authRepository.errorMessage ?? 'Identifiants incorrects';
+      });
     }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(20),
-      ),
-    );
   }
 
   @override
@@ -301,6 +287,34 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             validator: (value) => (value?.length ?? 0) < 6 ? 'Minimum 6 caractères' : null,
           ),
+
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           
           const SizedBox(height: 40),
           
