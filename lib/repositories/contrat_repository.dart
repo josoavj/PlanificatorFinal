@@ -227,7 +227,14 @@ class ContratRepository extends ChangeNotifier {
   }
 
   /// Supprime un contrat
-  Future<void> deleteContrat(int contratId) async {
+  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
+  Future<bool> deleteContrat(int contratId, {required bool isAdmin}) async {
+    if (!isAdmin) {
+      _errorMessage = 'Droits administrateur requis pour supprimer un contrat';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -242,9 +249,11 @@ class ContratRepository extends ChangeNotifier {
       }
 
       logger.i('Contrat $contratId supprimé');
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors de la suppression: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -315,11 +324,19 @@ class ContratRepository extends ChangeNotifier {
 
   /// Abroge/résilie un contrat et marque tous les plannings futurs comme 'Classé sans suite'
   /// Retourne true si l'abrogation s'est bien passée
+  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
   Future<bool> abrogateContract({
     required int contratId,
     required DateTime abrogationDate,
     String? motif,
+    required bool isAdmin,
   }) async {
+    if (!isAdmin) {
+      _errorMessage = 'Droits administrateur requis pour résilier un contrat';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
