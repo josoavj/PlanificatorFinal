@@ -1,4 +1,3 @@
-import 'package:planificator/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bcrypt/bcrypt.dart';
@@ -7,6 +6,7 @@ import '../../services/index.dart';
 import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
+import '../export/export_screen.dart';
 import '../legal/legal_documents_screen.dart';
 import '../../utils/app_snackbars.dart';
 
@@ -48,12 +48,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () =>
                           _showEditProfileDialog(context, authRepository),
                     ),
-                    _buildModernCard(
-                      icon: Icons.group_outlined,
-                      title: 'Liste des profils',
-                      subtitle: 'Voir tous les profils et leurs types',
-                      onTap: () => _showAllProfilesDialog(context),
-                    ),
+                    if (authRepository.isAdmin)
+                      _buildModernCard(
+                        icon: Icons.group_outlined,
+                        title: 'Liste des profils',
+                        subtitle: 'Voir tous les profils et leurs types',
+                        onTap: () => _showAllProfilesDialog(context),
+                      ),
                     _buildModernCard(
                       icon: Icons.lock_outline,
                       title: 'Changer le mot de passe',
@@ -179,48 +180,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Section Base de Données (CRITIQUE)
-                _buildSection(
-                  title: 'Base de Données',
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.warning_amber,
-                            color: Colors.orange.shade700,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Configuration critique - À manipuler avec prudence',
-                              style: TextStyle(
-                                color: Colors.orange.shade900,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                if (authRepository.isAdmin)
+                  _buildSection(
+                    title: 'Base de Données',
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber,
+                              color: Colors.orange.shade700,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Configuration critique - À manipuler avec prudence',
+                                style: TextStyle(
+                                  color: Colors.orange.shade900,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    _buildModernCard(
-                      icon: Icons.storage,
-                      title: 'Configuration Base de Données',
-                      subtitle: 'Modifier les informations de connexion',
-                      onTap: () => _showDatabaseConfigDialog(context),
-                    ),
-                  ],
-                ),
+                      _buildModernCard(
+                        icon: Icons.storage,
+                        title: 'Configuration Base de Données',
+                        subtitle: 'Modifier les informations de connexion',
+                        onTap: () => _showDatabaseConfigDialog(context),
+                      ),
+                    ],
+                  ),
 
                 // Section Sécurité
                 _buildSection(

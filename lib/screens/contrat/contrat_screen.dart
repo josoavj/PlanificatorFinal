@@ -62,7 +62,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final db = DatabaseService();
 
       // Charger tous les clients
-      logger.d('📥 Chargement des clients via repository...');
+      logger.d('Chargement des clients via repository...');
       await clientRepository.loadClients();
       var allClients = clientRepository.clients;
       logger.d(' ${allClients.length} clients via repository');
@@ -86,7 +86,7 @@ class _ContratScreenState extends State<ContratScreen> {
       }
 
       // Charger tous les contrats
-      logger.d('📥 Chargement des contrats...');
+      logger.d('Chargement des contrats...');
       await contratsRepository.loadContrats();
       var contrats = contratsRepository.contrats;
       logger.i(' ${contrats.length} contrats chargés');
@@ -777,7 +777,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '📅 Planifications: ${stat['planifications'] ?? 0}',
+                                    'Planifications: ${stat['planifications'] ?? 0}',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey[700],
@@ -807,7 +807,7 @@ class _ContratScreenState extends State<ContratScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '📄 Factures: ${stat['factures'] ?? 0}',
+                                    'Factures: ${stat['factures'] ?? 0}',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey[700],
@@ -849,38 +849,41 @@ class _ContratScreenState extends State<ContratScreen> {
         ),
         actions: [
           // Bouton: Modifier infos client
-          TextButton(
+          TextButton.icon(
             onPressed: () {
               Navigator.of(ctx).pop();
               if (client != null) {
                 _editClient(client);
               }
             },
-            child: const Text('✏️ Modifier Client'),
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Modifier Client'),
           ),
 
           // Bouton: Voir factures (si plusieurs traitements)
           if (numTraitements > 0)
-            TextButton(
+            TextButton.icon(
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _viewFactures(contrat);
               },
-              child: const Text('📄 Factures'),
+              icon: const Icon(Icons.description, size: 16),
+              label: const Text('Factures'),
             ),
 
           // Bouton: Voir planning (si traitements)
           if (numTraitements > 0)
-            TextButton(
+            TextButton.icon(
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _viewPlanning(contrat);
               },
-              child: const Text('📅 Planning'),
+              icon: const Icon(Icons.calendar_today, size: 16),
+              label: const Text('Planning'),
             ),
 
           // Bouton: Abroger/Résilier (si contrat actif)
-          if (contrat.statutContrat == 'Actif')
+          if (contrat.statutContrat == 'Actif' && context.read<AuthRepository>().isAdmin)
             TextButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
@@ -893,16 +896,18 @@ class _ContratScreenState extends State<ContratScreen> {
             ),
 
           // Bouton: Supprimer
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _deleteContrat(contrat);
-            },
-            child: const Text(
-              '🗑️ Supprimer',
-              style: TextStyle(color: Colors.red),
+          if (context.read<AuthRepository>().isAdmin)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _deleteContrat(contrat);
+              },
+              icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+              label: const Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
-          ),
 
           // Bouton: Fermer
           TextButton(
@@ -1571,7 +1576,13 @@ class _ContratScreenState extends State<ContratScreen> {
               : 'Client';
 
           return AlertDialog(
-            title: Text('📅 Planning pour $clientName'),
+        title: Row(
+          children: [
+            Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Planning pour $clientName')),
+          ],
+        ),
             content: SizedBox(
               width: 550,
               child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
@@ -2218,7 +2229,13 @@ class _ContratScreenState extends State<ContratScreen> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text('📅 Créer un planning - $typeTraitement'),
+        title: Row(
+          children: [
+            Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Créer un planning - $typeTraitement')),
+          ],
+        ),
             content: SizedBox(
               width: 450,
               child: SingleChildScrollView(
@@ -2486,7 +2503,7 @@ class _ContratScreenState extends State<ContratScreen> {
         redondance: redondance,
       );
 
-      logger.i('📅 ${planningDates.length} dates générées');
+      logger.i('${planningDates.length} dates générées');
 
       // 3. Créer les PlanningDetails
       int detailsCreated = 0;
@@ -2695,6 +2712,12 @@ class _ContratScreenState extends State<ContratScreen> {
     int dureeTraitement,
     int montant, // Nouveau paramètre: montant saisi manuellement
   ) async {
+    final authRepo = context.read<AuthRepository>();
+    if (!authRepo.isAdmin) {
+      AppSnackBars.showError(context, 'Droits administrateur requis pour régénérer un planning');
+      return;
+    }
+
     try {
       final db = DatabaseService();
 
@@ -2754,7 +2777,7 @@ class _ContratScreenState extends State<ContratScreen> {
       );
 
       logger.i(
-        '📅 ${planningDates.length} dates générées (redondance=$redondance, duree=$dureeTraitement mois)',
+        '${planningDates.length} dates générées (redondance=$redondance, duree=$dureeTraitement mois)',
       );
 
       // Créer les nouveaux planning details
@@ -3069,7 +3092,7 @@ class _ContratScreenState extends State<ContratScreen> {
         redondance: redondance,
       );
 
-      logger.i('📅 Dates attendues: ${expectedDates.length}');
+      logger.i('Dates attendues: ${expectedDates.length}');
 
       // Vérifier les détails manquants
       if (nbDetailsActuels < expectedDates.length) {
@@ -3289,8 +3312,10 @@ class _ContratScreenState extends State<ContratScreen> {
               // Fermer d'abord le dialog avec le dialog context
               Navigator.of(ctx).pop();
               try {
+                final authRepo = context.read<AuthRepository>();
                 await context.read<ContratRepository>().deleteContrat(
                   contrat.contratId,
+                  isAdmin: authRepo.isAdmin,
                 );
                 if (!mounted) return;
                 // Recharger la liste sans essayer de pop
@@ -3424,12 +3449,14 @@ class _ContratScreenState extends State<ContratScreen> {
 
                 Navigator.of(ctx).pop();
                 try {
+                  final authRepo = context.read<AuthRepository>();
                   final success = await context
                       .read<ContratRepository>()
                       .abrogateContract(
                         contratId: contrat.contratId,
                         abrogationDate: selectedDate!,
                         motif: motif.isNotEmpty ? motif : null,
+                        isAdmin: authRepo.isAdmin,
                       );
 
                   if (!mounted) return;
@@ -6044,7 +6071,7 @@ class _ContratCreationFlowScreenState
             int.tryParse((planningData['redondance'] as String?) ?? '1') ?? 1;
 
         logger.i(
-          '    📅 Params planning: mois=$moisDebut, duree=$dureeTraitement, redondance=$redondance',
+          '    Params planning: mois=$moisDebut, duree=$dureeTraitement, redondance=$redondance',
         );
 
         // Créer le planning
@@ -6080,7 +6107,7 @@ class _ContratCreationFlowScreenState
               : DateTime.now();
 
           logger.i(
-            '    📅 Date de planification sélectionnée: ${datePlanificationSelected.day}/${datePlanificationSelected.month}/${datePlanificationSelected.year}',
+            '    Date de planification sélectionnée: ${datePlanificationSelected.day}/${datePlanificationSelected.month}/${datePlanificationSelected.year}',
           );
 
           // Générer les dates du planning automatiquement
@@ -6091,7 +6118,7 @@ class _ContratCreationFlowScreenState
           );
 
           logger.i(
-            '    📅 ${planningDates.length} dates générées (à partir du ${datePlanificationSelected.day}/${datePlanificationSelected.month}/${datePlanificationSelected.year})',
+            '    ${planningDates.length} dates générées (à partir du ${datePlanificationSelected.day}/${datePlanificationSelected.month}/${datePlanificationSelected.year})',
           );
 
           if (planningDates.isEmpty) {

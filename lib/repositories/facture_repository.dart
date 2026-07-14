@@ -157,7 +157,14 @@ class FactureRepository extends ChangeNotifier {
 
   /// Met à jour le prix d'une facture et recharge les données
   /// (La somme totale se mettra à jour automatiquement grâce à notifyListeners())
-  Future<bool> updateFacturePrice(int factureId, int newPrice) async {
+  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
+  Future<bool> updateFacturePrice(int factureId, int newPrice, {required bool isAdmin}) async {
+    if (!isAdmin) {
+      _errorMessage = 'Droits administrateur requis pour modifier un montant';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -263,16 +270,19 @@ class FactureRepository extends ChangeNotifier {
 
   /// Met à jour le montant d'une facture et applique la différence aux factures postérieures
   /// du même traitement. Crée aussi des entrées dans l'historique.
-  /// Logique conforme au code Kivy:
-  /// - Récupère l'ID du traitement via la facture
-  /// - Calcule la différence de prix (newPrix - oldPrix)
-  /// - Applique cette différence aux factures du même traitement avec dateTraitement >= date actuelle
-  /// - Crée des entrées historique pour chaque modification
+  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
   Future<bool> majMontantEtHistorique(
     int factureId,
     int oldMontant,
-    int newMontant,
-  ) async {
+    int newMontant, {
+    required bool isAdmin,
+  }) async {
+    if (!isAdmin) {
+      _errorMessage = 'Droits administrateur requis pour cette opération';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -468,7 +478,14 @@ class FactureRepository extends ChangeNotifier {
   }
 
   /// Supprime une facture
-  Future<void> deleteFacture(int factureId) async {
+  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
+  Future<bool> deleteFacture(int factureId, {required bool isAdmin}) async {
+    if (!isAdmin) {
+      _errorMessage = 'Droits administrateur requis pour supprimer une facture';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -479,9 +496,11 @@ class FactureRepository extends ChangeNotifier {
       _factures.removeWhere((f) => f.factureId == factureId);
 
       logger.i('Facture $factureId supprimée');
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors de la suppression: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -649,7 +668,7 @@ class FactureRepository extends ChangeNotifier {
           sequenceNumber++;
         }
 
-        logger.i('🎉 TRANSACTION RÉUSSIE: $planningDetailsCreated PD + $facturesCreated factures');
+        logger.i('TRANSACTION REUSSIE: $planningDetailsCreated PD + $facturesCreated factures');
         return facturesCreated;
       });
     } catch (e) {

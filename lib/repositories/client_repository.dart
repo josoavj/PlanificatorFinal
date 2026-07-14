@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
-import '../services/query_cache_service.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
@@ -274,7 +273,14 @@ class ClientRepository extends ChangeNotifier {
   ///
   /// Invalide le cache après suppression
   /// Utilisé TRANSACTION pour garantir l'intégrité
-  Future<void> deleteClient(int clientId) async {
+  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
+  Future<bool> deleteClient(int clientId, {required bool isAdmin}) async {
+    if (!isAdmin) {
+      _errorMessage = 'Droits administrateur requis pour supprimer un client';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -352,9 +358,11 @@ class ClientRepository extends ChangeNotifier {
 
       // Invalider le cache après suppression
       _cache.invalidateByEntity('client', entityId: clientId);
+      return true;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e('Erreur lors de la suppression du client: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

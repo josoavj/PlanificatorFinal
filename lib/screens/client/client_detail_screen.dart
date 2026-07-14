@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
+import '../../utils/app_snackbars.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
 
@@ -90,34 +91,39 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           title: const Text('Détails du client'),
           actions: [
             if (!_isEditing)
-              PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: const Row(
-                      children: [
-                        Icon(Icons.edit, size: 18),
-                        SizedBox(width: 8),
-                        Text('Éditer'),
-                      ],
-                    ),
-                    onTap: () {
-                      setState(() => _isEditing = true);
-                    },
-                  ),
-                  PopupMenuItem(
-                    child: const Row(
-                      children: [
-                        Icon(Icons.delete, size: 18, color: AppTheme.errorRed),
-                        SizedBox(width: 8),
-                        Text(
-                          'Supprimer',
-                          style: TextStyle(color: AppTheme.errorRed),
+              Consumer<AuthRepository>(
+                builder: (context, auth, _) {
+                  return PopupMenuButton(
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        child: const Row(
+                          children: [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Text('Éditer'),
+                          ],
                         ),
-                      ],
-                    ),
-                    onTap: () => _deleteClient(),
-                  ),
-                ],
+                        onTap: () {
+                          setState(() => _isEditing = true);
+                        },
+                      ),
+                      if (auth.isAdmin)
+                        PopupMenuItem(
+                          child: const Row(
+                            children: [
+                              Icon(Icons.delete, size: 18, color: AppTheme.errorRed),
+                              SizedBox(width: 8),
+                              Text(
+                                'Supprimer',
+                                style: TextStyle(color: AppTheme.errorRed),
+                              ),
+                            ],
+                          ),
+                          onTap: () => _deleteClient(),
+                        ),
+                    ],
+                  );
+                },
               ),
           ],
         ),
@@ -440,15 +446,21 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   }
 
   void _deleteClient() async {
+    final authRepo = context.read<AuthRepository>();
+    if (!authRepo.isAdmin) {
+      AppSnackBars.showError(context, 'Droits administrateur requis');
+      return;
+    }
+
     final confirmed = await AppDialogs.confirmDelete(context);
     if (confirmed == true && mounted) {
       final nav = Navigator.of(context);
       final scaff = ScaffoldMessenger.of(context);
       context
           .read<ClientRepository>()
-          .deleteClient(_client!.clientId)
-          .then((_) {
-            if (mounted) {
+          .deleteClient(_client!.clientId, isAdmin: authRepo.isAdmin)
+          .then((success) {
+            if (mounted && success) {
               nav.pop(true);
               scaff.showSnackBar(
                 const SnackBar(content: Text('Client supprimé')),

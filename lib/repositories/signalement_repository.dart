@@ -138,7 +138,7 @@ class SignalementRepository extends ChangeNotifier {
         ]);
 
         logger.i(
-          '  📅 Detail ${allDetails[i]['planning_detail_id']}: ${DateHelper.format(oldDate)} → ${DateHelper.format(newDate)} (écart: $ecartMois mois)',
+          '  Detail ${allDetails[i]['planning_detail_id']}: ${DateHelper.format(oldDate)} → ${DateHelper.format(newDate)} (écart: $ecartMois mois)',
         );
       }
 

@@ -447,6 +447,16 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
       return;
     }
 
+    if (!context.read<AuthRepository>().isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(' Droits administrateur requis'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final prixInitialCtrl = TextEditingController(
       text: facture.montant.toString(),
     );
@@ -571,11 +581,13 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
 
                   // Appeler la méthode majMontantEtHistorique pour mettre à jour
                   // la facture ET les factures postérieures du même traitement
+                  final authRepo = context.read<AuthRepository>();
                   final factureRepo = context.read<FactureRepository>();
                   final success = await factureRepo.majMontantEtHistorique(
                     facture.factureId,
                     oldPrix,
                     newPrix,
+                    isAdmin: authRepo.isAdmin,
                   );
 
                   if (!mounted) return;
@@ -742,16 +754,19 @@ class _FactureRow extends StatelessWidget {
     }
   }
 
-  bool get _isPaid =>
+  bool get isPaid =>
       facture.etat.toLowerCase() == 'payé' ||
       facture.etat.toLowerCase() == 'payée';
 
   @override
   Widget build(BuildContext context) {
+    final isAdmin = context.read<AuthRepository>().isAdmin;
+    final bool paid = facture.etat == 'Payé' || facture.etat == 'Payée';
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
-        onTap: _isPaid ? null : onTapModifier,
+        onTap: (paid || !isAdmin) ? null : onTapModifier,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -765,7 +780,7 @@ class _FactureRow extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: _isPaid ? Colors.grey : Colors.black,
+                      color: paid ? Colors.grey : Colors.black,
                     ),
                   ),
                   Row(
@@ -775,9 +790,13 @@ class _FactureRow extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
-                          color: _isPaid ? Colors.grey : Colors.black,
+                          color: paid ? Colors.grey : Colors.black,
                         ),
                       ),
+                      if (isAdmin && !paid) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.edit, size: 14, color: Colors.blue),
+                      ],
                       const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(

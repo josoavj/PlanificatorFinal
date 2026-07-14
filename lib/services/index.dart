@@ -2,6 +2,7 @@
 library;
 
 export 'database_service.dart';
+export 'query_cache_service.dart';
 export 'logging_service.dart';
 export 'notification_service.dart';
 export 'theme_provider.dart';

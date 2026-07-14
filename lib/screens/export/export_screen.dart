@@ -77,7 +77,7 @@ class _ExportScreenState extends State<ExportScreen> {
         ORDER BY c.nom ASC
       ''';
 
-      logger.i('📥 Chargement des clients depuis la DB...');
+      logger.i('Chargement des clients depuis la DB...');
       final rows = await db
           .query(sql)
           .timeout(
