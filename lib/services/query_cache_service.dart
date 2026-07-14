@@ -1,13 +1,12 @@
 import 'dart:async';
 import '../services/logging_service.dart';
 
-/// Service de cache en mémoire pour les requêtes SQL fréquentes
+/// Service de cache unifié pour les requêtes SQL et les entités.
 ///
 /// Optimisation pour Windows en évitant les requêtes répétitives.
-/// Utilisé principalement pour les données qui changent rarement:
-/// - Listes de clients
-/// - Listes de contrats
-/// - Lookups (client by ID, etc.)
+/// Gère deux types de cache :
+/// 1. Cache basé sur les requêtes SQL (bas niveau)
+/// 2. Cache basé sur les entités (haut niveau - ex: client_1)
 class QueryCacheService {
   static final QueryCacheService _instance = QueryCacheService._internal();
   final logger = createLoggerWithFileOutput(name: 'query_cache_service');
@@ -17,7 +16,7 @@ class QueryCacheService {
 
   // Configuration
   static const Duration defaultTTL = Duration(minutes: 15);
-  static const int maxCacheSize = 100;
+  static const int maxCacheSize = 200; // Augmenté car unifié
 
   QueryCacheService._internal() {
     _initializeCleanup();
@@ -34,7 +33,9 @@ class QueryCacheService {
     });
   }
 
-  /// Récupère une valeur du cache si elle existe et n'est pas expirée
+  // --- NIVEAU ENTITÉ (Haut niveau) ---
+
+  /// Récupère une valeur du cache par clé sémantique
   dynamic get(String key) {
     final entry = _cache[key];
     if (entry == null) return null;
@@ -47,36 +48,47 @@ class QueryCacheService {
     return entry.data;
   }
 
-  /// Stocke une valeur dans le cache (liste de maps ou map unique)
+  /// Stocke une valeur dans le cache par clé sémantique
   void set(String key, dynamic data, {Duration ttl = defaultTTL}) {
-    // Ne pas cacher les résultats vides
     if (data == null) return;
     if (data is List && data.isEmpty) return;
 
-    // Limiter la taille du cache
-    if (_cache.length >= maxCacheSize) {
-      final oldestKey = _cache.entries
-          .reduce(
-            (a, b) => a.value.timestamp.isBefore(b.value.timestamp) ? a : b,
-          )
-          .key;
-      _cache.remove(oldestKey);
-      logger.i('Cache limit reached, removed oldest entry: $oldestKey');
-    }
+    _enforceMaxSize();
 
     _cache[key] = CacheEntry(data: data, expiresAt: DateTime.now().add(ttl));
 
     final dataSize = data is List ? data.length : 1;
-    logger.d('Cache SET: $key ($dataSize rows, TTL: ${ttl.inSeconds}s)');
+    logger.d('Cache SET (Entity): $key ($dataSize rows, TTL: ${ttl.inSeconds}s)');
   }
 
-  /// Invalide une clé spécifique du cache
+  // --- NIVEAU SQL (Bas niveau) ---
+
+  /// Récupère le résultat d'une requête SQL brute du cache
+  List<Map<String, dynamic>>? getQuery(String sql, List<dynamic>? params) {
+    final key = _generateSqlKey(sql, params);
+    final data = get(key);
+    if (data != null && data is List<Map<String, dynamic>>) {
+      logger.d('Cache HIT (SQL): ${sql.substring(0, _min(30, sql.length))}...');
+      return data;
+    }
+    return null;
+  }
+
+  /// Stocke le résultat d'une requête SQL brute dans le cache
+  void setQuery(String sql, List<dynamic>? params, List<Map<String, dynamic>> data, {Duration ttl = const Duration(minutes: 5)}) {
+    final key = _generateSqlKey(sql, params);
+    set(key, data, ttl: ttl);
+  }
+
+  // --- INVALIDATION ---
+
+  /// Invalide une clé spécifique
   void invalidate(String key) {
     _cache.remove(key);
     logger.d('Cache INVALIDATED: $key');
   }
 
-  /// Invalide toutes les entrées du cache (après modification de données)
+  /// Invalide tout le cache
   void invalidateAll() {
     _cache.clear();
     logger.i('Cache CLEARED completely');
@@ -85,16 +97,16 @@ class QueryCacheService {
   /// Invalide les caches liés à une entité spécifique
   void invalidateByEntity(String entityType, {int? entityId}) {
     final keysToRemove = <String>[];
+    final typeLower = entityType.toLowerCase();
 
     for (final key in _cache.keys) {
       if (entityId != null) {
-        // Invalider les entrées spécifiques à l'entité
         if (key.contains('${entityType}_$entityId')) {
           keysToRemove.add(key);
         }
       } else {
-        // Invalider tous les caches de ce type d'entité
-        if (key.startsWith(entityType)) {
+        // Invalide à la fois les clés sémantiques et les requêtes SQL contenant le nom de l'entité/table
+        if (key.startsWith(entityType) || key.toLowerCase().contains(typeLower)) {
           keysToRemove.add(key);
         }
       }
@@ -104,12 +116,21 @@ class QueryCacheService {
       _cache.remove(key);
     }
 
-    logger.d(
-      'Cache invalidated for entity: $entityType${entityId != null ? '_$entityId' : '_all'}',
-    );
+    logger.d('Cache invalidated for entity: $entityType${entityId != null ? '_$entityId' : '_all'}');
   }
 
-  /// Retire les entrées expirées du cache
+  // --- INTERNES ---
+
+  void _enforceMaxSize() {
+    if (_cache.length >= maxCacheSize) {
+      final oldestKey = _cache.entries
+          .reduce((a, b) => a.value.timestamp.isBefore(b.value.timestamp) ? a : b)
+          .key;
+      _cache.remove(oldestKey);
+      logger.i('Cache limit reached, removed oldest entry: $oldestKey');
+    }
+  }
+
   void _removeExpiredEntries() {
     final expiredKeys = _cache.entries
         .where((entry) => entry.value.isExpired())
@@ -125,26 +146,12 @@ class QueryCacheService {
     }
   }
 
-  /// Obtient les statistiques du cache
-  Map<String, dynamic> getStats() {
-    return {
-      'totalEntries': _cache.length,
-      'maxSize': maxCacheSize,
-      'entries': _cache.entries
-          .map(
-            (e) => {
-              'key': e.key,
-              'rows': e.value.data.length,
-              'expiresIn': e.value.expiresAt
-                  .difference(DateTime.now())
-                  .inSeconds,
-            },
-          )
-          .toList(),
-    };
+  String _generateSqlKey(String sql, List<dynamic>? params) {
+    return 'sql|${sql.hashCode}|${params?.join(',') ?? ''}';
   }
 
-  /// Nettoie les ressources (appelé à la fermeture de l'app)
+  int _min(int a, int b) => a < b ? a : b;
+
   void dispose() {
     _cleanupTimer?.cancel();
     _cache.clear();
@@ -152,9 +159,8 @@ class QueryCacheService {
   }
 }
 
-/// Classe interne pour représenter une entrée du cache
 class CacheEntry {
-  final dynamic data; // List<Map<String, dynamic>> ou Map<String, dynamic>
+  final dynamic data;
   final DateTime timestamp = DateTime.now();
   final DateTime expiresAt;
 
@@ -163,22 +169,16 @@ class CacheEntry {
   bool isExpired() => DateTime.now().isAfter(expiresAt);
 }
 
-/// Utilitaires pour générer des clés de cache cohérentes
 class CacheKeys {
-  static String clientsList([int? page]) =>
-      page != null ? 'clients_list_page_$page' : 'clients_list';
+  static String clientsList([int? page]) => page != null ? 'clients_list_page_$page' : 'clients_list';
   static String client(int clientId) => 'client_$clientId';
   static String clientsByAxe(String axe) => 'clients_axe_$axe';
-
   static String contratsList() => 'contrats_list';
   static String contrat(int contratId) => 'contrat_$contratId';
   static String contratsByClient(int clientId) => 'contrats_client_$clientId';
-
   static String factursList() => 'factures_list';
   static String facture(int factureId) => 'facture_$factureId';
-
   static String planningsList() => 'planning_list';
   static String planning(int planningId) => 'planning_$planningId';
-
   static String typeTraitementsList() => 'type_traitements_list';
 }
