@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
+import 'dart:math' as Math;
 import 'package:mysql1/mysql1.dart';
 import './logging_service.dart';
 import './database_isolate_service.dart';
-import './smart_cache_manager.dart';
+import './query_cache_service.dart';
 import '../utils/windows_profiler.dart';
 
 /// Simple connection pool pour réutiliser les connexions MySQL
@@ -266,9 +267,9 @@ class DatabaseService {
     }
 
     // 1. Tenter de récupérer depuis le cache
-    final cache = SmartCacheManager();
+    final cache = QueryCacheService();
     if (useCache) {
-      final cachedData = cache.get(sql, params);
+      final cachedData = cache.getQuery(sql, params);
       if (cachedData != null) return cachedData;
     }
 
@@ -321,7 +322,7 @@ class DatabaseService {
 
       // 3. Mettre en cache pour la prochaine fois
       if (useCache && rows.isNotEmpty) {
-        cache.set(sql, params, rows);
+        cache.setQuery(sql, params, rows);
       }
 
       return rows;
@@ -337,7 +338,7 @@ class DatabaseService {
 
     try {
       // Invalider le cache car les données vont changer
-      SmartCacheManager().invalidateAll();
+      QueryCacheService().invalidateAll();
 
       if (_useIsolates) {
         await DatabaseIsolateService.executeUpdate(sql, params, _host, _port, _user, _password, _database);
