@@ -217,7 +217,7 @@ class NotificationService {
     final title = 'Prochains Traitements - Demain';
     final body = subtitle.isNotEmpty
         ? subtitle
-        : '📅 $treatmentCount traitement${treatmentCount > 1 ? 's' : ''} programmé${treatmentCount > 1 ? 's' : ''}';
+        : '$treatmentCount traitement${treatmentCount > 1 ? 's' : ''} programmé${treatmentCount > 1 ? 's' : ''}';
 
     await scheduleDailyNotification(
       title: title,
