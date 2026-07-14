@@ -90,83 +90,81 @@ class _ClientListScreenState extends State<ClientListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Consumer<ClientRepository>(
-        builder: (context, repository, _) {
-          //  Filtrer les clients par recherche
-          final filteredClients = _filterClientsBySearch(repository.clients);
+      body: Column(
+        children: [
+          // En-tête avec gradient bleu et barre de recherche (TOUJOURS VISIBLE)
+          _buildHeader(context),
 
-          //  Afficher la structure avec en-tête toujours visible
-          return Column(
-            children: [
-              // En-tête avec gradient bleu et barre de recherche (TOUJOURS VISIBLE)
-              _buildHeader(context, repository, filteredClients),
-
-              // Contenu principal: état de chargement, erreur, liste ou vide
-              Expanded(
-                child: _buildContent(context, repository, filteredClients),
-              ),
-            ],
-          );
-        },
+          // Contenu principal: état de chargement, erreur, liste ou vide
+          Expanded(
+            child: _buildContent(context),
+          ),
+        ],
       ),
     );
   }
 
   /// Construit le contenu principal (liste, chargement, erreur ou vide)
-  Widget _buildContent(
-    BuildContext context,
-    ClientRepository repository,
-    List<Client> filteredClients,
-  ) {
-    //  État de chargement
-    if (repository.isInitiallyLoading) {
-      return const LoadingWidget(message: 'Chargement des clients...');
-    }
-
-    //  État d'erreur
-    if (repository.errorMessage != null) {
-      return ErrorDisplayWidget(
-        message: repository.errorMessage!,
-        onRetry: () => repository.loadClients(),
-      );
-    }
-
-    //  Liste des clients ou état vide
-    if (filteredClients.isNotEmpty) {
-      return PaginatedListView<Client>(
-        items: filteredClients,
-        isLoading: repository.isLoading,
-        hasMore: repository.hasMoreClients,
-        onLoadMore: () {
-          logger.i('Chargement page suivante des clients');
-          repository.loadNextPage();
-        },
-        itemBuilder: (context, index) {
-          final client = filteredClients[index];
-          return _buildClientCard(context, repository, client);
-        },
-      );
-    }
-
-    // État vide
-    return Center(
-      child: EmptyStateWidget(
-        title: _searchQuery.isEmpty ? 'Aucun client' : 'Aucun résultat',
-        message: _searchQuery.isEmpty
-            ? 'Aucun client trouvé. Commencez par créer un client.'
-            : 'Aucun client ne correspond à votre recherche',
-        icon: Icons.people_outline,
-        actionLabel: _searchQuery.isEmpty ? 'Ajouter un client' : null,
+  Widget _buildContent(BuildContext context) {
+    return Selector<ClientRepository, ClientRepoState>(
+      selector: (_, repo) => ClientRepoState(
+        clients: repo.clients,
+        isLoading: repo.isLoading,
+        isInitiallyLoading: repo.isInitiallyLoading,
+        hasMoreClients: repo.hasMoreClients,
+        errorMessage: repo.errorMessage,
       ),
+      builder: (context, state, _) {
+        //  État de chargement
+        if (state.isInitiallyLoading) {
+          return const LoadingWidget(message: 'Chargement des clients...');
+        }
+
+        //  État d'erreur
+        if (state.errorMessage != null) {
+          return ErrorDisplayWidget(
+            message: state.errorMessage!,
+            onRetry: () => context.read<ClientRepository>().loadClients(),
+          );
+        }
+
+        //  Filtrer les clients par recherche
+        final filteredClients = _filterClientsBySearch(state.clients);
+
+        //  Liste des clients ou état vide
+        if (filteredClients.isNotEmpty) {
+          return PaginatedListView<Client>(
+            items: filteredClients,
+            isLoading: state.isLoading,
+            hasMore: state.hasMoreClients,
+            onLoadMore: () {
+              logger.i('Chargement page suivante des clients');
+              context.read<ClientRepository>().loadNextPage();
+            },
+            itemBuilder: (context, index) {
+              final client = filteredClients[index];
+              return _buildClientCard(context, client);
+            },
+          );
+        }
+
+        // État vide
+        return Center(
+          child: EmptyStateWidget(
+            title: _searchQuery.isEmpty ? 'Aucun client' : 'Aucun résultat',
+            message: _searchQuery.isEmpty
+                ? 'Aucun client trouvé. Commencez par créer un client.'
+                : 'Aucun client ne correspond à votre recherche',
+            icon: Icons.people_outline,
+            actionLabel: _searchQuery.isEmpty ? 'Ajouter un client' : null,
+          ),
+        );
+      },
     );
   }
 
   /// Construit l'en-tête avec gradient et barre de recherche
-  Widget _buildHeader(
-    BuildContext context,
-    ClientRepository repository,
-    List<Client> filteredClients,
-  ) {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -239,7 +237,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     onPressed: () async {
                       _searchQuery = '';
                       _searchController.clear();
-                      await repository.loadClients();
+                      await context.read<ClientRepository>().loadClients();
                     },
                   ),
                 ),
@@ -254,13 +252,18 @@ class _ClientListScreenState extends State<ClientListScreen> {
               color: Colors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              '${filteredClients.length} ${filteredClients.length > 1 ? 'clients' : 'client'}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+            child: Selector<ClientRepository, int>(
+              selector: (_, repo) => _filterClientsBySearch(repo.clients).length,
+              builder: (context, count, _) {
+                return Text(
+                  '$count ${count > 1 ? 'clients' : 'client'}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -271,7 +274,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
   /// Construit une carte client moderne
   Widget _buildClientCard(
     BuildContext context,
-    ClientRepository repository,
     Client client,
   ) {
     return Padding(
@@ -1313,4 +1315,40 @@ class _ClientListScreenState extends State<ClientListScreen> {
       ),
     );
   }
+}
+
+/// État du repository client pour le Selector
+class ClientRepoState {
+  final List<Client> clients;
+  final bool isLoading;
+  final bool isInitiallyLoading;
+  final bool hasMoreClients;
+  final String? errorMessage;
+
+  ClientRepoState({
+    required this.clients,
+    required this.isLoading,
+    required this.isInitiallyLoading,
+    required this.hasMoreClients,
+    this.errorMessage,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientRepoState &&
+          runtimeType == other.runtimeType &&
+          clients == other.clients &&
+          isLoading == other.isLoading &&
+          isInitiallyLoading == other.isInitiallyLoading &&
+          hasMoreClients == other.hasMoreClients &&
+          errorMessage == other.errorMessage;
+
+  @override
+  int get hashCode =>
+      clients.hashCode ^
+      isLoading.hashCode ^
+      isInitiallyLoading.hashCode ^
+      hasMoreClients.hashCode ^
+      errorMessage.hashCode;
 }
