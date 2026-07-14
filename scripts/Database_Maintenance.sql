@@ -6,8 +6,9 @@
     Ce fichier consolide les scripts de maintenance essentiels:
     1. Fix_Planning_FK.sql - Correction des contraintes erronées
     2. SQL_OPTIMIZATION_INDEXES.sql - Optimisation des indices v2.1.1
-    3. Migration.sql - Migrations de base de données
-    4. Vérifications de cohérence des données
+    3. Update_Admin_Trigger.sql - Limitation à 2 comptes Administrateur
+    4. Migration.sql - Migrations de base de données
+    5. Vérifications de cohérence des données
     
     Date: 31 janvier 2026
     Version: 2.1.1
@@ -58,6 +59,36 @@ WHERE TABLE_NAME = 'PlanningDetails' AND REFERENCED_TABLE_NAME = 'Planning';
 -- PlanningDetails: Une FK planning_id → Planning(planning_id)
 
 SELECT 'OK SECTION 1 TERMINÉE - Contrainte erronée supprimée' AS 'Statut';
+
+-- =====================================================
+-- SECTION 1.1: LIMITATION À 2 ADMINISTRATEURS (v2.1.1)
+-- =====================================================
+/*
+    MISE À JOUR DU TRIGGER DE GESTION DES COMPTES
+    Objectif: Autoriser jusqu'à 2 administrateurs.
+*/
+
+DELIMITER $$
+
+-- 1. Supprimer l'ancien trigger restrictif s'il existe
+DROP TRIGGER IF EXISTS avant_ajout_compte$$
+
+-- 2. Créer le nouveau trigger (Max 2 Admins)
+CREATE TRIGGER avant_ajout_compte
+    BEFORE INSERT ON Account
+    FOR EACH ROW
+BEGIN
+    -- Limitation à 2 administrateurs
+    IF NEW.type_compte = 'Administrateur' THEN
+        IF (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') >= 2 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La limite de 2 comptes Administrateur est atteinte.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
+
+SELECT 'OK SECTION 1.1 TERMINÉE - Trigger Max 2 Admins mis à jour' AS 'Statut';
 
 -- =====================================================
 -- SECTION 2: OPTIMISATION DES INDICES CRITIQUES (v2.1.1)
