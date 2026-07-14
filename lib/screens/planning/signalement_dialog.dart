@@ -4,6 +4,7 @@ import 'package:planificator/models/index.dart';
 import 'package:planificator/repositories/signalement_repository.dart';
 import 'package:planificator/utils/date_helper.dart';
 import '../../services/logging_service.dart';
+import '../../utils/app_snackbars.dart';
 
 class SignalementDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -50,16 +51,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
     if (_isLoading) return;
 
     if (_motifCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Veuillez entrer un motif')));
+      AppSnackBars.showWarning(context, 'Veuillez entrer un motif');
       return;
     }
 
     if (_dateCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner une date')),
-      );
+      AppSnackBars.showWarning(context, 'Veuillez sélectionner une date');
       return;
     }
 
@@ -71,9 +68,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
       final oldDate = widget.planningDetail.datePlanification;
 
       if (newDate == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Date invalide')));
+        AppSnackBars.showError(context, 'Date invalide');
         return;
       }
 
