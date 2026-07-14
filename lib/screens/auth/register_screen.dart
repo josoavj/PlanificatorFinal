@@ -24,9 +24,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _prenomController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _adminSecretController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String _selectedAccountType = 'Utilisateur';
 
   // Password criteria states
   bool _hasMinLength = false;
@@ -76,6 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     _prenomController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _adminSecretController.dispose();
     super.dispose();
   }
 
@@ -85,6 +88,13 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (!_acceptedPrivacyPolicy) {
       _showErrorSnackBar('Vous devez accepter la politique de confidentialité');
       return;
+    }
+
+    if (_selectedAccountType == 'Administrateur') {
+      if (_adminSecretController.text.trim().toUpperCase() != 'ADMIN2026') {
+        _showErrorSnackBar('Code secret Administrateur invalide');
+        return;
+      }
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -99,6 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       _nomController.text.trim(),
       _prenomController.text.trim(),
       _passwordController.text,
+      typeCompte: _selectedAccountType,
     );
 
     if (!mounted) return;
@@ -369,6 +380,38 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
           _buildMatchIndicator(context),
           
+          const SizedBox(height: 24),
+          
+          _buildFieldLabel(context, 'Type de compte', _buildAccountTypeSelector(context)),
+          
+          if (_selectedAccountType == 'Administrateur') ...[
+            const SizedBox(height: 20),
+            _buildFieldLabel(context, 'Code secret Administrateur', 
+              TextFormField(
+                controller: _adminSecretController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'Code requis pour le rôle Admin',
+                  prefixIcon: Icon(Icons.vpn_key_outlined),
+                ),
+                validator: (v) => v!.isEmpty ? 'Requis pour Administrateur' : null,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: AppTheme.warningOrange, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Privilèges étendus : suppression, prix, config DB.',
+                    style: TextStyle(color: AppTheme.warningOrange, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
           const SizedBox(height: 30),
           
           _buildPrivacyPolicyCheckbox(context),
@@ -581,9 +624,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                   fontFamily: 'Poppins',
                 ),
                 children: [
-                  const TextSpan(text: "J'ai lu et j'accepte la "),
+                  const TextSpan(text: 'J\'ai lu et j\'accepte la '),
                   TextSpan(
-                    text: "politique de confidentialité",
+                    text: 'politique de confidentialité',
                     style: const TextStyle(
                       color: AppTheme.primaryBlue,
                       fontWeight: FontWeight.bold,
@@ -596,12 +639,50 @@ class _RegisterScreenState extends State<RegisterScreen>
                         );
                       },
                   ),
-                  const TextSpan(text: " de la plateforme Planificator."),
+                  const TextSpan(text: ' de la plateforme Planificator.'),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAccountTypeSelector(BuildContext context) {
+    return SegmentedButton<String>(
+      segments: const [
+        ButtonSegment<String>(
+          value: 'Utilisateur',
+          label: Text('Utilisateur'),
+          icon: Icon(Icons.person_outline),
+        ),
+        ButtonSegment<String>(
+          value: 'Administrateur',
+          label: Text('Admin'),
+          icon: Icon(Icons.shield_outlined),
+        ),
+      ],
+      selected: {_selectedAccountType},
+      onSelectionChanged: (Set<String> newSelection) {
+        setState(() {
+          _selectedAccountType = newSelection.first;
+        });
+      },
+      style: ButtonStyle(
+        side: WidgetStateProperty.all(BorderSide(color: Colors.grey.shade300)),
+        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTheme.primaryBlue;
+          }
+          return null;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return null;
+        }),
       ),
     );
   }
