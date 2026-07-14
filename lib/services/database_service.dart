@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
-import 'dart:math' as Math;
+import 'dart:math' as math;
 import 'package:mysql1/mysql1.dart';
 import './logging_service.dart';
 import './database_isolate_service.dart';
@@ -279,7 +279,7 @@ class DatabaseService {
       List<Map<String, dynamic>> rows = [];
 
       // PERFORMANCE: Mesurer le temps sur Desktop
-      final profilerName = 'SQL Query: ${sql.substring(0, Math.min(20, sql.length))}';
+      final profilerName = 'SQL Query: ${sql.substring(0, math.min(20, sql.length))}';
       final metric = Platform.isWindows ? WindowsProfiler.start(profilerName) : null;
 
       try {
