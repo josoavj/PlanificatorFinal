@@ -1,611 +1,773 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme.dart';
+import '../../utils/app_snackbars.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
+  Future<void> _launchURL(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        AppSnackBars.showError(context, 'Impossible d\'ouvrir: $url');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo/Icon
-                Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Image.asset(
-                    'assets/Pictures/Logo Planificator.png',
-                    fit: BoxFit.contain,
+        child: Column(
+          children: [
+            _buildModernHeader(colorScheme, isDark),
+            const SizedBox(height: 70), // Espace pour l'avatar qui dépasse
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Column(
+                  children: [
+                    _buildVisionSection(context, theme, colorScheme),
+                    const SizedBox(height: 32),
+                    _buildBenefitsSection(theme, colorScheme),
+                    const SizedBox(height: 32),
+                    _buildOrganizationSection(context, theme, colorScheme),
+                    const SizedBox(height: 32),
+                    _buildTeamSection(context, theme, colorScheme),
+                    const SizedBox(height: 48),
+                    _buildFooter(context, theme, colorScheme),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernHeader(ColorScheme colorScheme, bool isDark) {
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          height: 180,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(48),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 25,
+          child: Column(
+            children: [
+              const Text(
+                'Planificator',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -1.0,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'GESTION ET SUIVI DE PLANNING CLIENTS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 32),
-                // Title
-                Text(
-                  'Planificator',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 28,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: -45,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkCardBg : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-                const SizedBox(height: 8),
-                // Subtitle
-                Text(
-                  'Gestion et suivi de planning clients',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(60),
+              child: Image.asset(
+                'assets/Pictures/Logo Planificator.png',
+                height: 110,
+                width: 110,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVisionSection(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      children: [
+        Text(
+          'Notre Vision',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Planificator est conçu pour transformer la gestion administrative en une expérience fluide et maîtrisée. Nous croyons que la clarté opérationnelle est le socle de la croissance durable pour toute entreprise de services.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 15,
+            height: 1.6,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            'Version v2.1.1 stable',
+            style: TextStyle(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextButton.icon(
+          onPressed: () => _showFeaturesDialog(context),
+          icon: const Icon(Icons.rocket_launch_outlined, size: 18),
+          label: const Text('Découvrir toutes les fonctionnalités'),
+          style: TextButton.styleFrom(
+            foregroundColor: colorScheme.primary,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showFeaturesDialog(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: isDark ? AppTheme.darkBgSecondary : Colors.white,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                // Version, Build, Date et Contact
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[100]!),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildInfoRow('Version', 'v2.1.1'),
-                      const SizedBox(height: 12),
-                      _buildInfoRow('Build', '20260329-002'),
-                      const SizedBox(height: 12),
-                      _buildInfoRow('Dernière mise à jour', '29 mars 2026'),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        'Support',
-                        'support@planificator.app',
-                        isEmail: true,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Lien vers le Changelog
-                InkWell(
-                  onTap: () => _launchUrl(
-                    context,
-                    'https://github.com/josoavj/PlanificatorFinal/releases',
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.stars_rounded,
+                      color: Colors.white,
+                      size: 32,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber[200]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.description,
-                          color: Colors.amber[700],
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Consulter les notes de version (Changelog)',
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Arsenal Planificator',
                             style: TextStyle(
-                              color: Colors.amber[900],
-                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                        Icon(
-                          Icons.open_in_new,
-                          color: Colors.amber[700],
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 48),
-                // Description
-                SizedBox(
-                  width: double.infinity,
-                  child: Card(
-                    elevation: 4,
-                    shadowColor: Colors.grey.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.blue[100]!),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
                           Text(
-                            'À propos',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[700],
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Planificator est une plateforme moderne conçue pour faciliter la gestion et le suivi efficace de vos plannings clients. '
-                            'Elle vous permet d\'organiser et analyser vos interventions, clients et factures avec une interface intuitive et des outils puissants.\n\n'
-                            'Fonctionnalités principales:\n'
-                            '• Gestion complète des clients et catégories\n'
-                            '• Suivi des contrats et de leur statut\n'
-                            '• Planification détaillée des traitements\n'
-                            '• Génération et suivi des factures\n'
-                            '• Historique des interventions et signalements\n'
-                            '• Calendrier interactif avec vue mensuelle\n'
-                            '• Synchronisation temps réel avec base de données MySQL\n'
-                            '• Mode sombre avec design glassmorphism iOS',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            'La maîtrise au service de votre planning',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Technology Stack
-                SizedBox(
-                  width: double.infinity,
-                  child: Card(
-                    elevation: 4,
-                    shadowColor: Colors.grey.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.blue[100]!),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Technologies',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[700],
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          _buildTechItem('Framework', 'Flutter 3.16+'),
-                          _buildTechItem('Langage', 'Dart 3.1+'),
-                          _buildTechItem('Gestion d\'état', 'Provider 6.0.0+'),
-                          _buildTechItem(
-                            'Base de données',
-                            'MySQL 8.0+ / MariaDB',
-                          ),
-                          _buildTechItem(
-                            'Plateforme',
-                            'Windows, Linux, Web, Mobile',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Managed By Section
-                SizedBox(
-                  width: double.infinity,
-                  child: Card(
-                    elevation: 4,
-                    shadowColor: Colors.grey.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.blue[100]!),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Géré par',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[700],
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildOrganizationCard(
-                            context,
-                            name: 'APEXNova Labs',
-                            description:
-                                'Équipe de développement spécialisée dans les plateformes mobiles et web modernes',
-                            githubUrl: 'https://github.com/APEXNovaLabs',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Developers Section
-                SizedBox(
-                  width: double.infinity,
-                  child: Card(
-                    elevation: 4,
-                    shadowColor: Colors.grey.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.blue[100]!),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Développé par',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[700],
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildDeveloperCard(
-                            context,
-                            name: 'Josoa VONJINIAINA',
-                            role: 'Développeur Principal - Fullstack',
-                            githubUrl: 'https://github.com/josoavj',
-                          ),
-                          const SizedBox(height: 12),
-                          _buildDeveloperCard(
-                            context,
-                            name: 'Maminirina ANDRIAMASINORO',
-                            role: 'Développeur Front-end',
-                            githubUrl: 'https://github.com/AinaMaminirina18',
-                          ),
-
-                          const SizedBox(height: 12),
-                          _buildDeveloperCard(
-                            context,
-                            name: 'Équipe de Développement',
-                            role: 'Conception et Développement',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                // Project Repository Section
-                SizedBox(
-                  width: double.infinity,
-                  child: Card(
-                    elevation: 4,
-                    shadowColor: Colors.grey.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.blue[100]!),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Code Source',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[700],
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildProjectCard(
-                            context,
-                            name: 'PlanificatorFinal',
-                            description: 'Dépôt GitHub officiel du projet',
-                            githubUrl:
-                                'https://github.com/josoavj/PlanificatorFinal',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Column(
-                  children: [
-                    Text(
-                      'Tous droits réservés © 2025 - Planificator',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Made with Flutter & MySQL',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                      textAlign: TextAlign.center,
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white),
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-              ],
-            ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    _buildFeatureGroup('Gestion & Contrats', [
+                      _buildFeatureTile(
+                        Icons.people_alt_outlined,
+                        'Base Clients Intelligente',
+                        'Catégorisation dynamique (Société/Particulier) et historique complet.',
+                      ),
+                      _buildFeatureTile(
+                        Icons.assignment_outlined,
+                        'Suivi des Contrats',
+                        'Gestion des durées, des prix par axe et génération automatique des interventions.',
+                      ),
+                      _buildFeatureTile(
+                        Icons.calendar_month_outlined,
+                        'Calendrier Interactif',
+                        'Vue globale des traitements avec marqueurs d\'état et navigation fluide.',
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildFeatureGroup('Opérations & Finance', [
+                      _buildFeatureTile(
+                        Icons.receipt_long_outlined,
+                        'Facturation Automatisée',
+                        'Génération de factures liées aux interventions et suivi des règlements.',
+                      ),
+                      _buildFeatureTile(
+                        Icons.warning_amber_rounded,
+                        'Gestion des Signalements',
+                        'Traçabilité immédiate des problèmes rencontrés lors des interventions.',
+                      ),
+                      _buildFeatureTile(
+                        Icons.file_download_outlined,
+                        'Exports Professionnels',
+                        'Générez des rapports Excel complets pour votre comptabilité.',
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildFeatureGroup('Technologie & Sécurité', [
+                      _buildFeatureTile(
+                        Icons.storage_rounded,
+                        'Souveraineté des Données',
+                        'Stockage local sur votre serveur MySQL pour un contrôle total.',
+                      ),
+                      _buildFeatureTile(
+                        Icons.lock_outline,
+                        'Sécurité Robuste',
+                        'Chiffrement des mots de passe avec BCrypt et gestion des sessions sécurisée.',
+                      ),
+                      _buildFeatureTile(
+                        Icons.devices_outlined,
+                        'Multi-Plateforme Native',
+                        'Optimisé pour Windows et Linux avec support des raccourcis clavier.',
+                      ),
+                    ]),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Compris, c\'est efficace !',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTechItem(String label, String value) {
+  Widget _buildFeatureGroup(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...children,
+      ],
+    );
+  }
+
+  Widget _buildFeatureTile(IconData icon, String title, String desc) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(value, style: const TextStyle(color: Colors.grey)),
+          Icon(icon, color: Colors.blueAccent, size: 20),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  desc,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildOrganizationCard(
-    BuildContext context, {
-    required String name,
-    required String description,
-    String? githubUrl,
-  }) {
-    return GestureDetector(
-      onTap: githubUrl != null ? () => _launchUrl(context, githubUrl) : null,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue[200]!),
-        ),
-        child: Row(
-          children: [
-            // Avatar
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.blue[100],
-              child: Icon(Icons.business, size: 24, color: Colors.blue[600]),
-            ),
-            const SizedBox(width: 16),
-            // Organization Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            if (githubUrl != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Icon(
-                  Icons.open_in_new,
-                  size: 18,
-                  color: Colors.blue[600],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeveloperCard(
-    BuildContext context, {
-    required String name,
-    required String role,
-    String? githubUrl,
-  }) {
-    return GestureDetector(
-      onTap: githubUrl != null ? () => _launchUrl(context, githubUrl) : null,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue[200]!),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.blue[100],
-              child: Icon(Icons.person, color: Colors.blue[600], size: 24),
-            ),
-            const SizedBox(width: 16),
-            // Developer Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    role,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (githubUrl != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Icon(
-                  Icons.open_in_new,
-                  size: 18,
-                  color: Colors.blue[600],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProjectCard(
-    BuildContext context, {
-    required String name,
-    required String description,
-    required String githubUrl,
-  }) {
-    return GestureDetector(
-      onTap: () => _launchUrl(context, githubUrl),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.amber[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.amber[200]!),
-        ),
-        child: Row(
-          children: [
-            // Avatar
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.amber[100],
-              child: Icon(Icons.code, size: 24, color: Colors.amber[600]),
-            ),
-            const SizedBox(width: 16),
-            // Project Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Icon(
-                Icons.open_in_new,
-                size: 18,
-                color: Colors.amber[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _launchUrl(BuildContext context, String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Impossible d\'ouvrir: $url')));
-      }
-    }
-  }
-
-  Widget _buildInfoRow(String label, String value, {bool isEmail = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildBenefitsSection(ThemeData theme, ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.blue[700],
-            fontSize: 14,
+        const Padding(
+          padding: EdgeInsets.only(left: 8, bottom: 16),
+          child: Text(
+            'L\'impact Planificator',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
-        if (isEmail)
-          GestureDetector(
-            onTap: () => _launchEmail(value),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.blue[600],
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          )
-        else
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+        _buildBenefitCard(
+          icon: Icons.speed_outlined,
+          title: 'Productivité Accrue',
+          desc: 'Automatisez vos tâches répétitives et concentrez-vous sur vos clients.',
+          color: Colors.blue,
+        ),
+        _buildBenefitCard(
+          icon: Icons.shield_outlined,
+          title: 'Sécurité Maximale',
+          desc: 'Vos données restent sous votre contrôle, loin des nuages opaques.',
+          color: Colors.green,
+        ),
+        _buildBenefitCard(
+          icon: Icons.analytics_outlined,
+          title: 'Visibilité Totale',
+          desc: 'Suivez vos indicateurs de performance en temps réel.',
+          color: Colors.orange,
+        ),
       ],
     );
   }
 
-  Future<void> _launchEmail(String email) async {
-    final uri = Uri(scheme: 'mailto', path: email);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+  Widget _buildBenefitCard({
+    required IconData icon,
+    required String title,
+    required String desc,
+    required Color color,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    desc,
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrganizationSection(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 8, bottom: 16),
+          child: Text(
+            'Géré par',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+        ),
+        InkWell(
+          onTap: () => _launchURL(context, 'https://github.com/APEXNovaLabs'),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Row(
+              children: [
+                _buildAvatarWithFallback(
+                  url: 'https://github.com/APEXNovaLabs.png',
+                  fallbackIcon: Icons.business,
+                  radius: 32,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'APEXNova Labs',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Équipe de développement spécialisée dans les solutions logicielles et mobiles',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.open_in_new, size: 20, color: colorScheme.primary),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeamSection(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 8, bottom: 16),
+          child: Text(
+            'L\'Équipe Core',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+        ),
+        _buildAuthorChip(
+          context: context,
+          name: 'Josoa VONJINIAINA',
+          role: 'FullStack Developer',
+          desc:
+              'Expert en architecture Backend, passionné par l\'UI/UX et les performances système.',
+          avatarUrl: 'https://github.com/josoavj.png',
+          url: 'https://github.com/josoavj',
+          colorScheme: colorScheme,
+        ),
+        const SizedBox(height: 12),
+        _buildAuthorChip(
+          context: context,
+          name: 'Maminirina ANDRIAMASINORO',
+          role: 'FullStack Developer',
+          desc:
+              'Spécialiste en intégration fluide des processus métiers avec le backend.',
+          avatarUrl: 'https://github.com/AinaMaminirina18.png',
+          url: 'https://github.com/AinaMaminirina18',
+          colorScheme: colorScheme,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuthorChip({
+    required BuildContext context,
+    required String name,
+    required String role,
+    required String desc,
+    required String avatarUrl,
+    required String url,
+    required ColorScheme colorScheme,
+  }) {
+    return InkWell(
+      onTap: () => _launchURL(context, url),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            _buildAvatarWithFallback(
+              url: avatarUrl,
+              fallbackIcon: Icons.person,
+              radius: 32,
+              colorScheme: colorScheme,
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    role,
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    desc,
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.link, size: 20, color: colorScheme.outline),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarWithFallback({
+    required String url,
+    required IconData fallbackIcon,
+    required double radius,
+    required ColorScheme colorScheme,
+  }) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+      child: ClipOval(
+        child: Image.network(
+          url,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder:
+              (context, error, stackTrace) =>
+                  Icon(fallbackIcon, color: colorScheme.primary, size: radius),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: SizedBox(
+                width: radius,
+                height: radius,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value:
+                      loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      children: [
+        const Divider(),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildSocialIcon(
+              Icons.code_rounded,
+              'GitHub',
+              () => _launchURL(
+                context,
+                'https://github.com/josoavj/PlanificatorFinal',
+              ),
+              colorScheme,
+            ),
+            _buildSocialIcon(
+              Icons.email_outlined,
+              'Support',
+              () => _launchURL(context, 'mailto:support@planificator.app'),
+              colorScheme,
+            ),
+            _buildSocialIcon(
+              Icons.description_outlined,
+              'Changelog',
+              () => _launchURL(
+                context,
+                'https://github.com/josoavj/PlanificatorFinal/releases',
+              ),
+              colorScheme,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text(
+          '© 2025 APEXNova Labs. Tous droits réservés.',
+          style: TextStyle(color: colorScheme.outline, fontSize: 12),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Fièrement propulsé par Flutter & MySQL',
+          style: TextStyle(
+            color: colorScheme.outline,
+            fontSize: 11,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialIcon(
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+    ColorScheme colorScheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Icon(icon, color: colorScheme.primary, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
