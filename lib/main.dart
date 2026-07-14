@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:logger/logger.dart' as logger_pkg;
-import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'dart:io';
+import 'core/app_initializer.dart';
 import 'services/index.dart';
 import 'repositories/index.dart';
 import 'config/database_config.dart';
@@ -20,79 +17,8 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/about/about_screen.dart';
 import 'core/theme.dart';
 
-/// Logger global qui envoie tous les logs au fichier
-final logger = logger_pkg.Logger(level: logger_pkg.Level.debug);
-
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialiser le service de logging
-  await log.initialize();
-
-  // Configurer le logger global pour envoyer tous les logs au fichier
-  log.configureGlobalLogger(logger);
-
-  log.info('Plateforme démarrée', source: 'main');
-
-  // Initialiser le provider de thème
-  final themeProvider = ThemeProvider();
-  await themeProvider.initialize();
-  log.info('Provider de thème initialisé', source: 'main');
-
-  // Initialiser le service de notifications
-  await notifications.initialize();
-  log.info('Service de notifications initialisé', source: 'main');
-
-  // Initialiser les données de locale pour intl
-  await initializeDateFormatting('fr_FR');
-
-  // Définir la locale par défaut pour intl (DateFormat)
-  Intl.defaultLocale = 'fr_FR';
-
-  // Initialiser la configuration de la base de données
-  final config = DatabaseConfig();
-  await config.initialize();
-
-  // Mettre à jour les paramètres du DatabaseService si configuré
-  if (config.isConfigured) {
-    final db = DatabaseService();
-    db.updateConnectionSettings(
-      host: config.host ?? 'localhost',
-      port: config.port ?? 3306,
-      user: config.user ?? '',
-      password: config.password ?? '',
-      database: config.database ?? 'Planificator',
-    );
-
-    // Sur Windows, désactiver les isolates (bug avec compute() sur Windows)
-    // Utiliser la connexion directe à la DB à la place
-    if (Platform.isWindows) {
-      db.setUseIsolates(false);
-      logger.i(
-        'Isolates désactivés (Windows détecté - utiliser connexion directe)',
-      );
-    } else {
-      db.setUseIsolates(true);
-      logger.i('Isolates activés pour les requêtes');
-    }
-
-    // Essayer de se connecter d'abord
-    try {
-      await db.connect();
-      logger.i('Base de données connectée');
-    } catch (e) {
-      logger.e('Connexion impossible: $e');
-    }
-
-    // Charger les traitements du lendemain et planifier les notifications
-    try {
-      final notifRepo = NotificationRepository();
-      await notifRepo.loadAndNotifyNextDayTreatments();
-    } catch (e) {
-      log.warning('Erreur chargement traitements: $e', source: 'main');
-    }
-  }
-
+  await AppInitializer.initialize();
   runApp(const MyApp());
 }
 
@@ -206,7 +132,7 @@ class _AuthGateState extends State<_AuthGate> {
   @override
   void initState() {
     super.initState();
-    logger.i('AuthGate initialized - data loading deferred to screens');
+    log.info('AuthGate initialized - data loading deferred to screens', source: 'main');
   }
 
   @override
