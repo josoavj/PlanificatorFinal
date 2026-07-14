@@ -4,6 +4,7 @@ import 'package:planificator/models/index.dart';
 import 'package:planificator/repositories/remarque_repository.dart';
 import 'package:planificator/repositories/facture_repository.dart';
 import 'package:planificator/utils/date_helper.dart';
+import '../../repositories/auth_repository.dart';
 import '../../utils/app_snackbars.dart';
 
 class RemarqueDialog extends StatefulWidget {
@@ -126,7 +127,12 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
       // Si montant était 0, le mettre à jour
       if (widget.facture.montant == 0) {
         final montant = int.tryParse(_montantCtrl.text) ?? 0;
-        await factureRepo.updateFacturePrice(widget.facture.factureId, montant);
+        final authRepo = context.read<AuthRepository>();
+        await factureRepo.updateFacturePrice(
+          widget.facture.factureId,
+          montant,
+          isAdmin: authRepo.isAdmin,
+        );
         if (!mounted) return;
       }
 
