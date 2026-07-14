@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../core/theme.dart';
 import '../../models/client.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
@@ -33,7 +34,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
   /// Initialise le chargement des données clients
   Future<void> _initializeClientData() async {
     try {
-      logger.i('📥 Début initialisation clients...');
+      logger.i('Debut initialisation clients...');
       await context.read<ClientRepository>().loadClients().timeout(
         const Duration(seconds: 65),
         onTimeout: () {
@@ -678,7 +679,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
           ),
           if (client.treatmentCount > 0)
             ElevatedButton.icon(
-              label: const Text('📅 Planning'),
+              icon: const Icon(Icons.calendar_today, size: 18),
+              label: const Text('Planning'),
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _showClientPlanningDialog(context, client);
@@ -736,7 +738,13 @@ class _ClientListScreenState extends State<ClientListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('📅 Planning pour ${client.fullName}'),
+        title: Row(
+          children: [
+            const Icon(Icons.calendar_month, color: AppTheme.primaryBlue),
+            const SizedBox(width: 12),
+            Text('Planning pour ${client.fullName}'),
+          ],
+        ),
         content: SizedBox(
           width: 550,
           child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
