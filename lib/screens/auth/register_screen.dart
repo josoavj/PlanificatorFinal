@@ -1,8 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import '../../utils/password_validator.dart';
+import '../legal/privacy_policy_screen.dart';
 import 'login_screen.dart';
 import '../../utils/app_snackbars.dart';
 
@@ -35,6 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _showCriteria = false;
   bool _passwordsMatch = false;
   int _strengthScore = 0;
+  bool _acceptedPrivacyPolicy = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -78,6 +81,11 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   void _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!_acceptedPrivacyPolicy) {
+      _showErrorSnackBar('Vous devez accepter la politique de confidentialité');
+      return;
+    }
 
     if (_passwordController.text != _confirmPasswordController.text) {
       _showErrorSnackBar('Les mots de passe ne correspondent pas');
@@ -361,7 +369,11 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
           _buildMatchIndicator(context),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 30),
+          
+          _buildPrivacyPolicyCheckbox(context),
+          
+          const SizedBox(height: 30),
           
           Selector<AuthRepository, bool>(
             selector: (_, auth) => auth.isLoading,
@@ -527,5 +539,70 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildCircle(double size, Color color) {
     return Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+  }
+
+  Widget _buildPrivacyPolicyCheckbox(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _acceptedPrivacyPolicy 
+            ? AppTheme.primaryBlue.withValues(alpha: 0.05) 
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _acceptedPrivacyPolicy 
+              ? AppTheme.primaryBlue.withValues(alpha: 0.3) 
+              : Colors.grey.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 24,
+            width: 24,
+            child: Checkbox(
+              value: _acceptedPrivacyPolicy,
+              onChanged: (value) => setState(() => _acceptedPrivacyPolicy = value ?? false),
+              activeColor: AppTheme.primaryBlue,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white70 : Colors.grey[700],
+                  height: 1.4,
+                  fontFamily: 'Poppins',
+                ),
+                children: [
+                  const TextSpan(text: "J'ai lu et j'accepte la "),
+                  TextSpan(
+                    text: "politique de confidentialité",
+                    style: const TextStyle(
+                      color: AppTheme.primaryBlue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                        );
+                      },
+                  ),
+                  const TextSpan(text: " de la plateforme Planificator."),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
