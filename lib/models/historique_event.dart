@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Modèle HistoriqueEvent
 /// Représente une entrée dans l'historique technique des traitements.
 /// Aligné sur la table SQL 'Historique'.
@@ -64,7 +66,9 @@ class HistoriqueEvent {
   String get details => '${issue ?? ''} | Action: $action'.trim();
 
   /// Icône basée sur le contenu ou l'état
-  String get icon => issue != null && issue!.isNotEmpty ? '⚠️' : '✅';
+  IconData get statusIcon => issue != null && issue!.isNotEmpty 
+      ? Icons.warning_amber_rounded 
+      : Icons.check_circle_outline_rounded;
 
   /// Couleur basée sur la présence d'un problème
   int get colorValue => (issue != null && issue!.isNotEmpty) 
