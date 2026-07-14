@@ -191,31 +191,27 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                 ),
                 color: Colors.white.withValues(alpha: 0.5),
               ),
-              child: Consumer<AuthRepository>(
-                builder: (context, authRepository, _) {
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _showLogoutConfirm(context, authRepository);
-                      },
-                      icon: const Icon(Icons.logout_rounded),
-                      label: const Text(
-                        'Déconnexion',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.errorRed,
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showLogoutConfirm(context);
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text(
+                    'Déconnexion',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.errorRed,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
           ],
@@ -325,7 +321,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
     );
   }
 
-  void _showLogoutConfirm(BuildContext context, AuthRepository authRepository) {
+  void _showLogoutConfirm(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -345,6 +341,8 @@ class _SidebarNavigationState extends State<SidebarNavigation>
             ),
             ElevatedButton(
               onPressed: () {
+                // Effectuer la déconnexion via le repository
+                context.read<AuthRepository>().logout();
                 Navigator.pop(context);
                 Navigator.of(context).pushReplacementNamed('/login');
               },
