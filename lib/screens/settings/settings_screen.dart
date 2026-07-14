@@ -8,6 +8,7 @@ import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
 import '../legal/legal_documents_screen.dart';
+import '../../utils/app_snackbars.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -1497,9 +1498,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       confirmText: 'Vider',
     ).then((confirmed) {
       if (confirmed == true) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Cache vidé')));
+        AppSnackBars.showSuccess(context, 'Cache vidé');
       }
     });
   }
