@@ -1,4 +1,3 @@
-import 'package:planificator/main.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bcrypt/bcrypt.dart';
@@ -7,6 +6,7 @@ import '../../services/index.dart';
 import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
+import '../export/export_screen.dart';
 import '../legal/legal_documents_screen.dart';
 import '../../utils/app_snackbars.dart';
 
