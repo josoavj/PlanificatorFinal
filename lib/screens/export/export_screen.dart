@@ -6,6 +6,7 @@ import '../../models/index.dart';
 import '../../utils/excel_utils.dart';
 import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
+import '../../utils/app_snackbars.dart';
 
 final logger = createLoggerWithFileOutput(name: 'export_screen');
 
@@ -584,13 +585,7 @@ class _ExportScreenState extends State<ExportScreen> {
     await _loadTreatmentsForClient(-1);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(' Données actualisées'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppSnackBars.showSuccess(context, 'Données actualisées');
     }
 
     logger.i(' Actualisation complète des données');
