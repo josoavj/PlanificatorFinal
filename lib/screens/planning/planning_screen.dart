@@ -263,15 +263,13 @@ class _CalendarWidget extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: TableCalendar(
-          firstDay: DateTime(2024, 1, 1),
+          firstDay: DateTime(2024),
           lastDay: DateTime(2079, 12, 31),
           focusedDay: focusedDay,
           selectedDayPredicate: (day) {
             return isSameDay(selectedDay, day);
           },
-          onDaySelected: (selectedDay, focusedDay) {
-            onDaySelected(selectedDay, focusedDay);
-          },
+          onDaySelected: onDaySelected,
           onPageChanged: onPageChanged,
           eventLoader: _getEventsMarkers,
           calendarStyle: CalendarStyle(
