@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
-import '../services/query_cache_service.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
