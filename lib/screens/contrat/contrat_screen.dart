@@ -17,6 +17,7 @@ import '../../utils/number_formatter.dart';
 import '../../core/sql_queries.dart';
 import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
+import '../../utils/app_snackbars.dart';
 
 class ContratScreen extends StatefulWidget {
   final int? clientId;
@@ -1114,12 +1115,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
   /// Éditer les informations du client
   void _editClient(Client client) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Modification du client ${client.nom} en cours...'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppSnackBars.showInfo(context, 'Modification du client ${client.nom} en cours...');
   }
 
   /// Voir les factures du contrat (groupées par type de traitement)
@@ -6189,14 +6185,9 @@ class _ContratCreationFlowScreenState
 
       Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ' Contrat créé! $planningsCreated planning(s) + $facturesCreated facture(s).',
-          ),
-          backgroundColor: Colors.green[700],
-        ),
+      AppSnackBars.showSuccess(
+        context,
+        'Contrat créé! $planningsCreated planning(s) + $facturesCreated facture(s).',
       );
 
       await Future.delayed(const Duration(milliseconds: 500));
@@ -6205,12 +6196,7 @@ class _ContratCreationFlowScreenState
         // Le FutureBuilder va utiliser le cache mis en place par loadContrats()
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur : $e'),
-          backgroundColor: Colors.red[700],
-        ),
-      );
+      AppSnackBars.showError(context, 'Erreur : $e');
     }
   }
 
