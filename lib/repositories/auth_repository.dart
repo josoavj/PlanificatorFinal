@@ -103,8 +103,9 @@ class AuthRepository extends ChangeNotifier {
     String email,
     String nom,
     String prenom,
-    String password,
-  ) async {
+    String password, {
+    String typeCompte = 'Utilisateur',
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -144,7 +145,7 @@ class AuthRepository extends ChangeNotifier {
             nom,
             prenom,
             hashedPassword,
-            'Utilisateur',
+            typeCompte,
             DateTime.now().toIso8601String(),
           ])
           .timeout(
@@ -162,12 +163,12 @@ class AuthRepository extends ChangeNotifier {
         email: email,
         nom: nom,
         prenom: prenom,
-        isAdmin: false,
+        isAdmin: typeCompte == 'Administrateur',
         createdAt: DateTime.now(),
       );
       _isAuthenticated = true;
 
-      logger.i('Nouvel utilisateur créé: $username');
+      logger.i('Nouvel utilisateur créé: $username ($typeCompte)');
       return true;
     } catch (e) {
       _errorMessage = e.toString();
