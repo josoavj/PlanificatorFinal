@@ -25,18 +25,48 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient successGradient = LinearGradient(
-    colors: [successGreen, Color(0xFF388E3C)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // Ombres partagées (Optimisation performance)
+  static final List<BoxShadow> softShadow = [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.04),
+      blurRadius: 20,
+      offset: const Offset(0, 8),
+    ),
+  ];
+
+  static final List<BoxShadow> mediumShadow = [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.06),
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+    ),
+  ];
+
+  /// Retourne une décoration de carte adaptée au thème (Optimisé performance)
+  static BoxDecoration cardDecoration(BuildContext context, {double radius = 12, bool showShadow = true}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: isDark ? darkCardBg : Colors.white,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: isDark ? glassBorder.withValues(alpha: 0.1) : mediumGrey.withValues(alpha: 0.2),
+        width: 1,
+      ),
+      boxShadow: (showShadow && !isDark) ? softShadow : null,
+    );
+  }
+
+  // Thème de texte centralisé (Grosse optimisation performance)
+  static final _baseTextTheme = GoogleFonts.poppinsTextTheme();
 
   static final ThemeData lightTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
     primaryColor: primaryBlue,
     scaffoldBackgroundColor: Colors.white,
-    fontFamily: GoogleFonts.poppins().fontFamily,
+    textTheme: _baseTextTheme.apply(
+      bodyColor: darkGrey,
+      displayColor: darkGrey,
+    ),
+    fontFamily: _baseTextTheme.bodyLarge?.fontFamily,
 
     // AppBar
     appBarTheme: const AppBarTheme(
@@ -44,6 +74,7 @@ class AppTheme {
       foregroundColor: Colors.white,
       elevation: 2,
       centerTitle: false,
+      surfaceTintColor: Colors.transparent,
     ),
 
     // Input decoration
@@ -130,55 +161,6 @@ class AppTheme {
       labelStyle: const TextStyle(color: darkGrey),
     ),
 
-    // Typography - Poppins font family for all text
-    textTheme: TextTheme(
-      displayLarge: GoogleFonts.poppins(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: darkGrey,
-        letterSpacing: 0.5,
-      ),
-      displayMedium: GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: darkGrey,
-        letterSpacing: 0.5,
-      ),
-      headlineSmall: GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: darkGrey,
-        letterSpacing: 0.25,
-      ),
-      titleLarge: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: darkGrey,
-        letterSpacing: 0.15,
-      ),
-      titleMedium: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: darkGrey,
-        letterSpacing: 0.1,
-      ),
-      bodyLarge: GoogleFonts.poppins(
-        fontSize: 16,
-        color: darkGrey,
-        letterSpacing: 0.5,
-      ),
-      bodyMedium: GoogleFonts.poppins(
-        fontSize: 14,
-        color: darkGrey,
-        letterSpacing: 0.25,
-      ),
-      bodySmall: GoogleFonts.poppins(
-        fontSize: 12,
-        color: mediumGrey,
-        letterSpacing: 0.4,
-      ),
-    ),
-
     // Color scheme
     colorScheme: const ColorScheme.light(
       primary: primaryBlue,
@@ -201,11 +183,10 @@ class AppTheme {
   static const Color glassBorder = Color(0x4DFFFFFF); // Blanc transparent
 
   static final ThemeData darkTheme = ThemeData(
-    useMaterial3: true,
     brightness: Brightness.dark,
     primaryColor: accentBlue,
     scaffoldBackgroundColor: darkBg,
-    fontFamily: GoogleFonts.poppins().fontFamily,
+    fontFamily: _baseTextTheme.bodyLarge?.fontFamily,
 
     // AppBar avec glassmorphism
     appBarTheme: AppBarTheme(
@@ -321,53 +302,10 @@ class AppTheme {
       checkmarkColor: darkBg,
     ),
 
-    // Typography - Poppins font family for all text
-    textTheme: TextTheme(
-      displayLarge: GoogleFonts.poppins(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: darkTextPrimary,
-        letterSpacing: 0.5,
-      ),
-      displayMedium: GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: darkTextPrimary,
-        letterSpacing: 0.5,
-      ),
-      headlineSmall: GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: darkTextPrimary,
-        letterSpacing: 0.25,
-      ),
-      titleLarge: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: darkTextPrimary,
-        letterSpacing: 0.15,
-      ),
-      titleMedium: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: darkTextPrimary,
-        letterSpacing: 0.1,
-      ),
-      bodyLarge: GoogleFonts.poppins(
-        fontSize: 16,
-        color: darkTextPrimary,
-        letterSpacing: 0.5,
-      ),
-      bodyMedium: GoogleFonts.poppins(
-        fontSize: 14,
-        color: darkTextSecondary,
-        letterSpacing: 0.25,
-      ),
-      bodySmall: GoogleFonts.poppins(
-        fontSize: 12,
-        color: darkTextTertiary,
-        letterSpacing: 0.4,
-      ),
+    // Typography - Centralisée
+    textTheme: _baseTextTheme.apply(
+      bodyColor: darkTextPrimary,
+      displayColor: darkTextPrimary,
     ),
 
     // Color scheme avec glassmorphism
