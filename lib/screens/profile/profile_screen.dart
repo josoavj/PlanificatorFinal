@@ -105,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       clipBehavior: Clip.none,
       children: [
         Container(
-          height: 180,
+          height: 210,
           width: double.infinity,
           decoration: BoxDecoration(
             color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
@@ -115,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         Positioned(
-          top: 40,
+          top: 50,
           child: Column(
             children: [
               Text(
