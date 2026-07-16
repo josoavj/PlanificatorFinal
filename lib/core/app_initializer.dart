@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logger/logger.dart' as logger_pkg;
@@ -21,16 +22,21 @@ class AppInitializer {
     log.info('Démarrage de l\'initialisation applicative', source: 'AppInitializer');
 
     try {
-      // 2. Initialiser le provider de thème
+      // 2. Optimisation des performances des polices
+      // Désactiver le chargement à l'exécution pour éviter les micro-latences lors des changements de thème
+      GoogleFonts.config.allowRuntimeFetching = false;
+      log.info('Optimisation GoogleFonts activée', source: 'AppInitializer');
+
+      // 3. Initialiser le provider de thème
       final themeProvider = ThemeProvider();
       await themeProvider.initialize();
       log.info('Provider de thème initialisé', source: 'AppInitializer');
 
-      // 3. Initialiser le service de notifications
+      // 4. Initialiser le service de notifications
       await notifications.initialize();
       log.info('Service de notifications initialisé', source: 'AppInitializer');
 
-      // 4. Internationalisation et Locales
+      // 5. Internationalisation et Locales
       await initializeDateFormatting('fr_FR');
       Intl.defaultLocale = 'fr_FR';
       log.info('Locales initialisées (fr_FR)', source: 'AppInitializer');
