@@ -293,7 +293,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isDark ? AppTheme.darkCardBg : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isDark
@@ -310,8 +309,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
           ),
-          child: ClipRRect(
+          child: Material(
+            color: isDark ? AppTheme.darkCardBg : Colors.white,
             borderRadius: BorderRadius.circular(24),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: List.generate(children.length, (index) {
                 return Column(
