@@ -90,11 +90,12 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => SignalementRepository()),
         ChangeNotifierProvider(create: (_) => NotificationRepository()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
+      child: Selector<ThemeProvider, ThemeMode>(
+        selector: (_, themeProvider) => themeProvider.themeMode,
+        builder: (context, themeMode, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            themeMode: themeProvider.themeMode,
+            themeMode: themeMode,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             locale: const Locale('fr', 'FR'),
