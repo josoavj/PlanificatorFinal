@@ -56,7 +56,7 @@ class AppTheme {
     );
   }
 
-  // Thème de texte centralisé (Grosse optimisation performance)
+  // Thème de texte centralisé
   static final _baseTextTheme = GoogleFonts.poppinsTextTheme();
 
   static final ThemeData lightTheme = ThemeData(
