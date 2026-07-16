@@ -38,37 +38,24 @@ class _SidebarNavigationState extends State<SidebarNavigation>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Drawer(
-      elevation: 16,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Colors.grey[50]!],
-          ),
-        ),
+      elevation: 0,
+      child: RepaintBoundary(
+        child: Container(
+          color: isDark ? AppTheme.darkBgSecondary : Colors.white,
         child: Column(
           children: [
-            // Header Moderne avec Gradient
+            // Header Moderne (Optimisé performance)
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.primaryBlue, AppTheme.primaryDark],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: AppTheme.primaryBlue,
+                border: isDark ? const Border(bottom: BorderSide(color: AppTheme.glassBorder, width: 0.5)) : null,
               ),
               width: double.infinity,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -78,8 +65,8 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.calendar_month_rounded,
@@ -93,20 +80,20 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Gestion de Planning et Traitements',
+                      'GESTION DE PLANNING',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 0.3,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
                       ),
                     ),
                   ],
@@ -182,39 +169,39 @@ class _SidebarNavigationState extends State<SidebarNavigation>
               ),
             ),
 
-            // Footer avec bouton déconnexion
+            // Footer (Optimisé performance)
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Colors.grey[200]!),
+                  top: BorderSide(
+                    color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey[200]!,
+                  ),
                 ),
-                color: Colors.white.withValues(alpha: 0.5),
+                color: isDark ? AppTheme.darkBgSecondary : Colors.grey[50],
               ),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    _showLogoutConfirm(context);
-                  },
-                  icon: const Icon(Icons.logout_rounded),
+                  onPressed: () => _showLogoutConfirm(context),
+                  icon: const Icon(Icons.logout_rounded, size: 18),
                   label: const Text(
-                    'Déconnexion',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    'DÉCONNEXION',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.2),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.errorRed,
                     foregroundColor: Colors.white,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            )],
+          ),
         ),
       ),
     );
@@ -241,10 +228,11 @@ class _SidebarNavigationState extends State<SidebarNavigation>
     required String label,
     required int index,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = widget.selectedIndex == index;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -253,66 +241,36 @@ class _SidebarNavigationState extends State<SidebarNavigation>
             widget.onItemSelected(index);
           },
           borderRadius: BorderRadius.circular(12),
-          splashColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
-          highlightColor: AppTheme.primaryBlue.withValues(alpha: 0.05),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isSelected
-                  ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+                  ? (isDark ? AppTheme.accentBlue.withValues(alpha: 0.15) : AppTheme.primaryBlue.withValues(alpha: 0.08))
                   : Colors.transparent,
-              border: isSelected
-                  ? Border.all(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-                      width: 1.5,
-                    )
-                  : null,
             ),
             child: Row(
               children: [
-                // Icon avec animation
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryBlue.withValues(alpha: 0.2)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isSelected ? AppTheme.primaryBlue : Colors.grey[600],
-                    size: 20,
-                  ),
+                Icon(
+                  icon,
+                  color: isSelected 
+                      ? (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue) 
+                      : (isDark ? Colors.white54 : Colors.grey[600]),
+                  size: 20,
                 ),
-                const SizedBox(width: 12),
-                // Label
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     label,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                      color: isSelected
-                          ? AppTheme.primaryBlue
-                          : Colors.grey[700],
-                      letterSpacing: 0.2,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected 
+                          ? (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue) 
+                          : (isDark ? Colors.white70 : Colors.grey[800]),
                     ),
                   ),
                 ),
-                // Indicateur de sélection
-                if (isSelected)
-                  Container(
-                    width: 3,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue,
-                      borderRadius: BorderRadius.circular(1.5),
-                    ),
-                  ),
               ],
             ),
           ),
