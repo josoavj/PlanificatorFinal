@@ -155,15 +155,21 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                   _buildSectionLabel('AUTRES'),
                   _buildNavItem(
                     context,
+                    icon: Icons.account_circle_rounded,
+                    label: 'Mon Profil',
+                    index: 7,
+                  ),
+                  _buildNavItem(
+                    context,
                     icon: Icons.info_rounded,
                     label: 'À propos',
-                    index: 7,
+                    index: 8,
                   ),
                   _buildNavItem(
                     context,
                     icon: Icons.settings_rounded,
                     label: 'Paramètres',
-                    index: 8,
+                    index: 9,
                   ),
                 ],
               ),
@@ -200,11 +206,11 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                   ),
                 ),
               ),
-            )],
-          ),
+            ),
+          ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildSectionLabel(String label) {
