@@ -84,13 +84,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         subtitle: 'Configurer l\'heure d\'affichage',
                         onTap: () => _showNotificationTimeDialog(context),
                       ),
-                    _buildModernSwitchCard(
-                      icon: Icons.brightness_4_outlined,
-                      title: 'Mode sombre',
-                      subtitle: 'Utiliser le thème sombre',
-                      value: context.watch<ThemeProvider>().isDarkMode,
-                      onChanged: (value) {
-                        context.read<ThemeProvider>().toggleTheme();
+                    Selector<ThemeProvider, bool>(
+                      selector: (_, tp) => tp.isDarkMode,
+                      builder: (context, isDarkMode, _) {
+                        return _buildModernSwitchCard(
+                          icon: Icons.brightness_4_outlined,
+                          title: 'Mode sombre',
+                          subtitle: 'Utiliser le thème sombre',
+                          value: isDarkMode,
+                          onChanged: (value) {
+                            context.read<ThemeProvider>().toggleTheme();
+                          },
+                        );
                       },
                     ),
                     _buildModernSwitchCard(
@@ -299,15 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? AppTheme.glassBorder.withValues(alpha: 0.1)
                   : Colors.grey.withValues(alpha: 0.15),
             ),
-            boxShadow: isDark
-                ? []
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+            boxShadow: isDark ? [] : AppTheme.softShadow,
           ),
           child: Material(
             color: isDark ? AppTheme.darkCardBg : Colors.white,
@@ -457,15 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               : [AppTheme.primaryBlue, AppTheme.primaryDark],
         ),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+        boxShadow: isDark ? [] : AppTheme.softShadow,
       ),
       child: Row(
         children: [
