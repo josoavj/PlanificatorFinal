@@ -440,13 +440,7 @@ class AboutScreen extends StatelessWidget {
                   ? AppTheme.glassBorder.withValues(alpha: 0.1) 
                   : Colors.grey.withValues(alpha: 0.25),
             ),
-            boxShadow: isDark ? [] : [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: isDark ? [] : AppTheme.mediumShadow,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -516,13 +510,7 @@ class AboutScreen extends StatelessWidget {
                   ? AppTheme.glassBorder.withValues(alpha: 0.1) 
                   : Colors.grey.withValues(alpha: 0.25),
             ),
-            boxShadow: isDark ? [] : [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            boxShadow: isDark ? [] : AppTheme.mediumShadow,
           ),
           child: Material(
             color: isDark ? AppTheme.darkCardBg : Colors.white,
@@ -634,13 +622,7 @@ class AboutScreen extends StatelessWidget {
               ? AppTheme.glassBorder.withValues(alpha: 0.1) 
               : Colors.grey.withValues(alpha: 0.25),
         ),
-        boxShadow: isDark ? [] : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isDark ? [] : AppTheme.softShadow,
       ),
       child: Material(
         color: isDark ? AppTheme.darkCardBg : Colors.white,
