@@ -10,6 +10,7 @@ import '../planning/planning_screen.dart';
 import '../historique/historique_screen.dart';
 import '../settings/settings_screen.dart';
 import '../about/about_screen.dart';
+import '../profile/profile_screen.dart';
 import '../export/export_screen.dart';
 
 final logger = createLoggerWithFileOutput(name: 'home_screen');
@@ -24,7 +25,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<String> _pageTitles = [
+  // Liste des titres centralisée
+  static const List<String> _pageTitles = [
     'Accueil',
     'Contrats',
     'Clients',
@@ -32,52 +34,57 @@ class _HomeScreenState extends State<HomeScreen> {
     'Factures',
     'Historique',
     'Export',
+    'Mon Profil',
     'À propos',
     'Paramètres',
   ];
 
   @override
-  void initState() {
-    super.initState();
-    //WidgetsBinding.instance.addPostFrameCallback((_) {
-    //  logger.i(' HomeScreen mounted with initial tab index $_selectedIndex');
-    //});
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Sécurité : éviter le dépassement d'index lors des transitions de version
+    final safeIndex = _selectedIndex >= _pageTitles.length ? 0 : _selectedIndex;
+
     return PopScope(
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_pageTitles[_selectedIndex]),
-          centerTitle: true,
+          title: Text(_pageTitles[safeIndex]),
+          centerTitle: false,
           elevation: 2,
         ),
         drawer: SidebarNavigation(
-          selectedIndex: _selectedIndex,
+          selectedIndex: safeIndex,
           onItemSelected: (index) {
             setState(() {
               _selectedIndex = index;
             });
           },
         ),
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: const [
-            _DashboardTab(),
-            ContratScreen(),
-            ClientListScreen(),
-            PlanningScreen(),
-            FactureScreen(),
-            HistoriqueScreen(),
-            ExportScreen(),
-            AboutScreen(),
-            SettingsScreen(),
-          ],
-        ),
+        body: _buildPage(safeIndex),
       ),
     );
+  }
+
+  Widget _buildPage(int index) {
+    return RepaintBoundary(
+      child: _getPage(index),
+    );
+  }
+
+  Widget _getPage(int index) {
+    switch (index) {
+      case 0: return const _DashboardTab();
+      case 1: return const ContratScreen();
+      case 2: return const ClientListScreen();
+      case 3: return const PlanningScreen();
+      case 4: return const FactureScreen();
+      case 5: return const HistoriqueScreen();
+      case 6: return const ExportScreen();
+      case 7: return const ProfileScreen();
+      case 8: return const AboutScreen();
+      case 9: return const SettingsScreen();
+      default: return const _DashboardTab();
+    }
   }
 }
 
@@ -169,27 +176,8 @@ class _DashboardTabState extends State<_DashboardTab> {
               // Two columns layout for current and next treatments (responsive)
               Consumer<PlanningDetailsRepository>(
                 builder: (context, planningDetailsRepo, _) {
-                  // Filtrer une seule fois pour éviter les recalculs
-                  final currentMonthIds = planningDetailsRepo
-                      .currentMonthTreatmentsComplete
-                      .map((t) => t['planning_detail_id'] as int?)
-                      .toSet();
-
-                  final upcomingFiltered = planningDetailsRepo
-                      .upcomingTreatmentsComplete
-                      .where(
-                        (treatment) => !currentMonthIds.contains(
-                          treatment['planning_detail_id'] as int?,
-                        ),
-                      )
-                      .toList();
-
-                  final currentMonth =
-                      planningDetailsRepo.currentMonthTreatmentsComplete;
-
-                  logger.d(
-                    ' Dashboard: ${currentMonth.length} en cours, ${upcomingFiltered.length} à venir',
-                  );
+                  final currentMonth = planningDetailsRepo.currentMonthTreatmentsComplete;
+                  final upcoming = planningDetailsRepo.upcomingTreatmentsComplete;
 
                   // Responsive layout: 2 columns sur grand écran, 1 colonne sinon
                   final isMobile = MediaQuery.of(context).size.width < 900;
@@ -209,7 +197,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                           title: 'À venir',
                           isLoading: planningDetailsRepo.isLoading,
                           errorMessage: planningDetailsRepo.errorMessage,
-                          treatments: _formatTreatments(upcomingFiltered),
+                          treatments: _formatTreatments(upcoming),
                         ),
                       ],
                     );
@@ -224,7 +212,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                           title: 'À venir',
                           isLoading: planningDetailsRepo.isLoading,
                           errorMessage: planningDetailsRepo.errorMessage,
-                          treatments: _formatTreatments(upcomingFiltered),
+                          treatments: _formatTreatments(upcoming),
                         ),
                       ),
                       const SizedBox(width: 24),

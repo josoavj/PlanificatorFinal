@@ -28,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _obscureAdminSecret = true;
   String _selectedAccountType = 'Utilisateur';
 
   // Password criteria states
@@ -40,6 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _passwordsMatch = false;
   int _strengthScore = 0;
   bool _acceptedPrivacyPolicy = false;
+  bool _isFirstUser = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -51,6 +53,22 @@ class _RegisterScreenState extends State<RegisterScreen>
     _confirmPasswordController.addListener(_updatePasswordCriteria);
     _nomController.addListener(_updatePasswordCriteria);
     _prenomController.addListener(_updatePasswordCriteria);
+    
+    // Vérifier si c'est la première inscription
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkFirstUser();
+    });
+  }
+
+  Future<void> _checkFirstUser() async {
+    final authRepo = context.read<AuthRepository>();
+    final noUsers = await authRepo.hasNoUsers();
+    if (mounted && noUsers) {
+      setState(() {
+        _isFirstUser = true;
+        _selectedAccountType = 'Administrateur';
+      });
+    }
   }
 
   void _updatePasswordCriteria() {
@@ -90,9 +108,11 @@ class _RegisterScreenState extends State<RegisterScreen>
       return;
     }
 
-    if (_selectedAccountType == 'Administrateur') {
-      if (_adminSecretController.text.trim().toUpperCase() != 'ADMIN2026') {
-        _showErrorSnackBar('Code secret Administrateur invalide');
+    if (_selectedAccountType == 'Administrateur' && !_isFirstUser) {
+      // Nettoyage complet : suppression de tous les espaces et insensible à la casse
+      final typedSecret = _adminSecretController.text.replaceAll(' ', '').toUpperCase();
+      if (typedSecret != 'ADMIN2026') {
+        _showErrorSnackBar("Le code d'activation Administrateur est incorrect");
         return;
       }
     }
@@ -384,15 +404,22 @@ class _RegisterScreenState extends State<RegisterScreen>
           
           _buildFieldLabel(context, 'Type de compte', _buildAccountTypeSelector(context)),
           
-          if (_selectedAccountType == 'Administrateur') ...[
+          if (_selectedAccountType == 'Administrateur' && !_isFirstUser) ...[
             const SizedBox(height: 20),
-            _buildFieldLabel(context, 'Code secret Administrateur', 
+            _buildFieldLabel(context, "Code d'activation Administrateur", 
               TextFormField(
                 controller: _adminSecretController,
-                obscureText: true,
-                decoration: const InputDecoration(
+                obscureText: _obscureAdminSecret,
+                decoration: InputDecoration(
                   hintText: 'Code requis pour le rôle Admin',
-                  prefixIcon: Icon(Icons.vpn_key_outlined),
+                  prefixIcon: const Icon(Icons.vpn_key_outlined),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureAdminSecret ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscureAdminSecret = !_obscureAdminSecret),
+                  ),
                 ),
                 validator: (v) => v!.isEmpty ? 'Requis pour Administrateur' : null,
               ),

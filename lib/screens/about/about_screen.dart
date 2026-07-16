@@ -426,43 +426,62 @@ class AboutScreen extends StatelessWidget {
     required String desc,
     required Color color,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: color, size: 24),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkCardBg : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark 
+                  ? AppTheme.glassBorder.withValues(alpha: 0.1) 
+                  : Colors.grey.withValues(alpha: 0.25),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+            boxShadow: isDark ? [] : AppTheme.mediumShadow,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    desc,
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        desc,
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.grey[600], 
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 
@@ -471,6 +490,8 @@ class AboutScreen extends StatelessWidget {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -481,50 +502,60 @@ class AboutScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
-        InkWell(
-          onTap: () => _launchURL(context, 'https://github.com/APEXNovaLabs'),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.outlineVariant),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark 
+                  ? AppTheme.glassBorder.withValues(alpha: 0.1) 
+                  : Colors.grey.withValues(alpha: 0.25),
             ),
-            child: Row(
-              children: [
-                _buildAvatarWithFallback(
-                  url: 'https://github.com/APEXNovaLabs.png',
-                  fallbackIcon: Icons.business,
-                  radius: 32,
-                  colorScheme: colorScheme,
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'APEXNova Labs',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+            boxShadow: isDark ? [] : AppTheme.mediumShadow,
+          ),
+          child: Material(
+            color: isDark ? AppTheme.darkCardBg : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => _launchURL(context, 'https://github.com/APEXNovaLabs'),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    _buildAvatarWithFallback(
+                      url: 'https://github.com/APEXNovaLabs.png',
+                      fallbackIcon: Icons.business,
+                      radius: 32,
+                      colorScheme: colorScheme,
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'APEXNova Labs',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Équipe de développement spécialisée dans les solutions logicielles et mobiles',
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : colorScheme.onSurfaceVariant,
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Équipe de développement spécialisée dans les solutions logicielles et mobiles',
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    Icon(Icons.open_in_new_rounded, size: 20, color: colorScheme.primary.withValues(alpha: 0.5)),
+                  ],
                 ),
-                Icon(Icons.open_in_new, size: 20, color: colorScheme.primary),
-              ],
+              ),
             ),
           ),
         ),
@@ -581,67 +612,71 @@ class AboutScreen extends StatelessWidget {
     required String url,
     required ColorScheme colorScheme,
   }) {
-    return InkWell(
-      onTap: () => _launchURL(context, url),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark 
+              ? AppTheme.glassBorder.withValues(alpha: 0.1) 
+              : Colors.grey.withValues(alpha: 0.25),
         ),
-        child: Row(
-          children: [
-            _buildAvatarWithFallback(
-              url: avatarUrl,
-              fallbackIcon: Icons.person,
-              radius: 32,
-              colorScheme: colorScheme,
+        boxShadow: isDark ? [] : AppTheme.softShadow,
+      ),
+      child: Material(
+        color: isDark ? AppTheme.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _launchURL(context, url),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                _buildAvatarWithFallback(
+                  url: avatarUrl,
+                  fallbackIcon: Icons.person,
+                  radius: 32,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        role,
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        desc,
+                        style: TextStyle(
+                          color: isDark ? Colors.white60 : colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.link_rounded, size: 20, color: colorScheme.primary.withValues(alpha: 0.3)),
+              ],
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    role,
-                    style: TextStyle(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    desc,
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.link, size: 20, color: colorScheme.outline),
-          ],
+          ),
         ),
       ),
     );

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bcrypt/bcrypt.dart';
 import '../../repositories/index.dart';
 import '../../services/index.dart';
 import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
-import '../export/export_screen.dart';
-import '../legal/legal_documents_screen.dart';
 import '../../utils/app_snackbars.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -30,40 +27,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // Section Profil
-                _buildSection(
-                  title: 'Profil',
-                  children: [
-                    _buildModernProfileCard(authRepository),
-                    _buildModernCard(
-                      icon: Icons.person_outline,
-                      title: 'Détails du profil',
-                      subtitle: 'Afficher mes informations',
-                      onTap: () => _showProfileDialog(context, authRepository),
-                    ),
-                    _buildModernCard(
-                      icon: Icons.edit_outlined,
-                      title: 'Modifier le profil',
-                      subtitle: 'Mettre à jour mes informations',
-                      onTap: () =>
-                          _showEditProfileDialog(context, authRepository),
-                    ),
-                    if (authRepository.isAdmin)
-                      _buildModernCard(
-                        icon: Icons.group_outlined,
-                        title: 'Liste des profils',
-                        subtitle: 'Voir tous les profils et leurs types',
-                        onTap: () => _showAllProfilesDialog(context),
-                      ),
-                    _buildModernCard(
-                      icon: Icons.lock_outline,
-                      title: 'Changer le mot de passe',
-                      subtitle: 'Mettre à jour votre mot de passe',
-                      onTap: () => _showChangePasswordDialog(context),
-                    ),
-                  ],
-                ),
-
                 // Section Préférences
                 _buildSection(
                   title: 'Préférences',
@@ -84,13 +47,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         subtitle: 'Configurer l\'heure d\'affichage',
                         onTap: () => _showNotificationTimeDialog(context),
                       ),
-                    _buildModernSwitchCard(
-                      icon: Icons.brightness_4_outlined,
-                      title: 'Mode sombre',
-                      subtitle: 'Utiliser le thème sombre',
-                      value: context.watch<ThemeProvider>().isDarkMode,
-                      onChanged: (value) {
-                        context.read<ThemeProvider>().toggleTheme();
+                    Selector<ThemeProvider, bool>(
+                      selector: (_, tp) => tp.isDarkMode,
+                      builder: (context, isDarkMode, _) {
+                        return _buildModernSwitchCard(
+                          icon: Icons.brightness_4_outlined,
+                          title: 'Mode sombre',
+                          subtitle: 'Utiliser le thème sombre',
+                          value: isDarkMode,
+                          onChanged: (value) {
+                            context.read<ThemeProvider>().toggleTheme();
+                          },
+                        );
                       },
                     ),
                     _buildModernSwitchCard(
@@ -119,18 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.info_outline,
                       title: 'À propos',
                       subtitle: 'Informations sur la plateforme',
-                      onTap: () => _showAboutDialog(context),
-                    ),
-                    _buildModernCard(
-                      icon: Icons.gavel_outlined,
-                      title: 'Documents Légaux',
-                      subtitle: 'Politique, conditions et conformité',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LegalDocumentsScreen(),
-                        ),
-                      ),
+                      onTap: () => Navigator.pushNamed(context, '/about'),
                     ),
                     _buildModernCard(
                       icon: Icons.help_outline,
@@ -184,29 +141,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSection(
                     title: 'Base de Données',
                     children: [
+                      // Notice d'avertissement intégrée
                       Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
                         ),
-                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange.shade300),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppTheme.warningOrange.withValues(alpha: 0.15)
+                              : Colors.orange.shade50,
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              Icons.warning_amber,
-                              color: Colors.orange.shade700,
+                              Icons.warning_amber_rounded,
+                              color: AppTheme.warningOrange,
+                              size: 22,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
+                            const SizedBox(width: 16),
+                            const Expanded(
                               child: Text(
                                 'Configuration critique - À manipuler avec prudence',
                                 style: TextStyle(
-                                  color: Colors.orange.shade900,
+                                  color: AppTheme.warningOrange,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -216,10 +175,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       _buildModernCard(
-                        icon: Icons.storage,
+                        icon: Icons.storage_rounded,
                         title: 'Configuration Base de Données',
                         subtitle: 'Modifier les informations de connexion',
                         onTap: () => _showDatabaseConfigDialog(context),
+                      ),
+                    ],
+                  ),
+
+                // Section Administration
+                if (authRepository.isAdmin)
+                  _buildSection(
+                    title: 'Administration',
+                    children: [
+                      _buildModernCard(
+                        icon: Icons.group_outlined,
+                        title: 'Liste des profils',
+                        subtitle: 'Voir tous les profils et leurs types',
+                        onTap: () => _showAllProfilesDialog(context),
                       ),
                     ],
                   ),
@@ -272,22 +245,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String title,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
           child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryBlue,
-            ),
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                  color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Column(children: children),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark
+                  ? AppTheme.glassBorder.withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.15),
+            ),
+            boxShadow: isDark
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+          ),
+          child: Material(
+            color: isDark ? AppTheme.darkCardBg : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: List.generate(children.length, (index) {
+                return Column(
+                  children: [
+                    children[index],
+                    if (index < children.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: 60,
+                        endIndent: 16,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.grey.withValues(alpha: 0.1),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ),
         ),
         const SizedBox(height: 16),
       ],
@@ -301,43 +316,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 0,
-        color: isDestructive ? Colors.red.shade50 : Colors.grey.shade100,
-        child: ListTile(
-          leading: Icon(
-            icon,
-            color: isDestructive ? Colors.red.shade600 : AppTheme.primaryBlue,
-            size: 28,
-          ),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: isDestructive ? Colors.red.shade700 : Colors.black87,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDestructive ? Colors.red.shade600 : Colors.grey.shade600,
-            ),
-          ),
-          trailing: Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: isDestructive ? Colors.red.shade400 : Colors.grey.shade400,
-          ),
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDestructive
+              ? AppTheme.errorRed.withValues(alpha: 0.1)
+              : (isDark
+                  ? AppTheme.accentBlue.withValues(alpha: 0.1)
+                  : AppTheme.primaryBlue.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: isDestructive
+              ? AppTheme.errorRed
+              : (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
+          size: 20,
         ),
       ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: isDestructive
+              ? AppTheme.errorRed
+              : (isDark ? Colors.white : Colors.black87),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 20,
+        color: isDark ? Colors.white24 : Colors.grey.shade400,
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
@@ -348,472 +371,209 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 0,
-        color: Colors.grey.shade100,
-        child: ListTile(
-          leading: Icon(
-            icon,
-            color: value ? AppTheme.primaryBlue : Colors.grey.shade400,
-            size: 28,
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          ),
-          trailing: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppTheme.primaryBlue,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppTheme.accentBlue.withValues(alpha: 0.1)
+              : AppTheme.primaryBlue.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+          size: 20,
         ),
       ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
+        ),
+      ),
+      trailing: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: AppTheme.primaryBlue,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
-  Widget _buildModernProfileCard(AuthRepository authRepository) {
-    final user = authRepository.currentUser;
-    if (user == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 0,
-        color: Colors.blue.shade100,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: AppTheme.primaryBlue,
-                    child: Text(
-                      user.fullName.isNotEmpty
-                          ? user.fullName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.fullName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.email,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: user.isAdmin
-                          ? AppTheme.successGreen
-                          : AppTheme.primaryBlue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      user.isAdmin ? 'Admin' : 'Utilisateur',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+  void _showDatabaseConfigDialog(BuildContext context) {
+    final config = DatabaseConfig();
+    final hostController = TextEditingController(
+      text: config.host ?? 'localhost',
     );
-  }
+    final portController = TextEditingController(
+      text: (config.port ?? 3306).toString(),
+    );
+    final userController = TextEditingController(text: config.user ?? 'root');
+    final databaseController = TextEditingController(
+      text: config.database ?? 'Planificator',
+    );
+    final passwordController = TextEditingController(
+      text: config.password ?? 'root',
+    );
 
-  void _showProfileDialog(
-    BuildContext context,
-    AuthRepository authRepository,
-  ) async {
-    final user = authRepository.currentUser;
-    if (user == null) return;
-
-    String username = '';
-    try {
-      final db = DatabaseService();
-      final result = await db.query(
-        'SELECT username FROM Account WHERE id_compte = ?',
-        [user.userId],
-      );
-      if (result.isNotEmpty && result[0]['username'] != null) {
-        username = result[0]['username'].toString();
-      }
-    } catch (e) {
-      logger.w('Error fetching username: $e');
-    }
-
-    if (!context.mounted) return;
+    bool showPassword = false;
 
     showDialog(
       context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Détails du profil'),
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.65,
-          child: SingleChildScrollView(
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Configuration Base de Données'),
+          content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProfileDetailCard('Nom', user.nom, Icons.person),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warningOrange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.warningOrange.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppTheme.warningOrange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Modification CRITIQUE - Soyez prudent',
+                          style: TextStyle(
+                            color: AppTheme.warningOrange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: hostController,
+                  decoration: const InputDecoration(
+                    labelText: 'Host',
+                    hintText: 'localhost',
+                  ),
+                ),
                 const SizedBox(height: 12),
-                _buildProfileDetailCard('Prénom', user.prenom, Icons.person),
+                TextField(
+                  controller: portController,
+                  decoration: const InputDecoration(
+                    labelText: 'Port',
+                    hintText: '3306',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(height: 12),
-                _buildProfileDetailCard('Username', username, Icons.badge),
+                TextField(
+                  controller: userController,
+                  decoration: const InputDecoration(
+                    labelText: 'Utilisateur',
+                    hintText: 'root',
+                  ),
+                ),
                 const SizedBox(height: 12),
-                _buildProfileDetailCard('Email', user.email, Icons.email),
+                TextField(
+                  controller: passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        showPassword ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() => showPassword = !showPassword);
+                      },
+                    ),
+                  ),
+                  obscureText: !showPassword,
+                ),
                 const SizedBox(height: 12),
-                _buildProfileDetailCard(
-                  'Rôle',
-                  user.isAdmin ? 'Administrateur' : 'Utilisateur',
-                  Icons.shield,
-                  backgroundColor: user.isAdmin
-                      ? AppTheme.successGreen
-                      : AppTheme.primaryBlue,
+                TextField(
+                  controller: databaseController,
+                  decoration: const InputDecoration(
+                    labelText: 'Base de données',
+                    hintText: 'Planificator',
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditProfileDialog(
-    BuildContext context,
-    AuthRepository authRepository,
-  ) async {
-    final user = authRepository.currentUser;
-    if (user == null) return;
-
-    // Première demande de confirmation
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Modifier le profil'),
-        content: const Text(
-          'Souhaitez-vous modifier vos informations de profil ?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Non, annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Oui, continuer'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    final prenomCtrl = TextEditingController(
-      text: user.fullName.split(' ').last,
-    );
-    final nomCtrl = TextEditingController(text: user.fullName.split(' ').first);
-    final emailCtrl = TextEditingController(text: user.email);
-    final usernameCtrl = TextEditingController();
-    bool isUpdating = false;
-
-    // Fetch username from database
-    try {
-      final db = DatabaseService();
-      final result = await db.query(
-        'SELECT username FROM Account WHERE id_compte = ?',
-        [user.userId],
-      );
-      if (result.isNotEmpty && result[0]['username'] != null) {
-        usernameCtrl.text = result[0]['username'].toString();
-      }
-    } catch (e) {
-      logger.w('Error fetching username: $e');
-    }
-
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Modifier le profil'),
-          contentPadding: const EdgeInsets.all(16),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.65,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: prenomCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Prénom',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: nomCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Nom',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: emailCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.all(12),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: usernameCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Nom d\'utilisateur',
-                      prefixIcon: const Icon(Icons.account_circle_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[300]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.shield, color: Colors.blue[700], size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Type de compte',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                user.isAdmin ? 'Administrateur' : 'Utilisateur',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.blue[900],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
               child: const Text('Annuler'),
             ),
-            FilledButton(
-              onPressed: isUpdating
-                  ? null
-                  : () async {
-                      if (prenomCtrl.text.isEmpty ||
-                          nomCtrl.text.isEmpty ||
-                          emailCtrl.text.isEmpty ||
-                          usernameCtrl.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tous les champs sont requis'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        return;
-                      }
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final db = DatabaseService();
+                  db.updateConnectionSettings(
+                    host: hostController.text,
+                    port: int.parse(portController.text),
+                    user: userController.text,
+                    password: passwordController.text,
+                    database: databaseController.text,
+                  );
 
-                      // Deuxième demande de confirmation avant d'enregistrer
-                      final confirmSave = await showDialog<bool>(
-                        context: context,
-                        builder: (confirmCtx) => AlertDialog(
-                          title: const Text('Confirmer les modifications'),
-                          content: const Text(
-                            'Êtes-vous sûr de vouloir enregistrer ces modifications ?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(confirmCtx).pop(false),
-                              child: const Text('Annuler'),
-                            ),
-                            FilledButton(
-                              onPressed: () =>
-                                  Navigator.of(confirmCtx).pop(true),
-                              child: const Text('Confirmer'),
-                            ),
-                          ],
-                        ),
-                      );
+                  final connected = await db.connect();
+                  if (connected) {
+                    await config.saveConfig(
+                      host: hostController.text,
+                      port: int.parse(portController.text),
+                      user: userController.text,
+                      password: passwordController.text,
+                      database: databaseController.text,
+                    );
 
-                      if (confirmSave != true) return;
-
-                      setState(() => isUpdating = true);
-
-                      try {
-                        await _updateUserProfile(
-                          userId: user.userId,
-                          prenom: prenomCtrl.text,
-                          nom: nomCtrl.text,
-                          email: emailCtrl.text,
-                          username: usernameCtrl.text,
-                        );
-
-                        if (!context.mounted) return;
-                        Navigator.of(ctx).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(' Profil mis à jour avec succès'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Erreur: $e'),
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      } finally {
-                        setState(() => isUpdating = false);
-                      }
-                    },
-              child: isUpdating
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Enregistrer'),
+                    if (!context.mounted) return;
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(' Configuration sauvegardée'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    if (!context.mounted) return;
+                    AppDialogs.error(
+                      context,
+                      message:
+                          'Impossible de se connecter à la base de données',
+                    );
+                  }
+                } catch (e) {
+                  if (!context.mounted) return;
+                  AppDialogs.error(context, message: 'Erreur: $e');
+                }
+              },
+              child: const Text('Sauvegarder'),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _updateUserProfile({
-    required int userId,
-    required String prenom,
-    required String nom,
-    required String email,
-    required String username,
-  }) async {
-    try {
-      final db = DatabaseService();
-      const sql = '''
-        UPDATE Account
-        SET nom = ?, prenom = ?, email = ?, username = ?
-        WHERE id_compte = ?
-      ''';
-
-      await db.execute(sql, [nom, prenom, email, username, userId]);
-    } catch (e) {
-      throw 'Erreur lors de la mise à jour du profil: $e';
-    }
   }
 
   void _showAllProfilesDialog(BuildContext context) {
@@ -987,509 +747,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Widget _buildProfileDetailCard(
-    String label,
-    String value,
-    IconData icon, {
-    Color? backgroundColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: backgroundColor ?? AppTheme.primaryBlue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChangePasswordDialog(BuildContext context) async {
-    // Première demande de confirmation
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Changer le mot de passe'),
-        content: const Text('Souhaitez-vous changer votre mot de passe ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Non, annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Oui, continuer'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    final authRepository = context.read<AuthRepository>();
-    final user = authRepository.currentUser;
-    if (user == null) return;
-
-    // Récupérer les informations nécessaires pour les validations
-    String username = '';
-    String passwordHash = '';
-    try {
-      final db = DatabaseService();
-      final result = await db.query(
-        'SELECT username, password FROM Account WHERE id_compte = ?',
-        [user.userId],
-      );
-      if (result.isNotEmpty) {
-        username = result[0]['username']?.toString() ?? '';
-        passwordHash = result[0]['password']?.toString() ?? '';
-      }
-    } catch (e) {
-      logger.w('Error fetching user data: $e');
-    }
-
-    if (!context.mounted) return;
-
-    final oldPassword = TextEditingController();
-    final newPassword = TextEditingController();
-    final confirmPassword = TextEditingController();
-
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Changer le mot de passe'),
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.65,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: oldPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Ancien mot de passe',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: newPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Nouveau mot de passe',
-                    prefixIcon: const Icon(Icons.lock_reset_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: confirmPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Confirmer le mot de passe',
-                    prefixIcon: const Icon(Icons.check_circle_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                  obscureText: true,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              // Validation 1: Vérifier que tous les champs sont remplis
-              if (oldPassword.text.isEmpty ||
-                  newPassword.text.isEmpty ||
-                  confirmPassword.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(' Tous les champs sont requis'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Validation 2: Vérifier que l'ancien mot de passe est correct (avec bcrypt)
-              try {
-                if (!BCrypt.checkpw(oldPassword.text, passwordHash)) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(' L\'ancien mot de passe est incorrect'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(' L\'ancien mot de passe est incorrect'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Validation 3: Vérifier que les nouveaux mots de passe correspondent
-              if (newPassword.text != confirmPassword.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(' Les mots de passe ne correspondent pas'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Validation 4: Vérifier que le nouveau mot de passe ne ressemble pas à l'ancien
-              if (newPassword.text == oldPassword.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      ' Le nouveau mot de passe doit être différent de l\'ancien',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
-
-              // Validation 5: Vérifier la longueur minimale
-              if (newPassword.text.length < 6) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      ' Le mot de passe doit contenir au moins 6 caractères',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
-
-              // Validation 6: Vérifier que le mot de passe ne contient pas le username, nom ou prénom
-              final newPasswordLower = newPassword.text.toLowerCase();
-              final usernameLower = username.toLowerCase();
-              final nomLower = user.nom.toLowerCase();
-              final prenomLower = user.prenom.toLowerCase();
-
-              if (newPasswordLower.contains(usernameLower) ||
-                  newPasswordLower.contains(nomLower) ||
-                  newPasswordLower.contains(prenomLower)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      ' Le mot de passe ne doit pas contenir votre nom, prénom ou identifiant',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
-
-              // Deuxième demande de confirmation
-              final confirmChange = await showDialog<bool>(
-                context: context,
-                builder: (confirmCtx) => AlertDialog(
-                  title: const Text('Confirmer le changement'),
-                  content: const Text(
-                    'Êtes-vous sûr de vouloir changer votre mot de passe ?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(confirmCtx).pop(false),
-                      child: const Text('Annuler'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.of(confirmCtx).pop(true),
-                      child: const Text('Confirmer'),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirmChange != true) return;
-
-              try {
-                authRepository.changePassword(
-                  oldPassword.text,
-                  newPassword.text,
-                );
-
-                if (!context.mounted) return;
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(' Mot de passe changé avec succès'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(' Erreur: $e'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Changer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLanguageDialog() {
-    AppDialogs.selection(
-      context,
-      title: 'Sélectionner une langue',
-      items: const ['fr', 'en'],
-      itemLabel: (item) => item == 'fr' ? 'Français' : 'English',
-      selectedItem: _language,
-    ).then((selected) {
-      if (selected != null) {
-        setState(() => _language = selected);
-      }
-    });
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    showAboutDialog(
-      context: context,
-      applicationName: 'Planificator',
-      applicationVersion: '2.1.1',
-      applicationIcon: const Icon(Icons.calendar_today, size: 64),
-      children: const [
-        SizedBox(height: 16),
-        Text(
-          'Plateforme de gestion de clients et de factures.\n\n'
-          'Développé avec Flutter et MySQL.\n\n'
-          'Version 2.1.1 - 2026',
-        ),
-      ],
-    );
-  }
-
-  void _showDatabaseConfigDialog(BuildContext context) {
-    final config = DatabaseConfig();
-    final hostController = TextEditingController(
-      text: config.host ?? 'localhost',
-    );
-    final portController = TextEditingController(
-      text: (config.port ?? 3306).toString(),
-    );
-    final userController = TextEditingController(text: config.user ?? 'root');
-    final databaseController = TextEditingController(
-      text: config.database ?? 'Planificator',
-    );
-    final passwordController = TextEditingController(
-      text: config.password ?? 'root',
-    );
-
-    bool showPassword = false;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Configuration Base de Données'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.warning, color: Colors.orange[700], size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Modification CRITIQUE - Soyez prudent',
-                          style: TextStyle(
-                            color: Colors.orange[900],
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: hostController,
-                  decoration: const InputDecoration(
-                    labelText: 'Host',
-                    hintText: 'localhost',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: portController,
-                  decoration: const InputDecoration(
-                    labelText: 'Port',
-                    hintText: '3306',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: userController,
-                  decoration: const InputDecoration(
-                    labelText: 'Utilisateur',
-                    hintText: 'root',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Mot de passe',
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        showPassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() => showPassword = !showPassword);
-                      },
-                    ),
-                  ),
-                  obscureText: !showPassword,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: databaseController,
-                  decoration: const InputDecoration(
-                    labelText: 'Base de données',
-                    hintText: 'Planificator',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final db = DatabaseService();
-                  db.updateConnectionSettings(
-                    host: hostController.text,
-                    port: int.parse(portController.text),
-                    user: userController.text,
-                    password: passwordController.text,
-                    database: databaseController.text,
-                  );
-
-                  final connected = await db.connect();
-                  if (connected) {
-                    await config.saveConfig(
-                      host: hostController.text,
-                      port: int.parse(portController.text),
-                      user: userController.text,
-                      password: passwordController.text,
-                      database: databaseController.text,
-                    );
-
-                    if (!context.mounted) return;
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(' Configuration sauvegardée'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    if (!context.mounted) return;
-                    AppDialogs.error(
-                      context,
-                      message:
-                          'Impossible de se connecter à la base de données',
-                    );
-                  }
-                } catch (e) {
-                  if (!context.mounted) return;
-                  AppDialogs.error(context, message: 'Erreur: $e');
-                }
-              },
-              child: const Text('Sauvegarder'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showCacheDialog(BuildContext context) {
     AppDialogs.confirm(
       context,
@@ -1618,6 +875,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
+    });
+  }
+
+  void _showLanguageDialog() {
+    AppDialogs.selection(
+      context,
+      title: 'Sélectionner une langue',
+      items: const ['fr', 'en'],
+      itemLabel: (item) => item == 'fr' ? 'Français' : 'English',
+      selectedItem: _language,
+    ).then((selected) {
+      if (selected != null) {
+        setState(() => _language = selected);
       }
     });
   }

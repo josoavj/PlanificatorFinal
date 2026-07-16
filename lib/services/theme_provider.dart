@@ -43,11 +43,17 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   /// Changer le mode de thème
-  Future<void> setThemeMode(ThemeMode mode) async {
+  void setThemeMode(ThemeMode mode) {
     if (_themeMode == mode) return;
 
     _themeMode = mode;
+    notifyListeners(); // Notifier immédiatement pour une UI fluide
 
+    // Sauvegarder en arrière-plan sans bloquer le thread UI
+    _saveThemePreference(mode);
+  }
+
+  Future<void> _saveThemePreference(ThemeMode mode) async {
     try {
       final modeString = mode == ThemeMode.dark
           ? 'dark'
@@ -55,28 +61,26 @@ class ThemeProvider extends ChangeNotifier {
           ? 'light'
           : 'system';
       await _prefs?.setString(_prefKey, modeString);
-      log('Préférences de thème sauvegardées: $modeString');
+      log('Préférences de thème sauvegardées en arrière-plan: $modeString');
     } catch (e) {
-      log('Erreur lors de la sauvegarde des préférences de thème: $e');
+      log('Erreur lors de la sauvegarde asynchrone du thème: $e');
     }
-
-    notifyListeners();
   }
 
   /// Activer le mode sombre
-  Future<void> enableDarkMode() => setThemeMode(ThemeMode.dark);
+  void enableDarkMode() => setThemeMode(ThemeMode.dark);
 
   /// Désactiver le mode sombre (light mode)
-  Future<void> enableLightMode() => setThemeMode(ThemeMode.light);
+  void enableLightMode() => setThemeMode(ThemeMode.light);
 
   /// Utiliser le thème système
-  Future<void> useSystemTheme() => setThemeMode(ThemeMode.system);
+  void useSystemTheme() => setThemeMode(ThemeMode.system);
 
   /// Basculer entre clair et sombre
-  Future<void> toggleTheme() async {
+  void toggleTheme() {
     final newMode = _themeMode == ThemeMode.dark
         ? ThemeMode.light
         : ThemeMode.dark;
-    await setThemeMode(newMode);
+    setThemeMode(newMode);
   }
 }
