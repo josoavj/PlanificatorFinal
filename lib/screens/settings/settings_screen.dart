@@ -184,29 +184,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSection(
                     title: 'Base de Données',
                     children: [
+                      // Notice d'avertissement intégrée
                       Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
                         ),
-                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange.shade300),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppTheme.warningOrange.withValues(alpha: 0.15)
+                              : Colors.orange.shade50,
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              Icons.warning_amber,
-                              color: Colors.orange.shade700,
+                              Icons.warning_amber_rounded,
+                              color: AppTheme.warningOrange,
+                              size: 22,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
+                            const SizedBox(width: 16),
+                            const Expanded(
                               child: Text(
                                 'Configuration critique - À manipuler avec prudence',
                                 style: TextStyle(
-                                  color: Colors.orange.shade900,
+                                  color: AppTheme.warningOrange,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -216,7 +218,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       _buildModernCard(
-                        icon: Icons.storage,
+                        icon: Icons.storage_rounded,
                         title: 'Configuration Base de Données',
                         subtitle: 'Modifier les informations de connexion',
                         onTap: () => _showDatabaseConfigDialog(context),
@@ -272,22 +274,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String title,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
           child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryBlue,
-            ),
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                  color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Column(children: children),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.darkCardBg : Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark
+                  ? AppTheme.glassBorder.withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.15),
+            ),
+            boxShadow: isDark
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              children: List.generate(children.length, (index) {
+                return Column(
+                  children: [
+                    children[index],
+                    if (index < children.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: 60,
+                        endIndent: 16,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.grey.withValues(alpha: 0.1),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ),
         ),
         const SizedBox(height: 16),
       ],
@@ -301,43 +344,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 0,
-        color: isDestructive ? Colors.red.shade50 : Colors.grey.shade100,
-        child: ListTile(
-          leading: Icon(
-            icon,
-            color: isDestructive ? Colors.red.shade600 : AppTheme.primaryBlue,
-            size: 28,
-          ),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: isDestructive ? Colors.red.shade700 : Colors.black87,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDestructive ? Colors.red.shade600 : Colors.grey.shade600,
-            ),
-          ),
-          trailing: Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: isDestructive ? Colors.red.shade400 : Colors.grey.shade400,
-          ),
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDestructive
+              ? AppTheme.errorRed.withValues(alpha: 0.1)
+              : (isDark
+                  ? AppTheme.accentBlue.withValues(alpha: 0.1)
+                  : AppTheme.primaryBlue.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: isDestructive
+              ? AppTheme.errorRed
+              : (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
+          size: 20,
         ),
       ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: isDestructive
+              ? AppTheme.errorRed
+              : (isDark ? Colors.white : Colors.black87),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 20,
+        color: isDark ? Colors.white24 : Colors.grey.shade400,
+      ),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
@@ -348,123 +399,150 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 0,
-        color: Colors.grey.shade100,
-        child: ListTile(
-          leading: Icon(
-            icon,
-            color: value ? AppTheme.primaryBlue : Colors.grey.shade400,
-            size: 28,
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          ),
-          trailing: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppTheme.primaryBlue,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppTheme.accentBlue.withValues(alpha: 0.1)
+              : AppTheme.primaryBlue.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+          size: 20,
         ),
       ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
+        ),
+      ),
+      trailing: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: AppTheme.primaryBlue,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
   Widget _buildModernProfileCard(AuthRepository authRepository) {
     final user = authRepository.currentUser;
-    if (user == null) {
-      return const SizedBox.shrink();
-    }
+    if (user == null) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 0,
-        color: Colors.blue.shade100,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: AppTheme.primaryBlue,
-                    child: Text(
-                      user.fullName.isNotEmpty
-                          ? user.fullName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.fullName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.email,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: user.isAdmin
-                          ? AppTheme.successGreen
-                          : AppTheme.primaryBlue,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      user.isAdmin ? 'Admin' : 'Utilisateur',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [AppTheme.darkBgSecondary, AppTheme.darkCardBg]
+              : [AppTheme.primaryBlue, AppTheme.primaryDark],
         ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 2,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 38,
+              backgroundColor: Colors.white,
+              child: Text(
+                user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: AppTheme.primaryBlue,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 32,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.fullName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user.email,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        user.isAdmin ? Icons.shield_rounded : Icons.person_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        user.isAdmin ? 'Administrateur' : 'Utilisateur',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1361,19 +1439,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange[200]!),
+                    color: AppTheme.warningOrange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.warningOrange.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.orange[700], size: 20),
-                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppTheme.warningOrange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Modification CRITIQUE - Soyez prudent',
                           style: TextStyle(
-                            color: Colors.orange[900],
+                            color: AppTheme.warningOrange,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
