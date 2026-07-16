@@ -361,4 +361,18 @@ class AuthRepository extends ChangeNotifier {
       return false;
     }
   }
+
+  /// Vérifie si la base de données ne contient aucun utilisateur
+  /// Utile pour accorder automatiquement le rôle Admin au premier inscrit
+  Future<bool> hasNoUsers() async {
+    try {
+      const sql = 'SELECT COUNT(*) as count FROM Account';
+      final result = await _db.queryOne(sql);
+      final count = result?['count'] as int? ?? 0;
+      return count == 0;
+    } catch (e) {
+      logger.e('Erreur lors du comptage des utilisateurs: $e');
+      return false;
+    }
+  }
 }
