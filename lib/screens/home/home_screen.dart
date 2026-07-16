@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(_pageTitles[_selectedIndex]),
-          centerTitle: true,
+          centerTitle: false,
           elevation: 2,
         ),
         drawer: SidebarNavigation(
