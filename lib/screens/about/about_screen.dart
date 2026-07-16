@@ -439,7 +439,6 @@ class AboutScreen extends StatelessWidget {
               color: isDark 
                   ? AppTheme.glassBorder.withValues(alpha: 0.1) 
                   : Colors.grey.withValues(alpha: 0.25),
-              width: 1,
             ),
             boxShadow: isDark ? [] : [
               BoxShadow(
