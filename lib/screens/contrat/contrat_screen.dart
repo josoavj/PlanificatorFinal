@@ -495,7 +495,7 @@ class _ContratScreenState extends State<ContratScreen> {
     Client? client,
     int numTraitements,
   ) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Détails du Contrat'),
@@ -1125,7 +1125,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
   /// Voir les factures du contrat (groupées par type de traitement)
   void _viewFactures(Contrat contrat) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Factures du Contrat'),
@@ -1476,7 +1476,7 @@ class _ContratScreenState extends State<ContratScreen> {
       text: 'REF-${DateTime.now().millisecondsSinceEpoch}',
     );
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text(' Détails Réparation'),
@@ -2042,7 +2042,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
     // Afficher le dialog de modification
     if (!mounted) return;
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setState) {
@@ -3294,7 +3294,7 @@ class _ContratScreenState extends State<ContratScreen> {
 
   /// Supprimer un contrat
   void _deleteContrat(Contrat contrat) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirmer la suppression'),
@@ -3353,7 +3353,7 @@ class _ContratScreenState extends State<ContratScreen> {
     DateTime? selectedDate = DateTime.now();
     String motif = '';
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
