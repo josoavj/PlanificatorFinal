@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../core/theme.dart';
 
 class AppDialogs {
+  /// Affiche un dialogue avec un arrière-plan flouté
+  static Future<T?> showBlurDialog<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool barrierDismissible = true,
+  }) {
+    return showDialog<T>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      barrierColor: Colors.black.withValues(alpha: 0.1),
+      builder: (BuildContext ctx) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: builder(ctx),
+        );
+      },
+    );
+  }
+
   // Confirmation dialog simple
   static Future<bool?> confirmDelete(
     BuildContext context, {
     String title = 'Confirmation',
     String message = 'Êtes-vous sûr de vouloir supprimer ?',
   }) {
-    return showDialog<bool>(
+    return showBlurDialog<bool>(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
@@ -36,7 +56,7 @@ class AppDialogs {
     String confirmText = 'Confirmer',
     String cancelText = 'Annuler',
   }) {
-    return showDialog<bool>(
+    return showBlurDialog<bool>(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
@@ -66,7 +86,7 @@ class AppDialogs {
   }) {
     final controller = TextEditingController(text: initialValue);
 
-    return showDialog<String>(
+    return showBlurDialog<String>(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
@@ -94,7 +114,7 @@ class AppDialogs {
     required String title,
     required String message,
   }) {
-    return showDialog(
+    return showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
@@ -115,7 +135,7 @@ class AppDialogs {
     required String message,
     String title = 'Erreur',
   }) {
-    return showDialog(
+    return showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
@@ -139,27 +159,25 @@ class AppDialogs {
     required String Function(T) itemLabel,
     T? selectedItem,
   }) {
-    return showDialog<T>(
+    return showBlurDialog<T>(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
         content: SingleChildScrollView(
-          child: RadioGroup<T>(
-            groupValue: selectedItem,
-            onChanged: (value) {
-              Navigator.of(ctx).pop(value);
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: items
-                  .map(
-                    (item) => RadioListTile<T>(
-                      title: Text(itemLabel(item)),
-                      value: item,
-                    ),
-                  )
-                  .toList(),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: items
+                .map(
+                  (item) => RadioListTile<T>(
+                    title: Text(itemLabel(item)),
+                    value: item,
+                    groupValue: selectedItem,
+                    onChanged: (value) {
+                      Navigator.of(ctx).pop(value);
+                    },
+                  ),
+                )
+                .toList(),
           ),
         ),
       ),
@@ -171,7 +189,7 @@ class AppDialogs {
     BuildContext context, {
     String message = 'Chargement...',
   }) {
-    showDialog(
+    showBlurDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext ctx) => Dialog(

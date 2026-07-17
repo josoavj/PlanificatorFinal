@@ -6,6 +6,7 @@ import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
+import '../../widgets/features_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -87,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.info_outline,
                       title: 'À propos',
                       subtitle: 'Informations sur la plateforme',
-                      onTap: () => Navigator.pushNamed(context, '/about'),
+                      onTap: () => FeaturesDialog.show(context),
                     ),
                     _buildModernCard(
                       icon: Icons.help_outline,
@@ -429,7 +430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     bool showPassword = false;
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
@@ -577,7 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAllProfilesDialog(BuildContext context) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Liste des profils'),
@@ -825,7 +826,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Logs & Débogage
   void _showLogViewer(BuildContext context) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (context) => SizedBox(
         width: MediaQuery.of(context).size.width * 0.95,
@@ -899,7 +900,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     int hour = notifRepo.notificationHour;
     int minute = notifRepo.notificationMinute;
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Configurer les notifications'),

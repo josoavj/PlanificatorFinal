@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
+import 'app_dialogs.dart';
 
 class SidebarNavigation extends StatefulWidget {
   final int selectedIndex;
@@ -286,7 +287,7 @@ class _SidebarNavigationState extends State<SidebarNavigation>
   }
 
   void _showLogoutConfirm(BuildContext context) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(

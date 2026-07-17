@@ -545,7 +545,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Affiche les détails du client dans un AlertDialog avec sections
   void _showClientDetails(BuildContext context, Client client) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: const Text('Détails du Client'),
@@ -735,7 +735,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Afficher le planning groupé par type de traitement pour un client
   void _showClientPlanningDialog(BuildContext context, Client client) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Row(
@@ -1024,7 +1024,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
     final nifController = TextEditingController(text: client.nif);
     final statController = TextEditingController(text: client.stat);
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(

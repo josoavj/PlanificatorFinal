@@ -50,7 +50,6 @@ class AppTheme {
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: isDark ? glassBorder.withValues(alpha: 0.1) : mediumGrey.withValues(alpha: 0.2),
-        width: 1,
       ),
       boxShadow: (showShadow && !isDark) ? softShadow : null,
     );

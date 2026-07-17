@@ -7,6 +7,8 @@ import '../../utils/excel_utils.dart';
 import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
 import '../../utils/app_snackbars.dart';
+import '../../widgets/app_dialogs.dart';
+
 
 final logger = createLoggerWithFileOutput(name: 'export_screen');
 
@@ -847,7 +849,7 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   void _showSuccessDialog(BuildContext context, String title, String message) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.check_circle, color: Colors.green[600], size: 48),
@@ -865,7 +867,7 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   void _showErrorDialog(BuildContext context, String title, String message) {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         icon: Icon(Icons.error, color: Colors.red[600], size: 48),

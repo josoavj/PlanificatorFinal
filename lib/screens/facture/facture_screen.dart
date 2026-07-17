@@ -6,6 +6,7 @@ import '../../models/index.dart';
 import '../../core/theme.dart';
 import '../../utils/number_formatter.dart';
 import '../../services/logging_service.dart';
+import '../../widgets/app_dialogs.dart';
 
 class FactureScreen extends StatefulWidget {
   const FactureScreen({super.key});
@@ -462,7 +463,7 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
     );
     final prixNewCtrl = TextEditingController();
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(

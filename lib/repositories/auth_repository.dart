@@ -224,8 +224,13 @@ class AuthRepository extends ChangeNotifier {
     }
   }
 
-  /// Met à jour le profil utilisateur
-  Future<bool> updateProfile(String nom, String prenom) async {
+  /// Met à jour le profil utilisateur complet
+  Future<bool> updateProfile({
+    required String nom,
+    required String prenom,
+    required String email,
+    required String username,
+  }) async {
     if (_currentUser == null) {
       _errorMessage = 'Aucun utilisateur connecté';
       return false;
@@ -236,21 +241,36 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // 1. Vérifier si le username ou email est déjà pris par quelqu'un d'autre
+      const checkSql = 'SELECT id_compte FROM Account WHERE (username = ? OR email = ?) AND id_compte != ?';
+      final existing = await _db.query(checkSql, [username, email, _currentUser!.userId]);
+      
+      if (existing.isNotEmpty) {
+        _errorMessage = 'Cet identifiant ou cet email est déjà utilisé par un autre compte';
+        return false;
+      }
+
+      // 2. Mettre à jour en base de données
       const sql = '''
         UPDATE Account
-        SET nom = ?, prenom = ?
+        SET nom = ?, prenom = ?, email = ?, username = ?
         WHERE id_compte = ?
       ''';
 
-      await _db.execute(sql, [nom, prenom, _currentUser!.userId]);
+      await _db.execute(sql, [nom, prenom, email, username, _currentUser!.userId]);
 
-      _currentUser = _currentUser!.copyWith(nom: nom, prenom: prenom);
+      // 3. Mettre à jour l'état local
+      _currentUser = _currentUser!.copyWith(
+        nom: nom,
+        prenom: prenom,
+        email: email,
+      );
 
-      logger.i('Profil de l\'utilisateur ${_currentUser!.userId} mis à jour');
+      logger.i('Profil complet de l\'utilisateur ${_currentUser!.userId} mis à jour');
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la mise à jour du profil: $e');
+      logger.e('Erreur lors de la mise à jour complète du profil: $e');
       return false;
     } finally {
       _isLoading = false;
