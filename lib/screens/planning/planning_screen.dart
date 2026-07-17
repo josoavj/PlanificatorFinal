@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import '../../services/logging_service.dart';
+import '../../widgets/app_dialogs.dart';
 import 'signalement_dialog.dart';
 import 'remark_dialog.dart';
 import '../../utils/app_snackbars.dart';
@@ -478,7 +479,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       logger.i(' PlanningDetails créé: ${planningDetail.planningDetailId}');
 
       // Création d'une facture valide
-      showDialog(
+      AppDialogs.showBlurDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
@@ -523,7 +524,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                       Navigator.pop(ctx);
 
                       // Afficher le RemarqueDialog avec la vraie facture
-                      showDialog(
+                      AppDialogs.showBlurDialog(
                         context: context,
                         builder: (ctx2) => RemarqueDialog(
                           planningDetail: planningDetail,
@@ -587,7 +588,7 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       logger.i(' PlanningDetails créé: ${planningDetail.planningDetailId}');
 
       // Afficher le nouveau SignalementDialog moderne
-      showDialog(
+      AppDialogs.showBlurDialog(
         context: context,
         builder: (ctx) => SignalementDialog(
           planningDetail: planningDetail,
