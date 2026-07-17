@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:planificator/services/logging_service.dart';
+import 'app_dialogs.dart';
+
 
 class LogViewerDialog extends StatefulWidget {
   final bool isDialog;
@@ -110,7 +112,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   }
 
   void _clearLogs() {
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirmer la suppression'),
