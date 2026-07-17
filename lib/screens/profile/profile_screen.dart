@@ -5,6 +5,7 @@ import '../../repositories/index.dart';
 import '../../services/index.dart';
 import '../../core/theme.dart';
 import '../../utils/app_snackbars.dart';
+import '../../widgets/app_dialogs.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -285,51 +286,171 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Logique de modification (reprise de Settings et adaptée)
+  // Logique de modification complète (Multi-étapes)
   void _showEditProfileDialog(BuildContext context, AuthRepository authRepo) async {
     final user = authRepo.currentUser!;
+    
+    // Charger le username actuel pour pré-remplir
+    final currentUsername = await _fetchUsername(user.userId);
+    
+    if (!mounted) return;
+
     final prenomCtrl = TextEditingController(text: user.prenom);
     final nomCtrl = TextEditingController(text: user.nom);
+    final emailCtrl = TextEditingController(text: user.email);
+    final usernameCtrl = TextEditingController(text: currentUsername);
+    
+    int currentStep = 1;
     bool isUpdating = false;
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Modifier le profil'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: prenomCtrl,
-                decoration: const InputDecoration(labelText: 'Prénom', prefixIcon: Icon(Icons.person_outline)),
+        builder: (context, setState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return AlertDialog(
+            title: Column(
+              children: [
+                const Text('Mise à jour du profil', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                // Indicateur d'étapes
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildStepIndicator(1, currentStep, 'Identité', isDark),
+                    Container(
+                      width: 40,
+                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      color: currentStep >= 2 ? AppTheme.primaryBlue : Colors.grey.withValues(alpha: 0.2),
+                    ),
+                    _buildStepIndicator(2, currentStep, 'Coordonnées', isDark),
+                  ],
+                ),
+              ],
+            ),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: currentStep == 1
+                    ? Column(
+                        key: const ValueKey(1),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Commençons par vos informations d\'identité publique.',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          TextField(
+                            controller: prenomCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Prénom',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: nomCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Nom',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        key: const ValueKey(2),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Ces informations sont utilisées pour votre connexion et les notifications.',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          TextField(
+                            controller: usernameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Identifiant (Username)',
+                              prefixIcon: Icon(Icons.badge_outlined),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: emailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Adresse Email',
+                              prefixIcon: Icon(Icons.alternate_email_rounded),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: nomCtrl,
-                decoration: const InputDecoration(labelText: 'Nom', prefixIcon: Icon(Icons.person_outline)),
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            actions: [
+              if (currentStep == 1)
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('ANNULER'),
+                ),
+              if (currentStep == 2)
+                TextButton(
+                  onPressed: isUpdating ? null : () => setState(() => currentStep = 1),
+                  child: const Text('RETOUR'),
+                ),
+              FilledButton(
+                onPressed: isUpdating
+                    ? null
+                    : () async {
+                        if (currentStep == 1) {
+                          if (prenomCtrl.text.isEmpty || nomCtrl.text.isEmpty) {
+                            AppSnackBars.showError(context, 'Nom et Prénom sont requis');
+                            return;
+                          }
+                          setState(() => currentStep = 2);
+                        } else {
+                          if (usernameCtrl.text.isEmpty || emailCtrl.text.isEmpty) {
+                            AppSnackBars.showError(context, 'L\'identifiant et l\'email sont requis');
+                            return;
+                          }
+                          if (!emailCtrl.text.contains('@')) {
+                            AppSnackBars.showError(context, 'Veuillez saisir un email valide');
+                            return;
+                          }
+
+                          setState(() => isUpdating = true);
+                          final success = await authRepo.updateProfile(
+                            nom: nomCtrl.text.trim(),
+                            prenom: prenomCtrl.text.trim(),
+                            email: emailCtrl.text.trim(),
+                            username: usernameCtrl.text.trim(),
+                          );
+                          
+                          if (mounted) {
+                            if (success) {
+                              Navigator.pop(ctx);
+                              AppSnackBars.showSuccess(context, 'Profil mis à jour avec succès');
+                            } else {
+                              setState(() => isUpdating = false);
+                              AppSnackBars.showError(context, authRepo.errorMessage ?? 'Erreur lors de la mise à jour');
+                            }
+                          }
+                        }
+                      },
+                child: isUpdating
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                    : Text(currentStep == 1 ? 'SUIVANT' : 'ENREGISTRER'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-            FilledButton(
-              onPressed: isUpdating ? null : () async {
-                setState(() => isUpdating = true);
-                final success = await authRepo.updateProfile(nomCtrl.text, prenomCtrl.text);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  if (success) {
-                    AppSnackBars.showSuccess(context, 'Profil mis à jour');
-                  } else {
-                    AppSnackBars.showError(context, authRepo.errorMessage ?? 'Erreur');
-                  }
-                }
-              },
-              child: isUpdating ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Enregistrer'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -341,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     int currentStep = 1;
     bool isUpdating = false;
 
-    showDialog(
+    AppDialogs.showBlurDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
