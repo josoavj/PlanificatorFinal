@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../repositories/index.dart';
 import '../../services/index.dart';
 import '../../core/theme.dart';
+import '../../widgets/index.dart';
 import 'widgets/profile_edit_dialog.dart';
 import 'widgets/change_password_dialog.dart';
 
@@ -37,30 +38,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 constraints: const BoxConstraints(maxWidth: 800),
                 child: Column(
                   children: [
-                    _buildSection(
+                    AppSection(
                       title: 'Mes Informations',
                       children: [
-                        _buildInfoTile(icon: Icons.person_outline_rounded, label: 'Nom complet', value: user.fullName),
-                        _buildInfoTile(icon: Icons.alternate_email_rounded, label: 'Email', value: user.email),
-                        _buildInfoTile(icon: Icons.badge_outlined, label: 'Identifiant', value: '...', future: _fetchUsername(user.userId)),
+                        AppInfoTile(icon: Icons.person_outline_rounded, label: 'Nom complet', value: user.fullName),
+                        AppInfoTile(icon: Icons.alternate_email_rounded, label: 'Email', value: user.email),
+                        _buildUsernameTile(user.userId),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildSection(
+                    AppSection(
                       title: 'Gestion du compte',
                       children: [
-                        _buildActionTile(icon: Icons.edit_outlined, title: 'Modifier le profil', subtitle: 'Mettre à jour vos informations personnelles', onTap: () async {
-                          final currentUsername = await _fetchUsername(user.userId);
-                          if (mounted) ProfileEditDialog.show(context, authRepo, currentUsername);
-                        }),
-                        _buildActionTile(icon: Icons.lock_reset_rounded, title: 'Changer le mot de passe', subtitle: 'Assurer la sécurité de votre accès', onTap: () => ChangePasswordDialog.show(context, authRepo)),
+                        AppActionCard(
+                          icon: Icons.edit_outlined,
+                          title: 'Modifier le profil',
+                          subtitle: 'Mettre à jour vos informations personnelles',
+                          onTap: () async {
+                            final currentUsername = await _fetchUsername(user.userId);
+                            if (mounted) ProfileEditDialog.show(context, authRepo, currentUsername);
+                          },
+                        ),
+                        AppActionCard(
+                          icon: Icons.lock_reset_rounded,
+                          title: 'Changer le mot de passe',
+                          subtitle: 'Assurer la sécurité de votre accès',
+                          onTap: () => ChangePasswordDialog.show(context, authRepo),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _buildSection(
+                    AppSection(
                       title: 'Statut & Activité',
                       children: [
-                        _buildInfoTile(icon: Icons.event_available_rounded, label: 'Membre depuis le', value: user.createdAt != null ? DateFormat('dd MMMM yyyy', 'fr_FR').format(user.createdAt!) : 'Date inconnue'),
+                        AppInfoTile(
+                          icon: Icons.event_available_rounded,
+                          label: 'Membre depuis le',
+                          value: user.createdAt != null 
+                              ? DateFormat('dd MMMM yyyy', 'fr_FR').format(user.createdAt!) 
+                              : 'Date inconnue',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 40),
@@ -90,36 +107,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> children}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(padding: const EdgeInsets.fromLTRB(16, 24, 16, 12), child: Text(title.toUpperCase(), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.5, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue))),
-        Container(decoration: AppTheme.cardDecoration(context, radius: 24), child: Material(color: Colors.transparent, child: Column(children: List.generate(children.length, (index) => Column(children: [children[index], if (index < children.length - 1) Divider(height: 1, indent: 60, endIndent: 16, color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1))]))))),
-      ],
-    );
-  }
-
-  Widget _buildInfoTile({required IconData icon, required String label, required String value, Future<String>? future}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ListTile(
-      leading: Icon(icon, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, size: 22),
-      title: Text(label, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600], fontWeight: FontWeight.bold)),
-      subtitle: future != null ? FutureBuilder<String>(future: future, builder: (context, snapshot) => Text(snapshot.data ?? '...', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600))) : Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-    );
-  }
-
-  Widget _buildActionTile({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ListTile(
-      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isDark ? AppTheme.accentBlue.withValues(alpha: 0.1) : AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, size: 20)),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[600])),
-      trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+  Widget _buildUsernameTile(int userId) {
+    return FutureBuilder<String>(
+      future: _fetchUsername(userId),
+      builder: (context, snapshot) {
+        return AppInfoTile(
+          icon: Icons.badge_outlined,
+          label: 'Identifiant',
+          value: snapshot.data ?? '...',
+        );
+      },
     );
   }
 

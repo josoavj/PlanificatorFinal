@@ -4,17 +4,11 @@ import 'core/app_initializer.dart';
 import 'services/index.dart';
 import 'repositories/index.dart';
 import 'config/database_config.dart';
+import 'config/app_routes.dart';
+import 'config/app_providers.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/setup/database_config_screen.dart';
-import 'screens/client/client_list_screen.dart';
-import 'screens/contrat/contrat_screen.dart';
-import 'screens/facture/facture_screen.dart';
-import 'screens/planning/planning_screen.dart';
-import 'screens/historique/historique_screen.dart';
-import 'screens/settings/settings_screen.dart';
-import 'screens/about/about_screen.dart';
 import 'core/theme.dart';
 
 void main() async {
@@ -67,29 +61,14 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return MaterialApp(
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
     return MultiProvider(
-      providers: [
-        // Provider du thème (doit être en premier pour être disponible partout)
-        ChangeNotifierProvider(create: (_) => ThemeProvider()..initialize()),
-
-        // Repositories
-        ChangeNotifierProvider(create: (_) => AuthRepository()),
-        ChangeNotifierProvider(create: (_) => ClientRepository()),
-        ChangeNotifierProvider(create: (_) => FactureRepository()),
-        ChangeNotifierProvider(create: (_) => ContratRepository()),
-        ChangeNotifierProvider(create: (_) => PlanningRepository()),
-        ChangeNotifierProvider(create: (_) => PlanningDetailsRepository()),
-        ChangeNotifierProvider(create: (_) => HistoriqueRepository()),
-        ChangeNotifierProvider(create: (_) => TypeTraitementRepository()),
-        ChangeNotifierProvider(create: (_) => RemarqueRepository()),
-        ChangeNotifierProvider(create: (_) => SignalementRepository()),
-        ChangeNotifierProvider(create: (_) => NotificationRepository()),
-      ],
+      providers: AppProviders.providers,
       child: Selector<ThemeProvider, ThemeMode>(
         selector: (_, themeProvider) => themeProvider.themeMode,
         builder: (context, themeMode, _) {
@@ -100,20 +79,9 @@ class _MyAppState extends State<MyApp> {
             darkTheme: AppTheme.darkTheme,
             locale: const Locale('fr', 'FR'),
             home: _isConfigured
-                ? _AuthGate()
+                ? const _AuthGate()
                 : DatabaseConfigScreen(onConfigured: _onConfigured),
-            routes: {
-              '/login': (context) => const LoginScreen(),
-              '/register': (context) => const RegisterScreen(),
-              '/home': (context) => const HomeScreen(),
-              '/clients': (context) => const ClientListScreen(),
-              '/contrats': (context) => const ContratScreen(),
-              '/factures': (context) => const FactureScreen(),
-              '/planning': (context) => const PlanningScreen(),
-              '/historique': (context) => const HistoriqueScreen(),
-              '/about': (context) => const AboutScreen(),
-              '/settings': (context) => const SettingsScreen(),
-            },
+            routes: AppRoutes.routes,
           );
         },
       ),
