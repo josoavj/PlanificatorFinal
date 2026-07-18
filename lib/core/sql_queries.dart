@@ -146,16 +146,24 @@ class SqlQueries {
   static const String countTreatmentsByContrat = 'SELECT COUNT(*) as count FROM Traitement WHERE contrat_id = ?';
 
   static const String getTraitementsDetailedByContrat = '''
-    SELECT DISTINCT t.traitement_id, t.contrat_id, tt.typeTraitement as nom,
-           tt.categorieTraitement as type,
-           COALESCE(GROUP_CONCAT(DISTINCT pd.statut), 'Pas de planifications') as statuts,
-           COUNT(DISTINCT pd.planning_detail_id) as planning_count
+    SELECT 
+        t.traitement_id, 
+        t.contrat_id, 
+        tt.typeTraitement as nom,
+        tt.categorieTraitement as type,
+        (SELECT GROUP_CONCAT(DISTINCT pd_inner.statut) 
+         FROM PlanningDetails pd_inner 
+         WHERE pd_inner.planning_id = (SELECT p_inner.planning_id FROM Planning p_inner WHERE p_inner.traitement_id = t.traitement_id LIMIT 1)) as statuts,
+        (SELECT COUNT(*) 
+         FROM PlanningDetails pd_count 
+         WHERE pd_count.planning_id = (SELECT p_count.planning_id FROM Planning p_count WHERE p_count.traitement_id = t.traitement_id LIMIT 1)) as total_planif,
+        (SELECT COUNT(*) 
+         FROM PlanningDetails pd_done 
+         WHERE pd_done.planning_id = (SELECT p_done.planning_id FROM Planning p_done WHERE p_done.traitement_id = t.traitement_id LIMIT 1) 
+         AND pd_done.statut = 'Effectué') as planif_faites
     FROM Traitement t
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-    LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
-    LEFT JOIN PlanningDetails pd ON p.planning_id = pd.planning_id
     WHERE t.contrat_id = ?
-    GROUP BY t.traitement_id
   ''';
 
   static const String getFuturePlanningsByTreatment = 'SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?';
