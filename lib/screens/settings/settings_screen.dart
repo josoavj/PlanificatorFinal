@@ -550,12 +550,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     if (!context.mounted) return;
                     Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(' Configuration sauvegardée'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    AppSnackBars.showSuccess(context, ' Configuration sauvegardée');
                   } else {
                     if (!context.mounted) return;
                     AppDialogs.error(
@@ -840,22 +835,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final logsDir = await log.getLogsDirectory();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Logs sauvegardés: $logsDir'),
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBars.showSuccess(context, 'Logs sauvegardés: $logsDir');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBars.showError(context, 'Erreur: $e');
     }
   }
 
@@ -870,12 +853,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         log.clear();
         await log.clearLogFiles();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logs effacés avec succès'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBars.showSuccess(context, 'Logs effacés avec succès');
       }
     });
   }
@@ -1040,14 +1018,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 minute: minute,
               );
               if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Notification planifiée à ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              AppSnackBars.showSuccess(context, 'Notification planifiée à ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
               Navigator.pop(ctx);
             },
             child: const Text('Confirmer'),
