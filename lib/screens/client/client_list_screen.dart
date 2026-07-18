@@ -166,19 +166,18 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Construit l'en-tête avec gradient et barre de recherche
   Widget _buildHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[600]!, Colors.blue[400]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -191,12 +190,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   controller: _searchController,
                   focusNode: _searchFocusNode,
                   decoration: InputDecoration(
-                    hintText: 'Rechercher par nom, email...',
-                    hintStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    hintText: 'Rechercher un client...',
+                    hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.white70),
+                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white54 : Colors.white70),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
+                            icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
                             onPressed: () {
                               _searchController.clear();
                               setState(() {
@@ -206,17 +205,17 @@ class _ClientListScreenState extends State<ClientListScreen> {
                           )
                         : null,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.15),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   onChanged: (value) {
                     setState(() {
                       _searchQuery = value;
@@ -226,46 +225,55 @@ class _ClientListScreenState extends State<ClientListScreen> {
               ),
               const SizedBox(width: 12),
               // Bouton d'actualisation
-              Tooltip(
-                message: 'Actualiser',
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () async {
-                      _searchQuery = '';
-                      _searchController.clear();
-                      await context.read<ClientRepository>().loadClients();
-                    },
-                  ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+                  onPressed: () async {
+                    _searchQuery = '';
+                    _searchController.clear();
+                    await context.read<ClientRepository>().loadClients();
+                  },
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           // Badge nombre de clients
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Selector<ClientRepository, int>(
-              selector: (_, repo) => _filterClientsBySearch(repo.clients).length,
-              builder: (context, count, _) {
-                return Text(
-                  '$count ${count > 1 ? 'clients' : 'client'}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                );
-              },
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: Selector<ClientRepository, int>(
+                  selector: (_, repo) => _filterClientsBySearch(repo.clients).length,
+                  builder: (context, count, _) {
+                    return Row(
+                      children: [
+                        const Icon(Icons.people_alt_rounded, color: Colors.white70, size: 14),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$count ${count > 1 ? 'clients' : 'client'}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -277,153 +285,93 @@ class _ClientListScreenState extends State<ClientListScreen> {
     BuildContext context,
     Client client,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showClientDetails(context, client),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // En-tête avec avatar, nom et catégorie
-                Row(
-                  children: [
-                    // Avatar avec gradient
-                    _buildAvatar(client),
-                    const SizedBox(width: 12),
-                    // Informations client
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  client.fullName,
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      child: Container(
+        decoration: AppTheme.cardDecoration(context, radius: 24),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showClientDetails(context, client),
+            borderRadius: BorderRadius.circular(24),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // En-tête avec avatar, nom et catégorie
+                  Row(
+                    children: [
+                      // Avatar optimisé
+                      _buildAvatar(client),
+                      const SizedBox(width: 16),
+                      // Informations client
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              client.fullName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: isDark ? Colors.white : Colors.black87,
+                                letterSpacing: -0.3,
                               ),
-                              // Badge catégorie
-                              _buildCategoryBadge(client.categorie),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          // Email
-                          if (client.email.isNotEmpty)
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            // Email et badge catégorie
                             Row(
                               children: [
-                                Icon(
-                                  Icons.email_outlined,
-                                  size: 16,
-                                  color: Colors.grey[500],
-                                ),
-                                const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    client.email,
+                                    client.email.isNotEmpty ? client.email : 'Pas d\'email',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
+                                      color: isDark ? Colors.white38 : Colors.grey[600],
                                       fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                _buildCategoryBadge(client.categorie),
                               ],
                             ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Chips axe et traitements
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoChip(
-                        icon: Icons.location_on_outlined,
-                        label: client.axe,
-                        color: Colors.orange[100],
-                        textColor: Colors.orange[700],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildInfoChip(
-                        icon: Icons.description_outlined,
-                        label: '${client.treatmentCount} traitement(s)',
-                        color: Colors.green[100],
-                        textColor: Colors.green[700],
-                      ),
-                    ),
-                  ],
-                ),
-                if (client.telephone.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Chips info avec couleurs vibrantes
                   Row(
                     children: [
-                      Icon(
-                        Icons.phone_outlined,
-                        size: 16,
-                        color: Colors.grey[600],
+                      Expanded(
+                        child: _buildInfoChip(
+                          context: context,
+                          icon: Icons.location_on_outlined,
+                          label: client.axe,
+                          color: isDark ? AppTheme.darkWarning : Colors.orange.shade700,
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        client.telephone,
-                        style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildInfoChip(
+                          context: context,
+                          icon: Icons.assignment_outlined,
+                          label: '${client.treatmentCount} traitement(s)',
+                          color: isDark ? AppTheme.darkSuccess : AppTheme.successGreen,
+                        ),
                       ),
                     ],
                   ),
                 ],
-                const SizedBox(height: 12),
-                // Bouton d'action moderne
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.visibility, size: 18),
-                      label: const Text('Voir les détails'),
-                      onPressed: () => _showClientDetails(context, client),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[600],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -434,21 +382,30 @@ class _ClientListScreenState extends State<ClientListScreen> {
   /// Construit l'avatar avec gradient
   Widget _buildAvatar(Client client) {
     return Container(
-      width: 56,
-      height: 56,
+      width: 52,
+      height: 52,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue[400]!, Colors.blue[600]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.primaryBlue, AppTheme.primaryDark],
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBlue.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Center(
         child: Text(
           client.fullName.isNotEmpty ? client.fullName[0].toUpperCase() : '?',
           style: const TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 22,
           ),
         ),
       ),
@@ -457,18 +414,21 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Construit le badge de catégorie
   Widget _buildCategoryBadge(String categorie) {
+    final color = _getCategoryColor(categorie);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _getCategoryColor(categorie),
-        borderRadius: BorderRadius.circular(20),
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
-        categorie,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+        categorie.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -476,27 +436,29 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Construit un chip d'information
   Widget _buildInfoChip({
+    required BuildContext context,
     required IconData icon,
     required String label,
-    required Color? color,
-    required Color? textColor,
+    required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 6),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
-                color: textColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black87,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
