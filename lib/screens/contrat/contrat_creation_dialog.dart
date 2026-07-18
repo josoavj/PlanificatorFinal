@@ -8,11 +8,8 @@ import 'package:collection/collection.dart';
 import '../../core/theme.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
-import '../../utils/date_helper.dart';
-import '../../utils/number_formatter.dart';
 import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
-import '../../widgets/index.dart';
 
 class ContratCreationDialog extends StatefulWidget {
   final int? clientId;
@@ -80,8 +77,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           ],
         ),
       );
-      if (resume == true) _loadSavedProgress();
-      else _clearSavedProgress();
+      if (resume == true) {
+        _loadSavedProgress();
+      } else {
+        _clearSavedProgress();
+      }
     }
   }
 
@@ -419,7 +419,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           const SizedBox(width: 16),
           const Text('Contrat à durée déterminée ?', style: TextStyle(fontWeight: FontWeight.w600)),
           const Spacer(),
-          Switch(value: _isDeterminee, activeColor: AppTheme.primaryBlue, onChanged: (v) => setState(() => _isDeterminee = v)),
+          Switch(value: _isDeterminee, activeThumbColor: AppTheme.primaryBlue, onChanged: (v) => setState(() => _isDeterminee = v)),
           if (_isDeterminee) ...[
             const SizedBox(width: 20),
             SizedBox(width: 100, child: _buildModernField(_dureeContrat, 'Mois', Icons.numbers, isNumeric: true)),
@@ -492,7 +492,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _clientCategorie.text,
+            initialValue: _clientCategorie.text,
             decoration: InputDecoration(labelText: 'Catégorie Client', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
             items: ['Particulier', 'Organisation', 'Société'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (v) => setState(() => _clientCategorie.text = v!),
@@ -501,7 +501,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         const SizedBox(width: 20),
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _clientAxe.text,
+            initialValue: _clientAxe.text,
             decoration: InputDecoration(labelText: 'Axe Géographique', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
             items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (v) => setState(() => _clientAxe.text = v!),
@@ -534,8 +534,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             OutlinedButton.icon(
               onPressed: () {
                 setState(() {
-                  if (_mainStep == 2 && _treatmentIndex > 0) _treatmentIndex--;
-                  else _mainStep--;
+                  if (_mainStep == 2 && _treatmentIndex > 0) {
+                    _treatmentIndex--;
+                  } else {
+                    _mainStep--;
+                  }
                 });
               }, 
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16), 
