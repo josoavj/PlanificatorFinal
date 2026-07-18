@@ -505,12 +505,55 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Affiche la boîte de dialogue d'édition
 
+  Widget _buildDialogHeader(BuildContext context, String title, String subtitle) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.1)),
+          ),
+          child: Text(
+            subtitle.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.primaryBlue,
+              letterSpacing: 1.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubtleDivider(bool isDark) {
+    return Divider(
+      height: 1,
+      thickness: 0.5,
+      indent: 52,
+      endIndent: 16,
+      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
+    );
+  }
+
   /// Affiche les détails du client dans un AlertDialog avec sections
   void _showClientDetails(BuildContext context, Client client) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     AppDialogs.showBlurDialog(
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Détails du Client'),
+        title: _buildDialogHeader(context, 'Détails du Client', client.fullName),
         content: SizedBox(
           width: 550,
           child: SingleChildScrollView(
@@ -518,139 +561,149 @@ class _ClientListScreenState extends State<ClientListScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ═════════════════════════════════════════
                 // SECTION: INFORMATIONS PERSONNELLES
-                // ═════════════════════════════════════════
-                _buildSectionHeader('INFORMATIONS PERSONNELLES'),
-                _buildDetailRow('Nom', client.nom),
-                _buildDetailRow(client.prenomLabel, client.prenom),
-                _buildDetailRow('Email', client.email),
-                _buildDetailRow('Téléphone', client.telephone),
-                const SizedBox(height: 16),
-
-                // ═════════════════════════════════════════
-                // SECTION: ADRESSE & LOCALISATION
-                // ═════════════════════════════════════════
-                _buildSectionHeader('ADRESSE & LOCALISATION'),
-                _buildDetailRow('Adresse', client.adresse),
-                _buildDetailRow('Axe', client.axe),
-                const SizedBox(height: 16),
-
-                // ═════════════════════════════════════════
-                // SECTION: CATÉGORIE & INFOS FISCALES
-                // ═════════════════════════════════════════
-                _buildSectionHeader('CATÉGORIE & INFOS'),
-                _buildDetailRow('Catégorie', client.categorie),
-                if (client.categorie == 'Société') ...[
-                  _buildDetailRow('NIF', client.nif),
-                  _buildDetailRow('STAT', client.stat),
-                ],
-                const SizedBox(height: 16),
-
-                // ═════════════════════════════════════════
-                // SECTION: TRAITEMENTS ASSOCIÉS
-                // ═════════════════════════════════════════
-                _buildSectionHeader('TRAITEMENTS'),
-                _buildDetailRow(
-                  'Nombre de traitements',
-                  '${client.treatmentCount}',
+                _buildSectionHeader('Identité'),
+                Container(
+                  decoration: AppTheme.cardDecoration(context, radius: 24),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        _buildDetailRow(Icons.person_outline, 'Nom', client.nom),
+                        _buildSubtleDivider(isDark),
+                        _buildDetailRow(Icons.person_pin_outlined, client.prenomLabel, client.prenom),
+                        _buildSubtleDivider(isDark),
+                        _buildDetailRow(Icons.alternate_email_rounded, 'Email', client.email),
+                        _buildSubtleDivider(isDark),
+                        _buildDetailRow(Icons.phone_outlined, 'Téléphone', client.telephone),
+                      ],
+                    ),
+                  ),
                 ),
-                if (client.treatmentCount > 0) ...[
-                  const SizedBox(height: 8),
+                const SizedBox(height: 24),
+
+                // SECTION: ADRESSE & LOCALISATION
+                _buildSectionHeader('Localisation'),
+                Container(
+                  decoration: AppTheme.cardDecoration(context, radius: 24),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        _buildDetailRow(Icons.location_on_outlined, 'Adresse', client.adresse),
+                        _buildSubtleDivider(isDark),
+                        _buildDetailRow(Icons.map_outlined, 'Secteur / Axe', client.axe),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // SECTION: CATÉGORIE & INFOS FISCALES
+                _buildSectionHeader('Classification'),
+                Container(
+                  decoration: AppTheme.cardDecoration(context, radius: 24),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      children: [
+                        _buildDetailRow(Icons.category_outlined, 'Catégorie', client.categorie),
+                        if (client.categorie == 'Société') ...[
+                          _buildSubtleDivider(isDark),
+                          _buildDetailRow(Icons.description_outlined, 'NIF', client.nif),
+                          _buildSubtleDivider(isDark),
+                          _buildDetailRow(Icons.badge_outlined, 'STAT', client.stat),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // SECTION: TRAITEMENTS ASSOCIÉS
+                _buildSectionHeader('Services actifs'),
+                if (client.treatmentCount > 0)
                   FutureBuilder<List<Map<String, dynamic>>>(
                     future: _loadTraitementsByClient(client.clientId),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         );
                       }
 
-                      if (snapshot.hasError) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'Erreur: ${snapshot.error}',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                            ),
-                          ),
-                        );
+                      final traitements = snapshot.data ?? [];
+                      if (traitements.isEmpty) {
+                        return const Center(child: Text('Aucun traitement trouvé', style: TextStyle(fontSize: 12, color: Colors.grey)));
                       }
 
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text('Aucun traitement'),
-                        );
-                      }
-
-                      final traitements = snapshot.data!;
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: traitements.length,
-                        itemBuilder: (context, index) {
-                          final t = traitements[index];
+                      return Column(
+                        children: traitements.map((t) {
                           return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  t['nom'] ?? 'Traitement',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: AppTheme.cardDecoration(context, radius: 16),
+                            child: ListTile(
+                              dense: true,
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Type: ${t['type'] ?? '-'}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
+                                child: const Icon(Icons.medical_services_outlined, size: 18, color: AppTheme.primaryBlue),
+                              ),
+                              title: Text(
+                                t['nom'] ?? 'Traitement',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              subtitle: Text(
+                                t['type'] ?? '-',
+                                style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600]),
+                              ),
                             ),
                           );
-                        },
+                        }).toList(),
                       );
                     },
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: AppTheme.cardDecoration(context, radius: 24),
+                    child: Column(
+                      children: [
+                        Icon(Icons.assignment_late_outlined, color: isDark ? Colors.white10 : Colors.grey[300], size: 32),
+                        const SizedBox(height: 8),
+                        Text('Aucun traitement pour ce client', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey[500], fontSize: 12)),
+                      ],
+                    ),
                   ),
-                ],
               ],
             ),
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
+            child: const Text('FERMER'),
           ),
           if (client.treatmentCount > 0)
-            ElevatedButton.icon(
-              icon: const Icon(Icons.calendar_today, size: 18),
-              label: const Text('Planning'),
+            FilledButton.icon(
+              icon: const Icon(Icons.calendar_month_rounded, size: 18),
+              label: const Text('PLANNING'),
               onPressed: () {
                 Navigator.of(ctx).pop();
                 _showClientPlanningDialog(context, client);
               },
             ),
           OutlinedButton.icon(
-            icon: const Icon(Icons.edit, size: 18),
-            label: const Text('Éditer'),
+            icon: const Icon(Icons.edit_rounded, size: 18),
+            label: const Text('ÉDITER'),
             onPressed: () {
               Navigator.of(ctx).pop();
               _showEditClientDialog(context, client);
@@ -697,56 +750,35 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   /// Afficher le planning groupé par type de traitement pour un client
   void _showClientPlanningDialog(BuildContext context, Client client) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.calendar_month, color: AppTheme.primaryBlue),
-            const SizedBox(width: 12),
-            Text('Planning pour ${client.fullName}'),
-          ],
-        ),
+        title: _buildDialogHeader(context, 'Parcours Planning', client.fullName),
         content: SizedBox(
           width: 550,
           child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
             future: _loadClientTreatmentsByType(client.clientId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 32,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Erreur: ${snapshot.error}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ],
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(),
                   ),
                 );
               }
 
               final groupedTreatments = snapshot.data ?? {};
-
               if (groupedTreatments.isEmpty) {
-                return const Center(
+                return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.event_busy, size: 48, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('Aucun traitement trouvé'),
+                      Icon(Icons.event_busy_rounded, size: 48, color: isDark ? Colors.white10 : Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      const Text('Aucun traitement planifié'),
                     ],
                   ),
                 );
@@ -756,129 +788,126 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 shrinkWrap: true,
                 itemCount: groupedTreatments.length,
                 itemBuilder: (context, index) {
-                  final typeTraitement = groupedTreatments.keys.elementAt(
-                    index,
-                  );
+                  final typeTraitement = groupedTreatments.keys.elementAt(index);
                   final traitements = groupedTreatments[typeTraitement] ?? [];
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header du type de traitement
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                      // Header du type de traitement (Moderne)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12, top: 16),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              typeTraitement,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: Colors.blue[900],
+                            Container(
+                              width: 3,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryBlue,
+                                borderRadius: BorderRadius.circular(2),
                               ),
                             ),
+                            const SizedBox(width: 12),
                             Text(
-                              '${traitements.length} traitement(s)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue[700],
+                              typeTraitement.toUpperCase(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                                color: AppTheme.primaryBlue,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${traitements.length}',
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      // Liste des plannings
+                      
+                      // Liste des plannings style "Vibrant Glass"
                       ...traitements.map((planning) {
-                        final dateStr = planning['date_planification'] != null
-                            ? DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(
-                                planning['date_planification'] as DateTime,
-                              )
-                            : 'Date N/A';
+                        final date = planning['date_planification'] as DateTime?;
+                        final dateStr = date != null 
+                            ? DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(date)
+                            : 'Date inconnue';
+                        
                         final parts = dateStr.split(' ');
-                        if (parts.isNotEmpty) {
-                          parts[0] =
-                              parts[0][0].toUpperCase() + parts[0].substring(1);
-                        }
-                        if (parts.length > 2) {
-                          parts[2] =
-                              parts[2][0].toUpperCase() + parts[2].substring(1);
-                        }
+                        if (parts.isNotEmpty) parts[0] = parts[0][0].toUpperCase() + parts[0].substring(1);
+                        if (parts.length > 2) parts[2] = parts[2][0].toUpperCase() + parts[2].substring(1);
                         final capitalizedDate = parts.join(' ');
 
+                        final etat = planning['etat'] as String? ?? '-';
+                        final isEffectue = etat.toLowerCase().contains('effectué');
+                        final statusColor = isEffectue 
+                            ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen)
+                            : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
+
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border.all(
-                              color: Colors.grey[300]!,
-                              width: 0.5,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: AppTheme.cardDecoration(context, radius: 16),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Container(
+                                  width: 4,
+                                  decoration: BoxDecoration(
+                                    color: statusColor,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      bottomLeft: Radius.circular(16),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          capitalizedDate,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Réf: ${planning['contrat_reference']}',
+                                          style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[600]),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: statusColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        etat.toUpperCase(),
+                                        style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      capitalizedDate,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    planning['etat'] ?? '-',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: _getStatusColor(
-                                        planning['etat'] as String?,
-                                      ),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Contrat: ${planning['contrat_reference']}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  Text(
-                                    'Axe: ${planning['axe']}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
                           ),
                         );
                       }),
-                      const SizedBox(height: 12),
                     ],
                   );
                 },
@@ -889,7 +918,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
+            child: const Text('RETOUR AUX DÉTAILS'),
           ),
         ],
       ),
@@ -1029,7 +1058,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   // ═════════════════════════════════════════
                   // SECTION: CATÉGORIE & INFOS FISCALES
                   // ═════════════════════════════════════════
-                  _buildSectionHeader(' CATÉGORIE & INFOS'),
+                  _buildSectionHeader('CATÉGORIE & INFOS'),
                   _buildCategoryDropdown((value) {
                     setState(() {
                       selectedCategorie = value;
@@ -1055,7 +1084,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '🏢 Informations Fiscales',
+                            'Informations Fiscales',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.blue[700],
@@ -1232,57 +1261,66 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   /// Déterminer la couleur du statut
-  Color _getStatusColor(String? status) {
-    if (status == null) return Colors.grey;
-    final lower = status.toLowerCase();
-    if (lower.contains('complété') || lower.contains('done')) {
-      return Colors.green;
-    }
-    if (lower.contains('en attente') || lower.contains('pending')) {
-      return Colors.orange;
-    }
-    if (lower.contains('annulé') || lower.contains('cancelled')) {
-      return Colors.red;
-    }
-    return Colors.grey;
-  }
-
-  /// Construit un header de section (style Contrat)
+  /// Construit un header de section
   Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.blue,
-        ),
-      ),
-    );
-  }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  /// Construit une ligne de détail (style Contrat)
-  Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          Container(
+            width: 4,
+            height: 14,
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-          Flexible(
-            child: Text(
-              value.isNotEmpty ? value : '-',
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-              textAlign: TextAlign.end,
+          const SizedBox(width: 10),
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Construit une ligne de détail avec icône
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      leading: Icon(
+        icon,
+        size: 20,
+        color: isDark ? AppTheme.accentBlue.withValues(alpha: 0.7) : AppTheme.primaryBlue.withValues(alpha: 0.7),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white38 : Colors.grey[500],
+        ),
+      ),
+      subtitle: Text(
+        value.isNotEmpty ? value : '-',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : Colors.black87,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
     );
   }
 }
