@@ -520,7 +520,6 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         axe: _axeController.text,
       );
 
-      final scaff = ScaffoldMessenger.of(context);
       context
           .read<ClientRepository>()
           .updateClient(updated)
