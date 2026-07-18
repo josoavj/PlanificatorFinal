@@ -344,7 +344,7 @@ class _CalendarWidget extends StatelessWidget {
               todayDecoration: BoxDecoration(
                 color: AppTheme.primaryBlue.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.primaryBlue, width: 1),
+                border: Border.all(color: AppTheme.primaryBlue),
               ),
               todayTextStyle: TextStyle(
                 color: isDark ? Colors.white : AppTheme.primaryBlue,
@@ -355,7 +355,6 @@ class _CalendarWidget extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               markersMaxCount: 3,
-              outsideDaysVisible: true,
               defaultTextStyle: TextStyle(color: isDark ? Colors.white : Colors.black87),
               weekendTextStyle: TextStyle(color: isDark ? AppTheme.accentBlue : Colors.blue.shade700),
               outsideTextStyle: TextStyle(color: isDark ? Colors.white24 : Colors.grey.shade400),
