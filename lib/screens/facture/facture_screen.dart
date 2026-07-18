@@ -7,6 +7,7 @@ import '../../core/theme.dart';
 import '../../utils/number_formatter.dart';
 import '../../services/logging_service.dart';
 import '../../widgets/app_dialogs.dart';
+import '../../utils/app_snackbars.dart';
 
 class FactureScreen extends StatefulWidget {
   const FactureScreen({super.key});
@@ -438,23 +439,12 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
   void _showModifierPrixDialog(Facture facture) {
     //  Vérifier si la facture est déjà payée
     if (facture.etat == 'Payé' || facture.etat == 'Payée') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(' Impossible de modifier le prix d\'une facture payée'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppSnackBars.showError(context, ' Impossible de modifier le prix d\'une facture payée');
       return;
     }
 
     if (!context.read<AuthRepository>().isAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(' Droits administrateur requis'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackBars.showError(context, ' Droits administrateur requis');
       return;
     }
 
@@ -548,11 +538,7 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (prixNewCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Veuillez entrer un nouveau prix'),
-                    ),
-                  );
+                  AppSnackBars.showInfo(context, 'Veuillez entrer un nouveau prix');
                   return;
                 }
 
@@ -567,12 +553,7 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
 
                   // Validation: les montants doivent être positifs
                   if (newPrix <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Le montant doit être supérieur à 0'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    AppSnackBars.showError(context, 'Le montant doit être supérieur à 0');
                     return;
                   }
 
@@ -594,23 +575,13 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
                   if (!mounted) return;
 
                   if (!success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Erreur lors de la modification'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    AppSnackBars.showError(context, 'Erreur lors de la modification');
                     return;
                   }
 
                   Navigator.pop(ctx);
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Prix modifié avec succès'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  AppSnackBars.showSuccess(context, 'Prix modifié avec succès');
 
                   //  CORRECTION: Recharger les données directement sans délai arbitraire
                   if (mounted) {
@@ -622,9 +593,7 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
                   }
                 } catch (e) {
                   logger.e('Erreur modification prix: $e');
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                  AppSnackBars.showError(context, 'Erreur: $e');
                 }
               },
               child: const Text('Enregistrer'),
