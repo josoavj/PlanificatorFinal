@@ -10,6 +10,7 @@ import '../../core/sql_queries.dart';
 import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
 import '../../utils/app_snackbars.dart';
+import 'contrat_creation_dialog.dart';
 
 class ContratScreen extends StatefulWidget {
   final int? clientId;
@@ -330,8 +331,12 @@ class _ContratScreenState extends State<ContratScreen> {
     );
   }
 
-  void _showAddContratDialog() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ContratCreationFlowScreen(clientId: widget.clientId)));
+  void _showAddContratDialog() async {
+    final result = await AppDialogs.showBlurDialog<bool>(
+      context: context,
+      builder: (ctx) => const ContratCreationDialog(),
+    );
+    if (result == true) _reloadData();
   }
 
   void _showContratDetails(Contrat contrat, Client? client, int numTraitements) {
@@ -790,19 +795,3 @@ class _ContratScreenState extends State<ContratScreen> {
   }
 }
 
-class _ContratCreationFlowScreen extends StatefulWidget {
-  final int? clientId;
-  const _ContratCreationFlowScreen({this.clientId});
-  @override
-  State<_ContratCreationFlowScreen> createState() => _ContratCreationFlowScreenState();
-}
-
-class _ContratCreationFlowScreenState extends State<_ContratCreationFlowScreen> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Créer un contrat')),
-      body: Center(child: Text('Le flux de création est en cours de modernisation.')),
-    );
-  }
-}
