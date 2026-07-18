@@ -70,6 +70,8 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return PopScope(
       canPop: !_isEditing,
       onPopInvokedWithResult: (didPop, result) async {
@@ -87,46 +89,6 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Détails du client'),
-          actions: [
-            if (!_isEditing)
-              Consumer<AuthRepository>(
-                builder: (context, auth, _) {
-                  return PopupMenuButton(
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        child: const Row(
-                          children: [
-                            Icon(Icons.edit, size: 18),
-                            SizedBox(width: 8),
-                            Text('Éditer'),
-                          ],
-                        ),
-                        onTap: () {
-                          setState(() => _isEditing = true);
-                        },
-                      ),
-                      if (auth.isAdmin)
-                        PopupMenuItem(
-                          child: const Row(
-                            children: [
-                              Icon(Icons.delete, size: 18, color: AppTheme.errorRed),
-                              SizedBox(width: 8),
-                              Text(
-                                'Supprimer',
-                                style: TextStyle(color: AppTheme.errorRed),
-                              ),
-                            ],
-                          ),
-                          onTap: () => _deleteClient(),
-                        ),
-                    ],
-                  );
-                },
-              ),
-          ],
-        ),
         body: Consumer<ClientRepository>(
           builder: (context, repository, _) {
             _client = repository.currentClient;
@@ -154,14 +116,23 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
             }
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!_isEditing)
-                    _buildViewMode(context, _client!)
-                  else
-                    _buildEditMode(),
+                  if (!_isEditing) ...[
+                    _buildHeader(context, _client!, isDark),
+                    const SizedBox(height: 70),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: _buildViewMode(context, _client!),
+                      ),
+                    ),
+                  ] else
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: _buildEditMode(),
+                    ),
                 ],
               ),
             );
@@ -171,50 +142,106 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     );
   }
 
-  Widget _buildViewMode(BuildContext context, Client client) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader(BuildContext context, Client client, bool isDark) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
       children: [
-        // Header avec avatar
         Container(
-          padding: const EdgeInsets.all(16),
+          height: 230,
+          width: double.infinity,
           decoration: BoxDecoration(
-            gradient: AppTheme.primaryGradient,
-            borderRadius: BorderRadius.circular(16),
+            color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(48)),
           ),
-          child: Row(
+        ),
+        // Bouton Retour en haut à gauche (Simplifié)
+        Positioned(
+          top: 40,
+          left: 8,
+          child: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          ),
+        ),
+        // Menu Actions en haut à droite
+        Positioned(
+          top: 40,
+          right: 8,
+          child: Consumer<AuthRepository>(
+            builder: (context, auth, _) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  iconTheme: const IconThemeData(color: Colors.white),
+                ),
+                child: PopupMenuButton(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      child: const Row(
+                        children: [
+                          Icon(Icons.edit_rounded, size: 18),
+                          SizedBox(width: 8),
+                          Text('Éditer le profil'),
+                        ],
+                      ),
+                      onTap: () {
+                        setState(() => _isEditing = true);
+                      },
+                    ),
+                    if (auth.isAdmin)
+                      PopupMenuItem(
+                        child: const Row(
+                          children: [
+                            Icon(Icons.delete_rounded, size: 18, color: AppTheme.errorRed),
+                            SizedBox(width: 8),
+                            Text(
+                              'Supprimer le client',
+                              style: TextStyle(color: AppTheme.errorRed),
+                            ),
+                          ],
+                        ),
+                        onTap: () => _deleteClient(),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        Positioned(
+          top: 60,
+          child: Column(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.white,
-                child: Text(
-                  client.fullName.isNotEmpty
-                      ? client.fullName[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                client.fullName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
                   children: [
+                    const Icon(Icons.category_rounded, color: Colors.white, size: 14),
+                    const SizedBox(width: 8),
                     Text(
-                      client.fullName,
+                      client.categorie.toUpperCase(),
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
                         color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      client.email,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
                       ),
                     ),
                   ],
@@ -223,51 +250,92 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        Positioned(
+          bottom: -45,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkCardBg : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: isDark ? [] : [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 55,
+              backgroundColor: AppTheme.primaryBlue,
+              child: Text(
+                client.fullName.isNotEmpty ? client.fullName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildViewMode(BuildContext context, Client client) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         // Informations de contact
         _buildSection(
-          title: 'Contact',
+          title: 'Coordonnées de contact',
           children: [
-            _buildInfoRow(Icons.email, 'Email', client.email),
-            _buildInfoRow(Icons.phone, 'Téléphone', client.telephone),
-            _buildInfoRow(Icons.location_on, 'Adresse', client.adresse),
+            _buildInfoRow(Icons.email_outlined, 'Adresse Email', client.email),
+            _buildInfoRow(Icons.phone_outlined, 'Téléphone', client.telephone),
+            _buildInfoRow(Icons.location_on_outlined, 'Adresse physique', client.adresse),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
         // Informations professionnelles
         _buildSection(
-          title: 'Informations professionnelles',
+          title: 'Détails Professionnels',
           children: [
-            _buildInfoRow(Icons.category, 'Catégorie', client.categorie),
-            _buildInfoRow(Icons.card_membership, 'NIF', client.nif),
-            _buildInfoRow(Icons.badge, 'STAT', client.stat),
-            _buildInfoRow(Icons.trending_up, 'Axe', client.axe),
+            _buildInfoRow(Icons.business_center_outlined, 'Catégorie', client.categorie),
+            _buildInfoRow(Icons.description_outlined, 'NIF', client.nif),
+            _buildInfoRow(Icons.badge_outlined, 'STAT', client.stat),
+            _buildInfoRow(Icons.map_outlined, 'Axe / Secteur', client.axe),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
 
-        // Actions
+        // Actions rapides
         Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _navigateToFactures(context, client.clientId),
-                icon: const Icon(Icons.receipt),
-                label: const Text('Voir factures'),
+                icon: const Icon(Icons.receipt_long_rounded),
+                label: const Text('Voir factures', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _navigateToContrats(context, client.clientId),
-                icon: const Icon(Icons.description),
-                label: const Text('Voir contrats'),
+                icon: const Icon(Icons.assignment_rounded),
+                label: const Text('Voir contrats', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
               ),
             ),
           ],
         ),
+        const SizedBox(height: 40),
       ],
     );
   }
@@ -276,20 +344,42 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     required String title,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(children: children),
+        Container(
+          decoration: AppTheme.cardDecoration(context, radius: 24),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: List.generate(children.length, (index) {
+                return Column(
+                  children: [
+                    children[index],
+                    if (index < children.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: 60,
+                        endIndent: 16,
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
+                      ),
+                  ],
+                );
+              }),
+            ),
           ),
         ),
       ],
@@ -297,27 +387,16 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: AppTheme.primaryBlue),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.bodySmall),
-              Text(
-                value.isNotEmpty ? value : '-',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return ListTile(
+      leading: Icon(icon, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, size: 22),
+      title: Text(label, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600], fontWeight: FontWeight.bold)),
+      subtitle: Text(
+        value.isNotEmpty ? value : '-',
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 
@@ -326,26 +405,35 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
       key: _formKey,
       child: Column(
         children: [
-          Text(
-            'Éditer le client',
-            style: Theme.of(context).textTheme.headlineSmall,
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => setState(() => _isEditing = false),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Éditer le client',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _nomController,
-            decoration: const InputDecoration(labelText: 'Nom'),
+            decoration: const InputDecoration(labelText: 'Nom', prefixIcon: Icon(Icons.person_outline)),
             validator: (value) => value?.isEmpty ?? true ? 'Requis' : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _prenomController,
-            decoration: const InputDecoration(labelText: 'Prénom'),
+            decoration: const InputDecoration(labelText: 'Prénom', prefixIcon: Icon(Icons.person_outline)),
             validator: (value) => value?.isEmpty ?? true ? 'Requis' : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value?.isEmpty ?? true) return 'Requis';
@@ -358,41 +446,45 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _telephoneController,
-            decoration: const InputDecoration(labelText: 'Téléphone'),
+            decoration: const InputDecoration(labelText: 'Téléphone', prefixIcon: Icon(Icons.phone_outlined)),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _adresseController,
-            decoration: const InputDecoration(labelText: 'Adresse'),
+            decoration: const InputDecoration(labelText: 'Adresse', prefixIcon: Icon(Icons.location_on_outlined)),
             minLines: 2,
             maxLines: 3,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _categorieController,
-            decoration: const InputDecoration(labelText: 'Catégorie'),
+            decoration: const InputDecoration(labelText: 'Catégorie', prefixIcon: Icon(Icons.category_outlined)),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _nifController,
-            decoration: const InputDecoration(labelText: 'NIF'),
+            decoration: const InputDecoration(labelText: 'NIF', prefixIcon: Icon(Icons.description_outlined)),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _statController,
-            decoration: const InputDecoration(labelText: 'STAT'),
+            decoration: const InputDecoration(labelText: 'STAT', prefixIcon: Icon(Icons.badge_outlined)),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _axeController,
-            decoration: const InputDecoration(labelText: 'Axe'),
+            decoration: const InputDecoration(labelText: 'Axe', prefixIcon: Icon(Icons.map_outlined)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => setState(() => _isEditing = false),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: const Text('Annuler'),
                 ),
               ),
@@ -400,6 +492,10 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveClient,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: const Text('Enregistrer'),
                 ),
               ),
@@ -424,7 +520,6 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         axe: _axeController.text,
       );
 
-      Navigator.of(context);
       final scaff = ScaffoldMessenger.of(context);
       context
           .read<ClientRepository>()
@@ -432,14 +527,12 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           .then((_) {
             if (mounted) {
               setState(() => _isEditing = false);
-              scaff.showSnackBar(
-                const SnackBar(content: Text('Client modifié avec succès')),
-              );
+              AppSnackBars.showSuccess(context, 'Client modifié avec succès');
             }
           })
           .catchError((error) {
             if (mounted) {
-              AppDialogs.error(context, message: error.toString());
+              AppSnackBars.showError(context, error.toString());
             }
           });
     }
@@ -455,21 +548,18 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     final confirmed = await AppDialogs.confirmDelete(context);
     if (confirmed == true && mounted) {
       final nav = Navigator.of(context);
-      final scaff = ScaffoldMessenger.of(context);
       context
           .read<ClientRepository>()
           .deleteClient(_client!.clientId, isAdmin: authRepo.isAdmin)
           .then((success) {
             if (mounted && success) {
               nav.pop(true);
-              scaff.showSnackBar(
-                const SnackBar(content: Text('Client supprimé')),
-              );
+              AppSnackBars.showSuccess(context, 'Client supprimé');
             }
           })
           .catchError((error) {
             if (mounted) {
-              AppDialogs.error(context, message: error.toString());
+              AppSnackBars.showError(context, error.toString());
             }
           });
     }
