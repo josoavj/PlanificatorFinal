@@ -509,7 +509,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: INFORMATIONS CLIENT
                 // ═════════════════════════════════════════
-                _buildSectionHeader('👤 INFORMATIONS CLIENT'),
+                _buildSectionHeader('INFORMATIONS CLIENT'),
                 if (client != null) ...[
                   _buildDetailRow('Nom', client.nom),
                   _buildDetailRow(
@@ -535,7 +535,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: INFORMATIONS CONTRAT
                 // ═════════════════════════════════════════
-                _buildSectionHeader(' INFORMATIONS CONTRAT'),
+                _buildSectionHeader('INFORMATIONS CONTRAT'),
                 _buildDetailRow('Numéro Contrat', '#${contrat.contratId}'),
                 _buildDetailRow('Référence', contrat.referenceContrat),
                 _buildDetailRow(
@@ -560,7 +560,7 @@ class _ContratScreenState extends State<ContratScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: TRAITEMENTS
                 // ═════════════════════════════════════════
-                _buildSectionHeader(' TRAITEMENTS ($numTraitements)'),
+                _buildSectionHeader('TRAITEMENTS ($numTraitements)'),
                 FutureBuilder<List<Map<String, dynamic>>>(
                   future: _loadTraitements(contrat.contratId),
                   builder: (context, snapshot) {
@@ -1479,7 +1479,7 @@ class _ContratScreenState extends State<ContratScreen> {
     AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(' Détails Réparation'),
+        title: const Text('Détails Réparation'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

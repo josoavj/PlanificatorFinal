@@ -559,7 +559,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: INFORMATIONS PERSONNELLES
                 // ═════════════════════════════════════════
-                _buildSectionHeader('👤 INFORMATIONS PERSONNELLES'),
+                _buildSectionHeader('INFORMATIONS PERSONNELLES'),
                 _buildDetailRow('Nom', client.nom),
                 _buildDetailRow(client.prenomLabel, client.prenom),
                 _buildDetailRow('Email', client.email),
@@ -569,7 +569,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: ADRESSE & LOCALISATION
                 // ═════════════════════════════════════════
-                _buildSectionHeader('📍 ADRESSE & LOCALISATION'),
+                _buildSectionHeader('ADRESSE & LOCALISATION'),
                 _buildDetailRow('Adresse', client.adresse),
                 _buildDetailRow('Axe', client.axe),
                 const SizedBox(height: 16),
@@ -577,7 +577,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: CATÉGORIE & INFOS FISCALES
                 // ═════════════════════════════════════════
-                _buildSectionHeader(' CATÉGORIE & INFOS'),
+                _buildSectionHeader('CATÉGORIE & INFOS'),
                 _buildDetailRow('Catégorie', client.categorie),
                 if (client.categorie == 'Société') ...[
                   _buildDetailRow('NIF', client.nif),
@@ -588,7 +588,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 // ═════════════════════════════════════════
                 // SECTION: TRAITEMENTS ASSOCIÉS
                 // ═════════════════════════════════════════
-                _buildSectionHeader(' TRAITEMENTS'),
+                _buildSectionHeader('TRAITEMENTS'),
                 _buildDetailRow(
                   'Nombre de traitements',
                   '${client.treatmentCount}',
@@ -1039,7 +1039,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   // ═════════════════════════════════════════
                   // SECTION: INFORMATIONS PERSONNELLES
                   // ═════════════════════════════════════════
-                  _buildSectionHeader('👤 INFORMATIONS PERSONNELLES'),
+                  _buildSectionHeader('INFORMATIONS PERSONNELLES'),
                   _buildEditField('Nom', nomController),
                   _buildEditField(
                     selectedCategorie == 'Société' ||
@@ -1055,7 +1055,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   // ═════════════════════════════════════════
                   // SECTION: ADRESSE & LOCALISATION
                   // ═════════════════════════════════════════
-                  _buildSectionHeader('📍 ADRESSE & LOCALISATION'),
+                  _buildSectionHeader('ADRESSE & LOCALISATION'),
                   _buildEditField('Adresse', adresseController),
                   _buildAxisDropdown((value) {
                     setState(() {
