@@ -146,19 +146,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
             ? ' (toutes les dates futures)'
             : ' (cette date uniquement)';
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(' Signalement: $messageEcart$modeTexte'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBars.showSuccess(context, ' Signalement: $messageEcart$modeTexte');
       }
     } catch (e) {
       logger.e(' Erreur signalement: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        AppSnackBars.showError(context, 'Erreur: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
