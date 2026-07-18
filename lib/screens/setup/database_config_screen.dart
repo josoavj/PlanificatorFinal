@@ -3,6 +3,7 @@ import '../../config/database_config.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
 import '../../services/index.dart';
+import '../../utils/app_snackbars.dart';
 
 class DatabaseConfigScreen extends StatefulWidget {
   final VoidCallback onConfigured;
@@ -135,12 +136,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
           database: _databaseController.text.trim(),
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(' Connexion réussie! Configuration sauvegardée.'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBars.showSuccess(context, ' Connexion réussie! Configuration sauvegardée.');
 
         logger.i(' Base de données configurée avec succès');
 
