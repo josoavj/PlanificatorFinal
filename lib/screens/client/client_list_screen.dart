@@ -8,6 +8,7 @@ import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
+import '../../utils/app_snackbars.dart';
 
 class ClientListScreen extends StatefulWidget {
   const ClientListScreen({super.key});
@@ -58,24 +59,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
         logger.i(' Nouvelle tentative réussie');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(' Clients chargés après retry'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
+          AppSnackBars.showSuccess(context, ' Clients chargés après retry');
         }
       } catch (retryError) {
         logger.e(' Retry aussi échoué: $retryError');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(' Erreur: ${retryError.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 5),
-            ),
-          );
+          AppSnackBars.showError(context, ' Erreur: ${retryError.toString()}');
         }
       }
     }
@@ -1165,21 +1154,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   );
                   await context.read<ClientRepository>().loadClients();
                   Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(' Client modifié avec succès'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  AppSnackBars.showSuccess(context, ' Client modifié avec succès');
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        ' Veuillez remplir les champs obligatoires',
-                      ),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
+                  AppSnackBars.showWarning(context, ' Veuillez remplir les champs obligatoires');
                 }
               },
             ),
