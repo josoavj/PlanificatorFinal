@@ -846,17 +846,6 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 40),
-                    
-                    // Bouton Retour
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
-                        label: const Text('RETOUR AU PLANNING', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1)),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -878,6 +867,15 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
           decoration: BoxDecoration(
             color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
             borderRadius: const BorderRadius.vertical(bottom: Radius.circular(48)),
+          ),
+        ),
+        // Bouton Retour en haut à gauche (Simplifié)
+        Positioned(
+          top: 40,
+          left: 8,
+          child: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
           ),
         ),
         Positioned(
