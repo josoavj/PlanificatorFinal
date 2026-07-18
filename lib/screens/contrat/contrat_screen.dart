@@ -461,26 +461,26 @@ class _ContratScreenState extends State<ContratScreen> {
             FilledButton.icon(
               icon: const Icon(Icons.description_rounded, size: 18),
               label: const Text('FACTURES'),
-              onPressed: () { Navigator.of(ctx).pop(); _viewFactures(contrat); },
+              onPressed: () { Navigator.of(ctx).pop(); _viewFactures(contrat, client, numTraitements); },
               style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryBlue),
             ),
             FilledButton.icon(
               icon: const Icon(Icons.calendar_month_rounded, size: 18),
               label: const Text('PLANNING'),
-              onPressed: () { Navigator.of(ctx).pop(); _viewPlanning(contrat); },
+              onPressed: () { Navigator.of(ctx).pop(); _viewPlanning(contrat, client, numTraitements); },
               style: FilledButton.styleFrom(backgroundColor: AppTheme.successGreen),
             ),
           ],
           if (contrat.statutContrat == 'Actif' && context.read<AuthRepository>().isAdmin)
             FilledButton.icon(
               icon: const Icon(Icons.history_toggle_off_rounded, size: 18),
-              onPressed: () { Navigator.of(ctx).pop(); _showAbrogationDialog(contrat); },
+              onPressed: () { Navigator.of(ctx).pop(); _showAbrogationDialog(contrat, client, numTraitements); },
               style: FilledButton.styleFrom(backgroundColor: Colors.orange),
               label: const Text('ABROGER'),
             ),
           if (context.read<AuthRepository>().isAdmin)
             FilledButton.icon(
-              onPressed: () { Navigator.of(ctx).pop(); _deleteContrat(contrat); },
+              onPressed: () { Navigator.of(ctx).pop(); _deleteContrat(contrat, client, numTraitements); },
               icon: const Icon(Icons.delete_outline_rounded, size: 18),
               label: const Text('SUPPRIMER'),
               style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed),
@@ -490,7 +490,7 @@ class _ContratScreenState extends State<ContratScreen> {
     );
   }
 
-  void _viewFactures(Contrat contrat) {
+  void _viewFactures(Contrat contrat, Client? client, int numTraitements) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     AppDialogs.showBlurDialog(
       context: context,
@@ -537,12 +537,21 @@ class _ContratScreenState extends State<ContratScreen> {
             },
           ),
         ),
-        actions: [TextButton.icon(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18), onPressed: () => Navigator.of(ctx).pop(), label: const Text('RETOUR'))],
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18), 
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _showContratDetails(contrat, client, numTraitements);
+            }, 
+            label: const Text('RETOUR'),
+          ),
+        ],
       ),
     );
   }
 
-  void _viewPlanning(Contrat contrat) {
+  void _viewPlanning(Contrat contrat, Client? client, int numTraitements) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     AppDialogs.showBlurDialog(
       context: context,
@@ -599,21 +608,37 @@ class _ContratScreenState extends State<ContratScreen> {
                 },
               ),
             ),
-            actions: [TextButton.icon(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18), onPressed: () => Navigator.of(ctx).pop(), label: const Text('RETOUR'))],
+            actions: [
+              TextButton.icon(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18), 
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _showContratDetails(contrat, client, numTraitements);
+                }, 
+                label: const Text('RETOUR AUX DÉTAILS'),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  void _deleteContrat(Contrat contrat) {
+  void _deleteContrat(Contrat contrat, Client? client, int numTraitements) {
     AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirmer la suppression', style: TextStyle(fontWeight: FontWeight.bold)),
         content: Text('Supprimer définitivement le contrat ${contrat.referenceContrat} ?'),
         actions: [
-          TextButton.icon(icon: const Icon(Icons.close_rounded, size: 18), onPressed: () => Navigator.pop(ctx), label: const Text('ANNULER')),
+          TextButton.icon(
+            icon: const Icon(Icons.close_rounded, size: 18),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showContratDetails(contrat, client, numTraitements);
+            }, 
+            label: const Text('ANNULER'),
+          ),
           FilledButton.icon(icon: const Icon(Icons.delete_forever_rounded, size: 18), label: const Text('SUPPRIMER'), style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed), onPressed: () async {
             Navigator.pop(ctx);
             await context.read<ContratRepository>().deleteContrat(contrat.contratId, isAdmin: context.read<AuthRepository>().isAdmin);
@@ -624,7 +649,7 @@ class _ContratScreenState extends State<ContratScreen> {
     );
   }
 
-  void _showAbrogationDialog(Contrat contrat) {
+  void _showAbrogationDialog(Contrat contrat, Client? client, int numTraitements) {
     DateTime selectedDate = DateTime.now();
     String motif = '';
     AppDialogs.showBlurDialog(
@@ -644,7 +669,14 @@ class _ContratScreenState extends State<ContratScreen> {
             ],
           ),
           actions: [
-            TextButton.icon(icon: const Icon(Icons.close_rounded, size: 18), onPressed: () => Navigator.pop(ctx), label: const Text('ANNULER')),
+            TextButton.icon(
+              icon: const Icon(Icons.close_rounded, size: 18),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _showContratDetails(contrat, client, numTraitements);
+              }, 
+              label: const Text('ANNULER'),
+            ),
             FilledButton.icon(icon: const Icon(Icons.check_circle_outline, size: 18), label: const Text('CONFIRMER'), style: FilledButton.styleFrom(backgroundColor: Colors.orange), onPressed: () async {
               Navigator.pop(ctx);
               await context.read<ContratRepository>().abrogateContract(contratId: contrat.contratId, abrogationDate: selectedDate, motif: motif, isAdmin: true);
