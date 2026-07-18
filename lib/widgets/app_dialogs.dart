@@ -164,20 +164,22 @@ class AppDialogs {
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(title),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: items
-                .map(
-                  (item) => RadioListTile<T>(
-                    title: Text(itemLabel(item)),
-                    value: item,
-                    groupValue: selectedItem,
-                    onChanged: (value) {
-                      Navigator.of(ctx).pop(value);
-                    },
-                  ),
-                )
-                .toList(),
+          child: RadioGroup<T>(
+            groupValue: selectedItem,
+            onChanged: (value) {
+              Navigator.of(ctx).pop(value);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: items
+                  .map(
+                    (item) => RadioListTile<T>(
+                      title: Text(itemLabel(item)),
+                      value: item,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         ),
       ),

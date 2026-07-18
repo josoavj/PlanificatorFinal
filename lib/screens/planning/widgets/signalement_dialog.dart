@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:planificator/models/index.dart';
-import 'package:planificator/repositories/signalement_repository.dart';
-import 'package:planificator/utils/date_helper.dart';
-import '../../services/logging_service.dart';
-import '../../utils/app_snackbars.dart';
+import '../../../models/index.dart';
+import '../../../repositories/signalement_repository.dart';
+import '../../../utils/date_helper.dart';
+import '../../../services/logging_service.dart';
+import '../../../utils/app_snackbars.dart';
 
 class SignalementDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -146,19 +146,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
             ? ' (toutes les dates futures)'
             : ' (cette date uniquement)';
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(' Signalement: $messageEcart$modeTexte'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBars.showSuccess(context, ' Signalement: $messageEcart$modeTexte');
       }
     } catch (e) {
       logger.e(' Erreur signalement: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        AppSnackBars.showError(context, 'Erreur: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

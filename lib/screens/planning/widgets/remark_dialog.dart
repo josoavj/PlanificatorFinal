@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:planificator/models/index.dart';
-import 'package:planificator/repositories/remarque_repository.dart';
-import 'package:planificator/repositories/facture_repository.dart';
-import 'package:planificator/utils/date_helper.dart';
-import '../../repositories/auth_repository.dart';
-import '../../utils/app_snackbars.dart';
+import '../../../models/index.dart';
+import '../../../repositories/remarque_repository.dart';
+import '../../../repositories/facture_repository.dart';
+import '../../../utils/date_helper.dart';
+import '../../../repositories/auth_repository.dart';
+import '../../../utils/app_snackbars.dart';
 
 class RemarqueDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -155,15 +155,11 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(' Remarque & Facture enregistrées')),
-        );
+        AppSnackBars.showSuccess(context, ' Remarque & Facture enregistrées');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(' Erreur: $e'), backgroundColor: Colors.red),
-        );
+        AppSnackBars.showError(context, ' Erreur: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
