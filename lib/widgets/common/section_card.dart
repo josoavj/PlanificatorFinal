@@ -39,7 +39,7 @@ class AppSection extends StatelessWidget {
                   color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
                 ),
               ),
-              if (headerAction != null) headerAction!,
+              ?headerAction,
             ],
           ),
         ),
