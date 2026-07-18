@@ -4,10 +4,8 @@ import 'package:intl/intl.dart';
 import '../../repositories/index.dart';
 import '../../models/index.dart';
 import '../../core/theme.dart';
-import '../../utils/number_formatter.dart';
 import '../../services/logging_service.dart';
-import '../../widgets/app_dialogs.dart';
-import '../../utils/app_snackbars.dart';
+import 'widgets/facture_price_dialog.dart';
 
 class FactureScreen extends StatefulWidget {
   const FactureScreen({super.key});
@@ -37,161 +35,59 @@ class _FactureScreenState extends State<FactureScreen> {
 
   List<Facture> _filterFacturesBySearch(List<Facture> factures) {
     if (_searchQuery.isEmpty) return factures;
-
-    return factures
-        .where(
-          (f) =>
-              (f.clientNom?.toLowerCase().contains(
-                    _searchQuery.toLowerCase(),
-                  ) ??
-                  false) ||
-              (f.clientPrenom?.toLowerCase().contains(
-                    _searchQuery.toLowerCase(),
-                  ) ??
-                  false) ||
-              (f.typeTreatment?.toLowerCase().contains(
-                    _searchQuery.toLowerCase(),
-                  ) ??
-                  false),
-        )
-        .toList();
+    final q = _searchQuery.toLowerCase();
+    return factures.where((f) => (f.clientNom?.toLowerCase().contains(q) ?? false) || (f.clientPrenom?.toLowerCase().contains(q) ?? false) || (f.typeTreatment?.toLowerCase().contains(q) ?? false)).toList();
   }
 
-  /// Construit l'en-tête avec gradient et barre de recherche
   Widget _buildHeader(BuildContext context, List<Facture> factures) {
-    final filteredFactures = _filterFacturesBySearch(factures);
-
-    // Compter le nombre de groupes client-traitement distincts (comme affichés dans la liste)
+    final filtered = _filterFacturesBySearch(factures);
     final groupKeys = <String>{};
-    for (final f in filteredFactures) {
-      final key = '${f.clientFullName} - ${f.typeTreatment ?? 'N/A'}';
-      groupKeys.add(key);
+    for (final f in filtered) {
+      groupKeys.add('${f.clientFullName} - ${f.typeTreatment ?? 'N/A'}');
     }
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[600]!, Colors.blue[400]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
-      ),
+      decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.blue[600]!, Colors.blue[400]!], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))),
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Barre de recherche avec bouton d'actualisation
           Row(
             children: [
-              // Barre de recherche
               Expanded(
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Rechercher par client ou traitement...',
-                    hintStyle: const TextStyle(color: Colors.white70),
+                    hintText: 'Rechercher par client ou traitement...', hintStyle: const TextStyle(color: Colors.white70),
                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.2),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    suffixIcon: _searchQuery.isNotEmpty ? IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); }) : null,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    filled: true, fillColor: Colors.white.withValues(alpha: 0.2),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   style: const TextStyle(color: Colors.white),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
+                  onChanged: (v) => setState(() => _searchQuery = v),
                 ),
               ),
               const SizedBox(width: 12),
-              // Bouton d'actualisation
-              Tooltip(
-                message: 'Actualiser',
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () {
-                      _searchQuery = '';
-                      _searchController.clear();
-                      context.read<FactureRepository>().loadAllFactures();
-                    },
-                  ),
-                ),
-              ),
+              Container(decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(12)), child: IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: () { _searchQuery = ''; _searchController.clear(); context.read<FactureRepository>().loadAllFactures(); })),
             ],
           ),
           const SizedBox(height: 12),
-          // Badges pour nombre de factures et traitements
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${filteredFactures.length} ${filteredFactures.length > 1 ? 'factures' : 'facture'}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+              _buildHeaderBadge('${filtered.length} ${filtered.length > 1 ? 'factures' : 'facture'}'),
               const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${groupKeys.length} ${groupKeys.length > 1 ? 'traitements' : 'traitement'}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
+              _buildHeaderBadge('${groupKeys.length} ${groupKeys.length > 1 ? 'traitements' : 'traitement'}'),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildHeaderBadge(String text) {
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(20)), child: Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)));
   }
 
   @override
@@ -202,21 +98,13 @@ class _FactureScreenState extends State<FactureScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // En-tête avec gradient et barre de recherche
                 _buildHeader(context, factureRepo.factures),
-
-                // Liste des factures
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: factureRepo.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : factureRepo.errorMessage != null
-                      ? Center(
-                          child: Text(
-                            'Erreur: ${factureRepo.errorMessage}',
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        )
+                      ? Center(child: Text('Erreur: ${factureRepo.errorMessage}', style: const TextStyle(color: Colors.red)))
                       : _buildFacturesList(factureRepo.factures),
                 ),
               ],
@@ -228,37 +116,19 @@ class _FactureScreenState extends State<FactureScreen> {
   }
 
   Widget _buildFacturesList(List<Facture> factures) {
-    final filteredFactures = _filterFacturesBySearch(factures);
+    final filtered = _filterFacturesBySearch(factures);
+    if (factures.isEmpty) return const Center(child: Text('Aucune facture trouvée'));
+    if (filtered.isEmpty) return const Center(child: Text('Aucune facture ne correspond à votre recherche'));
 
-    if (factures.isEmpty) {
-      return const Center(child: Text('Aucune facture trouvée'));
-    }
-
-    if (filteredFactures.isEmpty) {
-      return const Center(
-        child: Text('Aucune facture ne correspond à votre recherche'),
-      );
-    }
-
-    // Grouper par client + traitement pour une meilleure organisation
     final Map<String, List<Facture>> grouped = {};
-    for (final facture in filteredFactures) {
-      final key =
-          '${facture.clientFullName} - ${facture.typeTreatment ?? 'N/A'}';
-      if (!grouped.containsKey(key)) {
-        grouped[key] = [];
-      }
-      grouped[key]!.add(facture);
+    for (final f in filtered) {
+      final key = '${f.clientFullName} - ${f.typeTreatment ?? 'N/A'}';
+      grouped.putIfAbsent(key, () => []).add(f);
     }
 
-    // Trier alphabétiquement par clé (client - traitement) et par date décroissante dans chaque groupe
-    final sortedKeys = grouped.keys.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-    for (final key in sortedKeys) {
-      grouped[key]!.sort((a, b) {
-        return b.dateTraitement.compareTo(a.dateTraitement); // Récent d'abord
-      });
+    final sortedKeys = grouped.keys.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    for (final k in sortedKeys) {
+      grouped[k]!.sort((a, b) => b.dateTraitement.compareTo(a.dateTraitement));
     }
 
     return ListView.builder(
@@ -267,58 +137,32 @@ class _FactureScreenState extends State<FactureScreen> {
       itemCount: sortedKeys.length,
       itemBuilder: (context, index) {
         final key = sortedKeys[index];
-        final facturesGroup = grouped[key]!;
-
+        final group = grouped[key]!;
         return _FactureGroupCard(
-          title: key,
-          factures: facturesGroup,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => _FactureDetailScreen(
-                  factures: facturesGroup,
-                  groupTitle: key,
-                ),
-              ),
-            );
-          },
+          title: key, factures: group,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => _FactureDetailScreen(factures: group, groupTitle: key))),
         );
       },
     );
   }
 }
 
-/// Card pour afficher un groupe de factures (client + traitement)
 class _FactureGroupCard extends StatelessWidget {
   final String title;
   final List<Facture> factures;
   final VoidCallback onTap;
-
-  const _FactureGroupCard({
-    required this.title,
-    required this.factures,
-    required this.onTap,
-  });
+  const _FactureGroupCard({required this.title, required this.factures, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    // Calculer les montants
-    int montantTotal = 0;
-    int montantNonPaye = 0;
-    for (final f in factures) {
-      montantTotal += f.montant;
-      if (f.etat != 'Payé') {
-        montantNonPaye += f.montant;
-      }
-    }
+    int total = 0; int unpaid = 0;
+    for (final f in factures) { total += f.montant; if (f.etat != 'Payé') unpaid += f.montant; }
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        onTap: onTap, borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -326,73 +170,14 @@ class _FactureGroupCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.receipt_long,
-                      color: AppTheme.primaryBlue,
-                      size: 24,
-                    ),
-                  ),
+                  Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.receipt_long, color: AppTheme.primaryBlue, size: 24)),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${factures.length} facture(s)',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.grey[400],
-                  ),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis), const SizedBox(height: 4), Text('${factures.length} facture(s)', style: const TextStyle(fontSize: 12, color: Colors.grey))])),
+                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
                 ],
               ),
               const SizedBox(height: 12),
-              // Résumé des montants
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total: $montantTotal Ar',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                  Text(
-                    'Non payé: $montantNonPaye Ar',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ],
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Total: $total Ar', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)), Text('Non payé: $unpaid Ar', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange))]),
             ],
           ),
         ),
@@ -401,265 +186,34 @@ class _FactureGroupCard extends StatelessWidget {
   }
 }
 
-/// Écran détail des factures pour un groupe
 class _FactureDetailScreen extends StatefulWidget {
   final List<Facture> factures;
   final String groupTitle;
-
-  const _FactureDetailScreen({
-    required this.factures,
-    required this.groupTitle,
-  });
-
+  const _FactureDetailScreen({required this.factures, required this.groupTitle});
   @override
   State<_FactureDetailScreen> createState() => _FactureDetailScreenState();
 }
 
 class _FactureDetailScreenState extends State<_FactureDetailScreen> {
-  final logger = createLoggerWithFileOutput(name: 'facture_detail_screen');
-
-  int _calculateTotalMontant(List<Facture> factures) {
-    int total = 0;
-    for (final facture in factures) {
-      total += facture.montant;
-    }
-    return total;
-  }
-
-  int _calculateMontantNonPaye(List<Facture> factures) {
-    int total = 0;
-    for (final facture in factures) {
-      if (facture.etat != 'Payé') {
-        total += facture.montant;
-      }
-    }
-    return total;
-  }
-
-  void _showModifierPrixDialog(Facture facture) {
-    //  Vérifier si la facture est déjà payée
-    if (facture.etat == 'Payé' || facture.etat == 'Payée') {
-      AppSnackBars.showError(context, ' Impossible de modifier le prix d\'une facture payée');
-      return;
-    }
-
-    if (!context.read<AuthRepository>().isAdmin) {
-      AppSnackBars.showError(context, ' Droits administrateur requis');
-      return;
-    }
-
-    final prixInitialCtrl = TextEditingController(
-      text: facture.montant.toString(),
-    );
-    final prixNewCtrl = TextEditingController();
-
-    AppDialogs.showBlurDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Modification de Prix'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Informations du traitement
-                Text(
-                  widget.groupTitle,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Date: ${DateFormat('dd/MM/yyyy').format(facture.dateTraitement)}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-
-                // Prix initial (lecture seule)
-                const Text(
-                  'Prix Initial',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: prixInitialCtrl,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Nouveau prix
-                const Text(
-                  'Nouveau Prix',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: prixNewCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'Ex: 50 000 ou 1500000',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.all(12),
-                    helperText: 'Les espaces sont autorisés',
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Statut actuel
-                Text(
-                  'Statut: ${facture.etat}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (prixNewCtrl.text.isEmpty) {
-                  AppSnackBars.showInfo(context, 'Veuillez entrer un nouveau prix');
-                  return;
-                }
-
-                try {
-                  // Parser les montants en ignorant les espaces
-                  final oldPrix = NumberFormatter.parseMontant(
-                    prixInitialCtrl.text,
-                  );
-                  final newPrix = NumberFormatter.parseMontant(
-                    prixNewCtrl.text,
-                  );
-
-                  // Validation: les montants doivent être positifs
-                  if (newPrix <= 0) {
-                    AppSnackBars.showError(context, 'Le montant doit être supérieur à 0');
-                    return;
-                  }
-
-                  logger.i(
-                    '💰 Changement de prix: $oldPrix → $newPrix pour facture ${facture.factureId}',
-                  );
-
-                  // Appeler la méthode majMontantEtHistorique pour mettre à jour
-                  // la facture ET les factures postérieures du même traitement
-                  final authRepo = context.read<AuthRepository>();
-                  final factureRepo = context.read<FactureRepository>();
-                  final success = await factureRepo.majMontantEtHistorique(
-                    facture.factureId,
-                    oldPrix,
-                    newPrix,
-                    isAdmin: authRepo.isAdmin,
-                  );
-
-                  if (!mounted) return;
-
-                  if (!success) {
-                    AppSnackBars.showError(context, 'Erreur lors de la modification');
-                    return;
-                  }
-
-                  Navigator.pop(ctx);
-
-                  AppSnackBars.showSuccess(context, 'Prix modifié avec succès');
-
-                  //  CORRECTION: Recharger les données directement sans délai arbitraire
-                  if (mounted) {
-                    await context.read<FactureRepository>().loadAllFactures();
-                    // Rafraîchir l'écran détail
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  }
-                } catch (e) {
-                  logger.e('Erreur modification prix: $e');
-                  AppSnackBars.showError(context, 'Erreur: $e');
-                }
-              },
-              child: const Text('Enregistrer'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Trier les factures par date croissante (plus anciennes en premier)
-    final sortedFactures = List<Facture>.from(widget.factures);
-    sortedFactures.sort((a, b) => a.dateTraitement.compareTo(b.dateTraitement));
-
-    final montantTotal = _calculateTotalMontant(sortedFactures);
-    final montantNonPaye = _calculateMontantNonPaye(sortedFactures);
-    final montantPaye = montantTotal - montantNonPaye;
+    final sorted = List<Facture>.from(widget.factures)..sort((a, b) => a.dateTraitement.compareTo(b.dateTraitement));
+    int total = 0; int unpaid = 0;
+    for (final f in sorted) { total += f.montant; if (f.etat != 'Payé') unpaid += f.montant; }
+    final paid = total - unpaid;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.groupTitle), elevation: 1),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Résumé des montants
             Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.blue[50],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _SummaryCard(
-                    label: 'Total',
-                    amount: montantTotal,
-                    color: Colors.blue,
-                  ),
-                  _SummaryCard(
-                    label: 'Payé',
-                    amount: montantPaye,
-                    color: Colors.green,
-                  ),
-                  _SummaryCard(
-                    label: 'Non Payé',
-                    amount: montantNonPaye,
-                    color: Colors.orange,
-                  ),
-                ],
-              ),
+              padding: const EdgeInsets.all(16), color: Colors.blue[50],
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_SummaryCard(label: 'Total', amount: total, color: Colors.blue), _SummaryCard(label: 'Payé', amount: paid, color: Colors.green), _SummaryCard(label: 'Non Payé', amount: unpaid, color: Colors.orange)]),
             ),
-
-            // Liste des factures
             Padding(
               padding: const EdgeInsets.all(16),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: sortedFactures.length,
-                itemBuilder: (context, index) {
-                  final facture = sortedFactures[index];
-                  return _FactureRow(
-                    facture: facture,
-                    onTapModifier: () => _showModifierPrixDialog(facture),
-                  );
-                },
-              ),
+              child: ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: sorted.length, itemBuilder: (context, index) => _FactureRow(facture: sorted[index], onTapModifier: () => FacturePriceDialog.show(context, sorted[index], widget.groupTitle, () => setState(() {})))),
             ),
           ],
         ),
@@ -668,75 +222,30 @@ class _FactureDetailScreenState extends State<_FactureDetailScreen> {
   }
 }
 
-/// Card pour afficher un résumé de montant
 class _SummaryCard extends StatelessWidget {
-  final String label;
-  final int amount;
-  final Color color;
-
-  const _SummaryCard({
-    required this.label,
-    required this.amount,
-    required this.color,
-  });
-
+  final String label; final int amount; final Color color;
+  const _SummaryCard({required this.label, required this.amount, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '$amount Ar',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
+    return Column(children: [Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)), const SizedBox(height: 4), Text('$amount Ar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color))]);
   }
 }
 
-/// Ligne de facture cliquable
 class _FactureRow extends StatelessWidget {
   final Facture facture;
   final VoidCallback onTapModifier;
-
   const _FactureRow({required this.facture, required this.onTapModifier});
-
-  Color _getStatusColor(String etat) {
-    switch (etat.toLowerCase()) {
-      case 'payé':
-        return Colors.green;
-      case 'payée':
-        return Colors.green;
-      case 'non payé':
-        return Colors.red;
-      case 'à venir':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  bool get isPaid =>
-      facture.etat.toLowerCase() == 'payé' ||
-      facture.etat.toLowerCase() == 'payée';
 
   @override
   Widget build(BuildContext context) {
     final isAdmin = context.read<AuthRepository>().isAdmin;
-    final bool paid = facture.etat == 'Payé' || facture.etat == 'Payée';
+    final isPaid = facture.etat.toLowerCase() == 'payé' || facture.etat.toLowerCase() == 'payée';
+    final statusColor = isPaid ? Colors.green : Colors.red;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
-        onTap: (paid || !isAdmin) ? null : onTapModifier,
+        onTap: (isPaid || !isAdmin) ? null : onTapModifier,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -745,60 +254,18 @@ class _FactureRow extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    DateFormat('dd/MM/yyyy').format(facture.dateTraitement),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: paid ? Colors.grey : Colors.black,
-                    ),
-                  ),
+                  Text(DateFormat('dd/MM/yyyy').format(facture.dateTraitement), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isPaid ? Colors.grey : Colors.black)),
                   Row(
                     children: [
-                      Text(
-                        '${facture.montant} Ar',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: paid ? Colors.grey : Colors.black,
-                        ),
-                      ),
-                      if (isAdmin && !paid) ...[
-                        const SizedBox(width: 8),
-                        const Icon(Icons.edit, size: 14, color: Colors.blue),
-                      ],
+                      Text('${facture.montant} Ar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isPaid ? Colors.grey : Colors.black)),
+                      if (isAdmin && !isPaid) ...[const SizedBox(width: 8), const Icon(Icons.edit, size: 14, color: Colors.blue)],
                       const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(
-                            facture.etat,
-                          ).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          facture.etat,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: _getStatusColor(facture.etat),
-                          ),
-                        ),
-                      ),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)), child: Text(facture.etat, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor))),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              if (facture.referenceFacture != null &&
-                  facture.referenceFacture!.isNotEmpty)
-                Text(
-                  'Réf: ${facture.referenceFacture}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
+              if (facture.referenceFacture != null && facture.referenceFacture!.isNotEmpty) ...[const SizedBox(height: 8), Text('Réf: ${facture.referenceFacture}', style: const TextStyle(fontSize: 12, color: Colors.grey))],
             ],
           ),
         ),
