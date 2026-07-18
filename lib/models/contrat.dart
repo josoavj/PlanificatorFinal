@@ -54,18 +54,46 @@ class Contrat {
     DateTime? parseDate(dynamic value) {
       if (value == null || value == 'Indéterminée' || value == '') return null;
       if (value is DateTime) return value;
-      return DateTime.tryParse(value.toString());
+      
+      String s = value.toString();
+      // Tenter ISO 8601
+      DateTime? dt = DateTime.tryParse(s);
+      if (dt != null) return dt;
+      
+      // Tenter format dd/MM/yyyy
+      try {
+        if (s.contains('/')) {
+          final parts = s.split('/');
+          if (parts.length == 3) {
+            return DateTime(
+              int.parse(parts[2]), // year
+              int.parse(parts[1]), // month
+              int.parse(parts[0]), // day
+            );
+          }
+        }
+      } catch (e) {
+        // Ignorer les erreurs de parsing manuel
+      }
+      
+      return null;
+    }
+
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      return int.tryParse(value.toString()) ?? 0;
     }
 
     return Contrat(
-      contratId: map['contrat_id'] as int? ?? 0,
-      clientId: map['client_id'] as int? ?? 0,
+      contratId: parseInt(map['contrat_id']),
+      clientId: parseInt(map['client_id']),
       referenceContrat: map['reference_contrat'] as String? ?? '',
       dateContrat: parseDate(map['date_contrat']) ?? DateTime.now(),
       dateDebut: parseDate(map['date_debut']) ?? DateTime.now(),
       dateFin: parseDate(map['date_fin']),
       statutContrat: map['statut_contrat'] as String? ?? 'Actif',
-      dureeContrat: map['duree_contrat'] as int? ?? 0,
+      dureeContrat: parseInt(map['duree_contrat']),
       dureeType: map['duree'] as String? ?? 'Déterminée',
       categorie: map['categorie'] as String? ?? '',
       dateAbrogation: parseDate(map['date_abrogation']),

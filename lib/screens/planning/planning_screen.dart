@@ -127,6 +127,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
       ),
       body: Consumer<PlanningDetailsRepository>(
         builder: (context, detailsRepository, _) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           final treatmentsForSelected = _getTreatmentsForDay(
             _selectedDay,
             detailsRepository.allTreatmentsComplete,
@@ -154,40 +155,56 @@ class _PlanningScreenState extends State<PlanningScreen> {
 
                 // Événements du jour
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                    color: isDark ? AppTheme.darkBg : Colors.white,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        () {
-                          final dateStr = DateFormat(
-                            'EEEE dd MMMM yyyy',
-                            'fr_FR',
-                          ).format(_selectedDay);
-                          // Mettre en majuscule le premier caractère du jour et du mois
-                          final parts = dateStr.split(' ');
-                          if (parts.isNotEmpty) {
-                            // Majuscule du jour
-                            parts[0] =
-                                parts[0][0].toUpperCase() +
-                                parts[0].substring(1);
-                            // Majuscule du mois (généralement à l'index 2)
-                            if (parts.length > 2) {
-                              parts[2] =
-                                  parts[2][0].toUpperCase() +
-                                  parts[2].substring(1);
-                            }
-                          }
-                          return parts.join(' ');
-                        }(),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBlue,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              () {
+                                final dateStr = DateFormat(
+                                  'EEEE dd MMMM yyyy',
+                                  'fr_FR',
+                                ).format(_selectedDay);
+                                // Mettre en majuscule le premier caractère du jour et du mois
+                                final parts = dateStr.split(' ');
+                                if (parts.isNotEmpty) {
+                                  // Majuscule du jour
+                                  parts[0] =
+                                      parts[0][0].toUpperCase() +
+                                      parts[0].substring(1);
+                                  // Majuscule du mois (généralement à l'index 2)
+                                  if (parts.length > 2) {
+                                    parts[2] =
+                                        parts[2][0].toUpperCase() +
+                                        parts[2].substring(1);
+                                  }
+                                }
+                                return parts.join(' ');
+                              }(),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       if (treatmentsForSelected.isNotEmpty)
                         ListView.builder(
                           shrinkWrap: true,
@@ -213,16 +230,49 @@ class _PlanningScreenState extends State<PlanningScreen> {
                           },
                         )
                       else if (detailsRepository.isLoading)
-                        const Center(child: CircularProgressIndicator())
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(40.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       else if (detailsRepository.errorMessage != null)
                         Center(
-                          child: Text(
-                            'Erreur: ${detailsRepository.errorMessage}',
-                            style: const TextStyle(color: Colors.red),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Erreur: ${detailsRepository.errorMessage}',
+                              style: const TextStyle(color: AppTheme.errorRed),
+                            ),
                           ),
                         )
                       else
-                        const Center(child: Text('Aucun traitement ce jour')),
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.event_busy_rounded,
+                                  size: 48,
+                                  color: isDark ? Colors.white24 : Colors.grey[300],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Aucun traitement prévu pour ce jour',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white38 : Colors.grey[400],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -260,30 +310,66 @@ class _CalendarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: TableCalendar(
-          firstDay: DateTime(2024),
-          lastDay: DateTime(2079, 12, 31),
-          focusedDay: focusedDay,
-          selectedDayPredicate: (day) {
-            return isSameDay(selectedDay, day);
-          },
-          onDaySelected: onDaySelected,
-          onPageChanged: onPageChanged,
-          eventLoader: _getEventsMarkers,
-          calendarStyle: CalendarStyle(
-            selectedDecoration: BoxDecoration(
-              color: AppTheme.primaryBlue,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: AppTheme.cardDecoration(context, radius: 28),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: TableCalendar(
+            firstDay: DateTime(2024),
+            lastDay: DateTime(2079, 12, 31),
+            focusedDay: focusedDay,
+            locale: 'fr_FR',
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+            onDaySelected: onDaySelected,
+            onPageChanged: onPageChanged,
+            eventLoader: _getEventsMarkers,
+            calendarStyle: CalendarStyle(
+              selectedDecoration: BoxDecoration(
+                color: AppTheme.primaryBlue,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              todayDecoration: BoxDecoration(
+                color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.primaryBlue),
+              ),
+              todayTextStyle: TextStyle(
+                color: isDark ? Colors.white : AppTheme.primaryBlue,
+                fontWeight: FontWeight.bold,
+              ),
+              markerDecoration: const BoxDecoration(
+                color: AppTheme.primaryBlue,
+                shape: BoxShape.circle,
+              ),
+              markersMaxCount: 3,
+              defaultTextStyle: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              weekendTextStyle: TextStyle(color: isDark ? AppTheme.accentBlue : Colors.blue.shade700),
+              outsideTextStyle: TextStyle(color: isDark ? Colors.white24 : Colors.grey.shade400),
             ),
-            todayDecoration: BoxDecoration(
-              color: AppTheme.accentBlue,
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              leftChevronIcon: Icon(Icons.chevron_left_rounded, color: isDark ? Colors.white : Colors.black87),
+              rightChevronIcon: Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white : Colors.black87),
             ),
-          ),
-          headerStyle: const HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+              weekendStyle: TextStyle(color: isDark ? AppTheme.accentBlue : Colors.blue.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
           ),
         ),
       ),
@@ -336,6 +422,7 @@ class _PlanningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final traitement = _convertToString(treatment['traitement']);
     final axe = _convertToString(treatment['axe']);
     final etat = _convertToString(treatment['etat']);
@@ -345,85 +432,105 @@ class _PlanningCard extends StatelessWidget {
     final traitementFormate = _formatTraitement(traitement, categorie);
 
     final isEffectue = etat.toLowerCase().contains('effectué');
-    final bgColor = isEffectue ? Colors.green[50] : Colors.orange[50];
-    final textColor = isEffectue ? Colors.green[900] : Colors.orange[900];
+    
+    final statusColor = isEffectue 
+        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen)
+        : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      color: bgColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Icône d'état
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isEffectue ? Colors.green : Colors.orange,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isEffectue ? Icons.check_circle : Icons.schedule,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Détails
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      traitementFormate,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        fontSize: 13,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: AppTheme.cardDecoration(context, radius: 24),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Barre de statut latérale
+                Container(
+                  width: 6,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      bottomLeft: Radius.circular(24),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Contenu
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Axe: $axe',
-                          style: TextStyle(color: textColor, fontSize: 11),
+                          traitementFormate,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontSize: 14,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isEffectue
-                                ? Colors.green.shade200
-                                : Colors.orange.shade200,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            etat,
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on_outlined, size: 14, color: isDark ? Colors.white38 : Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Axe: $axe',
+                              style: TextStyle(
+                                color: isDark ? Colors.white60 : Colors.grey[600], 
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              // Flèche
-              Icon(Icons.arrow_forward_ios, size: 16, color: textColor),
-            ],
+                // Badge d'état
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isEffectue ? Icons.check_circle_rounded : Icons.pending_actions_rounded,
+                            color: statusColor,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            etat.toUpperCase(),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -450,8 +557,10 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
   final TextEditingController _problemeController = TextEditingController();
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void dispose() {
+    _remarqueController.dispose();
+    _problemeController.dispose();
+    super.dispose();
   }
 
   String _convertToString(dynamic value) {
@@ -521,50 +630,52 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
                     if (factures.isNotEmpty) {
                       final facture = factures.first;
 
-                      Navigator.pop(ctx);
+                      if (mounted) Navigator.pop(ctx);
 
                       // Afficher le RemarqueDialog avec la vraie facture
-                      AppDialogs.showBlurDialog(
-                        context: context,
-                        builder: (ctx2) => RemarqueDialog(
-                          planningDetail: planningDetail,
-                          facture: facture,
-                          onSaved: () async {
-                            logger.i(' Remarque enregistrée');
+                      if (mounted) {
+                        AppDialogs.showBlurDialog(
+                          context: context,
+                          builder: (ctx2) => RemarqueDialog(
+                            planningDetail: planningDetail,
+                            facture: facture,
+                            onSaved: () async {
+                              logger.i(' Remarque enregistrée');
 
-                            if (mounted) {
-                              await context
-                                  .read<PlanningDetailsRepository>()
-                                  .loadAllTreatmentsComplete();
-                              // Recharger aussi les factures pour les voir dans Factures
-                              await context
-                                  .read<FactureRepository>()
-                                  .loadAllFactures();
-                            }
+                              if (mounted) {
+                                await context
+                                    .read<PlanningDetailsRepository>()
+                                    .loadAllTreatmentsComplete();
+                                // Recharger aussi les factures pour les voir dans Factures
+                                await context
+                                    .read<FactureRepository>()
+                                    .loadAllFactures();
+                              }
 
-                            if (mounted) {
-                              AppSnackBars.showSuccess(
-                                context,
-                                'Remarque & Facture ajoutées avec succès',
-                              );
-                            }
+                              if (mounted) {
+                                AppSnackBars.showSuccess(
+                                  context,
+                                  'Remarque & Facture ajoutées avec succès',
+                                );
+                              }
 
-                            if (mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                        ),
-                      );
+                              if (mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                          ),
+                        );
+                      }
                     } else {
-                      throw Exception('Erreur création facture');
+                      throw Exception('Erreur récupération facture');
                     }
                   } else {
                     throw Exception('Erreur création facture');
                   }
                 } catch (err) {
                   logger.e(' Erreur: $err');
-                  Navigator.pop(ctx);
-                  AppSnackBars.showError(context, ' Erreur: $err');
+                  if (mounted) Navigator.pop(ctx);
+                  if (mounted) AppSnackBars.showError(context, ' Erreur: $err');
                 }
               },
               child: const Text('Créer Facture'),
@@ -621,13 +732,6 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _remarqueController.dispose();
-    _problemeController.dispose();
-    super.dispose();
-  }
-
   /// Formate le traitement en supprimant le titre et prénom si c'est une Société/Organisation
   String _formatTraitement(String traitement, String? categorie) {
     if (categorie == 'Société' || categorie == 'Organisation') {
@@ -651,6 +755,10 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    
     final traitement = _convertToString(widget.treatment['traitement']);
     final axe = _convertToString(widget.treatment['axe']);
     final etat = _convertToString(widget.treatment['etat']);
@@ -681,111 +789,64 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       }
     }
 
-    // Formater le traitement selon la catégorie
     final traitementFormate = _formatTraitement(traitement, categorie);
+    final isEffectue = etat.toLowerCase().contains('effectué');
+    final statusColor = isEffectue 
+        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen)
+        : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Détail du Planning'),
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(30),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Section infos planning
-            Center(
+            // Header Immersif (Style Profile/About)
+            _buildHeader(context, dateFormatee, statusColor, colorScheme, isDark),
+            const SizedBox(height: 70), // Espace pour l'icône qui dépasse
+            
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Column(
+                  children: [
+                    // Bloc Informations
+                    _buildDetailSection(
+                      context,
+                      title: 'Détails du Traitement',
                       children: [
-                        Center(
-                          child: const Text(
-                            'Informations du Planning',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _DetailRow('Traitement', traitementFormate),
-                        _DetailRow('Date', dateFormatee),
-                        _DetailRow('Axe', axe),
-                        _DetailRow('État', etat),
+                        _buildDetailTile(context, Icons.medical_services_outlined, 'Service', traitementFormate),
+                        _buildDetailTile(context, Icons.map_outlined, 'Axe / Secteur', axe),
+                        _buildDetailTile(context, Icons.info_outline_rounded, 'État actuel', etat, valueColor: statusColor),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 32),
+                    
+                    // Bloc Actions
+                    _buildDetailSection(
+                      context,
+                      title: 'Actions disponibles',
+                      children: [
+                        _buildActionTile(
+                          context,
+                          icon: Icons.edit_note_rounded,
+                          title: 'Ajouter une remarque',
+                          subtitle: 'Noter des précisions ou créer une facture',
+                          color: AppTheme.primaryBlue,
+                          onTap: _showRemarqueDialog,
+                        ),
+                        _buildActionTile(
+                          context,
+                          icon: Icons.report_problem_outlined,
+                          title: 'Signaler un problème',
+                          subtitle: 'Enregistrer une anomalie durant le traitement',
+                          color: isDark ? AppTheme.darkError : AppTheme.errorRed,
+                          onTap: _showSignalementDialog,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Boutons centré et petit
-            Center(
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.center,
-                children: [
-                  // Bouton 1: Ajouter une Remarque
-                  SizedBox(
-                    width: 220,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _showRemarqueDialog,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Ajouter une remarque',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-
-                  // Bouton 2: Signaler un Problème
-                  SizedBox(
-                    width: 220,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _showSignalementDialog,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Signaler un problème',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
@@ -793,28 +854,151 @@ class _PlanningDetailScreenState extends State<_PlanningDetailScreen> {
       ),
     );
   }
-}
 
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+  Widget _buildHeader(BuildContext context, String date, Color statusColor, ColorScheme colorScheme, bool isDark) {
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          height: 230,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(48)),
           ),
-          const SizedBox(width: 16),
-          Text(value, style: const TextStyle(fontSize: 13)),
-        ],
+        ),
+        // Bouton Retour en haut à gauche (Simplifié)
+        Positioned(
+          top: 40,
+          left: 8,
+          child: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          ),
+        ),
+        Positioned(
+          top: 50,
+          child: Column(
+            children: [
+              const Text(
+                'Traitement du',
+                style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.5),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                date,
+                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
+                    const SizedBox(width: 10),
+                    Text(
+                      'TRAITEMENT PLANIFIÉ',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: -45,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkCardBg : Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: isDark ? [] : [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(Icons.calendar_today_rounded, size: 48, color: AppTheme.primaryBlue),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailSection(BuildContext context, {required String title, required List<Widget> children}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+            ),
+          ),
+        ),
+        Container(
+          decoration: AppTheme.cardDecoration(context, radius: 24),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: List.generate(children.length, (index) {
+                return Column(
+                  children: [
+                    children[index],
+                    if (index < children.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: 60,
+                        endIndent: 16,
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailTile(BuildContext context, IconData icon, String label, String value, {Color? valueColor}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListTile(
+      leading: Icon(icon, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, size: 22),
+      title: Text(label, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600], fontWeight: FontWeight.bold)),
+      subtitle: Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+    );
+  }
+
+  Widget _buildActionTile(BuildContext context, {required IconData icon, required String title, required String subtitle, required Color color, required VoidCallback onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+        child: Icon(icon, color: color, size: 20),
       ),
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[600])),
+      trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }
 }

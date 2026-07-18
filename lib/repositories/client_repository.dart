@@ -56,10 +56,14 @@ class ClientRepository extends ChangeNotifier {
           'Cache HIT: Page $page (${cachedRows.length} clients from cache)',
         );
         if (page == 0) {
-          _clients = cachedRows.map((row) => Client.fromMap(row)).toList();
+          _clients = (cachedRows as List)
+              .map<Client>((row) => Client.fromMap(row as Map<String, dynamic>))
+              .toList();
         } else {
           _clients.addAll(
-            cachedRows.map((row) => Client.fromMap(row)).toList(),
+            (cachedRows as List)
+                .map<Client>((row) => Client.fromMap(row as Map<String, dynamic>))
+                .toList(),
           );
         }
         _currentPage = page;
@@ -91,7 +95,9 @@ class ClientRepository extends ChangeNotifier {
       _cache.set(cacheKey, rows);
       logger.i('Cache set for page $page');
 
-      final pageClients = rows.map((row) => Client.fromMap(row)).toList();
+      final pageClients = rows
+          .map<Client>((row) => Client.fromMap(row))
+          .toList();
       logger.i('Mapped ${pageClients.length} rows to Client objects');
 
       if (page == 0) {
@@ -386,7 +392,9 @@ class ClientRepository extends ChangeNotifier {
               throw TimeoutException('Database query timeout');
             },
           );
-      _clients = rows.map((row) => Client.fromMap(row)).toList();
+      _clients = rows
+          .map<Client>((row) => Client.fromMap(row))
+          .toList();
 
       // Tri garantis par Dart (en plus du SQL)
       _clients.sort((a, b) {
@@ -427,7 +435,9 @@ class ClientRepository extends ChangeNotifier {
       ''';
 
       final rows = await _db.query(sql, [category]);
-      _clients = rows.map((row) => Client.fromMap(row)).toList();
+      _clients = rows
+          .map<Client>((row) => Client.fromMap(row))
+          .toList();
 
       logger.i(
         '${_clients.length} clients trouvés pour la catégorie: $category',
