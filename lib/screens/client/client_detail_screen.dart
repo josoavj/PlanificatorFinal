@@ -284,24 +284,26 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Informations de contact
-        _buildSection(
+        AppSection(
           title: 'Coordonnées de contact',
+          margin: EdgeInsets.zero,
           children: [
-            _buildInfoRow(Icons.email_outlined, 'Adresse Email', client.email),
-            _buildInfoRow(Icons.phone_outlined, 'Téléphone', client.telephone),
-            _buildInfoRow(Icons.location_on_outlined, 'Adresse physique', client.adresse),
+            AppInfoTile(icon: Icons.email_outlined, label: 'Adresse Email', value: client.email),
+            AppInfoTile(icon: Icons.phone_outlined, label: 'Téléphone', value: client.telephone),
+            AppInfoTile(icon: Icons.location_on_outlined, label: 'Adresse physique', value: client.adresse),
           ],
         ),
         const SizedBox(height: 24),
 
         // Informations professionnelles
-        _buildSection(
+        AppSection(
           title: 'Détails Professionnels',
+          margin: EdgeInsets.zero,
           children: [
-            _buildInfoRow(Icons.business_center_outlined, 'Catégorie', client.categorie),
-            _buildInfoRow(Icons.description_outlined, 'NIF', client.nif),
-            _buildInfoRow(Icons.badge_outlined, 'STAT', client.stat),
-            _buildInfoRow(Icons.map_outlined, 'Axe / Secteur', client.axe),
+            AppInfoTile(icon: Icons.business_center_outlined, label: 'Catégorie', value: client.categorie),
+            AppInfoTile(icon: Icons.description_outlined, label: 'NIF', value: client.nif),
+            AppInfoTile(icon: Icons.badge_outlined, label: 'STAT', value: client.stat),
+            AppInfoTile(icon: Icons.map_outlined, label: 'Axe / Secteur', value: client.axe),
           ],
         ),
         const SizedBox(height: 32),
@@ -337,66 +339,6 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         ),
         const SizedBox(height: 40),
       ],
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required List<Widget> children,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Text(
-            title.toUpperCase(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.5,
-              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
-            ),
-          ),
-        ),
-        Container(
-          decoration: AppTheme.cardDecoration(context, radius: 24),
-          child: Material(
-            color: Colors.transparent,
-            child: Column(
-              children: List.generate(children.length, (index) {
-                return Column(
-                  children: [
-                    children[index],
-                    if (index < children.length - 1)
-                      Divider(
-                        height: 1,
-                        indent: 60,
-                        endIndent: 16,
-                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
-                      ),
-                  ],
-                );
-              }),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return ListTile(
-      leading: Icon(icon, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, size: 22),
-      title: Text(label, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600], fontWeight: FontWeight.bold)),
-      subtitle: Text(
-        value.isNotEmpty ? value : '-',
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 
