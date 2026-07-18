@@ -177,6 +177,11 @@ class AppTheme {
   static const Color darkTextSecondary = Color(0xFFC5CEE0);
   static const Color darkTextTertiary = Color(0xFF888FA3);
 
+  // Couleurs vibrantes pour statuts en mode sombre
+  static const Color darkSuccess = Color(0xFF00C853);
+  static const Color darkWarning = Color(0xFFFFAB00);
+  static const Color darkError = Color(0xFFFF1744);
+
   // Glassmorphism colors - teintes bleu/violet subtiles
   static const Color glassLight = Color(0xFF2D3561);
   static const Color glassBorder = Color(0x4DFFFFFF); // Blanc transparent
