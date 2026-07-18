@@ -12,6 +12,7 @@ import '../settings/settings_screen.dart';
 import '../about/about_screen.dart';
 import '../profile/profile_screen.dart';
 import '../export/export_screen.dart';
+import '../../utils/app_snackbars.dart';
 
 final logger = createLoggerWithFileOutput(name: 'home_screen');
 
@@ -125,23 +126,12 @@ class _DashboardTabState extends State<_DashboardTab> {
       logger.i(' Rafraîchissement complété');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(' Données rafraîchies'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        AppSnackBars.showSuccess(context, ' Données rafraîchies');
       }
     } catch (e) {
       logger.e(' Erreur lors du rafraîchissement: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(' Erreur: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        AppSnackBars.showError(context, ' Erreur: $e');
       }
     }
   }
