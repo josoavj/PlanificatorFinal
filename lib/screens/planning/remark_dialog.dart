@@ -155,15 +155,11 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(' Remarque & Facture enregistrées')),
-        );
+        AppSnackBars.showSuccess(context, ' Remarque & Facture enregistrées');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(' Erreur: $e'), backgroundColor: Colors.red),
-        );
+        AppSnackBars.showError(context, ' Erreur: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
