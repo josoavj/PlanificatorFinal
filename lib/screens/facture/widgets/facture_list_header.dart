@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme.dart';
 
 class FactureListHeader extends StatelessWidget {
   final TextEditingController searchController;
@@ -20,19 +21,18 @@ class FactureListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[600]!, Colors.blue[400]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -43,11 +43,11 @@ class FactureListHeader extends StatelessWidget {
                   controller: searchController,
                   decoration: InputDecoration(
                     hintText: 'Rechercher par client ou traitement...',
-                    hintStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.white70),
+                    prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.white70),
                     suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
+                            icon: const Icon(Icons.close, color: Colors.white, size: 20),
                             onPressed: () {
                               searchController.clear();
                               onSearchChanged('');
@@ -55,36 +55,36 @@ class FactureListHeader extends StatelessWidget {
                           )
                         : null,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.15),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   onChanged: onSearchChanged,
                 ),
               ),
               const SizedBox(width: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
                   onPressed: onRefresh,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
-              _buildBadge('$factureCount ${factureCount > 1 ? 'factures' : 'facture'}'),
+              _buildBadge('$factureCount ${factureCount > 1 ? 'factures' : 'facture'}', Icons.receipt_long_rounded),
               const SizedBox(width: 12),
-              _buildBadge('$treatmentCount ${treatmentCount > 1 ? 'traitements' : 'traitement'}'),
+              _buildBadge('$treatmentCount ${treatmentCount > 1 ? 'traitements' : 'traitement'}', Icons.assignment_rounded),
             ],
           ),
         ],
@@ -92,16 +92,28 @@ class FactureListHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge(String text) {
+  Widget _buildBadge(String text, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70, size: 14),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white, 
+              fontWeight: FontWeight.w800, 
+              fontSize: 12, 
+              letterSpacing: 0.5
+            ),
+          ),
+        ],
       ),
     );
   }
