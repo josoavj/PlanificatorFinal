@@ -278,6 +278,22 @@ class AuthRepository extends ChangeNotifier {
     }
   }
 
+  /// Vérifie le mot de passe actuel de l'utilisateur
+  Future<bool> verifyCurrentPassword(String password) async {
+    if (_currentUser == null) return false;
+
+    try {
+      const sql = 'SELECT password FROM Account WHERE id_compte = ?';
+      final row = await _db.queryOne(sql, [_currentUser!.userId]);
+      if (row == null) return false;
+
+      return _verifyPassword(password, row['password'] as String);
+    } catch (e) {
+      logger.e('Erreur lors de la vérification du mot de passe: $e');
+      return false;
+    }
+  }
+
   /// Change le mot de passe
   ///
   /// IMPORTANT: Valide le mot de passe actuel avant de changer.
