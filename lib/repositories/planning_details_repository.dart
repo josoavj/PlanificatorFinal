@@ -250,25 +250,25 @@ class PlanningDetailsRepository extends ChangeNotifier {
   }
 
   /// Charger les traitements à venir (table_prevision) - Version complète avec JOINs
-  /// Retourne: List<Map> avec clés: date, traitement, etat, axe
-  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete() async {
+  /// [startDate] : Date à partir de laquelle charger les traitements (par défaut aujourd'hui)
+  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({DateTime? startDate}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final today = DateTime.now();
-      final todayStr = today.toIso8601String().split('T')[0];
+      final effectiveDate = startDate ?? DateTime.now();
+      final dateStr = effectiveDate.toIso8601String().split('T')[0];
 
       logger.i(
-        '🔍 Chargement COMPLET traitements à venir (à partir de $todayStr)',
+        '🔍 Chargement COMPLET traitements à venir (à partir de $dateStr)',
       );
 
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db
           .query(
             SqlQueries.getUpcomingTreatmentsComplete,
-            [todayStr],
+            [dateStr],
           )
           .timeout(
             const Duration(seconds: 60),
