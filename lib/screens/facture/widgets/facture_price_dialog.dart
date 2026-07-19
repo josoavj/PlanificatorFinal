@@ -42,7 +42,7 @@ class FacturePriceDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prixInitialCtrl = TextEditingController(text: facture.montant.toString());
+    final prixInitialCtrl = TextEditingController(text: NumberFormatter.formatMontant(facture.montant));
     final prixNewCtrl = TextEditingController();
 
     return StatefulBuilder(
@@ -103,7 +103,7 @@ class FacturePriceDialog extends StatelessWidget {
                 AppSnackBars.showError(context, 'Erreur: $e');
               }
             },
-            child: const Text('Enregistrer'),
+            child: const Text('Modifier le prix'),
           ),
         ],
       ),
