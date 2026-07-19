@@ -232,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _clearLogs(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Effacer les logs', message: 'Supprimer tous les logs en mémoire et sur disque ?', confirmText: 'Effacer', isDestructive: true).then((c) async {
+    AppDialogs.confirm(context, title: 'Effacer les logs', message: 'Supprimer tous les logs en mémoire et sur disque ?', confirmText: 'Effacer les logs', isDestructive: true).then((c) async {
       if (c == true) { log.clear(); await log.clearLogFiles(); if (mounted) AppSnackBars.showSuccess(context, 'Logs effacés avec succès'); }
     });
   }
