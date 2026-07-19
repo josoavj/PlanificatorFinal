@@ -95,7 +95,6 @@ class _FactureScreenState extends State<FactureScreen> {
                   child: child,
                 );
               },
-              transitionDuration: const Duration(milliseconds: 300),
             ),
           ),
         );
