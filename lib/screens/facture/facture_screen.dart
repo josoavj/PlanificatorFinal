@@ -55,7 +55,7 @@ class _FactureScreenState extends State<FactureScreen> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: factureRepo.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : factureRepo.errorMessage != null
