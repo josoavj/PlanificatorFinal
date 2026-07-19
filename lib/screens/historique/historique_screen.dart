@@ -142,12 +142,15 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => _TreatmentListScreen(
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => _TreatmentListScreen(
                               title: section['title'] as String,
                               code: code,
                               treatments: treatments,
                             ),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(opacity: animation, child: child);
+                            },
                           ),
                         );
                       },
@@ -269,11 +272,14 @@ class _TreatmentListScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => _PlanningListScreen(
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => _PlanningListScreen(
                           title: clientName.trim().isNotEmpty ? '$traitementName - ${clientName.trim()}' : traitementName,
                           plannings: allPlannings,
                         ),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
                       ),
                     );
                   },
@@ -321,7 +327,12 @@ class _PlanningListScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => _TreatmentDetailScreen(treatment: planning)),
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => _TreatmentDetailScreen(treatment: planning),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
+                      ),
                     );
                   },
                 );
