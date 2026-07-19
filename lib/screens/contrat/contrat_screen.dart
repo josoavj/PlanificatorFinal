@@ -20,7 +20,7 @@ class ContratScreen extends StatefulWidget {
 }
 
 class _ContratScreenState extends State<ContratScreen> {
-  late Future<List<Map<String, dynamic>>> _contratsFuture;
+  Future<List<Map<String, dynamic>>>? _contratsFuture;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final logger = createLoggerWithFileOutput(name: 'contrat_screen');
@@ -28,7 +28,9 @@ class _ContratScreenState extends State<ContratScreen> {
   @override
   void initState() {
     super.initState();
-    _contratsFuture = _fetchContratsWithDetails();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reloadData();
+    });
   }
 
   @override
@@ -94,7 +96,7 @@ class _ContratScreenState extends State<ContratScreen> {
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _contratsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (_contratsFuture == null || snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
