@@ -5,6 +5,7 @@ import '../../models/index.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
+import '../../utils/number_formatter.dart';
 import 'widgets/facture_price_dialog.dart';
 
 class FactureDetailScreen extends StatefulWidget {
@@ -136,7 +137,7 @@ class _SummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label, 
+                  '$label', 
                   style: TextStyle(
                     fontSize: 10, 
                     fontWeight: FontWeight.w900, 
@@ -146,7 +147,7 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$amount Ar', 
+                  '${NumberFormatter.formatMontant(amount)} Ar', 
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -196,7 +197,7 @@ class _FactureRow extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '${facture.montant} Ar',
+            '${NumberFormatter.formatMontant(facture.montant)} Ar',
             style: TextStyle(
               fontWeight: FontWeight.w900, 
               fontSize: 15,
