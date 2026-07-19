@@ -268,6 +268,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                 children: [
                   Expanded(
                     child: Container(
+                      height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.3),
@@ -300,56 +301,71 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      controller: _filterCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                      decoration: InputDecoration(
-                        hintText: 'Source...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                        filled: true,
-                        fillColor: Colors.black.withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                    child: SizedBox(
+                      height: 40,
+                      child: TextField(
+                        controller: _filterCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          hintText: 'Source...',
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                          prefixIcon: const Icon(Icons.terminal, size: 16, color: Colors.white38),
+                          filled: true,
+                          fillColor: Colors.black.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                          isDense: true,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        isDense: true,
+                        onChanged: (val) {
+                          setState(() => _filterSource = val);
+                        },
                       ),
-                      onChanged: (val) {
-                        setState(() => _filterSource = val);
-                      },
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 2,
-                    child: TextField(
-                      controller: _searchCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                      decoration: InputDecoration(
-                        hintText: 'Rechercher un message...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                        prefixIcon: const Icon(Icons.search, size: 16, color: Colors.white38),
-                        filled: true,
-                        fillColor: Colors.black.withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                    child: SizedBox(
+                      height: 40,
+                      child: TextField(
+                        controller: _searchCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher un message...',
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                          prefixIcon: const Icon(Icons.search, size: 16, color: Colors.white38),
+                          filled: true,
+                          fillColor: Colors.black.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                          isDense: true,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        isDense: true,
+                        onChanged: (val) {
+                          setState(() => _searchQuery = val);
+                        },
                       ),
-                      onChanged: (val) {
-                        setState(() => _searchQuery = val);
-                      },
                     ),
                   ),
                 ],
