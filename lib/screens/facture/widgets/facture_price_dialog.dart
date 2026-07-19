@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../models/index.dart';
@@ -87,50 +86,65 @@ class FacturePriceDialog extends StatelessWidget {
                     margin: EdgeInsets.zero,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                        child: Column(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text('Ancien Prix', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${NumberFormatter.formatMontant(facture.montant)} Ar',
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, decoration: TextDecoration.lineThrough, color: Colors.grey),
-                                      ),
-                                    ],
+                            // ANCIEN PRIX
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Ancien Prix', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    height: 56, // Même hauteur que le TextField
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '${NumberFormatter.formatMontant(facture.montant)} Ar',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, decoration: TextDecoration.lineThrough, color: Colors.grey),
+                                    ),
                                   ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8),
-                                  child: Icon(Icons.arrow_forward_rounded, color: AppTheme.primaryBlue, size: 20),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: TextField(
+                                ],
+                              ),
+                            ),
+                            
+                            // FLÈCHE
+                            Padding(
+                              padding: const EdgeInsets.only(top: 40, left: 8, right: 16),
+                              child: Icon(Icons.arrow_forward_rounded, color: AppTheme.primaryBlue.withValues(alpha: 0.5), size: 20),
+                            ),
+
+                            // NOUVEAU PRIX
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Nouveau Prix', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+                                  const SizedBox(height: 12),
+                                  TextField(
                                     controller: prixNewCtrl,
                                     keyboardType: TextInputType.number,
                                     autofocus: true,
                                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
                                     decoration: InputDecoration(
-                                      labelText: 'Nouveau Prix',
                                       hintText: 'Ex: 85 000',
                                       prefixIcon: const Icon(Icons.payments_rounded, color: AppTheme.primaryBlue),
                                       suffixText: 'Ar',
-                                      helperText: 'Espaces gérés automatiquement',
+                                      filled: true,
+                                      fillColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
                                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade300)),
                                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 8, left: 4),
+                                    child: Text('Espaces gérés automatiquement', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
