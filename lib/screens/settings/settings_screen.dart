@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _logout(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Déconnexion', message: 'Êtes-vous sûr de vouloir vous déconnecter ?', confirmText: 'Se déconnecter').then((c) { if (c == true) { context.read<AuthRepository>().logout(); Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false); } });
+    AppDialogs.confirm(context, title: 'Déconnexion', message: 'Êtes-vous sûr de vouloir vous déconnecter ?', confirmText: 'Se déconnecter', isDestructive: true).then((c) { if (c == true) { context.read<AuthRepository>().logout(); Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false); } });
   }
 
   void _deleteAccount(BuildContext context) {
