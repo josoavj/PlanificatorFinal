@@ -120,7 +120,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: const Text('Garder les logs'),
           ),
           TextButton(
             onPressed: () {
@@ -128,7 +128,7 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
               Navigator.pop(ctx);
               setState(() {});
             },
-            child: const Text('Effacer'),
+            child: const Text('Tout effacer'),
           ),
         ],
       ),
@@ -522,6 +522,8 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     if (widget.isDialog) {
       return Dialog(
         backgroundColor: Colors.grey[950] ?? Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        clipBehavior: Clip.antiAlias,
         child: content,
       );
     } else {
