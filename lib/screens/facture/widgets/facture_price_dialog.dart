@@ -47,7 +47,6 @@ class FacturePriceDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final prixInitialCtrl = TextEditingController(text: NumberFormatter.formatMontant(facture.montant));
     final prixNewCtrl = TextEditingController();
 
     return Dialog(
