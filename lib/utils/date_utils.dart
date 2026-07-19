@@ -121,6 +121,14 @@ class DateUtils {
     return formatter.format(date);
   }
 
+  /// Formate une date en format complet avec majuscule au début
+  /// Exemple: "Samedi 18 juillet 2026"
+  static String formatDateFull(DateTime date) {
+    final str = DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(date);
+    if (str.isEmpty) return str;
+    return str[0].toUpperCase() + str.substring(1);
+  }
+
   /// Obtient le jour de la semaine en français
   static String getDayNameFr(DateTime date) {
     const days = [
