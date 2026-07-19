@@ -9,6 +9,8 @@ import '../../../utils/number_formatter.dart';
 import '../../../widgets/app_dialogs.dart';
 import '../../../widgets/common/index.dart';
 
+import '../../../utils/date_utils.dart' as date_utils;
+
 class FacturePriceDialog extends StatelessWidget {
   final Facture facture;
   final String groupTitle;
@@ -76,7 +78,7 @@ class FacturePriceDialog extends StatelessWidget {
                       AppInfoTile(
                         icon: Icons.calendar_today_rounded, 
                         label: 'Date du traitement', 
-                        value: DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(facture.dateTraitement),
+                        value: date_utils.DateUtils.formatDateFull(facture.dateTraitement),
                       ),
                     ],
                   ),
@@ -86,15 +88,17 @@ class FacturePriceDialog extends StatelessWidget {
                     margin: EdgeInsets.zero,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Text('Ancien Prix', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                                       const SizedBox(height: 4),
@@ -105,8 +109,10 @@ class FacturePriceDialog extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.arrow_forward_rounded, color: AppTheme.primaryBlue),
-                                const SizedBox(width: 24),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Icon(Icons.arrow_forward_rounded, color: AppTheme.primaryBlue, size: 20),
+                                ),
                                 Expanded(
                                   flex: 2,
                                   child: TextField(
@@ -119,7 +125,7 @@ class FacturePriceDialog extends StatelessWidget {
                                       hintText: 'Ex: 85 000',
                                       prefixIcon: const Icon(Icons.payments_rounded, color: AppTheme.primaryBlue),
                                       suffixText: 'Ar',
-                                      helperText: 'Espaces autorisés',
+                                      helperText: 'Espaces gérés automatiquement',
                                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade300)),
                                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2)),
                                     ),
