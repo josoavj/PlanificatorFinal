@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
-import '../../../models/index.dart';
+import '../../../models/facture.dart';
+import '../../../utils/number_formatter.dart';
 
 class FactureGroupCard extends StatelessWidget {
   final String title;
@@ -95,7 +97,7 @@ class FactureGroupCard extends StatelessWidget {
                         child: _buildInfoIndicator(
                           context,
                           icon: Icons.account_balance_wallet_rounded,
-                          label: 'Total: $total Ar',
+                          label: 'Total: ${NumberFormatter.formatMontant(total)} Ar',
                           color: AppTheme.primaryBlue,
                         ),
                       ),
@@ -104,7 +106,7 @@ class FactureGroupCard extends StatelessWidget {
                         child: _buildInfoIndicator(
                           context,
                           icon: Icons.error_outline_rounded,
-                          label: 'À régler: $unpaid Ar',
+                          label: 'À régler: ${NumberFormatter.formatMontant(unpaid)} Ar',
                           color: unpaid > 0 ? AppTheme.warningOrange : AppTheme.successGreen,
                         ),
                       ),
