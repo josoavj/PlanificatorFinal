@@ -303,7 +303,9 @@ class _PlanningListScreen extends StatelessWidget {
         if (dateTimeA == null || dateTimeB == null) return 0;
         return dateTimeB.compareTo(dateTimeA);
       });
-    } catch (e) { }
+    } catch (e) {
+      // Ignorer l'erreur de tri
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -436,7 +438,6 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
 
           final remarques = (snapshot.data?['remarques'] ?? []) as List<Remarque>;
           final signalements = (snapshot.data?['signalements'] ?? []) as List<Signalement>;
-          final factures = (snapshot.data?['factures'] ?? []) as List<Facture>;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
