@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import '../../core/theme.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
+import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
 
@@ -239,59 +240,60 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   Widget _buildStepContrat() {
     return Column(
       children: [
-        _buildSectionCard(
+        AppSection(
           title: 'Référence et Validité',
-          child: Column(
-            children: [
-              _buildModernField(_numeroContrat, 'Numéro de Contrat (ex: REF-2026-001)', Icons.tag_rounded),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(child: _buildModernDateField(_dateContrat, 'Date du contrat')),
-                  const SizedBox(width: 20),
-                  Expanded(child: _buildModernDateField(_dateDebut, 'Date de début de prestation')),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildDureeToggle(),
-            ],
-          ),
+          margin: EdgeInsets.zero,
+          children: [
+            _buildModernField(_numeroContrat, 'Numéro de Contrat (ex: REF-2026-001)', Icons.tag_rounded),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: _buildModernDateField(_dateContrat, 'Date du contrat')),
+                const SizedBox(width: 20),
+                Expanded(child: _buildModernDateField(_dateDebut, 'Date de début de prestation')),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildDureeToggle(),
+          ],
         ),
         const SizedBox(height: 30),
-        _buildSectionCard(
+        AppSection(
           title: 'Services à inclure',
-          child: _buildServicePicker(),
+          margin: EdgeInsets.zero,
+          children: [
+            _buildServicePicker(),
+          ],
         ),
       ],
     );
   }
 
   Widget _buildStepClient() {
-    return _buildSectionCard(
+    return AppSection(
       title: 'Identité du client',
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _buildModernField(_clientNom, 'Nom / Raison Sociale', Icons.person_outline_rounded)),
-              const SizedBox(width: 20),
-              Expanded(child: _buildModernField(_clientPrenom, 'Prénom / Responsable', Icons.badge_outlined)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
-              const SizedBox(width: 20),
-              Expanded(child: _buildModernField(_clientTelephone, 'Téléphone', Icons.phone_android_rounded)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
-          const SizedBox(height: 20),
-          _buildClientExtraParams(),
-        ],
-      ),
+      margin: EdgeInsets.zero,
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildModernField(_clientNom, 'Nom / Raison Sociale', Icons.person_outline_rounded)),
+            const SizedBox(width: 20),
+            Expanded(child: _buildModernField(_clientPrenom, 'Prénom / Responsable', Icons.badge_outlined)),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
+            const SizedBox(width: 20),
+            Expanded(child: _buildModernField(_clientTelephone, 'Téléphone', Icons.phone_android_rounded)),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
+        const SizedBox(height: 20),
+        _buildClientExtraParams(),
+      ],
     );
   }
 
@@ -321,17 +323,16 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           ),
         ),
         const SizedBox(height: 30),
-        _buildSectionCard(
+        AppSection(
           title: 'Fréquence et Facturation',
-          child: Column(
-            children: [
-              _buildFrequencySelector(tId),
-              const SizedBox(height: 30),
-              _buildModernField(null, 'Montant unitaire par passage (MGA)', Icons.payments_outlined, isNumeric: true, 
-                onChanged: (v) => _treatmentConfig[tId]!['montant'] = v,
-                initialValue: _treatmentConfig[tId]!['montant']),
-            ],
-          ),
+          margin: EdgeInsets.zero,
+          children: [
+            _buildFrequencySelector(tId),
+            const SizedBox(height: 30),
+            _buildModernField(null, 'Montant unitaire par passage (MGA)', Icons.payments_outlined, isNumeric: true, 
+              onChanged: (v) => _treatmentConfig[tId]!['montant'] = v,
+              initialValue: _treatmentConfig[tId]!['montant']),
+          ],
         ),
       ],
     );
@@ -340,39 +341,23 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   Widget _buildStepValidation() {
     return Column(
       children: [
-        _buildSectionCard(
+        AppSection(
           title: 'Récapitulatif Final',
-          child: Column(
-            children: [
-              _buildSummaryRow('Client', '${_clientNom.text} ${_clientPrenom.text}'),
-              _buildSummaryRow('Contrat', _numeroContrat.text),
-              _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
-              _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
-              const Divider(height: 40),
-              const Text('Voulez-vous valider et enregistrer ce contrat ?', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
+          margin: EdgeInsets.zero,
+          children: [
+            _buildSummaryRow('Client', '${_clientNom.text} ${_clientPrenom.text}'),
+            _buildSummaryRow('Contrat', _numeroContrat.text),
+            _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
+            _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
+            const Divider(height: 40),
+            const Text('Voulez-vous valider et enregistrer ce contrat ?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
         ),
       ],
     );
   }
 
   // --- WIDGET HELPERS ---
-
-  Widget _buildSectionCard({required String title, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(30),
-      decoration: AppTheme.cardDecoration(context, radius: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppTheme.primaryBlue, letterSpacing: 1.5)),
-          const SizedBox(height: 25),
-          child,
-        ],
-      ),
-    );
-  }
 
   Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue}) {
     return TextField(

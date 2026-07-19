@@ -415,18 +415,25 @@ class SqlQueries {
   static const String getCurrentMonthTreatmentsComplete = '''
     SELECT 
       pd.planning_detail_id,
+      pd.planning_id,
       DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
       CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) as traitement,
       COALESCE(pd.statut, 'Non planifié') as etat,
       COALESCE(c.axe, 'Non défini') as axe,
       COALESCE(tt.categorieTraitement, '') as categorieTraitement,
-      COALESCE(c.categorie, '') as categorie
+      COALESCE(c.categorie, '') as categorie,
+      COALESCE(f.montant, 0) as montant,
+      COALESCE(f.etat, 'Non payé') as facture_etat,
+      c.telephone,
+      c.email,
+      c.client_id
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
+    LEFT JOIN Facture f ON pd.planning_detail_id = f.planning_detail_id
     WHERE YEAR(pd.date_planification) = ?
     AND MONTH(pd.date_planification) = ?
     AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
@@ -444,13 +451,19 @@ class SqlQueries {
       COALESCE(pd.statut, 'Non planifié') as etat,
       COALESCE(c.axe, 'Non défini') as axe,
       COALESCE(tt.categorieTraitement, '') as categorieTraitement,
-      COALESCE(c.categorie, '') as categorie
+      COALESCE(c.categorie, '') as categorie,
+      COALESCE(f.montant, 0) as montant,
+      COALESCE(f.etat, 'Non payé') as facture_etat,
+      c.telephone,
+      c.email,
+      c.client_id
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
+    LEFT JOIN Facture f ON pd.planning_detail_id = f.planning_detail_id
     WHERE pd.date_planification >= ?
     AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
     ORDER BY pd.date_planification ASC

@@ -52,9 +52,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Selector<ThemeProvider, bool>(
                       selector: (_, tp) => tp.isDarkMode,
                       builder: (context, isDark, _) => AppSwitchCard(
-                        icon: Icons.brightness_4_outlined,
-                        title: 'Mode sombre',
-                        subtitle: 'Utiliser le thème sombre',
+                        icon: isDark ? Icons.wb_sunny_outlined : Icons.mode_night_outlined,
+                        title: isDark ? 'Mode clair' : 'Mode sombre',
+                        subtitle: isDark ? 'Utiliser le thème clair' : 'Utiliser le thème sombre',
                         value: isDark,
                         onChanged: (v) => context.read<ThemeProvider>().toggleTheme(),
                       ),
