@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
@@ -121,14 +120,18 @@ class _PlanningScreenState extends State<PlanningScreen> {
                             treatment: treatments[index], 
                             onTap: () => Navigator.push(
                               context, 
-                              MaterialPageRoute(
-                                builder: (context) => PlanningDetailScreen(
-                                  treatment: treatments[index], 
-                                  planningDetailId: treatments[index]['planning_detail_id'] ?? 0
-                                )
-                              )
-                            )
-                          )
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => 
+                                    PlanningDetailScreen(
+                                      treatment: treatments[index], 
+                                      planningDetailId: treatments[index]['planning_detail_id'] ?? 0
+                                    ),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                              ),
+                            ),
+                          ),
                         )
                       else if (repo.isLoading) 
                         const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()))
