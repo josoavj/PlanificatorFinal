@@ -112,27 +112,19 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   }
 
   void _clearLogs() {
-    AppDialogs.showBlurDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: const Text('Effacer tous les logs en mémoire?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Garder les logs'),
-          ),
-          TextButton(
-            onPressed: () {
-              log.clear();
-              Navigator.pop(ctx);
-              setState(() {});
-            },
-            child: const Text('Tout effacer'),
-          ),
-        ],
-      ),
-    );
+    AppDialogs.confirm(
+      context,
+      title: 'Confirmer la suppression',
+      message: 'Effacer tous les logs en mémoire ?',
+      confirmText: 'Tout effacer',
+      cancelText: 'Garder les logs',
+      isDestructive: true,
+    ).then((confirmed) {
+      if (confirmed == true) {
+        log.clear();
+        setState(() {});
+      }
+    });
   }
 
   void _exportLogs() {
