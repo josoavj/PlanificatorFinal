@@ -98,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Données locales',
                       subtitle: 'Gérer les données en cache',
                       onTap: () => _showCacheDialog(context),
+                      isDestructive: true,
                     ),
                   ],
                 ),
@@ -201,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCacheDialog(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Vider le cache', message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.', confirmText: 'Vider').then((c) { if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé'); });
+    AppDialogs.confirm(context, title: 'Vider le cache', message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.', confirmText: 'Vider la cache').then((c) { if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé'); });
   }
 
   void _logout(BuildContext context) {
