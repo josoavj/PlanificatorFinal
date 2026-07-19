@@ -9,6 +9,8 @@ import '../../../repositories/index.dart';
 
 import '../../client/widgets/client_details_dialog.dart';
 
+import '../../../utils/date_utils.dart' as date_utils;
+
 class TreatmentDetailDialog extends StatelessWidget {
   final Map<String, dynamic> data;
 
@@ -256,7 +258,7 @@ class TreatmentDetailDialog extends StatelessWidget {
     if (dateStr == null) return 'N/A';
     try {
       final date = DateTime.parse(dateStr);
-      return DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(date);
+      return date_utils.DateUtils.formatDateFull(date);
     } catch (e) {
       return dateStr;
     }
