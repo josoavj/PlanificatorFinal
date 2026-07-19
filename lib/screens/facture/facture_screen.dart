@@ -86,8 +86,16 @@ class _FactureScreenState extends State<FactureScreen> {
           factures: group,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => FactureDetailScreen(factures: group, groupTitle: key),
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => 
+                  FactureDetailScreen(factures: group, groupTitle: key),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 300),
             ),
           ),
         );
