@@ -49,23 +49,26 @@ class AppSection extends StatelessWidget {
             color: backgroundColor,
           ),
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: List.generate(children.length, (index) {
-              return Column(
-                children: [
-                  children[index],
-                  if (index < children.length - 1)
-                    Divider(
-                      height: 1,
-                      indent: 60,
-                      endIndent: 16,
-                      color: isDark 
-                          ? Colors.white.withValues(alpha: 0.05) 
-                          : Colors.grey.withValues(alpha: 0.1),
-                    ),
-                ],
-              );
-            }),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: List.generate(children.length, (index) {
+                return Column(
+                  children: [
+                    children[index],
+                    if (index < children.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: 60,
+                        endIndent: 16,
+                        color: isDark 
+                            ? Colors.white.withValues(alpha: 0.05) 
+                            : Colors.grey.withValues(alpha: 0.1),
+                      ),
+                  ],
+                );
+              }),
+            ),
           ),
         ),
         const SizedBox(height: 16),
