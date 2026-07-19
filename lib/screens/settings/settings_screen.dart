@@ -202,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCacheDialog(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Vider le cache', message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.', confirmText: 'Vider la cache').then((c) { if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé'); });
+    AppDialogs.confirm(context, title: 'Vider le cache', message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.', confirmText: 'Vider la cache', isDestructive: true).then((c) { if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé'); });
   }
 
   void _logout(BuildContext context) {
@@ -210,7 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _deleteAccount(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Supprimer le compte', message: 'Cette action est irréversible. Tous vos données seront supprimées. Êtes-vous sûr ?', confirmText: 'Supprimer définitivement').then((c) async {
+    AppDialogs.confirm(context, title: 'Supprimer le compte', message: 'Cette action est irréversible. Tous vos données seront supprimées. Êtes-vous sûr ?', confirmText: 'Supprimer définitivement', isDestructive: true).then((c) async {
       if (c == true) {
         try {
           final auth = context.read<AuthRepository>();
@@ -232,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _clearLogs(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Effacer les logs', message: 'Supprimer tous les logs en mémoire et sur disque ?', confirmText: 'Effacer').then((c) async {
+    AppDialogs.confirm(context, title: 'Effacer les logs', message: 'Supprimer tous les logs en mémoire et sur disque ?', confirmText: 'Effacer', isDestructive: true).then((c) async {
       if (c == true) { log.clear(); await log.clearLogFiles(); if (mounted) AppSnackBars.showSuccess(context, 'Logs effacés avec succès'); }
     });
   }
