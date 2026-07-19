@@ -55,6 +55,7 @@ class AppDialogs {
     required String message,
     String confirmText = 'Confirmer',
     String cancelText = 'Annuler',
+    bool isDestructive = false,
   }) {
     return showBlurDialog<bool>(
       context: context,
@@ -67,6 +68,7 @@ class AppDialogs {
             child: Text(cancelText),
           ),
           ElevatedButton(
+            style: isDestructive ? ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed, foregroundColor: Colors.white) : null,
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(confirmText),
           ),

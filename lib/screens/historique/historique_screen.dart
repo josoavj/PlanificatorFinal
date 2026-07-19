@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../services/logging_service.dart';
+import '../../utils/date_utils.dart' as date_utils;
 import 'widgets/category_button.dart';
 import 'widgets/treatment_client_card.dart';
 
@@ -142,12 +142,15 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => _TreatmentListScreen(
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) => _TreatmentListScreen(
                               title: section['title'] as String,
                               code: code,
                               treatments: treatments,
                             ),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(opacity: animation, child: child);
+                            },
                           ),
                         );
                       },
@@ -269,11 +272,14 @@ class _TreatmentListScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => _PlanningListScreen(
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => _PlanningListScreen(
                           title: clientName.trim().isNotEmpty ? '$traitementName - ${clientName.trim()}' : traitementName,
                           plannings: allPlannings,
                         ),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
                       ),
                     );
                   },
@@ -321,7 +327,12 @@ class _PlanningListScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => _TreatmentDetailScreen(treatment: planning)),
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => _TreatmentDetailScreen(treatment: planning),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
+                      ),
                     );
                   },
                 );
@@ -340,7 +351,7 @@ class _PlanningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateValue = planning['date'] is String ? DateTime.parse(planning['date'] as String) : planning['date'] as DateTime?;
-    final date = dateValue != null ? DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(dateValue) : 'Date inconnue';
+    final date = dateValue != null ? date_utils.DateUtils.formatDateFull(dateValue) : 'Date inconnue';
     final etat = planning['etat']?.toString() ?? '';
     final axe = planning['axe']?.toString() ?? '';
 
@@ -424,7 +435,9 @@ class _TreatmentDetailScreenState extends State<_TreatmentDetailScreen> {
   Widget build(BuildContext context) {
     final traitement = widget.treatment['traitement']?.toString() ?? '';
     final dateValue = widget.treatment['date_planification'] ?? widget.treatment['date'];
-    final dateStr = dateValue is DateTime ? DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(dateValue) : dateValue.toString();
+    final dateStr = dateValue is DateTime 
+        ? date_utils.DateUtils.formatDateFull(dateValue) 
+        : (dateValue != null ? date_utils.DateUtils.formatDateFull(DateTime.parse(dateValue.toString())) : 'N/A');
     final etat = widget.treatment['etat']?.toString() ?? '';
     final axe = widget.treatment['axe']?.toString() ?? '';
 

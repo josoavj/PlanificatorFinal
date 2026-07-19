@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
+import '../../utils/date_utils.dart' as date_utils;
 import 'widgets/calendar_widget.dart';
 import 'widgets/planning_card.dart';
 import 'planning_detail_screen.dart';
@@ -120,14 +120,18 @@ class _PlanningScreenState extends State<PlanningScreen> {
                             treatment: treatments[index], 
                             onTap: () => Navigator.push(
                               context, 
-                              MaterialPageRoute(
-                                builder: (context) => PlanningDetailScreen(
-                                  treatment: treatments[index], 
-                                  planningDetailId: treatments[index]['planning_detail_id'] ?? 0
-                                )
-                              )
-                            )
-                          )
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => 
+                                    PlanningDetailScreen(
+                                      treatment: treatments[index], 
+                                      planningDetailId: treatments[index]['planning_detail_id'] ?? 0
+                                    ),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                              ),
+                            ),
+                          ),
                         )
                       else if (repo.isLoading) 
                         const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()))
@@ -167,10 +171,6 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   String _formatDateLong(DateTime date) {
-    final str = DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(date);
-    final parts = str.split(' ');
-    if (parts.isNotEmpty) parts[0] = parts[0][0].toUpperCase() + parts[0].substring(1);
-    if (parts.length > 2) parts[2] = parts[2][0].toUpperCase() + parts[2].substring(1);
-    return parts.join(' ');
+    return date_utils.DateUtils.formatDateFull(date);
   }
 }

@@ -54,14 +54,11 @@ class _FactureScreenState extends State<FactureScreen> {
                 treatmentCount: groupedData.keys.length,
               ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: factureRepo.isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : factureRepo.errorMessage != null
-                          ? Center(child: Text('Erreur: ${factureRepo.errorMessage}', style: const TextStyle(color: Colors.red)))
-                          : _buildList(groupedData),
-                ),
+                child: factureRepo.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : factureRepo.errorMessage != null
+                        ? Center(child: Text('Erreur: ${factureRepo.errorMessage}', style: const TextStyle(color: Colors.red)))
+                        : _buildList(groupedData),
               ),
             ],
           );
@@ -89,8 +86,15 @@ class _FactureScreenState extends State<FactureScreen> {
           factures: group,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => FactureDetailScreen(factures: group, groupTitle: key),
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => 
+                  FactureDetailScreen(factures: group, groupTitle: key),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
             ),
           ),
         );

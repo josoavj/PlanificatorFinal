@@ -530,10 +530,24 @@ class AboutScreen extends StatelessWidget {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       children: [
-        const Divider(),
-        const SizedBox(height: 24),
+        Container(
+          height: 1,
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

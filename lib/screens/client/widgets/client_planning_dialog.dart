@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme.dart';
 import '../../../models/client.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/index.dart';
+import '../../../../utils/date_utils.dart' as date_utils;
 import 'client_details_dialog.dart';
 
 class ClientPlanningDialog extends StatelessWidget {
@@ -78,11 +78,7 @@ class ClientPlanningDialog extends StatelessWidget {
                     ),
                     ...traitements.map((planning) {
                       final date = planning['date_planification'] as DateTime?;
-                      final dateStr = date != null ? DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(date) : 'Date inconnue';
-                      final parts = dateStr.split(' ');
-                      if (parts.isNotEmpty) parts[0] = parts[0][0].toUpperCase() + parts[0].substring(1);
-                      if (parts.length > 2) parts[2] = parts[2][0].toUpperCase() + parts[2].substring(1);
-                      final capitalizedDate = parts.join(' ');
+                      final capitalizedDate = date != null ? date_utils.DateUtils.formatDateFull(date) : 'Date inconnue';
 
                       final etat = planning['etat'] as String? ?? '-';
                       final isEffectue = etat.toLowerCase().contains('effectué');

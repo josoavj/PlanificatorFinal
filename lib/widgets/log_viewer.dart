@@ -112,27 +112,19 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   }
 
   void _clearLogs() {
-    AppDialogs.showBlurDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: const Text('Effacer tous les logs en mémoire?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
-          ),
-          TextButton(
-            onPressed: () {
-              log.clear();
-              Navigator.pop(ctx);
-              setState(() {});
-            },
-            child: const Text('Effacer'),
-          ),
-        ],
-      ),
-    );
+    AppDialogs.confirm(
+      context,
+      title: 'Confirmer la suppression',
+      message: 'Effacer tous les logs en mémoire ?',
+      confirmText: 'Tout effacer',
+      cancelText: 'Garder les logs',
+      isDestructive: true,
+    ).then((confirmed) {
+      if (confirmed == true) {
+        log.clear();
+        setState(() {});
+      }
+    });
   }
 
   void _exportLogs() {
@@ -275,68 +267,105 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButton<LogLevel>(
-                      value: _filterLevel,
-                      style: const TextStyle(color: Colors.white),
-                      dropdownColor: Colors.grey[800],
-                      items: LogLevel.values
-                          .map(
-                            (level) => DropdownMenuItem(
-                              value: level,
-                              child: Text(level.name.toUpperCase()),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (level) {
-                        if (level != null) {
-                          setState(() => _filterLevel = level);
-                        }
-                      },
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[700]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<LogLevel>(
+                          value: _filterLevel,
+                          isExpanded: true,
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          dropdownColor: Colors.grey[900],
+                          icon: const Icon(Icons.filter_list, size: 16, color: Colors.blue),
+                          items: LogLevel.values
+                              .map(
+                                (level) => DropdownMenuItem(
+                                  value: level,
+                                  child: Text(level.name.toUpperCase()),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (level) {
+                            if (level != null) {
+                              setState(() => _filterLevel = level);
+                            }
+                          },
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      controller: _filterCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      decoration: InputDecoration(
-                        hintText: 'Source...',
-                        hintStyle: TextStyle(color: Colors.grey[500]),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                    child: SizedBox(
+                      height: 40,
+                      child: TextField(
+                        controller: _filterCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          hintText: 'Source...',
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                          prefixIcon: const Icon(Icons.terminal, size: 16, color: Colors.white38),
+                          filled: true,
+                          fillColor: Colors.black.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                          isDense: true,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        isDense: true,
+                        onChanged: (val) {
+                          setState(() => _filterSource = val);
+                        },
                       ),
-                      onChanged: (val) {
-                        setState(() => _filterSource = val);
-                      },
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 2,
-                    child: TextField(
-                      controller: _searchCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      decoration: InputDecoration(
-                        hintText: 'Recherche...',
-                        hintStyle: TextStyle(color: Colors.grey[500]),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                    child: SizedBox(
+                      height: 40,
+                      child: TextField(
+                        controller: _searchCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher un message...',
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                          prefixIcon: const Icon(Icons.search, size: 16, color: Colors.white38),
+                          filled: true,
+                          fillColor: Colors.black.withValues(alpha: 0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[700]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                          isDense: true,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        isDense: true,
+                        onChanged: (val) {
+                          setState(() => _searchQuery = val);
+                        },
                       ),
-                      onChanged: (val) {
-                        setState(() => _searchQuery = val);
-                      },
                     ),
                   ),
                 ],
@@ -522,6 +551,8 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
     if (widget.isDialog) {
       return Dialog(
         backgroundColor: Colors.grey[950] ?? Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        clipBehavior: Clip.antiAlias,
         child: content,
       );
     } else {
