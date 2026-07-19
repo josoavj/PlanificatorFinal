@@ -54,14 +54,11 @@ class _FactureScreenState extends State<FactureScreen> {
                 treatmentCount: groupedData.keys.length,
               ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: factureRepo.isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : factureRepo.errorMessage != null
-                          ? Center(child: Text('Erreur: ${factureRepo.errorMessage}', style: const TextStyle(color: Colors.red)))
-                          : _buildList(groupedData),
-                ),
+                child: factureRepo.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : factureRepo.errorMessage != null
+                        ? Center(child: Text('Erreur: ${factureRepo.errorMessage}', style: const TextStyle(color: Colors.red)))
+                        : _buildList(groupedData),
               ),
             ],
           );
