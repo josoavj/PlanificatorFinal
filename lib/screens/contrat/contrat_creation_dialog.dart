@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,9 @@ import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
+import '../../utils/phone_formatter.dart';
+import '../../utils/nif_stat_formatter.dart';
+import '../../widgets/common/multi_phone_input.dart';
 
 class ContratCreationDialog extends StatefulWidget {
   final int? clientId;
@@ -38,7 +42,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   final _clientNom = TextEditingController();
   final _clientPrenom = TextEditingController();
   final _clientEmail = TextEditingController();
-  final _clientTelephone = TextEditingController();
+  final List<TextEditingController> _clientPhoneControllers = [TextEditingController()];
   final _clientAdresse = TextEditingController();
   final _clientCategorie = TextEditingController(text: 'Particulier');
   final _clientNif = TextEditingController();
@@ -56,6 +60,28 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     super.initState();
     _loadTypeTraitements();
     _checkForSavedProgress();
+  }
+
+  @override
+  void dispose() {
+    _numeroContrat.dispose();
+    _dateContrat.dispose();
+    _dateDebut.dispose();
+    _dateFin.dispose();
+    _categorieContrat.dispose();
+    _dureeContrat.dispose();
+    _clientNom.dispose();
+    _clientPrenom.dispose();
+    _clientEmail.dispose();
+    for (var controller in _clientPhoneControllers) {
+      controller.dispose();
+    }
+    _clientAdresse.dispose();
+    _clientCategorie.dispose();
+    _clientNif.dispose();
+    _clientStat.dispose();
+    _clientAxe.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTypeTraitements() async {
@@ -101,9 +127,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         'nom': _clientNom.text,
         'prenom': _clientPrenom.text,
         'email': _clientEmail.text,
-        'tel': _clientTelephone.text,
+        'tels': _clientPhoneControllers.map((c) => c.text).toList(),
         'adr': _clientAdresse.text,
         'cat': _clientCategorie.text,
+        'nif': _clientNif.text,
+        'stat': _clientStat.text,
         'axe': _clientAxe.text,
       }
     };
@@ -129,9 +157,16 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         _clientNom.text = c['nom'];
         _clientPrenom.text = c['prenom'];
         _clientEmail.text = c['email'];
-        _clientTelephone.text = c['tel'];
+        final List<String> tels = List<String>.from(c['tels'] ?? [c['tel'] ?? '']);
+        _clientPhoneControllers.clear();
+        for (var t in tels) {
+          _clientPhoneControllers.add(TextEditingController(text: t));
+        }
+        if (_clientPhoneControllers.isEmpty) _clientPhoneControllers.add(TextEditingController());
         _clientAdresse.text = c['adr'];
         _clientCategorie.text = c['cat'];
+        _clientNif.text = c['nif'] ?? '';
+        _clientStat.text = c['stat'] ?? '';
         _clientAxe.text = c['axe'];
       });
     }
@@ -243,6 +278,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         AppSection(
           title: 'Référence et Validité',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          showDividers: false,
           children: [
             _buildModernField(_numeroContrat, 'Numéro de Contrat (ex: REF-2026-001)', Icons.tag_rounded),
             const SizedBox(height: 20),
@@ -257,10 +294,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             _buildDureeToggle(),
           ],
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 32),
         AppSection(
           title: 'Services à inclure',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
             _buildServicePicker(),
           ],
@@ -270,34 +308,92 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepClient() {
-    return AppSection(
-      title: 'Identité du client',
-      margin: EdgeInsets.zero,
+    final cat = _clientCategorie.text;
+    final isSociety = cat == 'Société';
+    final isParticular = cat == 'Particulier';
+    
+    final String nomLabel;
+    if (isParticular) {
+      nomLabel = 'Nom';
+    } else if (isSociety) {
+      nomLabel = "Nom de l'entreprise";
+    } else {
+      nomLabel = "Nom de l'organisation";
+    }
+    
+    final prenomLabel = isParticular ? 'Prénom' : 'Nom du Responsable';
+
+    return Column(
       children: [
-        Row(
+        AppSection(
+          title: 'Type de client',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          children: [_buildCategoryPicker()],
+        ),
+        const SizedBox(height: 32),
+        AppSection(
+          title: 'Identité du client',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          showDividers: false,
           children: [
-            Expanded(child: _buildModernField(_clientNom, 'Nom / Raison Sociale', Icons.person_outline_rounded)),
-            const SizedBox(width: 20),
-            Expanded(child: _buildModernField(_clientPrenom, 'Prénom / Responsable', Icons.badge_outlined)),
+            Row(
+              children: [
+                Expanded(child: _buildModernField(_clientNom, nomLabel, Icons.person_outline_rounded)),
+                const SizedBox(width: 20),
+                Expanded(child: _buildModernField(_clientPrenom, prenomLabel, Icons.badge_outlined)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
+                const SizedBox(width: 20),
+                Expanded(child: _buildClientExtraParams()),
+              ],
+            ),
+            if (isSociety) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildModernField(
+                      _clientNif, 
+                      'NIF', 
+                      Icons.description_outlined,
+                      inputFormatters: [NifInputFormatter()],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: _buildModernField(
+                      _clientStat, 
+                      'STAT', 
+                      Icons.badge_outlined,
+                      inputFormatters: [StatInputFormatter()],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
+            _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
+            const SizedBox(height: 24),
+            // NOUVELLE SECTION TÉLÉPHONES
+            MultiPhoneInput(
+              controllers: _clientPhoneControllers, 
+              onAdd: () => setState(() => _clientPhoneControllers.add(TextEditingController())), 
+              onRemove: (idx) => setState(() => _clientPhoneControllers.removeAt(idx)),
+            ),
           ],
         ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
-            const SizedBox(width: 20),
-            Expanded(child: _buildModernField(_clientTelephone, 'Téléphone', Icons.phone_android_rounded)),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
-        const SizedBox(height: 20),
-        _buildClientExtraParams(),
       ],
     );
   }
 
   Widget _buildStepPlanning() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_selectedTreatments.isEmpty) return const Center(child: Text('Aucun service sélectionné'));
     
     final tId = _selectedTreatments[_treatmentIndex];
@@ -310,22 +406,35 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1)),
+          ),
           child: Row(
             children: [
-              const Icon(Icons.settings_suggest_rounded, color: AppTheme.primaryBlue),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.settings_suggest_rounded, color: AppTheme.primaryBlue, size: 20),
+              ),
               const SizedBox(width: 16),
-              Text('Configuration du service (${_treatmentIndex + 1}/${_selectedTreatments.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('Configuration du service (${_treatmentIndex + 1}/${_selectedTreatments.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const Spacer(),
-              Text(type?.type ?? '', style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue, borderRadius: BorderRadius.circular(12)),
+                child: Text(type?.type ?? '', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 10)),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 32),
         AppSection(
           title: 'Fréquence et Facturation',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
             _buildFrequencySelector(tId),
             const SizedBox(height: 30),
@@ -339,18 +448,51 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepValidation() {
+    final cat = _clientCategorie.text;
+    final isParticular = cat == 'Particulier';
+    final isSociety = cat == 'Société';
+
+    final String entityLabel;
+    if (isParticular) {
+      entityLabel = 'Nom complet';
+    } else if (isSociety) {
+      entityLabel = "Nom de l'entreprise";
+    } else {
+      entityLabel = "Nom de l'organisation";
+    }
+
+    final clientDisplay = isParticular 
+        ? '${_clientNom.text} ${_clientPrenom.text}' 
+        : _clientNom.text;
+
     return Column(
       children: [
         AppSection(
           title: 'Récapitulatif Final',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
-            _buildSummaryRow('Client', '${_clientNom.text} ${_clientPrenom.text}'),
-            _buildSummaryRow('Contrat', _numeroContrat.text),
+            _buildSummaryRow('Catégorie Client', cat),
+            _buildSummaryRow(entityLabel, clientDisplay),
+            if (!isParticular) _buildSummaryRow('Responsable', _clientPrenom.text),
+            _buildSummaryRow('Téléphone(s)', _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / ')),
+            if (isSociety) ...[
+              _buildSummaryRow('NIF', NifStatFormatter.formatNif(_clientNif.text)),
+              _buildSummaryRow('STAT', NifStatFormatter.formatStat(_clientStat.text)),
+            ],
+            const Divider(height: 32),
+            _buildSummaryRow('Référence Contrat', _numeroContrat.text),
             _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
             _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
-            const Divider(height: 40),
-            const Text('Voulez-vous valider et enregistrer ce contrat ?', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 20),
+            const Center(
+              child: Text(
+                'Voulez-vous valider et enregistrer ce contrat ?', 
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
+              ),
+            ),
           ],
         ),
       ],
@@ -359,14 +501,16 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   // --- WIDGET HELPERS ---
 
-  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue}) {
+  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue, List<TextInputFormatter>? inputFormatters, Widget? suffixIcon}) {
     return TextField(
       controller: controller ?? (initialValue != null ? TextEditingController(text: initialValue) : null),
       onChanged: onChanged,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryBlue),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
@@ -395,19 +539,31 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildDureeToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1)),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.timer_outlined, color: AppTheme.primaryBlue),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.timer_outlined, color: AppTheme.primaryBlue, size: 20),
+          ),
           const SizedBox(width: 16),
-          const Text('Contrat à durée déterminée ?', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Contrat à durée déterminée ?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           const Spacer(),
-          Switch(value: _isDeterminee, activeThumbColor: AppTheme.primaryBlue, onChanged: (v) => setState(() => _isDeterminee = v)),
+          Switch.adaptive(value: _isDeterminee, activeTrackColor: AppTheme.primaryBlue, onChanged: (v) => setState(() => _isDeterminee = v)),
           if (_isDeterminee) ...[
             const SizedBox(width: 20),
-            SizedBox(width: 100, child: _buildModernField(_dureeContrat, 'Mois', Icons.numbers, isNumeric: true)),
+            SizedBox(
+              width: 120, 
+              child: _buildModernField(_dureeContrat, 'Mois', Icons.numbers, isNumeric: true)
+            ),
           ],
         ],
       ),
@@ -473,26 +629,68 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildClientExtraParams() {
+    return DropdownButtonFormField<String>(
+      initialValue: _clientAxe.text,
+      decoration: InputDecoration(
+        labelText: 'Axe Géographique', 
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+        filled: true,
+        fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+      ),
+      items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+      onChanged: (v) => setState(() => _clientAxe.text = v!),
+    );
+  }
+
+  Widget _buildCategoryPicker() {
+    final categories = [
+      {'label': 'Particulier', 'icon': Icons.person_rounded},
+      {'label': 'Organisation', 'icon': Icons.account_balance_rounded},
+      {'label': 'Société', 'icon': Icons.business_rounded},
+    ];
+    final current = _clientCategorie.text;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            initialValue: _clientCategorie.text,
-            decoration: InputDecoration(labelText: 'Catégorie Client', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
-            items: ['Particulier', 'Organisation', 'Société'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-            onChanged: (v) => setState(() => _clientCategorie.text = v!),
+      children: categories.map((c) {
+        bool active = current == c['label'];
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: InkWell(
+              onTap: () => setState(() => _clientCategorie.text = c['label'] as String),
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(c['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 28),
+                    const SizedBox(height: 12),
+                    Text(
+                      c['label'] as String, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900, 
+                        fontSize: 13, 
+                        color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        letterSpacing: 0.5
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            initialValue: _clientAxe.text,
-            decoration: InputDecoration(labelText: 'Axe Géographique', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
-            items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-            onChanged: (v) => setState(() => _clientAxe.text = v!),
-          ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 
@@ -583,7 +781,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       // 1. Créer le client
       final newClient = Client(
         clientId: 0, nom: _clientNom.text, prenom: _clientPrenom.text,
-        email: _clientEmail.text, telephone: _clientTelephone.text,
+        email: _clientEmail.text, 
+        telephone: PhoneFormatter.join(_clientPhoneControllers.map((c) => c.text).toList()),
         adresse: _clientAdresse.text, nif: _clientNif.text, stat: _clientStat.text,
         categorie: _clientCategorie.text,
         axe: _clientAxe.text, dateAjout: DateTime.now(),

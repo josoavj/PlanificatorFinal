@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../models/client.dart';
 import '../../../repositories/index.dart';
 import '../../../utils/app_snackbars.dart';
 import '../../../widgets/index.dart';
 import '../../../core/theme.dart';
+import '../../../utils/nif_stat_formatter.dart';
+import '../../../utils/phone_formatter.dart';
+import '../../../widgets/common/multi_phone_input.dart';
 import 'client_details_dialog.dart';
 
 class ClientEditDialog extends StatefulWidget {
@@ -35,7 +39,7 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
   late TextEditingController nomController;
   late TextEditingController prenomController;
   late TextEditingController emailController;
-  late TextEditingController telephoneController;
+  late List<TextEditingController> phoneControllers;
   late TextEditingController adresseController;
   late String selectedAxe;
   late String selectedCategorie;
@@ -48,7 +52,11 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
     nomController = TextEditingController(text: widget.client.nom);
     prenomController = TextEditingController(text: widget.client.prenom);
     emailController = TextEditingController(text: widget.client.email);
-    telephoneController = TextEditingController(text: widget.client.telephone);
+    
+    final List<String> tels = PhoneFormatter.split(widget.client.telephone);
+    phoneControllers = tels.map((t) => TextEditingController(text: t)).toList();
+    if (phoneControllers.isEmpty) phoneControllers.add(TextEditingController());
+    
     adresseController = TextEditingController(text: widget.client.adresse);
     selectedAxe = widget.client.axe;
     selectedCategorie = widget.client.categorie;
@@ -61,7 +69,9 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
     nomController.dispose();
     prenomController.dispose();
     emailController.dispose();
-    telephoneController.dispose();
+    for (var c in phoneControllers) {
+      c.dispose();
+    }
     adresseController.dispose();
     nifController.dispose();
     statController.dispose();
@@ -86,13 +96,22 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                     ? 'Responsable' : 'Prénom',
                 prenomController,
               ),
-              _buildEditField('Email', emailController),
-              _buildEditField('Téléphone', telephoneController),
+              Row(
+                children: [
+                  Expanded(child: _buildEditField('Email', emailController)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildAxisDropdown((value) => setState(() => selectedAxe = value), selectedAxe)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              MultiPhoneInput(
+                title: 'Numéros de téléphone',
+                controllers: phoneControllers, 
+                onAdd: () => setState(() => phoneControllers.add(TextEditingController())), 
+                onRemove: (idx) => setState(() => phoneControllers.removeAt(idx)),
+              ),
               const SizedBox(height: 16),
-
-              _buildSectionHeader('ADRESSE & LOCALISATION'),
               _buildEditField('Adresse', adresseController),
-              _buildAxisDropdown((value) => setState(() => selectedAxe = value), selectedAxe),
               const SizedBox(height: 16),
 
               _buildSectionHeader('CATÉGORIE & INFOS'),
@@ -116,8 +135,8 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                     children: [
                       Text('Informations Fiscales', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700], fontSize: 13)),
                       const SizedBox(height: 12),
-                      _buildEditField('NIF', nifController),
-                      _buildEditField('STAT', statController),
+                      _buildEditField('NIF', nifController, inputFormatters: [NifInputFormatter()]),
+                      _buildEditField('STAT', statController, inputFormatters: [StatInputFormatter()]),
                     ],
                   ),
                 ),
@@ -159,7 +178,7 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                 nom: nomController.text,
                 prenom: prenomController.text,
                 email: emailController.text,
-                telephone: telephoneController.text,
+                telephone: PhoneFormatter.join(phoneControllers.map((c) => c.text).toList()),
                 adresse: adresseController.text,
                 categorie: selectedCategorie,
                 nif: nifController.text,
@@ -185,18 +204,37 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
     );
   }
 
-  Widget _buildEditField(String label, TextEditingController controller) {
+  Widget _buildEditField(String label, TextEditingController controller, {List<TextInputFormatter>? inputFormatters}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(controller: controller, decoration: InputDecoration(labelText: label, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8))),
+      child: TextField(
+        controller: controller, 
+        inputFormatters: inputFormatters,
+        decoration: InputDecoration(
+          labelText: label, 
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), 
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+        )
+      ),
     );
   }
 
   Widget _buildAxisDropdown(Function(String) onChanged, String selectedValue) {
     final axes = ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<String>(initialValue: selectedValue, decoration: InputDecoration(labelText: 'Axe', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)), items: axes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v != null) onChanged(v); }),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DropdownButtonFormField<String>(
+      initialValue: selectedValue, 
+      decoration: InputDecoration(
+        labelText: 'Axe', 
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), 
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+        filled: true,
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+      ), 
+      items: axes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), 
+      onChanged: (v) { if (v != null) onChanged(v); }
     );
   }
 
