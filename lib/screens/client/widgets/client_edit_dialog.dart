@@ -7,6 +7,7 @@ import '../../../utils/app_snackbars.dart';
 import '../../../widgets/index.dart';
 import '../../../core/theme.dart';
 import '../../../utils/nif_stat_formatter.dart';
+import '../../../utils/phone_formatter.dart';
 import 'client_details_dialog.dart';
 
 class ClientEditDialog extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
   late TextEditingController nomController;
   late TextEditingController prenomController;
   late TextEditingController emailController;
-  late TextEditingController telephoneController;
+  late List<TextEditingController> phoneControllers;
   late TextEditingController adresseController;
   late String selectedAxe;
   late String selectedCategorie;
@@ -50,7 +51,11 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
     nomController = TextEditingController(text: widget.client.nom);
     prenomController = TextEditingController(text: widget.client.prenom);
     emailController = TextEditingController(text: widget.client.email);
-    telephoneController = TextEditingController(text: widget.client.telephone);
+    
+    final List<String> tels = PhoneFormatter.split(widget.client.telephone);
+    phoneControllers = tels.map((t) => TextEditingController(text: t)).toList();
+    if (phoneControllers.isEmpty) phoneControllers.add(TextEditingController());
+    
     adresseController = TextEditingController(text: widget.client.adresse);
     selectedAxe = widget.client.axe;
     selectedCategorie = widget.client.categorie;
@@ -63,7 +68,9 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
     nomController.dispose();
     prenomController.dispose();
     emailController.dispose();
-    telephoneController.dispose();
+    for (var c in phoneControllers) {
+      c.dispose();
+    }
     adresseController.dispose();
     nifController.dispose();
     statController.dispose();
@@ -89,7 +96,37 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                 prenomController,
               ),
               _buildEditField('Email', emailController),
-              _buildEditField('Téléphone', telephoneController),
+              const SizedBox(height: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...phoneControllers.asMap().entries.map((entry) {
+                    int idx = entry.key;
+                    var controller = entry.value;
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: _buildEditField(
+                            idx == 0 ? 'Téléphone' : 'Téléphone ${idx + 1}', 
+                            controller,
+                            inputFormatters: [PhoneInputFormatter()],
+                          ),
+                        ),
+                        if (idx > 0)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: AppTheme.errorRed),
+                            onPressed: () => setState(() => phoneControllers.removeAt(idx)),
+                          )
+                        else if (phoneControllers.length < 3)
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue),
+                            onPressed: () => setState(() => phoneControllers.add(TextEditingController())),
+                          ),
+                      ],
+                    );
+                  }),
+                ],
+              ),
               const SizedBox(height: 16),
 
               _buildSectionHeader('ADRESSE & LOCALISATION'),
@@ -161,7 +198,7 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                 nom: nomController.text,
                 prenom: prenomController.text,
                 email: emailController.text,
-                telephone: telephoneController.text,
+                telephone: PhoneFormatter.join(phoneControllers.map((c) => c.text).toList()),
                 adresse: adresseController.text,
                 categorie: selectedCategorie,
                 nif: nifController.text,
