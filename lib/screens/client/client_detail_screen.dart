@@ -5,6 +5,7 @@ import '../../repositories/index.dart';
 import '../../utils/app_snackbars.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
+import '../../utils/nif_stat_formatter.dart';
 
 class ClientDetailScreen extends StatefulWidget {
   final int clientId;
@@ -301,8 +302,8 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           margin: EdgeInsets.zero,
           children: [
             AppInfoTile(icon: Icons.business_center_outlined, label: 'Catégorie', value: client.categorie),
-            AppInfoTile(icon: Icons.description_outlined, label: 'NIF', value: client.nif),
-            AppInfoTile(icon: Icons.badge_outlined, label: 'STAT', value: client.stat),
+            AppInfoTile(icon: Icons.description_outlined, label: 'NIF', value: NifStatFormatter.formatNif(client.nif)),
+            AppInfoTile(icon: Icons.badge_outlined, label: 'STAT', value: NifStatFormatter.formatStat(client.stat)),
             AppInfoTile(icon: Icons.map_outlined, label: 'Axe / Secteur', value: client.axe),
           ],
         ),
@@ -405,11 +406,13 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _nifController,
+            inputFormatters: [NifInputFormatter()],
             decoration: const InputDecoration(labelText: 'NIF', prefixIcon: Icon(Icons.description_outlined)),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _statController,
+            inputFormatters: [StatInputFormatter()],
             decoration: const InputDecoration(labelText: 'STAT', prefixIcon: Icon(Icons.badge_outlined)),
           ),
           const SizedBox(height: 16),
