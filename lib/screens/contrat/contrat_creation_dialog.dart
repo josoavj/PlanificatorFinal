@@ -14,6 +14,7 @@ import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
 import '../../utils/phone_formatter.dart';
 import '../../utils/nif_stat_formatter.dart';
+import '../../widgets/common/multi_phone_input.dart';
 
 class ContratCreationDialog extends StatefulWidget {
   final int? clientId;
@@ -349,33 +350,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
               children: [
                 Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
                 const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ..._clientPhoneControllers.asMap().entries.map((entry) {
-                        int idx = entry.key;
-                        var controller = entry.value;
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: idx < _clientPhoneControllers.length - 1 ? 8 : 0),
-                          child: _buildModernField(
-                            controller, 
-                            idx == 0 ? 'Téléphone' : 'Téléphone ${idx + 1}', 
-                            Icons.phone_android_rounded,
-                            inputFormatters: [PhoneInputFormatter()],
-                            suffixIcon: idx > 0 ? IconButton(
-                              icon: const Icon(Icons.remove_circle_outline, color: AppTheme.errorRed, size: 20),
-                              onPressed: () => setState(() => _clientPhoneControllers.removeAt(idx)),
-                            ) : (_clientPhoneControllers.length < 3 ? IconButton(
-                              icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue, size: 20),
-                              onPressed: () => setState(() => _clientPhoneControllers.add(TextEditingController())),
-                            ) : null),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
+                Expanded(child: _buildClientExtraParams()),
               ],
             ),
             if (isSociety) ...[
@@ -404,8 +379,13 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             ],
             const SizedBox(height: 20),
             _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
-            const SizedBox(height: 20),
-            _buildClientExtraParams(),
+            const SizedBox(height: 24),
+            // NOUVELLE SECTION TÉLÉPHONES
+            MultiPhoneInput(
+              controllers: _clientPhoneControllers, 
+              onAdd: () => setState(() => _clientPhoneControllers.add(TextEditingController())), 
+              onRemove: (idx) => setState(() => _clientPhoneControllers.removeAt(idx)),
+            ),
           ],
         ),
       ],
@@ -649,21 +629,17 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildClientExtraParams() {
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            initialValue: _clientAxe.text,
-            decoration: InputDecoration(
-              labelText: 'Axe Géographique', 
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
-            ),
-            items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-            onChanged: (v) => setState(() => _clientAxe.text = v!),
-          ),
-        ),
-      ],
+    return DropdownButtonFormField<String>(
+      initialValue: _clientAxe.text,
+      decoration: InputDecoration(
+        labelText: 'Axe Géographique', 
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+        filled: true,
+        fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+      ),
+      items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+      onChanged: (v) => setState(() => _clientAxe.text = v!),
     );
   }
 
@@ -806,7 +782,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       final newClient = Client(
         clientId: 0, nom: _clientNom.text, prenom: _clientPrenom.text,
         email: _clientEmail.text, 
-        telephone: _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / '),
+        telephone: PhoneFormatter.join(_clientPhoneControllers.map((c) => c.text).toList()),
         adresse: _clientAdresse.text, nif: _clientNif.text, stat: _clientStat.text,
         categorie: _clientCategorie.text,
         axe: _clientAxe.text, dateAjout: DateTime.now(),
