@@ -104,6 +104,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         'tel': _clientTelephone.text,
         'adr': _clientAdresse.text,
         'cat': _clientCategorie.text,
+        'nif': _clientNif.text,
+        'stat': _clientStat.text,
         'axe': _clientAxe.text,
       }
     };
@@ -132,6 +134,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         _clientTelephone.text = c['tel'];
         _clientAdresse.text = c['adr'];
         _clientCategorie.text = c['cat'];
+        _clientNif.text = c['nif'] ?? '';
+        _clientStat.text = c['stat'] ?? '';
         _clientAxe.text = c['axe'];
       });
     }
@@ -273,31 +277,67 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepClient() {
-    return AppSection(
-      title: 'Identité du client',
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(24),
-      showDividers: false,
+    final cat = _clientCategorie.text;
+    final isSociety = cat == 'Société';
+    final isParticular = cat == 'Particulier';
+    
+    final String nomLabel;
+    if (isParticular) {
+      nomLabel = 'Nom';
+    } else if (isSociety) {
+      nomLabel = "Nom de l'entreprise";
+    } else {
+      nomLabel = "Nom de l'organisation";
+    }
+    
+    final prenomLabel = isParticular ? 'Prénom' : 'Nom du Responsable';
+
+    return Column(
       children: [
-        Row(
+        AppSection(
+          title: 'Type de client',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          children: [_buildCategoryPicker()],
+        ),
+        const SizedBox(height: 32),
+        AppSection(
+          title: 'Identité du client',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          showDividers: false,
           children: [
-            Expanded(child: _buildModernField(_clientNom, 'Nom / Raison Sociale', Icons.person_outline_rounded)),
-            const SizedBox(width: 20),
-            Expanded(child: _buildModernField(_clientPrenom, 'Prénom / Responsable', Icons.badge_outlined)),
+            Row(
+              children: [
+                Expanded(child: _buildModernField(_clientNom, nomLabel, Icons.person_outline_rounded)),
+                const SizedBox(width: 20),
+                Expanded(child: _buildModernField(_clientPrenom, prenomLabel, Icons.badge_outlined)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
+                const SizedBox(width: 20),
+                Expanded(child: _buildModernField(_clientTelephone, 'Téléphone', Icons.phone_android_rounded)),
+              ],
+            ),
+            if (isSociety) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: _buildModernField(_clientNif, 'NIF', Icons.description_outlined)),
+                  const SizedBox(width: 20),
+                  Expanded(child: _buildModernField(_clientStat, 'STAT', Icons.badge_outlined)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
+            _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
+            const SizedBox(height: 20),
+            _buildClientExtraParams(),
           ],
         ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
-            const SizedBox(width: 20),
-            Expanded(child: _buildModernField(_clientTelephone, 'Téléphone', Icons.phone_android_rounded)),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _buildModernField(_clientAdresse, 'Adresse complète', Icons.location_on_outlined),
-        const SizedBox(height: 20),
-        _buildClientExtraParams(),
       ],
     );
   }
@@ -358,6 +398,23 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepValidation() {
+    final cat = _clientCategorie.text;
+    final isParticular = cat == 'Particulier';
+    final isSociety = cat == 'Société';
+
+    final String entityLabel;
+    if (isParticular) {
+      entityLabel = 'Nom complet';
+    } else if (isSociety) {
+      entityLabel = "Nom de l'entreprise";
+    } else {
+      entityLabel = "Nom de l'organisation";
+    }
+
+    final clientDisplay = isParticular 
+        ? '${_clientNom.text} ${_clientPrenom.text}' 
+        : _clientNom.text;
+
     return Column(
       children: [
         AppSection(
@@ -365,8 +422,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
-            _buildSummaryRow('Client', '${_clientNom.text} ${_clientPrenom.text}'),
-            _buildSummaryRow('Contrat', _numeroContrat.text),
+            _buildSummaryRow('Catégorie Client', cat),
+            _buildSummaryRow(entityLabel, clientDisplay),
+            if (!isParticular) _buildSummaryRow('Responsable', _clientPrenom.text),
+            const Divider(height: 32),
+            _buildSummaryRow('Référence Contrat', _numeroContrat.text),
             _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
             _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
             const SizedBox(height: 20),
@@ -516,22 +576,68 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            initialValue: _clientCategorie.text,
-            decoration: InputDecoration(labelText: 'Catégorie Client', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
-            items: ['Particulier', 'Organisation', 'Société'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-            onChanged: (v) => setState(() => _clientCategorie.text = v!),
-          ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            initialValue: _clientAxe.text,
-            decoration: InputDecoration(labelText: 'Axe Géographique', border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
+            value: _clientAxe.text,
+            decoration: InputDecoration(
+              labelText: 'Axe Géographique', 
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+            ),
             items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (v) => setState(() => _clientAxe.text = v!),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCategoryPicker() {
+    final categories = [
+      {'label': 'Particulier', 'icon': Icons.person_rounded},
+      {'label': 'Organisation', 'icon': Icons.account_balance_rounded},
+      {'label': 'Société', 'icon': Icons.business_rounded},
+    ];
+    final current = _clientCategorie.text;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      children: categories.map((c) {
+        bool active = current == c['label'];
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: InkWell(
+              onTap: () => setState(() => _clientCategorie.text = c['label'] as String),
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(c['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 28),
+                    const SizedBox(height: 12),
+                    Text(
+                      c['label'] as String, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900, 
+                        fontSize: 13, 
+                        color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        letterSpacing: 0.5
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
