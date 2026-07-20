@@ -8,6 +8,7 @@ import '../../widgets/index.dart';
 import '../../core/theme.dart';
 import '../../utils/nif_stat_formatter.dart';
 import '../../utils/phone_formatter.dart';
+import '../../widgets/common/multi_phone_input.dart';
 
 class ClientDetailScreen extends StatefulWidget {
   final int clientId;
@@ -386,24 +387,33 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildModernField(_emailController, 'Email de contact', Icons.alternate_email_rounded)),
+              Expanded(
+                child: _buildModernField(_emailController, 'Email de contact', Icons.alternate_email_rounded),
+              ),
               const SizedBox(width: 20),
               Expanded(
-                child: Column(
-                  children: [
-                    ..._phoneControllers.asMap().entries.map((e) => Row(
-                      children: [
-                        Expanded(child: _buildEditField(e.key == 0 ? 'Téléphone' : 'Tél ${e.key + 1}', e.value, inputFormatters: [PhoneInputFormatter()])),
-                        if (e.key > 0) IconButton(icon: const Icon(Icons.remove_circle_outline, color: AppTheme.errorRed), onPressed: () => setState(() => _phoneControllers.removeAt(e.key)))
-                        else if (_phoneControllers.length < 3) IconButton(icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue), onPressed: () => setState(() => _phoneControllers.add(TextEditingController()))),
-                      ],
-                    )),
-                  ],
+                child: DropdownButtonFormField<String>(
+                  initialValue: _axeController.text,
+                  decoration: InputDecoration(
+                    labelText: 'Axe Géographique', 
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+                    filled: true,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+                  ),
+                  items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  onChanged: (v) => setState(() => _axeController.text = v!),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          MultiPhoneInput(
+            controllers: _phoneControllers, 
+            onAdd: () => setState(() => _phoneControllers.add(TextEditingController())), 
+            onRemove: (idx) => setState(() => _phoneControllers.removeAt(idx)),
+          ),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _adresseController,
             decoration: const InputDecoration(labelText: 'Adresse', prefixIcon: Icon(Icons.location_on_outlined)),
@@ -477,21 +487,6 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.all(18),
-      ),
-    );
-  }
-
-  Widget _buildEditField(String label, TextEditingController controller, {List<TextInputFormatter>? inputFormatters}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller, 
-        inputFormatters: inputFormatters,
-        decoration: InputDecoration(
-          labelText: label, 
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), 
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
-        )
       ),
     );
   }
