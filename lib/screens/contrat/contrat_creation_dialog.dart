@@ -9,6 +9,7 @@ import 'package:collection/collection.dart';
 import '../../core/theme.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
+import '../../utils/number_formatter.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
@@ -405,42 +406,87 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
     return Column(
       children: [
+        // BANDEAU SERVICE
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1)),
+            color: isDark ? AppTheme.darkBgSecondary : Colors.blue.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1)),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.settings_suggest_rounded, color: AppTheme.primaryBlue, size: 20),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.settings_suggest_rounded, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 16),
-              Text('Configuration du service (${_treatmentIndex + 1}/${_selectedTreatments.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const Spacer(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Configuration du service (${_treatmentIndex + 1}/${_selectedTreatments.length})', 
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      type?.type ?? 'Service inconnu', 
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5)
+                    ),
+                  ],
+                ),
+              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(color: AppTheme.primaryBlue, borderRadius: BorderRadius.circular(12)),
-                child: Text(type?.type ?? '', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 10)),
+                child: const Text('EN COURS', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 10, letterSpacing: 1)),
               ),
             ],
           ),
         ),
         const SizedBox(height: 32),
+        
+        // SECTION FRÉQUENCE
         AppSection(
-          title: 'Fréquence et Facturation',
+          title: 'Fréquence de passage',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
-            _buildFrequencySelector(tId),
-            const SizedBox(height: 30),
-            _buildModernField(null, 'Montant unitaire par passage (MGA)', Icons.payments_outlined, isNumeric: true, 
+            _buildFrequencyGrid(tId),
+          ],
+        ),
+        
+        const SizedBox(height: 32),
+        
+        // SECTION FACTURATION
+        AppSection(
+          title: 'Conditions financières',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          children: [
+            _buildModernField(
+              null, 
+              'Montant unitaire par passage (Net)', 
+              Icons.payments_outlined, 
+              isNumeric: true, 
               onChanged: (v) => _treatmentConfig[tId]!['montant'] = v,
-              initialValue: _treatmentConfig[tId]!['montant']),
+              initialValue: _treatmentConfig[tId]!['montant'],
+              inputFormatters: [AmountInputFormatter()],
+              suffixIcon: const Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Center(widthFactor: 1, child: Text('MGA / Ar', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                'Les séparateurs de milliers s\'ajoutent automatiquement pendant la saisie.',
+                style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+              ),
+            ),
           ],
         ),
       ],
@@ -600,27 +646,53 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildFrequencySelector(int tId) {
+  Widget _buildFrequencyGrid(int tId) {
     final frequencies = [
-      {'label': 'Mensuel', 'value': 1},
-      {'label': 'Trimestriel', 'value': 3},
-      {'label': 'Semestriel', 'value': 6},
-      {'label': 'Annuel', 'value': 12},
-      {'label': 'Une seule fois', 'value': 0},
+      {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded},
+      {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded},
+      {'label': 'Semestriel', 'value': 6, 'icon': Icons.event_note_rounded},
+      {'label': 'Annuel', 'value': 12, 'icon': Icons.event_available_rounded},
+      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded},
     ];
     int current = _treatmentConfig[tId]!['redondance'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
       children: frequencies.map((f) {
         bool active = current == f['value'];
         return Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip(
-              label: Text(f['label'] as String, style: TextStyle(color: active ? Colors.white : null, fontSize: 11)),
-              selected: active,
-              onSelected: (v) => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
-              selectedColor: AppTheme.primaryBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: InkWell(
+              onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(f['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 24),
+                    const SizedBox(height: 10),
+                    Text(
+                      f['label'] as String, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900, 
+                        fontSize: 11, 
+                        color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        letterSpacing: 0.5
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );

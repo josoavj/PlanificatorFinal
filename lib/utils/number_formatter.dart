@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 /// Utilitaires pour la manipulation des nombres (prix, montants)
 class NumberFormatter {
   /// Parse un montant en ignorant les espaces et caractères non-numériques
@@ -55,5 +57,31 @@ class NumberFormatter {
     } catch (e) {
       return false;
     }
+  }
+}
+
+/// Formatteur pour les champs de saisie de montants (en temps réel)
+class AmountInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Si le champ est vide
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    // Garder seulement les chiffres
+    final String cleanText = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    final int montant = int.tryParse(cleanText) ?? 0;
+
+    // Formater avec espaces
+    final String formattedText = NumberFormatter.formatMontant(montant);
+
+    return TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: formattedText.length),
+    );
   }
 }
