@@ -4,6 +4,7 @@ import '../../../core/theme.dart';
 import '../../../models/client.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/index.dart';
+import '../../../utils/nif_stat_formatter.dart';
 import 'client_edit_dialog.dart';
 import 'client_planning_dialog.dart';
 
@@ -86,9 +87,9 @@ class ClientDetailsDialog extends StatelessWidget {
                       _buildDetailRow(context, Icons.category_outlined, 'Catégorie', client.categorie),
                       if (client.categorie == 'Société') ...[
                         _buildSubtleDivider(isDark),
-                        _buildDetailRow(context, Icons.description_outlined, 'NIF', client.nif),
+                        _buildDetailRow(context, Icons.description_outlined, 'NIF', NifStatFormatter.formatNif(client.nif)),
                         _buildSubtleDivider(isDark),
-                        _buildDetailRow(context, Icons.badge_outlined, 'STAT', client.stat),
+                        _buildDetailRow(context, Icons.badge_outlined, 'STAT', NifStatFormatter.formatStat(client.stat)),
                       ],
                     ],
                   ),
