@@ -8,6 +8,7 @@ import '../../../widgets/index.dart';
 import '../../../core/theme.dart';
 import '../../../utils/nif_stat_formatter.dart';
 import '../../../utils/phone_formatter.dart';
+import '../../../widgets/common/multi_phone_input.dart';
 import 'client_details_dialog.dart';
 
 class ClientEditDialog extends StatefulWidget {
@@ -95,43 +96,22 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                     ? 'Responsable' : 'Prénom',
                 prenomController,
               ),
-              _buildEditField('Email', emailController),
-              const SizedBox(height: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  ...phoneControllers.asMap().entries.map((entry) {
-                    int idx = entry.key;
-                    var controller = entry.value;
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: _buildEditField(
-                            idx == 0 ? 'Téléphone' : 'Téléphone ${idx + 1}', 
-                            controller,
-                            inputFormatters: [PhoneInputFormatter()],
-                          ),
-                        ),
-                        if (idx > 0)
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: AppTheme.errorRed),
-                            onPressed: () => setState(() => phoneControllers.removeAt(idx)),
-                          )
-                        else if (phoneControllers.length < 3)
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue),
-                            onPressed: () => setState(() => phoneControllers.add(TextEditingController())),
-                          ),
-                      ],
-                    );
-                  }),
+                  Expanded(child: _buildEditField('Email', emailController)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildAxisDropdown((value) => setState(() => selectedAxe = value), selectedAxe)),
                 ],
               ),
+              const SizedBox(height: 8),
+              MultiPhoneInput(
+                title: 'Numéros de téléphone',
+                controllers: phoneControllers, 
+                onAdd: () => setState(() => phoneControllers.add(TextEditingController())), 
+                onRemove: (idx) => setState(() => phoneControllers.removeAt(idx)),
+              ),
               const SizedBox(height: 16),
-
-              _buildSectionHeader('ADRESSE & LOCALISATION'),
               _buildEditField('Adresse', adresseController),
-              _buildAxisDropdown((value) => setState(() => selectedAxe = value), selectedAxe),
               const SizedBox(height: 16),
 
               _buildSectionHeader('CATÉGORIE & INFOS'),
@@ -241,9 +221,20 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
 
   Widget _buildAxisDropdown(Function(String) onChanged, String selectedValue) {
     final axes = ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<String>(initialValue: selectedValue, decoration: InputDecoration(labelText: 'Axe', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)), items: axes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v != null) onChanged(v); }),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DropdownButtonFormField<String>(
+      initialValue: selectedValue, 
+      decoration: InputDecoration(
+        labelText: 'Axe', 
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)), 
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+        filled: true,
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+      ), 
+      items: axes.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), 
+      onChanged: (v) { if (v != null) onChanged(v); }
     );
   }
 
