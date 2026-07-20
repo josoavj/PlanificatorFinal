@@ -243,6 +243,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         AppSection(
           title: 'Référence et Validité',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          showDividers: false,
           children: [
             _buildModernField(_numeroContrat, 'Numéro de Contrat (ex: REF-2026-001)', Icons.tag_rounded),
             const SizedBox(height: 20),
@@ -257,10 +259,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             _buildDureeToggle(),
           ],
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 32),
         AppSection(
           title: 'Services à inclure',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
             _buildServicePicker(),
           ],
@@ -273,6 +276,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     return AppSection(
       title: 'Identité du client',
       margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(24),
+      showDividers: false,
       children: [
         Row(
           children: [
@@ -310,22 +315,35 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1)),
+          ),
           child: Row(
             children: [
-              const Icon(Icons.settings_suggest_rounded, color: AppTheme.primaryBlue),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.settings_suggest_rounded, color: AppTheme.primaryBlue, size: 20),
+              ),
               const SizedBox(width: 16),
-              Text('Configuration du service (${_treatmentIndex + 1}/${_selectedTreatments.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('Configuration du service (${_treatmentIndex + 1}/${_selectedTreatments.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const Spacer(),
-              Text(type?.type ?? '', style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue, borderRadius: BorderRadius.circular(12)),
+                child: Text(type?.type ?? '', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 10)),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 32),
         AppSection(
           title: 'Fréquence et Facturation',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
             _buildFrequencySelector(tId),
             const SizedBox(height: 30),
@@ -344,13 +362,21 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         AppSection(
           title: 'Récapitulatif Final',
           margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
           children: [
             _buildSummaryRow('Client', '${_clientNom.text} ${_clientPrenom.text}'),
             _buildSummaryRow('Contrat', _numeroContrat.text),
             _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
             _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
-            const Divider(height: 40),
-            const Text('Voulez-vous valider et enregistrer ce contrat ?', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 20),
+            const Center(
+              child: Text(
+                'Voulez-vous valider et enregistrer ce contrat ?', 
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
+              ),
+            ),
           ],
         ),
       ],
@@ -395,19 +421,31 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildDureeToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1)),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.timer_outlined, color: AppTheme.primaryBlue),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.timer_outlined, color: AppTheme.primaryBlue, size: 20),
+          ),
           const SizedBox(width: 16),
-          const Text('Contrat à durée déterminée ?', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Contrat à durée déterminée ?', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           const Spacer(),
-          Switch(value: _isDeterminee, activeThumbColor: AppTheme.primaryBlue, onChanged: (v) => setState(() => _isDeterminee = v)),
+          Switch.adaptive(value: _isDeterminee, activeTrackColor: AppTheme.primaryBlue, onChanged: (v) => setState(() => _isDeterminee = v)),
           if (_isDeterminee) ...[
             const SizedBox(width: 20),
-            SizedBox(width: 100, child: _buildModernField(_dureeContrat, 'Mois', Icons.numbers, isNumeric: true)),
+            SizedBox(
+              width: 120, 
+              child: _buildModernField(_dureeContrat, 'Mois', Icons.numbers, isNumeric: true)
+            ),
           ],
         ],
       ),
