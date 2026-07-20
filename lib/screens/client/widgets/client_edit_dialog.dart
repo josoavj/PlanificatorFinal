@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../models/client.dart';
 import '../../../repositories/index.dart';
 import '../../../utils/app_snackbars.dart';
 import '../../../widgets/index.dart';
 import '../../../core/theme.dart';
+import '../../../utils/nif_stat_formatter.dart';
 import 'client_details_dialog.dart';
 
 class ClientEditDialog extends StatefulWidget {
@@ -116,8 +118,8 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                     children: [
                       Text('Informations Fiscales', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700], fontSize: 13)),
                       const SizedBox(height: 12),
-                      _buildEditField('NIF', nifController),
-                      _buildEditField('STAT', statController),
+                      _buildEditField('NIF', nifController, inputFormatters: [NifInputFormatter()]),
+                      _buildEditField('STAT', statController, inputFormatters: [StatInputFormatter()]),
                     ],
                   ),
                 ),
@@ -185,10 +187,18 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
     );
   }
 
-  Widget _buildEditField(String label, TextEditingController controller) {
+  Widget _buildEditField(String label, TextEditingController controller, {List<TextInputFormatter>? inputFormatters}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(controller: controller, decoration: InputDecoration(labelText: label, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8))),
+      child: TextField(
+        controller: controller, 
+        inputFormatters: inputFormatters,
+        decoration: InputDecoration(
+          labelText: label, 
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), 
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+        )
+      ),
     );
   }
 
