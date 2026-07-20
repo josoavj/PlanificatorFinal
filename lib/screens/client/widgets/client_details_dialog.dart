@@ -5,6 +5,7 @@ import '../../../models/client.dart';
 import '../../../services/database_service.dart';
 import '../../../widgets/index.dart';
 import '../../../utils/nif_stat_formatter.dart';
+import '../../../utils/phone_formatter.dart';
 import 'client_edit_dialog.dart';
 import 'client_planning_dialog.dart';
 
@@ -54,7 +55,12 @@ class ClientDetailsDialog extends StatelessWidget {
                       _buildSubtleDivider(isDark),
                       _buildDetailRow(context, Icons.alternate_email_rounded, 'Email', client.email),
                       _buildSubtleDivider(isDark),
-                      _buildDetailRow(context, Icons.phone_outlined, 'Téléphone', client.telephone),
+                      ...PhoneFormatter.split(client.telephone).asMap().entries.map((e) => Column(
+                        children: [
+                          _buildDetailRow(context, Icons.phone_outlined, e.key == 0 ? 'Téléphone' : 'Téléphone ${e.key + 1}', PhoneFormatter.format(e.value)),
+                          if (e.key < PhoneFormatter.split(client.telephone).length - 1) _buildSubtleDivider(isDark),
+                        ],
+                      )),
                     ],
                   ),
                 ),
