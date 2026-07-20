@@ -303,6 +303,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepPlanning() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (_selectedTreatments.isEmpty) return const Center(child: Text('Aucun service sélectionné'));
     
     final tId = _selectedTreatments[_treatmentIndex];
