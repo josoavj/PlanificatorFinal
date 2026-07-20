@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
@@ -6,6 +7,7 @@ import '../../utils/app_snackbars.dart';
 import '../../widgets/index.dart';
 import '../../core/theme.dart';
 import '../../utils/nif_stat_formatter.dart';
+import '../../utils/phone_formatter.dart';
 
 class ClientDetailScreen extends StatefulWidget {
   final int clientId;
@@ -23,7 +25,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   late TextEditingController _nomController;
   late TextEditingController _prenomController;
   late TextEditingController _emailController;
-  late TextEditingController _telephoneController;
+  late List<TextEditingController> _phoneControllers;
   late TextEditingController _adresseController;
   late TextEditingController _categorieController;
   late TextEditingController _nifController;
@@ -43,7 +45,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     _nomController = TextEditingController();
     _prenomController = TextEditingController();
     _emailController = TextEditingController();
-    _telephoneController = TextEditingController();
+    _phoneControllers = [TextEditingController()];
     _adresseController = TextEditingController();
     _categorieController = TextEditingController();
     _nifController = TextEditingController();
@@ -61,7 +63,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     _nomController.text = client.nom;
     _prenomController.text = client.prenom;
     _emailController.text = client.email;
-    _telephoneController.text = client.telephone;
+    final List<String> tels = PhoneFormatter.split(client.telephone);
+    _phoneControllers = tels.map((t) => TextEditingController(text: t)).toList();
+    if (_phoneControllers.isEmpty) _phoneControllers.add(TextEditingController());
     _adresseController.text = client.adresse;
     _categorieController.text = client.categorie;
     _nifController.text = client.nif;
@@ -281,6 +285,8 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   }
 
   Widget _buildViewMode(BuildContext context, Client client) {
+    final List<String> tels = PhoneFormatter.split(client.telephone);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,7 +296,11 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           margin: EdgeInsets.zero,
           children: [
             AppInfoTile(icon: Icons.email_outlined, label: 'Adresse Email', value: client.email),
-            AppInfoTile(icon: Icons.phone_outlined, label: 'Téléphone', value: client.telephone),
+            ...tels.asMap().entries.map((e) => AppInfoTile(
+              icon: Icons.phone_outlined, 
+              label: e.key == 0 ? 'Téléphone' : 'Téléphone ${e.key + 1}', 
+              value: PhoneFormatter.format(e.value),
+            )),
             AppInfoTile(icon: Icons.location_on_outlined, label: 'Adresse physique', value: client.adresse),
           ],
         ),
@@ -374,22 +384,24 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
             validator: (value) => value?.isEmpty ?? true ? 'Requis' : null,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value?.isEmpty ?? true) return 'Requis';
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value!)) {
-                return 'Email invalide';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _telephoneController,
-            decoration: const InputDecoration(labelText: 'Téléphone', prefixIcon: Icon(Icons.phone_outlined)),
+          Row(
+            children: [
+              Expanded(child: _buildModernField(_emailController, 'Email de contact', Icons.alternate_email_rounded)),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  children: [
+                    ..._phoneControllers.asMap().entries.map((e) => Row(
+                      children: [
+                        Expanded(child: _buildEditField(e.key == 0 ? 'Téléphone' : 'Tél ${e.key + 1}', e.value, inputFormatters: [PhoneInputFormatter()])),
+                        if (e.key > 0) IconButton(icon: const Icon(Icons.remove_circle_outline, color: AppTheme.errorRed), onPressed: () => setState(() => _phoneControllers.removeAt(e.key)))
+                        else if (_phoneControllers.length < 3) IconButton(icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue), onPressed: () => setState(() => _phoneControllers.add(TextEditingController()))),
+                      ],
+                    )),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -451,13 +463,46 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     );
   }
 
+  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue, List<TextInputFormatter>? inputFormatters, Widget? suffixIcon}) {
+    return TextField(
+      controller: controller ?? (initialValue != null ? TextEditingController(text: initialValue) : null),
+      onChanged: onChanged,
+      keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      inputFormatters: inputFormatters,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryBlue),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.all(18),
+      ),
+    );
+  }
+
+  Widget _buildEditField(String label, TextEditingController controller, {List<TextInputFormatter>? inputFormatters}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller, 
+        inputFormatters: inputFormatters,
+        decoration: InputDecoration(
+          labelText: label, 
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)), 
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+        )
+      ),
+    );
+  }
+
   void _saveClient() {
     if (_formKey.currentState!.validate()) {
       final updated = _client!.copyWith(
         nom: _nomController.text,
         prenom: _prenomController.text,
         email: _emailController.text,
-        telephone: _telephoneController.text,
+        telephone: PhoneFormatter.join(_phoneControllers.map((c) => c.text).toList()),
         adresse: _adresseController.text,
         categorie: _categorieController.text,
         nif: _nifController.text,
@@ -523,7 +568,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     _nomController.dispose();
     _prenomController.dispose();
     _emailController.dispose();
-    _telephoneController.dispose();
+    for (var c in _phoneControllers) {
+      c.dispose();
+    }
     _adresseController.dispose();
     _categorieController.dispose();
     _nifController.dispose();
