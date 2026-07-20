@@ -137,7 +137,7 @@ class _SummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$label', 
+                  label,
                   style: TextStyle(
                     fontSize: 10, 
                     fontWeight: FontWeight.w900, 
