@@ -12,6 +12,7 @@ import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
+import '../../utils/phone_formatter.dart';
 import '../../utils/nif_stat_formatter.dart';
 
 class ContratCreationDialog extends StatefulWidget {
@@ -40,7 +41,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   final _clientNom = TextEditingController();
   final _clientPrenom = TextEditingController();
   final _clientEmail = TextEditingController();
-  final _clientTelephone = TextEditingController();
+  final List<TextEditingController> _clientPhoneControllers = [TextEditingController()];
   final _clientAdresse = TextEditingController();
   final _clientCategorie = TextEditingController(text: 'Particulier');
   final _clientNif = TextEditingController();
@@ -58,6 +59,28 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     super.initState();
     _loadTypeTraitements();
     _checkForSavedProgress();
+  }
+
+  @override
+  void dispose() {
+    _numeroContrat.dispose();
+    _dateContrat.dispose();
+    _dateDebut.dispose();
+    _dateFin.dispose();
+    _categorieContrat.dispose();
+    _dureeContrat.dispose();
+    _clientNom.dispose();
+    _clientPrenom.dispose();
+    _clientEmail.dispose();
+    for (var controller in _clientPhoneControllers) {
+      controller.dispose();
+    }
+    _clientAdresse.dispose();
+    _clientCategorie.dispose();
+    _clientNif.dispose();
+    _clientStat.dispose();
+    _clientAxe.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTypeTraitements() async {
@@ -103,7 +126,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         'nom': _clientNom.text,
         'prenom': _clientPrenom.text,
         'email': _clientEmail.text,
-        'tel': _clientTelephone.text,
+        'tels': _clientPhoneControllers.map((c) => c.text).toList(),
         'adr': _clientAdresse.text,
         'cat': _clientCategorie.text,
         'nif': _clientNif.text,
@@ -133,7 +156,12 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         _clientNom.text = c['nom'];
         _clientPrenom.text = c['prenom'];
         _clientEmail.text = c['email'];
-        _clientTelephone.text = c['tel'];
+        final List<String> tels = List<String>.from(c['tels'] ?? [c['tel'] ?? '']);
+        _clientPhoneControllers.clear();
+        for (var t in tels) {
+          _clientPhoneControllers.add(TextEditingController(text: t));
+        }
+        if (_clientPhoneControllers.isEmpty) _clientPhoneControllers.add(TextEditingController());
         _clientAdresse.text = c['adr'];
         _clientCategorie.text = c['cat'];
         _clientNif.text = c['nif'] ?? '';
@@ -321,7 +349,33 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
               children: [
                 Expanded(child: _buildModernField(_clientEmail, 'Email de contact', Icons.alternate_email_rounded)),
                 const SizedBox(width: 20),
-                Expanded(child: _buildModernField(_clientTelephone, 'Téléphone', Icons.phone_android_rounded)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ..._clientPhoneControllers.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        var controller = entry.value;
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: idx < _clientPhoneControllers.length - 1 ? 8 : 0),
+                          child: _buildModernField(
+                            controller, 
+                            idx == 0 ? 'Téléphone' : 'Téléphone ${idx + 1}', 
+                            Icons.phone_android_rounded,
+                            inputFormatters: [PhoneInputFormatter()],
+                            suffixIcon: idx > 0 ? IconButton(
+                              icon: const Icon(Icons.remove_circle_outline, color: AppTheme.errorRed, size: 20),
+                              onPressed: () => setState(() => _clientPhoneControllers.removeAt(idx)),
+                            ) : (_clientPhoneControllers.length < 3 ? IconButton(
+                              icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue, size: 20),
+                              onPressed: () => setState(() => _clientPhoneControllers.add(TextEditingController())),
+                            ) : null),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ],
             ),
             if (isSociety) ...[
@@ -441,6 +495,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             _buildSummaryRow('Catégorie Client', cat),
             _buildSummaryRow(entityLabel, clientDisplay),
             if (!isParticular) _buildSummaryRow('Responsable', _clientPrenom.text),
+            _buildSummaryRow('Téléphone(s)', _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / ')),
             if (isSociety) ...[
               _buildSummaryRow('NIF', NifStatFormatter.formatNif(_clientNif.text)),
               _buildSummaryRow('STAT', NifStatFormatter.formatStat(_clientStat.text)),
@@ -466,7 +521,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   // --- WIDGET HELPERS ---
 
-  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue, List<TextInputFormatter>? inputFormatters}) {
+  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue, List<TextInputFormatter>? inputFormatters, Widget? suffixIcon}) {
     return TextField(
       controller: controller ?? (initialValue != null ? TextEditingController(text: initialValue) : null),
       onChanged: onChanged,
@@ -475,6 +530,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryBlue),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
@@ -749,7 +805,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       // 1. Créer le client
       final newClient = Client(
         clientId: 0, nom: _clientNom.text, prenom: _clientPrenom.text,
-        email: _clientEmail.text, telephone: _clientTelephone.text,
+        email: _clientEmail.text, 
+        telephone: _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / '),
         adresse: _clientAdresse.text, nif: _clientNif.text, stat: _clientStat.text,
         categorie: _clientCategorie.text,
         axe: _clientAxe.text, dateAjout: DateTime.now(),
