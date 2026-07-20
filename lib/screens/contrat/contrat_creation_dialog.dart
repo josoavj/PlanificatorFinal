@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ import '../../repositories/index.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
 import '../../utils/date_utils.dart' as date_utils;
+import '../../utils/nif_stat_formatter.dart';
 
 class ContratCreationDialog extends StatefulWidget {
   final int? clientId;
@@ -326,9 +328,23 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Expanded(child: _buildModernField(_clientNif, 'NIF', Icons.description_outlined)),
+                  Expanded(
+                    child: _buildModernField(
+                      _clientNif, 
+                      'NIF', 
+                      Icons.description_outlined,
+                      inputFormatters: [NifInputFormatter()],
+                    ),
+                  ),
                   const SizedBox(width: 20),
-                  Expanded(child: _buildModernField(_clientStat, 'STAT', Icons.badge_outlined)),
+                  Expanded(
+                    child: _buildModernField(
+                      _clientStat, 
+                      'STAT', 
+                      Icons.badge_outlined,
+                      inputFormatters: [StatInputFormatter()],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -425,6 +441,10 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             _buildSummaryRow('Catégorie Client', cat),
             _buildSummaryRow(entityLabel, clientDisplay),
             if (!isParticular) _buildSummaryRow('Responsable', _clientPrenom.text),
+            if (isSociety) ...[
+              _buildSummaryRow('NIF', NifStatFormatter.formatNif(_clientNif.text)),
+              _buildSummaryRow('STAT', NifStatFormatter.formatStat(_clientStat.text)),
+            ],
             const Divider(height: 32),
             _buildSummaryRow('Référence Contrat', _numeroContrat.text),
             _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
@@ -446,11 +466,12 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   // --- WIDGET HELPERS ---
 
-  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue}) {
+  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue, List<TextInputFormatter>? inputFormatters}) {
     return TextField(
       controller: controller ?? (initialValue != null ? TextEditingController(text: initialValue) : null),
       onChanged: onChanged,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryBlue),
@@ -576,7 +597,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _clientAxe.text,
+            initialValue: _clientAxe.text,
             decoration: InputDecoration(
               labelText: 'Axe Géographique', 
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
