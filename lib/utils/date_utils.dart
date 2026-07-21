@@ -62,6 +62,8 @@ class DateUtils {
     final holidays = <String, DateTime>{
       // Jours fériés fixes à Madagascar
       'Jour de l\'an': DateTime(year),
+      'Commémoration 1947': DateTime(year, 3, 29),
+      'Fête du travail': DateTime(year, 5),
       'Fête nationale': DateTime(year, 6, 26), // Indépendance Madagascar
       'Assomption': DateTime(year, 8, 15),
       'Toussaint': DateTime(year, 11),
@@ -209,56 +211,69 @@ class DateUtils {
   /// Paramètres:
   /// - dateDebut: Date de début du traitement
   /// - dureeTraitement: Durée totale du traitement en mois
-  /// - redondance: Fréquence d'exécution en mois (1 = chaque mois, 2 = tous les 2 mois, etc.)
-  ///               redondance = 0 = UNE SEULE FOIS (pas une récurrence)
+  /// - redondance: Code de fréquence d'exécution
+  ///               - 0 = Une seule fois
+  ///               - > 0 : Fréquence en mois (1=Mensuel, 2=Bimestriel, etc.)
+  ///               - < 0 : Fréquence en semaines/jours
+  ///                 - -1 = Hebdomadaire (7j)
+  ///                 - -2 = Toutes les 2 semaines (14j)
+  ///                 - -3 = 2 fois par semaine (alt. +3, +4 jours)
+  ///                 - -4 = 3 fois par semaine (alt. +2, +2, +3 jours)
   ///
-  /// Retourne une liste de dates planifiées, en ajustant si nécessaire pour les weekends/jours fériés
+  /// Retourne une liste de dates planifiées, ajustées pour les jours non ouvrables.
   static List<DateTime> generatePlanningDates({
     required DateTime dateDebut,
     required int dureeTraitement,
     required int redondance,
   }) {
     final dates = <DateTime>[];
+    if (dureeTraitement <= 0) return dates;
 
-    // Vérifier les paramètres
-    if (dureeTraitement <= 0) {
-      return dates;
-    }
+    // Calculer la date de fin du contrat (basé sur la durée en mois)
+    // Janvier + 12 mois = Janvier année suivante. Le planning s'arrête à la veille.
+    final dateFinContrat = _addMonths(dateDebut, dureeTraitement);
 
-    //  CAS SPÉCIAL: redondance = 0 = UNE SEULE FOIS
+    // CAS 0: Une seule fois
     if (redondance == 0) {
-      var singleDate = adjustIfWeekendAndHoliday(dateDebut);
-      dates.add(singleDate);
+      dates.add(adjustIfWeekendAndHoliday(dateDebut));
       return dates;
     }
 
-    if (redondance <= 0) {
-      return dates;
-    }
-
-    // Calculer la date de fin basée sur la durée du traitement
-    // Pour 12 mois: ajouter 11 mois (janvier + 11 = décembre)
-    final dateFin = _addMonths(dateDebut, dureeTraitement - 1);
-
-    // Générer les dates de planification selon la redondance
     DateTime currentDate = dateDebut;
-    final maxDates = 1000;
+    int stepIndex = 0;
 
-    while (!currentDate.isAfter(dateFin) && dates.length < maxDates) {
-      // Ajuster si weekend (dimanche) ET/OU jour férié
-      var plannedDate = adjustIfWeekendAndHoliday(currentDate);
+    while (currentDate.isBefore(dateFinContrat) && dates.length < 1000) {
+      // 1. Ajouter la date actuelle (ajustée)
+      dates.add(adjustIfWeekendAndHoliday(currentDate));
 
-      dates.add(plannedDate);
-
-      // Passer à la prochaine date en fonction de la redondance
-      final nextDate = _addMonths(currentDate, redondance);
-
-      // Break si pas de changement (éviter boucle infinie)
-      if (nextDate == currentDate) {
-        break;
+      // 2. Calculer la prochaine date brute
+      if (redondance > 0) {
+        // Mode MOIS
+        currentDate = _addMonths(currentDate, redondance);
+      } else {
+        // Mode SEMAINES / JOURS
+        int daysToAdd;
+        switch (redondance) {
+          case -1: // Hebdomadaire
+            daysToAdd = 7;
+            break;
+          case -2: // Toutes les 2 semaines
+            daysToAdd = 14;
+            break;
+          case -3: // 2 fois par semaine
+            daysToAdd = (stepIndex % 2 == 0) ? 3 : 4;
+            break;
+          case -4: // 3 fois par semaine
+            // Répartition: Lu -> Mer (+2), Mer -> Ven (+2), Ven -> Lu (+3)
+            int mod = stepIndex % 3;
+            daysToAdd = (mod == 2) ? 3 : 2;
+            break;
+          default:
+            daysToAdd = 7;
+        }
+        currentDate = currentDate.add(Duration(days: daysToAdd));
       }
-
-      currentDate = nextDate;
+      stepIndex++;
     }
 
     return dates;
