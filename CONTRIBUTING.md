@@ -15,46 +15,38 @@ Merci de l'intérêt que vous portez à la plateforme Planificator ! Ce document
 
 ---
 
-## 2. Architecture & Standards de Code
+## 2. Architecture et Standards de Code
 
 ### Modèle Repository
 
-Toute la logique de données doit passer par les classes dans `lib/repositories/`. Ne faites jamais de requêtes SQL directement dans les Widgets (Screens).
+Toute la logique de données doit passer par les classes dans `lib/repositories/`. Ne faites jamais de requêtes SQL directement dans les Widgets.
 
 ### Intégrité SGBDR (Transactions)
 
-Pour toute opération impliquant plusieurs requêtes liées (ex: mise à jour d'un contrat + suppression de plannings), vous **devez** utiliser une transaction :
-```dart
-await _db.transaction((conn) async {
-  await conn.query(...);
-  await conn.query(...);
-});
-```
+Pour toute opération impliquant plusieurs requêtes liées (ex: création de contrat), vous **devez** utiliser la méthode `transaction` du `DatabaseService` pour assurer l'atomicité des données.
 
-### SQL Centralisé
+### Formatage Madagascar
 
-N'écrivez pas de chaînes SQL brutes dans les repositories. Ajoutez vos requêtes dans `lib/core/sql_queries.dart`.
+Pour toute saisie de données spécifiques à Madagascar, utilisez obligatoirement les formateurs centralisés :
+- `NifStatFormatter` pour les identifiants fiscaux.
+- `PhoneFormatter` pour les numéros de téléphone.
+- `NumberFormatter` pour les montants financiers.
 
 ---
 
 ## 3. Standards de Test
 
-La plateforme repose sur une suite de tests unitaires (70+). Toute nouvelle fonctionnalité **doit** s'accompagner de son fichier de test dans le dossier `test/`.
+Toute nouvelle fonctionnalité **doit** s'accompagner de son fichier de test dans le dossier `test/`.
 
 - **Exécution** : `flutter test`
-- **Mocks** : Utilisez les mocks manuels définis dans `test/repositories/auth_repository_test.dart` pour simuler la base de données.
+- **Mocks** : Utilisez les mocks manuels définis pour simuler la base de données.
 
 ---
 
 ## 4. Workflow Git
 
-1.  **Branches** : Travaillez toujours sur une branche de fonctionnalité (ex: `feature/ma-fonctionnalite`) basée sur la branche de version actuelle (ex: `2.1.1`).
-2.  **Commits** : Utilisez des messages clairs et préfixés :
-    - `feat:` pour une nouvelle fonctionnalité.
-    - `fix:` pour une correction de bug.
-    - `docs:` pour la documentation.
-    - `refactor:` pour une modification de code sans changement de comportement.
-    - `test:` pour l'ajout ou la modification de tests.
+1.  **Branches** : Travaillez sur une branche de fonctionnalité (ex: `feature/nom`) basée sur la version actuelle (ex: `2.2.0`).
+2.  **Commits** : Utilisez des messages clairs en français, préfixés par le type d'intervention (`feat:`, `fix:`, `style:`, `refactor:`, `docs:`, `test:`).
 
 ---
 
@@ -62,9 +54,9 @@ La plateforme repose sur une suite de tests unitaires (70+). Toute nouvelle fonc
 
 À chaque modification importante :
 
-- Mettez à jour le **`README.md`** si nécessaire.
-- Ajoutez une entrée précise dans le **`CHANGELOG.md`** sous la version actuelle.
-- Vérifiez que les notes de **`SECURITY.md`** sont toujours exactes si vous touchez à l'authentification ou à la DB.
+- Mettez à jour le **README.md**.
+- Ajoutez une entrée précise dans le **CHANGELOG.md**.
+- Vérifiez la conformité des notes de **SECURITY.md**.
 
 ---
 
@@ -72,9 +64,8 @@ La plateforme repose sur une suite de tests unitaires (70+). Toute nouvelle fonc
 
 - [ ] `flutter analyze` ne remonte aucune erreur.
 - [ ] `flutter test` passe à 100%.
-- [ ] Les nouvelles requêtes SQL sont dans `SqlQueries.dart`.
-- [ ] Les opérations multi-tables sont protégées par une transaction.
-- [ ] Les données sensibles dans les paramètres sont masquées pour les logs.
+- [ ] Les opérations multi-tables sont protégées par une transaction SQL.
+- [ ] Les données sensibles sont masquées dans les paramètres de log.
 
 ---
-**Dernière mise à jour** : 25 Juin 2026
+**Dernière mise à jour** : 22 Juillet 2026
