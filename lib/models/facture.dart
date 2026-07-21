@@ -2,7 +2,7 @@
 /// Représente une facture pour un traitement
 class Facture {
   final int factureId;
-  final int planningDetailsId;
+  final int? planningDetailsId; // Modifié : NULL si facture groupée
   final String? referenceFacture;
   final int montant; // Montant en Ar (entier)
   final String? mode; // 'Chèque', 'Espèce', 'Mobile Money', 'Virement'
@@ -57,7 +57,7 @@ class Facture {
 
     return Facture(
       factureId: json['facture_id'] as int,
-      planningDetailsId: json['planning_detail_id'] as int,
+      planningDetailsId: json['planning_detail_id'] as int?,
       referenceFacture: json['reference_facture'] as String?,
       montant: json['montant'] as int,
       mode: json['mode'] as String?,
@@ -90,7 +90,7 @@ class Facture {
 
     return Facture(
       factureId: map['facture_id'] as int? ?? 0,
-      planningDetailsId: map['planning_detail_id'] as int? ?? 0,
+      planningDetailsId: map['planning_detail_id'] as int?,
       referenceFacture: map['reference_facture'] as String?,
       montant: map['montant'] as int? ?? 0,
       mode: map['mode'] as String?,

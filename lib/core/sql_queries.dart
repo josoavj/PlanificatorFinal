@@ -174,10 +174,13 @@ class SqlQueries {
   ''';
 
   // --- FACTURES ---
+  // Note: Toutes les requêtes de factures utilisent désormais le lien réciproque (PlanningDetails.facture_id)
+  // pour supporter les factures groupées (N passages -> 1 Facture)
+
   static const String getFacturesByContrat = '''
     SELECT DISTINCT f.*
     FROM Facture f
-    INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
@@ -189,7 +192,7 @@ class SqlQueries {
   static const String getFacturesByClientDetailed = '''
     SELECT 
       f.facture_id,
-      f.planning_detail_id,
+      pd.planning_detail_id,
       f.reference_facture,
       f.montant,
       f.mode,
@@ -203,24 +206,25 @@ class SqlQueries {
       cl.nom as clientNom,
       cl.prenom as clientPrenom,
       cl.categorie as clientCategorie,
-      tt.typeTraitement as typeTreatment,
+      GROUP_CONCAT(DISTINCT tt.typeTraitement SEPARATOR ' + ') as typeTreatment,
       pd.date_planification as datePlanification,
       pd.statut as etatPlanning
     FROM Facture f
-    INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
     INNER JOIN Client cl ON co.client_id = cl.client_id
     WHERE cl.client_id = ?
-    ORDER BY cl.nom ASC
+    GROUP BY f.facture_id
+    ORDER BY f.date_traitement DESC
   ''';
 
   static const String getAllFacturesDetailed = '''
     SELECT 
       f.facture_id,
-      f.planning_detail_id,
+      MAX(pd.planning_detail_id) as planning_detail_id,
       f.reference_facture,
       f.montant,
       f.mode,
@@ -234,35 +238,26 @@ class SqlQueries {
       COALESCE(cl.nom, 'Non associé') as clientNom,
       COALESCE(cl.prenom, '') as clientPrenom,
       COALESCE(cl.categorie, '') as clientCategorie,
-      COALESCE(tt.typeTraitement, 'Non défini') as typeTreatment,
-      COALESCE(pd.date_planification, '2000-01-01') as datePlanification,
-      COALESCE(pd.statut, 'Non planifié') as etatPlanning
+      GROUP_CONCAT(DISTINCT tt.typeTraitement SEPARATOR ' + ') as typeTreatment,
+      COALESCE(f.date_traitement, '2000-01-01') as datePlanification,
+      'Groupée' as etatPlanning
     FROM Facture f
-    INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-    INNER JOIN Planning p ON pd.planning_id = p.planning_id
-    INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+    LEFT JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
+    LEFT JOIN Planning p ON pd.planning_id = p.planning_id
+    LEFT JOIN Traitement t ON p.traitement_id = t.traitement_id
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-    INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
-    INNER JOIN Client cl ON co.client_id = cl.client_id
-    ORDER BY COALESCE(cl.nom, 'Z') ASC
+    LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
+    LEFT JOIN Client cl ON co.client_id = cl.client_id
+    GROUP BY f.facture_id
+    ORDER BY f.date_traitement DESC
     LIMIT 10000
   ''';
 
   static const String getFacturesByPlanningDetail = '''
-    SELECT 
-      f.facture_id,
-      f.planning_detail_id,
-      f.reference_facture,
-      f.montant,
-      f.mode,
-      f.etablissement_payeur,
-      f.date_cheque,
-      f.numero_cheque,
-      f.date_traitement,
-      f.etat,
-      f.axe
+    SELECT f.*
     FROM Facture f
-    WHERE f.planning_detail_id = ?
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
+    WHERE pd.planning_detail_id = ?
     ORDER BY f.date_traitement DESC
   ''';
 
@@ -274,7 +269,7 @@ class SqlQueries {
       f.etat,
       tt.typeTraitement
     FROM Facture f
-    INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
@@ -302,16 +297,17 @@ class SqlQueries {
   static const String getFactureAndTreatmentInfo = '''
     SELECT f.facture_id, f.date_traitement, pd.planning_id, p.traitement_id
     FROM Facture f
-    LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    LEFT JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     LEFT JOIN Planning p ON pd.planning_id = p.planning_id
     WHERE f.facture_id = ?
+    LIMIT 1
   ''';
 
   static const String getOtherFacturesByTreatmentFromDate = '''
     SELECT f.facture_id, f.montant, f.date_traitement, f.etat
     FROM Facture f
-    LEFT JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
-    LEFT JOIN Planning p ON pd.planning_id = p.planning_id
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
+    INNER JOIN Planning p ON pd.planning_id = p.planning_id
     WHERE p.traitement_id = ? AND f.date_traitement >= ?
     ORDER BY f.date_traitement DESC
   ''';
@@ -366,7 +362,7 @@ class SqlQueries {
   static const String countPlanningDetailsByTreatment = 'SELECT COUNT(*) as count FROM Planning WHERE traitement_id = ?';
   static const String countFacturesByTreatment = '''
     SELECT COUNT(*) as count FROM Facture f
-    INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     WHERE p.traitement_id = ?
   ''';
@@ -380,14 +376,14 @@ class SqlQueries {
     SELECT COUNT(*) as count FROM Historique h
     WHERE h.facture_id IN (
       SELECT f.facture_id FROM Facture f
-      INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+      INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
       INNER JOIN Planning p ON pd.planning_id = p.planning_id
       WHERE p.traitement_id = ?
     )
   ''';
   static const String sumMontantByTreatment = '''
     SELECT COALESCE(SUM(CAST(f.montant AS DECIMAL(10,2))), 0) as total FROM Facture f
-    INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     WHERE p.traitement_id = ?
   ''';
@@ -406,7 +402,8 @@ class SqlQueries {
 
   // --- PLANNING DETAILS ---
   static const String checkExistingPlanningDetail = 'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?';
-  static const String insertPlanningDetailWithStatut = 'INSERT INTO PlanningDetails (planning_id, date_planification, statut) VALUES (?, ?, ?)';
+  static const String insertPlanningDetailWithStatut = 'INSERT INTO PlanningDetails (planning_id, date_planification, statut, facture_id) VALUES (?, ?, ?, ?)';
+  static const String updatePlanningDetailFacture = 'UPDATE PlanningDetails SET facture_id = ? WHERE planning_detail_id = ?';
   static const String getPlanningDetailsByPlanningId = 'SELECT * FROM PlanningDetails WHERE planning_id = ? ORDER BY date_planification';
   static const String updatePlanningDetailStatut = 'UPDATE PlanningDetails SET statut = ? WHERE planning_detail_id = ?';
   static const String deletePlanningDetail = 'DELETE FROM PlanningDetails WHERE planning_detail_id = ?';
@@ -433,7 +430,7 @@ class SqlQueries {
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
-    LEFT JOIN Facture f ON pd.planning_detail_id = f.planning_detail_id
+    LEFT JOIN Facture f ON pd.facture_id = f.facture_id
     WHERE YEAR(pd.date_planification) = ?
     AND MONTH(pd.date_planification) = ?
     AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
@@ -463,7 +460,7 @@ class SqlQueries {
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
-    LEFT JOIN Facture f ON pd.planning_detail_id = f.planning_detail_id
+    LEFT JOIN Facture f ON pd.facture_id = f.facture_id
     WHERE pd.date_planification >= ?
     AND COALESCE(pd.statut, 'Non planifié') != 'Classé sans suite'
     ORDER BY pd.date_planification ASC
@@ -546,7 +543,7 @@ class SqlQueries {
       h.action
     FROM Historique h
     LEFT JOIN Facture f ON h.facture_id = f.facture_id
-    LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
+    LEFT JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     ORDER BY h.date_historique DESC
     LIMIT ? OFFSET ?
   ''';
@@ -574,7 +571,7 @@ class SqlQueries {
       h.action
     FROM Historique h
     LEFT JOIN Facture f ON h.facture_id = f.facture_id
-    LEFT JOIN PlanningDetails pd ON h.planning_detail_id = pd.planning_detail_id
+    LEFT JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     LEFT JOIN Planning p ON pd.planning_id = p.planning_id
     LEFT JOIN Traitement t ON p.planning_id IN (
       SELECT DISTINCT planning_id FROM PlanningDetails WHERE planning_detail_id = pd.planning_detail_id
@@ -725,7 +722,7 @@ class SqlQueries {
       c.prenom as `Prénom Client`,
       c.axe as `Axe`
     FROM Facture f
-    JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id
+    JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     JOIN Planning p ON pd.planning_id = p.planning_id
     JOIN Traitement t ON p.traitement_id = t.traitement_id
     JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement

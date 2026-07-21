@@ -1,12 +1,14 @@
 class PlanningDetails {
   final int planningDetailId;
   final int planningId;
+  final int? factureId; // Nouveau : lien vers la facture groupée
   final DateTime datePlanification;
   final String statut; // 'À venir', 'Effectué'
 
   PlanningDetails({
     required this.planningDetailId,
     required this.planningId,
+    this.factureId,
     required this.datePlanification,
     this.statut = 'À venir',
   });
@@ -16,6 +18,7 @@ class PlanningDetails {
     return PlanningDetails(
       planningDetailId: json['planning_detail_id'] as int? ?? 0,
       planningId: json['planning_id'] as int? ?? 0,
+      factureId: json['facture_id'] as int?,
       datePlanification: json['date_planification'] != null
           ? DateTime.parse(json['date_planification'].toString())
           : DateTime.now(),
@@ -28,6 +31,7 @@ class PlanningDetails {
     return {
       'planning_detail_id': planningDetailId,
       'planning_id': planningId,
+      'facture_id': factureId,
       'date_planification': datePlanification.toIso8601String().split('T')[0],
       'statut': statut,
     };
@@ -52,12 +56,14 @@ class PlanningDetails {
   PlanningDetails copyWith({
     int? planningDetailId,
     int? planningId,
+    int? factureId,
     DateTime? datePlanification,
     String? statut,
   }) {
     return PlanningDetails(
       planningDetailId: planningDetailId ?? this.planningDetailId,
       planningId: planningId ?? this.planningId,
+      factureId: factureId ?? this.factureId,
       datePlanification: datePlanification ?? this.datePlanification,
       statut: statut ?? this.statut,
     );

@@ -37,6 +37,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   final _categorieContrat = TextEditingController(text: 'Nouveau');
   final _dureeContrat = TextEditingController(text: '12');
   bool _isDeterminee = true;
+  bool _groupInvoices = false;
 
   // Controllers Client
   final _clientNom = TextEditingController();
@@ -124,6 +125,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       'dateF': _dateFin.text,
       'cat': _categorieContrat.text,
       'dur': _dureeContrat.text,
+      'groupInvoices': _groupInvoices,
       'selected': _selectedTreatments,
       'client': {
         'nom': _clientNom.text,
@@ -154,6 +156,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         _dateFin.text = data['dateF'];
         _categorieContrat.text = data['cat'];
         _dureeContrat.text = data['dur'];
+        _groupInvoices = data['groupInvoices'] ?? false;
         _selectedTreatments = List<int>.from(data['selected']);
         final c = data['client'];
         _clientNom.text = c['nom'];
@@ -543,6 +546,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
+            _buildGroupingToggle(),
+            const SizedBox(height: 24),
             _buildModernField(
               null, 
               'Montant unitaire par passage (Net)', 
@@ -928,6 +933,61 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
+  Widget _buildGroupingToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: _groupInvoices 
+            ? AppTheme.primaryBlue.withValues(alpha: 0.1) 
+            : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _groupInvoices 
+              ? AppTheme.primaryBlue 
+              : (isDark ? AppTheme.glassBorder.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _groupInvoices ? AppTheme.primaryBlue : Colors.grey.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _groupInvoices ? Icons.inventory_2_rounded : Icons.receipt_long_rounded, 
+              color: Colors.white, 
+              size: 20
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Facturation groupée par passage', 
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)
+                ),
+                Text(
+                  'Une seule facture pour tous les services du même jour', 
+                  style: TextStyle(fontSize: 10, color: Colors.grey)
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: _groupInvoices, 
+            activeTrackColor: AppTheme.primaryBlue, 
+            onChanged: (v) => setState(() => _groupInvoices = v)
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.fromLTRB(40, 0, 40, 30),
@@ -1058,7 +1118,8 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         categorieContrat: _categorieContrat.text, 
         dureeStatus: _isDeterminee ? 'Déterminée' : 'Indéterminée', 
         selectedTreatmentIds: _selectedTreatments, 
-        treatmentConfigs: _treatmentConfig
+        treatmentConfigs: _treatmentConfig,
+        groupInvoicesByDate: _groupInvoices,
       );
 
       if (success && mounted) {
