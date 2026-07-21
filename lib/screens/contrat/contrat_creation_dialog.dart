@@ -671,7 +671,12 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   Widget _buildFrequencyGrid(int tId) {
     final frequencies = [
+      {'label': 'Hebdomadaire', 'value': -1, 'icon': Icons.repeat_rounded},
+      {'label': '2 fois / semaine', 'value': -3, 'icon': Icons.flash_on_rounded},
+      {'label': '3 fois / semaine', 'value': -4, 'icon': Icons.auto_awesome_rounded},
+      {'label': 'Toutes les 2 semaines', 'value': -2, 'icon': Icons.update_rounded},
       {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded},
+      {'label': 'Bimestriel', 'value': 2, 'icon': Icons.exposure_plus_2_rounded},
       {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded},
       {'label': 'Semestriel', 'value': 6, 'icon': Icons.event_note_rounded},
       {'label': 'Annuel', 'value': 12, 'icon': Icons.event_available_rounded},
@@ -680,41 +685,41 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     int current = _treatmentConfig[tId]!['redondance'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: frequencies.map((f) {
         bool active = current == f['value'];
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: InkWell(
-              onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
-              borderRadius: BorderRadius.circular(16),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                decoration: BoxDecoration(
-                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
-                  ),
+        return SizedBox(
+          width: 175, // Largeur adaptée pour 10 items sur Desktop
+          child: InkWell(
+            onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
+            borderRadius: BorderRadius.circular(16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+              decoration: BoxDecoration(
+                color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
                 ),
-                child: Column(
-                  children: [
-                    Icon(f['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 24),
-                    const SizedBox(height: 10),
-                    Text(
-                      f['label'] as String, 
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900, 
-                        fontSize: 11, 
-                        color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                        letterSpacing: 0.5
-                      ),
-                      textAlign: TextAlign.center,
+              ),
+              child: Column(
+                children: [
+                  Icon(f['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 24),
+                  const SizedBox(height: 10),
+                  Text(
+                    f['label'] as String, 
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900, 
+                      fontSize: 11, 
+                      color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      letterSpacing: 0.5
                     ),
-                  ],
-                ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           ),
