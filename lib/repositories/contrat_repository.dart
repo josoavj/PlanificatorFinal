@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
+import '../utils/date_utils.dart' as date_utils;
 
 class ContratRepository extends ChangeNotifier {
   final DatabaseService _db;
@@ -169,6 +171,135 @@ class ContratRepository extends ChangeNotifier {
       _errorMessage = e.toString();
       logger.e('Erreur lors de la création: $e');
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Sauvegarde complète d'un contrat (Client, Contrat, Traitements, Plannings, Factures)
+  /// dans une seule TRANSACTION SQL pour garantir l'intégrité des données.
+  /// SÉCURITÉ: Atomique (Tout ou rien)
+  /// PERFORMANCE: Optimisé pour Desktop (requêtes groupées)
+  Future<bool> saveFullContratTransaction({
+    required Client client,
+    required String referenceContrat,
+    required DateTime dateContrat,
+    required DateTime dateDebut,
+    DateTime? dateFin,
+    required String statutContrat,
+    required int duree,
+    required String categorieContrat,
+    required String dureeStatus,
+    required List<int> selectedTreatmentIds,
+    required Map<int, Map<String, dynamic>> treatmentConfigs,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _db.transaction((conn) async {
+        // 1. CRÉER LE CLIENT
+        final clientId = await _db.insert(SqlQueries.createClient, [
+          client.nom,
+          client.prenom,
+          client.email,
+          client.telephone,
+          client.adresse,
+          client.categorie,
+          client.nif,
+          client.stat,
+          client.axe,
+          DateTime.now().toIso8601String().split('T')[0],
+        ]);
+        logger.i('Transaction: Client créé ID $clientId');
+
+        // 2. CRÉER LE CONTRAT
+        int? dureeContrat;
+        if (dateFin != null) {
+          dureeContrat = dateFin.month - dateDebut.month + 12 * (dateFin.year - dateDebut.year);
+        }
+
+        final contratId = await _db.insert(SqlQueries.createContrat, [
+          clientId,
+          referenceContrat,
+          dateContrat.toIso8601String(),
+          dateDebut.toIso8601String(),
+          dateFin?.toIso8601String(),
+          statutContrat,
+          dureeContrat,
+          dureeStatus,
+          categorieContrat,
+        ]);
+        logger.i('Transaction: Contrat créé ID $contratId');
+
+        // 3. CRÉER LES TRAITEMENTS, PLANNINGS ET FACTURES
+        for (final tId in selectedTreatmentIds) {
+          final config = treatmentConfigs[tId] ?? {};
+          final int redondance = config['redondance'] ?? 1;
+          final String debutStr = config['debut'] ?? DateFormat('dd/MM/yyyy').format(dateDebut);
+          final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
+          final int montant = int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0;
+
+          // A. Insertion Traitement
+          final traitId = await _db.insert(SqlQueries.createTraitement, [contratId, tId]);
+
+          // B. Insertion Planning
+          // Calculer date_fin_planification (approximatif pour la table Planning)
+          final endMonth = treatmentStartDate.month - 1 + (duree - 1);
+          final endYear = treatmentStartDate.year + (endMonth ~/ 12);
+          final endNewMonth = (endMonth % 12) + 1;
+          final daysInMonth = DateTime(endYear, endNewMonth + 1, 0).day;
+          final day = treatmentStartDate.day > daysInMonth ? daysInMonth : treatmentStartDate.day;
+          final dateFinPlanification = DateTime(endYear, endNewMonth, day);
+
+          final planningId = await _db.insert(SqlQueries.createPlanning, [
+            traitId,
+            treatmentStartDate.toIso8601String().split('T')[0],
+            treatmentStartDate.month,
+            treatmentStartDate.month + duree - 1, // moisFin
+            duree,
+            redondance,
+            dateFinPlanification.toIso8601String().split('T')[0],
+          ]);
+
+          // C. Génération et Insertion des PlanningDetails + Factures
+          final dates = date_utils.DateUtils.generatePlanningDates(
+            dateDebut: treatmentStartDate, 
+            dureeTraitement: duree, 
+            redondance: redondance,
+          );
+
+          for (final d in dates) {
+            final dateStr = d.toIso8601String().split('T')[0];
+            // Insertion Detail
+            final detailId = await _db.insert(SqlQueries.insertPlanningDetailWithStatut, [
+              planningId,
+              dateStr,
+              'À venir',
+            ]);
+
+            // Insertion Facture
+            await _db.insert(SqlQueries.createFactureComplete, [
+              detailId,
+              null, // reference_facture
+              montant,
+              null, // mode
+              dateStr,
+              'À venir',
+              client.axe,
+            ]);
+          }
+          logger.i('Transaction: Service $tId configuré avec ${dates.length} passages');
+        }
+
+        return true;
+      });
+    } catch (e) {
+      _errorMessage = e.toString();
+      logger.e('ERREUR Transaction Contrat: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

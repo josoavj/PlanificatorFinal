@@ -12,7 +12,6 @@ import '../../repositories/index.dart';
 import '../../utils/number_formatter.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
-import '../../utils/date_utils.dart' as date_utils;
 import '../../utils/phone_formatter.dart';
 import '../../utils/nif_stat_formatter.dart';
 import '../../widgets/common/multi_phone_input.dart';
@@ -55,6 +54,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   // Configuration par service
   final Map<int, Map<String, dynamic>> _treatmentConfig = {};
+  final _treatmentDateController = TextEditingController();
 
   @override
   void initState() {
@@ -77,6 +77,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     for (var controller in _clientPhoneControllers) {
       controller.dispose();
     }
+    _treatmentDateController.dispose();
     _clientAdresse.dispose();
     _clientCategorie.dispose();
     _clientNif.dispose();
@@ -401,8 +402,26 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     final type = _allTypeTraitements.firstWhereOrNull((t) => t.id == tId);
     
     if (!_treatmentConfig.containsKey(tId)) {
-      _treatmentConfig[tId] = {'redondance': 1, 'montant': '', 'debut': _dateDebut.text};
+      _treatmentConfig[tId] = {
+        'redondance': 1, 
+        'montant': '', 
+        'debut': _dateDebut.text,
+        'mode': 'monthly' 
+      };
+    } else {
+      // Sécurité si l'entrée existait déjà sans certains champs
+      if (!_treatmentConfig[tId]!.containsKey('mode')) {
+        _treatmentConfig[tId]!['mode'] = 'monthly';
+      }
+      if (!_treatmentConfig[tId]!.containsKey('redondance')) {
+        _treatmentConfig[tId]!['redondance'] = 1;
+      }
+      if (!_treatmentConfig[tId]!.containsKey('debut')) {
+        _treatmentConfig[tId]!['debut'] = _dateDebut.text;
+      }
     }
+    
+    final String currentMode = _treatmentConfig[tId]!['mode'] ?? 'monthly';
 
     return Column(
       children: [
@@ -448,17 +467,75 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         ),
         const SizedBox(height: 32),
         
-        // SECTION FRÉQUENCE
+        // SÉLECTEUR DE MODE (MENSUEL VS HEBDO) - Format Compact
         AppSection(
-          title: 'Fréquence de passage',
+          title: 'Type de planification',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          children: [
+            Row(
+              children: [
+                _buildModeCard(
+                  label: 'MENSUELLE / UNIQUE', 
+                  icon: Icons.calendar_month_rounded, 
+                  isActive: currentMode == 'monthly',
+                  onTap: () => setState(() {
+                    _treatmentConfig[tId]!['mode'] = 'monthly';
+                    _treatmentConfig[tId]!['redondance'] = 1;
+                  }),
+                ),
+                const SizedBox(width: 12),
+                _buildModeCard(
+                  label: 'HEBDOMADAIRE', 
+                  icon: Icons.view_week_rounded, 
+                  isActive: currentMode == 'weekly',
+                  onTap: () => setState(() {
+                    _treatmentConfig[tId]!['mode'] = 'weekly';
+                    _treatmentConfig[tId]!['redondance'] = -1;
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+        
+        // SECTION FRÉQUENCE (ANIMÉE)
+        AppSection(
+          title: 'Détails de passage',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
-            _buildFrequencyGrid(tId),
+            _buildModernDateField(
+              _treatmentDateController, 
+              'Date du premier passage',
+              onChanged: (v) => _treatmentConfig[tId]!['debut'] = v,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'CHOISISSEZ LE RYTHME PRÉCIS',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2),
+            ),
+            const SizedBox(height: 12),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.02, 0), 
+                      end: Offset.zero
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: _buildFrequencyGrid(tId, currentMode),
+            ),
           ],
         ),
-        
-        const SizedBox(height: 32),
         
         // SECTION FACTURATION
         AppSection(
@@ -565,13 +642,23 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildModernDateField(TextEditingController controller, String label) {
+  Widget _buildModernDateField(TextEditingController controller, String label, {Function(String)? onChanged}) {
     return TextField(
       controller: controller,
       readOnly: true,
       onTap: () async {
-        final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime(2100));
-        if (d != null) setState(() => controller.text = DateFormat('dd/MM/yyyy').format(d));
+        final initialDate = DateFormat('dd/MM/yyyy').tryParse(controller.text) ?? DateTime.now();
+        final d = await showDatePicker(
+          context: context, 
+          initialDate: initialDate, 
+          firstDate: DateTime(2020), 
+          lastDate: DateTime(2100)
+        );
+        if (d != null) {
+          final formatted = DateFormat('dd/MM/yyyy').format(d);
+          setState(() => controller.text = formatted);
+          if (onChanged != null) onChanged(formatted);
+        }
       },
       decoration: InputDecoration(
         labelText: label,
@@ -646,35 +733,50 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildFrequencyGrid(int tId) {
-    final frequencies = [
-      {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded},
-      {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded},
-      {'label': 'Semestriel', 'value': 6, 'icon': Icons.event_note_rounded},
-      {'label': 'Annuel', 'value': 12, 'icon': Icons.event_available_rounded},
-      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded},
+  Widget _buildFrequencyGrid(int tId, String mode) {
+    final allFrequencies = [
+      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded, 'mode': 'both'},
+      {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded, 'mode': 'monthly'},
+      {'label': 'Bimestriel', 'value': 2, 'icon': Icons.exposure_plus_2_rounded, 'mode': 'monthly'},
+      {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded, 'mode': 'monthly'},
+      {'label': 'Semestriel', 'value': 6, 'icon': Icons.event_note_rounded, 'mode': 'monthly'},
+      {'label': 'Annuel', 'value': 12, 'icon': Icons.event_available_rounded, 'mode': 'monthly'},
+      
+      {'label': 'Hebdomadaire', 'value': -1, 'icon': Icons.repeat_rounded, 'mode': 'weekly'},
+      {'label': '2 fois / semaine', 'value': -3, 'icon': Icons.flash_on_rounded, 'mode': 'weekly'},
+      {'label': '3 fois / semaine', 'value': -4, 'icon': Icons.auto_awesome_rounded, 'mode': 'weekly'},
+      {'label': 'Toutes les 2 semaines', 'value': -2, 'icon': Icons.update_rounded, 'mode': 'weekly'},
     ];
+
+    final frequencies = allFrequencies.where((f) => f['mode'] == mode || f['mode'] == 'both').toList();
     int current = _treatmentConfig[tId]!['redondance'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Row(
+    return Wrap(
+      key: ValueKey(mode), // Crucial pour AnimatedSwitcher
+      spacing: 12,
+      runSpacing: 12,
       children: frequencies.map((f) {
         bool active = current == f['value'];
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+        return SizedBox(
+          width: 175, 
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
             child: InkWell(
               onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
               borderRadius: BorderRadius.circular(16),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 20),
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
                 decoration: BoxDecoration(
                   color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
                   ),
+                  boxShadow: active && !isDark ? [
+                    BoxShadow(color: AppTheme.primaryBlue.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))
+                  ] : [],
                 ),
                 child: Column(
                   children: [
@@ -697,6 +799,53 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildModeCard({
+    required String label, 
+    required IconData icon, 
+    required bool isActive, 
+    required VoidCallback onTap
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Expanded(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            padding: const EdgeInsets.symmetric(vertical: 16), // Hauteur réduite
+            decoration: BoxDecoration(
+              color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.04)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.15)),
+                width: 1.2,
+              ),
+            ),
+            child: Row( // Row au lieu de Column pour plus de compacité
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: isActive ? Colors.white : AppTheme.primaryBlue, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900, 
+                    fontSize: 11, 
+                    letterSpacing: 0.8,
+                    color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87)
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -791,8 +940,13 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                 setState(() {
                   if (_mainStep == 2 && _treatmentIndex > 0) {
                     _treatmentIndex--;
+                    _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
                   } else {
                     _mainStep--;
+                    if (_mainStep == 2) {
+                      _treatmentIndex = _selectedTreatments.length - 1;
+                      _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+                    }
                   }
                 });
               }, 
@@ -828,13 +982,38 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     }
     if (_mainStep == 2) {
       if (_treatmentIndex < _selectedTreatments.length - 1) {
-        setState(() => _treatmentIndex++);
+        setState(() {
+          _treatmentIndex++;
+          _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+        });
         return;
       }
     }
 
     if (_mainStep < 3) {
-      setState(() => _mainStep++);
+      setState(() {
+        _mainStep++;
+        if (_mainStep == 2) {
+          _treatmentIndex = 0;
+          if (_selectedTreatments.isNotEmpty) {
+            final tId = _selectedTreatments[0];
+            if (!_treatmentConfig.containsKey(tId)) {
+              _treatmentConfig[tId] = {
+                'redondance': 1, 
+                'montant': '', 
+                'debut': _dateDebut.text,
+                'mode': 'monthly'
+              };
+            } else {
+              // Sécurité pour les champs manquants
+              if (!_treatmentConfig[tId]!.containsKey('mode')) {
+                _treatmentConfig[tId]!['mode'] = 'monthly';
+              }
+            }
+            _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
+          }
+        }
+      });
       _saveProgress();
     } else {
       _finalSave();
@@ -844,72 +1023,54 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   Future<void> _finalSave() async {
     setState(() => _isSaving = true);
     try {
-      final clientRepo = context.read<ClientRepository>();
       final contratRepo = context.read<ContratRepository>();
-      final planningRepo = context.read<PlanningRepository>();
-      final detailsRepo = context.read<PlanningDetailsRepository>();
-      final factureRepo = context.read<FactureRepository>();
 
-      // 1. Créer le client
-      final newClient = Client(
-        clientId: 0, nom: _clientNom.text, prenom: _clientPrenom.text,
+      // Préparation du client
+      final client = Client(
+        clientId: 0, 
+        nom: _clientNom.text, 
+        prenom: _clientPrenom.text,
         email: _clientEmail.text, 
         telephone: PhoneFormatter.join(_clientPhoneControllers.map((c) => c.text).toList()),
-        adresse: _clientAdresse.text, nif: _clientNif.text, stat: _clientStat.text,
+        adresse: _clientAdresse.text, 
+        nif: _clientNif.text, 
+        stat: _clientStat.text,
         categorie: _clientCategorie.text,
-        axe: _clientAxe.text, dateAjout: DateTime.now(),
+        axe: _clientAxe.text, 
+        dateAjout: DateTime.now(),
       );
-      final cId = await clientRepo.createClient(newClient);
 
-      // 2. Créer le contrat
+      // Dates et Durée
       final dateC = DateFormat('dd/MM/yyyy').parse(_dateContrat.text);
       final dateD = DateFormat('dd/MM/yyyy').parse(_dateDebut.text);
-      DateTime? dateF;
       int duree = int.tryParse(_dureeContrat.text) ?? 12;
-      if (_isDeterminee) {
-        dateF = DateTime(dateD.year, dateD.month + duree, dateD.day);
-      }
+      DateTime? dateF = _isDeterminee ? DateTime(dateD.year, dateD.month + duree, dateD.day) : null;
 
-      final contratId = await contratRepo.createContrat(
-        clientId: cId, referenceContrat: _numeroContrat.text,
-        dateContrat: dateC, dateDebut: dateD, dateFin: dateF,
-        statutContrat: 'Actif', duree: duree,
-        categorie: _categorieContrat.text, dureeStatus: _isDeterminee ? 'Déterminée' : 'Indéterminée',
+      // APPEL À LA TRANSACTION UNIQUE
+      final success = await contratRepo.saveFullContratTransaction(
+        client: client, 
+        referenceContrat: _numeroContrat.text, 
+        dateContrat: dateC, 
+        dateDebut: dateD, 
+        dateFin: dateF,
+        statutContrat: 'Actif', 
+        duree: duree, 
+        categorieContrat: _categorieContrat.text, 
+        dureeStatus: _isDeterminee ? 'Déterminée' : 'Indéterminée', 
+        selectedTreatmentIds: _selectedTreatments, 
+        treatmentConfigs: _treatmentConfig
       );
 
-      // 3. Créer les traitements et plannings
-      for (final tId in _selectedTreatments) {
-        final traitId = await contratRepo.createTraitement(contratId: contratId, typeTraitementId: tId);
-        final config = _treatmentConfig[tId]!;
-        
-        final planningId = await planningRepo.createPlanning(
-          traitementId: traitId, dateDebutPlanification: dateD,
-          moisDebut: dateD.month, dureeTraitement: duree, redondance: config['redondance'],
-        );
-
-        final dates = date_utils.DateUtils.generatePlanningDates(
-          dateDebut: dateD, dureeTraitement: duree, redondance: config['redondance'],
-        );
-
-        for (final d in dates) {
-          final detail = await detailsRepo.createPlanningDetails(planningId, d);
-          if (detail != null) {
-            await factureRepo.createFactureComplete(
-              planningDetailId: detail.planningDetailId, referenceFacture: '',
-              montant: int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0,
-              etat: 'À venir', axe: _clientAxe.text, dateTraitement: d,
-            );
-          }
-        }
-      }
-
-      await _clearSavedProgress();
-      if (mounted) {
+      if (success && mounted) {
+        await _clearSavedProgress();
         Navigator.pop(context, true);
-        AppSnackBars.showSuccess(context, 'Contrat créé avec succès !');
+        AppSnackBars.showSuccess(context, 'Contrat complet créé avec succès (Transaction OK)');
+        // Recharger les listes si nécessaire (fait par le caller via le Navigator.pop(true))
+      } else if (mounted) {
+        AppSnackBars.showError(context, 'Échec de l\'enregistrement : ${contratRepo.errorMessage ?? 'Erreur inconnue'}');
       }
     } catch (e) {
-      if (mounted) AppSnackBars.showError(context, 'Erreur lors de l\'enregistrement : $e');
+      if (mounted) AppSnackBars.showError(context, 'Erreur technique : $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
