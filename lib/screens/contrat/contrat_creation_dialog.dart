@@ -468,11 +468,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         ),
         const SizedBox(height: 32),
         
-        // SÉLECTEUR DE MODE (MENSUEL VS HEBDO)
+        // SÉLECTEUR DE MODE (MENSUEL VS HEBDO) - Format Compact
         AppSection(
           title: 'Type de planification',
           margin: EdgeInsets.zero,
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
             Row(
               children: [
@@ -482,17 +482,17 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                   isActive: currentMode == 'monthly',
                   onTap: () => setState(() {
                     _treatmentConfig[tId]!['mode'] = 'monthly';
-                    _treatmentConfig[tId]!['redondance'] = 1; // Reset à mensuel
+                    _treatmentConfig[tId]!['redondance'] = 1;
                   }),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 _buildModeCard(
                   label: 'HEBDOMADAIRE', 
                   icon: Icons.view_week_rounded, 
                   isActive: currentMode == 'weekly',
                   onTap: () => setState(() {
                     _treatmentConfig[tId]!['mode'] = 'weekly';
-                    _treatmentConfig[tId]!['redondance'] = -1; // Reset à hebdo
+                    _treatmentConfig[tId]!['redondance'] = -1;
                   }),
                 ),
               ],
@@ -500,9 +500,9 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           ],
         ),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         
-        // SECTION FRÉQUENCE (DYNAMIQUE)
+        // SECTION FRÉQUENCE (ANIMÉE)
         AppSection(
           title: 'Détails de passage',
           margin: EdgeInsets.zero,
@@ -519,11 +519,24 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2),
             ),
             const SizedBox(height: 12),
-            _buildFrequencyGrid(tId, currentMode),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.02, 0), 
+                      end: Offset.zero
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: _buildFrequencyGrid(tId, currentMode),
+            ),
           ],
         ),
-        
-        const SizedBox(height: 32),
         
         // SECTION FACTURATION
         AppSection(
@@ -723,7 +736,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   Widget _buildFrequencyGrid(int tId, String mode) {
     final allFrequencies = [
-      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded, 'mode': 'monthly'},
+      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded, 'mode': 'both'},
       {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded, 'mode': 'monthly'},
       {'label': 'Bimestriel', 'value': 2, 'icon': Icons.exposure_plus_2_rounded, 'mode': 'monthly'},
       {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded, 'mode': 'monthly'},
@@ -736,45 +749,52 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       {'label': 'Toutes les 2 semaines', 'value': -2, 'icon': Icons.update_rounded, 'mode': 'weekly'},
     ];
 
-    final frequencies = allFrequencies.where((f) => f['mode'] == mode).toList();
+    final frequencies = allFrequencies.where((f) => f['mode'] == mode || f['mode'] == 'both').toList();
     int current = _treatmentConfig[tId]!['redondance'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Wrap(
+      key: ValueKey(mode), // Crucial pour AnimatedSwitcher
       spacing: 12,
       runSpacing: 12,
       children: frequencies.map((f) {
         bool active = current == f['value'];
         return SizedBox(
           width: 175, 
-          child: InkWell(
-            onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
-            borderRadius: BorderRadius.circular(16),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-              decoration: BoxDecoration(
-                color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Icon(f['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 24),
-                  const SizedBox(height: 10),
-                  Text(
-                    f['label'] as String, 
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900, 
-                      fontSize: 11, 
-                      color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                      letterSpacing: 0.5
-                    ),
-                    textAlign: TextAlign.center,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: InkWell(
+              onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: active ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
                   ),
-                ],
+                  boxShadow: active && !isDark ? [
+                    BoxShadow(color: AppTheme.primaryBlue.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))
+                  ] : [],
+                ),
+                child: Column(
+                  children: [
+                    Icon(f['icon'] as IconData, color: active ? Colors.white : AppTheme.primaryBlue, size: 24),
+                    const SizedBox(height: 10),
+                    Text(
+                      f['label'] as String, 
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900, 
+                        fontSize: 11, 
+                        color: active ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        letterSpacing: 0.5
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -792,34 +812,38 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          decoration: BoxDecoration(
-            color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.04)),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.15)),
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: isActive ? Colors.white : AppTheme.primaryBlue, size: 30),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900, 
-                  fontSize: 12, 
-                  letterSpacing: 1,
-                  color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87)
-                ),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            padding: const EdgeInsets.symmetric(vertical: 16), // Hauteur réduite
+            decoration: BoxDecoration(
+              color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.04)),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.15)),
+                width: 1.2,
               ),
-            ],
+            ),
+            child: Row( // Row au lieu de Column pour plus de compacité
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: isActive ? Colors.white : AppTheme.primaryBlue, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900, 
+                    fontSize: 11, 
+                    letterSpacing: 0.8,
+                    color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87)
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
