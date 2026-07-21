@@ -12,7 +12,6 @@ import '../../repositories/index.dart';
 import '../../utils/number_formatter.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
-import '../../utils/date_utils.dart' as date_utils;
 import '../../utils/phone_formatter.dart';
 import '../../utils/nif_stat_formatter.dart';
 import '../../widgets/common/multi_phone_input.dart';
@@ -1024,85 +1023,54 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   Future<void> _finalSave() async {
     setState(() => _isSaving = true);
     try {
-      final clientRepo = context.read<ClientRepository>();
       final contratRepo = context.read<ContratRepository>();
-      final planningRepo = context.read<PlanningRepository>();
-      final detailsRepo = context.read<PlanningDetailsRepository>();
-      final factureRepo = context.read<FactureRepository>();
 
-      // 1. Créer le client
-      final newClient = Client(
-        clientId: 0, nom: _clientNom.text, prenom: _clientPrenom.text,
+      // Préparation du client
+      final client = Client(
+        clientId: 0, 
+        nom: _clientNom.text, 
+        prenom: _clientPrenom.text,
         email: _clientEmail.text, 
         telephone: PhoneFormatter.join(_clientPhoneControllers.map((c) => c.text).toList()),
-        adresse: _clientAdresse.text, nif: _clientNif.text, stat: _clientStat.text,
+        adresse: _clientAdresse.text, 
+        nif: _clientNif.text, 
+        stat: _clientStat.text,
         categorie: _clientCategorie.text,
-        axe: _clientAxe.text, dateAjout: DateTime.now(),
+        axe: _clientAxe.text, 
+        dateAjout: DateTime.now(),
       );
-      final cId = await clientRepo.createClient(newClient);
 
-      // 2. Créer le contrat
+      // Dates et Durée
       final dateC = DateFormat('dd/MM/yyyy').parse(_dateContrat.text);
       final dateD = DateFormat('dd/MM/yyyy').parse(_dateDebut.text);
-      DateTime? dateF;
       int duree = int.tryParse(_dureeContrat.text) ?? 12;
-      if (_isDeterminee) {
-        dateF = DateTime(dateD.year, dateD.month + duree, dateD.day);
-      }
+      DateTime? dateF = _isDeterminee ? DateTime(dateD.year, dateD.month + duree, dateD.day) : null;
 
-      final contratId = await contratRepo.createContrat(
-        clientId: cId, referenceContrat: _numeroContrat.text,
-        dateContrat: dateC, dateDebut: dateD, dateFin: dateF,
-        statutContrat: 'Actif', duree: duree,
-        categorie: _categorieContrat.text, dureeStatus: _isDeterminee ? 'Déterminée' : 'Indéterminée',
+      // APPEL À LA TRANSACTION UNIQUE
+      final success = await contratRepo.saveFullContratTransaction(
+        client: client, 
+        referenceContrat: _numeroContrat.text, 
+        dateContrat: dateC, 
+        dateDebut: dateD, 
+        dateFin: dateF,
+        statutContrat: 'Actif', 
+        duree: duree, 
+        categorieContrat: _categorieContrat.text, 
+        dureeStatus: _isDeterminee ? 'Déterminée' : 'Indéterminée', 
+        selectedTreatmentIds: _selectedTreatments, 
+        treatmentConfigs: _treatmentConfig
       );
 
-      // 3. Créer les traitements et plannings
-      for (final tId in _selectedTreatments) {
-        final traitId = await contratRepo.createTraitement(contratId: contratId, typeTraitementId: tId);
-        final config = _treatmentConfig[tId] ?? {};
-        
-        // Sécurité sur les valeurs
-        final String debutStr = config['debut'] ?? _dateDebut.text;
-        final int redondance = config['redondance'] ?? 1;
-        final String montantRaw = (config['montant'] ?? '').toString().replaceAll(' ', '');
-        final int montant = int.tryParse(montantRaw) ?? 0;
-        
-        final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
-        
-        final planningId = await planningRepo.createPlanning(
-          traitementId: traitId, 
-          dateDebutPlanification: treatmentStartDate,
-          moisDebut: treatmentStartDate.month, 
-          dureeTraitement: duree, 
-          redondance: redondance,
-        );
-
-        final dates = date_utils.DateUtils.generatePlanningDates(
-          dateDebut: treatmentStartDate, 
-          dureeTraitement: duree, 
-          redondance: redondance,
-        );
-
-        for (final d in dates) {
-          final detail = await detailsRepo.createPlanningDetails(planningId, d);
-          if (detail != null) {
-            await factureRepo.createFactureComplete(
-              planningDetailId: detail.planningDetailId, referenceFacture: '',
-              montant: montant,
-              etat: 'À venir', axe: _clientAxe.text, dateTraitement: d,
-            );
-          }
-        }
-      }
-
-      await _clearSavedProgress();
-      if (mounted) {
+      if (success && mounted) {
+        await _clearSavedProgress();
         Navigator.pop(context, true);
-        AppSnackBars.showSuccess(context, 'Contrat créé avec succès !');
+        AppSnackBars.showSuccess(context, 'Contrat complet créé avec succès (Transaction OK)');
+        // Recharger les listes si nécessaire (fait par le caller via le Navigator.pop(true))
+      } else if (mounted) {
+        AppSnackBars.showError(context, 'Échec de l\'enregistrement : ${contratRepo.errorMessage ?? 'Erreur inconnue'}');
       }
     } catch (e) {
-      if (mounted) AppSnackBars.showError(context, 'Erreur lors de l\'enregistrement : $e');
+      if (mounted) AppSnackBars.showError(context, 'Erreur technique : $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
