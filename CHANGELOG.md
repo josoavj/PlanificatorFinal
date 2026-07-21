@@ -2,46 +2,51 @@
 
 Ce fichier centralise toutes les évolutions, corrections de bugs et optimisations de la plateforme Planificator.
 
-**Version Actuelle**: 2.1.1  
+**Version Actuelle**: 2.2.0  
 **Statut**: PRODUCTION READY  
-**Dernière mise à jour**: 2026-06-25
+**Dernière mise à jour**: 2026-07-22
+
+---
+
+## [2.2.0] - Modernisation & Flexibilité (2026-07-22)
+
+### Gestion des Contrats & Planning
+- **Planning Hebdomadaire** : Nouvel algorithme supportant les fréquences tous les 7 jours, gérant les mois à 5 semaines.
+- **Passages Multiples** : Support des rythmes 2 fois et 3 fois par semaine avec répartition équilibrée des dates.
+- **Dates de Début Flexibles** : Possibilité de définir une date de premier passage spécifique pour chaque service au sein d'un même contrat.
+- **Respect Calendrier Malgache** : Intégration du 29 Mars et du 1er Mai dans les jours non ouvrables (décalage automatique).
+
+### Facturation & Comptabilité
+- **Facturation Groupée** : Option permettant de générer une seule facture pour plusieurs services tombant le même jour (cumul automatique des montants).
+- **Inversion de Relation DB** : Migration du schéma pour lier les passages à une facture (N-1), optimisant la traçabilité.
+- **Formatage Financier** : Saisie assistée avec séparateurs de milliers en temps réel pour tous les champs de prix.
+
+### Sécurité & Fiabilité
+- **Verrouillage de Configuration** : L'accès aux paramètres de la base de données nécessite désormais la saisie du mot de passe administrateur.
+- **Sauvegarde Atomique** : Refonte totale du processus d'enregistrement via une transaction SQL unique (Client + Contrat + Planning + Factures).
+- **Formateurs Madagascar** : Implémentation de formateurs stricts pour le NIF (10 chiffres), le STAT (17 chiffres) et les téléphones (03X XX XXX XX).
+
+### Expérience Utilisateur (UI/UX)
+- **Design Desktop Premium** : Refonte des dialogues avec des coins arrondis (32px), des headers stylisés et des effets de transition fluides (FadeTransition).
+- **Navigation Contextuelle** : Formulaires adaptatifs affichant les champs selon la catégorie client ou le mode de planification choisi.
+- **Sélecteurs Visuels** : Remplacement des menus déroulants par des grilles de cartes interactives avec icônes.
 
 ---
 
 ## [2.1.1] - Fiabilité Financière & Industrialisation (2026-06-25)
 
 ### Intégrité des Données (SGBDR)
-- **Atomic SQL Transactions** : Implémentation du support des transactions (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) pour garantir que les opérations financières complexes soient atomiques.
-- **Sécurisation des Prix** : La mise à jour massive des prix sur les interventions futures est désormais protégée par une transaction. En cas de coupure réseau, aucune donnée n'est corrompue.
-- **Régénération Sécurisée** : La création automatique de plannings et de factures est désormais atomique (évite les plannings orphelins sans factures).
+- **Atomic SQL Transactions** : Implémentation du support des transactions pour garantir que les opérations financières complexes soient atomiques.
+- **Sécurisation des Prix** : La mise à jour massive des prix est désormais protégée par une transaction.
+- **Régénération Sécurisée** : La création automatique de plannings et de factures est désormais atomique.
 
 ### Optimisations UI & Performance
-- **Infinite Scrolling (Lazy Loading)** : L'historique des interventions utilise désormais une pagination (paquets de 50) pour un affichage instantané, peu importe le nombre d'entrées en base.
-- **Axe/Région Automatisé** : Détection intelligente de l'axe géographique du client lors de la création de factures, garantissant des statistiques régionales exactes.
-- **Robust Model Parsing** : Ajout de protections `try-catch` et de valeurs de secours dans les modèles (Facture, User) pour éviter les crashs en cas de données corrompues en production.
-- **Smart Cache System** : Implémentation d'un gestionnaire de cache SQL global pour des lectures instantanées.
-- **Advanced Connection Pooling** : Pool de connexions MySQL réutilisables (5-10 connexions).
-
-### Maintenance & Qualité Code
-- **Analyse Statique Rigoureuse** : Correction de plus de 120 avertissements `flutter analyze` (redondances, dépréciations, conventions de nommage).
-- **Refactoring des Tests** : Mise à jour de la suite de tests unitaires pour correspondre au schéma réel de la base de données de production.
-- **Mocking Système** : Ajout de mocks manuels pour les tests unitaires afin de faciliter l'intégration continue sans dépendances de build lourdes.
-- **SQL Centralization** : Déplacement de 100% des scripts SQL vers `lib/core/sql_queries.dart`.
-
-### Sécurité & Stabilité
-- **Log Sanitization** : Masquage automatique des données sensibles dans les logs.
-- **Requêtes Paramétrées** : Protection totale contre les injections SQL.
-- **Zéro Erreur d'Analyse** : Premier nettoyage complet des lints.
+- **Infinite Scrolling (Lazy Loading)** : L'historique des interventions utilise désormais une pagination.
+- **Smart Cache System** : Implémentation d'un gestionnaire de cache SQL global.
+- **Advanced Connection Pooling** : Pool de connexions MySQL réutilisables.
 
 ---
 
 ## Sécurité & Durcissement (2026-01-31)
-- **Chiffrement des identifiants** : Utilisation de `flutter_secure_storage` (DPAPI/Keystore).
-- **Optimisation Windows** : Suppression des sous-requêtes corrélées impactant les performances.
-
----
-
-## Refactoring & Corrections (2026-01-17)
-- **Standardisation des Modèles** : Formatage uniforme "Nom Prénom".
-- **Optimisation des Jointures** : Passage en `INNER JOIN` pour les listes critiques.
-- **Sécurité Async** : Ajout de guards `mounted` dans tous les dialogues.
+- **Chiffrement des identifiants** : Utilisation de `flutter_secure_storage`.
+- **Optimisation Windows** : Suppression des sous-requêtes corrélées.
