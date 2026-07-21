@@ -193,6 +193,7 @@ class ContratRepository extends ChangeNotifier {
     required String dureeStatus,
     required List<int> selectedTreatmentIds,
     required Map<int, Map<String, dynamic>> treatmentConfigs,
+    bool groupInvoicesByDate = false, // Nouveau : option de regroupement
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -201,7 +202,7 @@ class ContratRepository extends ChangeNotifier {
     try {
       return await _db.transaction((conn) async {
         // 1. CRÉER LE CLIENT
-        final clientId = await _db.insert(SqlQueries.createClient, [
+        final clientResults = await conn.query(SqlQueries.createClient, [
           client.nom,
           client.prenom,
           client.email,
@@ -213,6 +214,7 @@ class ContratRepository extends ChangeNotifier {
           client.axe,
           DateTime.now().toIso8601String().split('T')[0],
         ]);
+        final clientId = clientResults.insertId ?? 0;
         logger.i('Transaction: Client créé ID $clientId');
 
         // 2. CRÉER LE CONTRAT
@@ -221,7 +223,7 @@ class ContratRepository extends ChangeNotifier {
           dureeContrat = dateFin.month - dateDebut.month + 12 * (dateFin.year - dateDebut.year);
         }
 
-        final contratId = await _db.insert(SqlQueries.createContrat, [
+        final contratResults = await conn.query(SqlQueries.createContrat, [
           clientId,
           referenceContrat,
           dateContrat.toIso8601String(),
@@ -232,9 +234,13 @@ class ContratRepository extends ChangeNotifier {
           dureeStatus,
           categorieContrat,
         ]);
+        final contratId = contratResults.insertId ?? 0;
         logger.i('Transaction: Contrat créé ID $contratId');
 
-        // 3. CRÉER LES TRAITEMENTS, PLANNINGS ET FACTURES
+        // 3. COLLECTER TOUTES LES DATES DE PLANNING POUR TOUS LES SERVICES
+        // Structure : { '2026-08-01': [ {tId: 1, montant: 50000}, {tId: 2, montant: 30000} ] }
+        final Map<String, List<Map<String, dynamic>>> groupedPassages = {};
+
         for (final tId in selectedTreatmentIds) {
           final config = treatmentConfigs[tId] ?? {};
           final int redondance = config['redondance'] ?? 1;
@@ -242,29 +248,6 @@ class ContratRepository extends ChangeNotifier {
           final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
           final int montant = int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0;
 
-          // A. Insertion Traitement
-          final traitId = await _db.insert(SqlQueries.createTraitement, [contratId, tId]);
-
-          // B. Insertion Planning
-          // Calculer date_fin_planification (approximatif pour la table Planning)
-          final endMonth = treatmentStartDate.month - 1 + (duree - 1);
-          final endYear = treatmentStartDate.year + (endMonth ~/ 12);
-          final endNewMonth = (endMonth % 12) + 1;
-          final daysInMonth = DateTime(endYear, endNewMonth + 1, 0).day;
-          final day = treatmentStartDate.day > daysInMonth ? daysInMonth : treatmentStartDate.day;
-          final dateFinPlanification = DateTime(endYear, endNewMonth, day);
-
-          final planningId = await _db.insert(SqlQueries.createPlanning, [
-            traitId,
-            treatmentStartDate.toIso8601String().split('T')[0],
-            treatmentStartDate.month,
-            treatmentStartDate.month + duree - 1, // moisFin
-            duree,
-            redondance,
-            dateFinPlanification.toIso8601String().split('T')[0],
-          ]);
-
-          // C. Génération et Insertion des PlanningDetails + Factures
           final dates = date_utils.DateUtils.generatePlanningDates(
             dateDebut: treatmentStartDate, 
             dureeTraitement: duree, 
@@ -273,25 +256,94 @@ class ContratRepository extends ChangeNotifier {
 
           for (final d in dates) {
             final dateStr = d.toIso8601String().split('T')[0];
-            // Insertion Detail
-            final detailId = await _db.insert(SqlQueries.insertPlanningDetailWithStatut, [
-              planningId,
-              dateStr,
-              'À venir',
-            ]);
+            groupedPassages.putIfAbsent(dateStr, () => []).add({
+              'treatmentId': tId,
+              'montant': montant,
+            });
+          }
+        }
 
-            // Insertion Facture
-            await _db.insert(SqlQueries.createFactureComplete, [
-              detailId,
-              null, // reference_facture
-              montant,
+        // 4. CRÉER LES TRAITEMENTS ET PLANNINGS POUR CHAQUE SERVICE
+        final Map<int, int> planningIdsByTreatment = {};
+        for (final tId in selectedTreatmentIds) {
+          final config = treatmentConfigs[tId] ?? {};
+          
+          final traitResults = await conn.query(SqlQueries.createTraitement, [contratId, tId]);
+          final traitId = traitResults.insertId ?? 0;
+          
+          final String debutStr = config['debut'] ?? DateFormat('dd/MM/yyyy').format(dateDebut);
+          final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
+          
+          final endMonth = treatmentStartDate.month - 1 + (duree - 1);
+          final endYear = treatmentStartDate.year + (endMonth ~/ 12);
+          final endNewMonth = (endMonth % 12) + 1;
+          final daysInMonth = DateTime(endYear, endNewMonth + 1, 0).day;
+          final day = treatmentStartDate.day > daysInMonth ? treatmentStartDate.day : treatmentStartDate.day;
+          final dateFinPlanification = DateTime(endYear, endNewMonth, day);
+
+          final planResults = await conn.query(SqlQueries.createPlanning, [
+            traitId,
+            treatmentStartDate.toIso8601String().split('T')[0],
+            treatmentStartDate.month,
+            treatmentStartDate.month + duree - 1,
+            duree,
+            config['redondance'] ?? 1,
+            dateFinPlanification.toIso8601String().split('T')[0],
+          ]);
+          
+          planningIdsByTreatment[tId] = planResults.insertId ?? 0;
+        }
+
+        // 5. CRÉER LES PASSAGES ET LES FACTURES (GROUPÉES OU NON)
+        for (final entry in groupedPassages.entries) {
+          final String dateStr = entry.key;
+          final List<Map<String, dynamic>> services = entry.value;
+
+          if (groupInvoicesByDate) {
+            // MODE GROUPÉ : Une seule facture pour tous les services de ce jour
+            final int totalMontant = services.fold(0, (sum, s) => sum + (s['montant'] as int));
+            
+            final factResults = await conn.query(SqlQueries.createFactureComplete, [
+              null, // planning_detail_id
+              null, // reference
+              totalMontant,
               null, // mode
               dateStr,
               'À venir',
               client.axe,
             ]);
+            final factureId = factResults.insertId ?? 0;
+
+            for (final s in services) {
+              await conn.query(SqlQueries.insertPlanningDetailWithStatut, [
+                planningIdsByTreatment[s['treatmentId']],
+                dateStr,
+                'À venir',
+                factureId,
+              ]);
+            }
+          } else {
+            // MODE CLASSIQUE : Une facture par service
+            for (final s in services) {
+              final factResults = await conn.query(SqlQueries.createFactureComplete, [
+                null,
+                null,
+                s['montant'],
+                null,
+                dateStr,
+                'À venir',
+                client.axe,
+              ]);
+              final fId = factResults.insertId ?? 0;
+
+              await conn.query(SqlQueries.insertPlanningDetailWithStatut, [
+                planningIdsByTreatment[s['treatmentId']],
+                dateStr,
+                'À venir',
+                fId,
+              ]);
+            }
           }
-          logger.i('Transaction: Service $tId configuré avec ${dates.length} passages');
         }
 
         return true;
@@ -437,7 +489,7 @@ class ContratRepository extends ChangeNotifier {
   }
 
   /// Créer un enregistrement Traitement dans la base de données
-  /// Retourne l'ID du traitement créé, ou -1 en cas d'erreur
+  /// Retourne l'ID du traitement créé, ou -1 en cas d' erreur
   Future<int> createTraitement({
     required int contratId,
     required int typeTraitementId,
