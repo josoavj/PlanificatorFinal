@@ -2,7 +2,7 @@
 
 Ce document détaille les mesures de sécurité implementées dans la plateforme Planificator pour protéger les données des clients et l'intégrité du système.
 
-## 🔒 1. Protection des Identifiants (Credentials)
+## 1. Protection des Identifiants (Credentials)
 
 La plateforme ne stocke jamais les identifiants de la base de données en texte clair.
 
@@ -14,13 +14,20 @@ La plateforme ne stocke jamais les identifiants de la base de données en texte 
   - Les données non sensibles (hôte, port) sont dans `SharedPreferences`.
   - Les données sensibles (utilisateur, mot de passe) sont exclusivement dans le stockage chiffré.
 
-## 🛡️ 2. Sécurité & Intégrité de la Base de Données
+## 2. Sécurité et Intégrité de la Base de Données
 
 - **Injections SQL** : Protection systématique via **requêtes paramétrées** (placeholders `?`). Aucun script SQL n'est concaténé avec des entrées utilisateur.
 - **Transactions Atomiques** : Utilisation systématique de `START TRANSACTION`, `COMMIT` et `ROLLBACK` pour toutes les opérations critiques (comptabilité, plannings). Cela garantit qu'une coupure réseau ne laisse jamais la base de données dans un état incohérent ou partiel.
 - **Triggers de Protection** : La base de données utilise des triggers (`Planificator.sql`) pour forcer les règles de sécurité au niveau du moteur SGBDR (ex: unicité de l'admin, format d'email).
 
-## 📝 3. Protection des Journaux (Log Sanitization)
+## 3. Protection des Actions Critiques
+
+Certaines modifications peuvent compromettre la stabilité de l'application.
+
+- **Verrouillage Administrateur** : L'accès à la configuration de la base de données est protégé par un processus en trois étapes, exigeant la saisie du mot de passe de la session actuelle avant toute modification.
+- **Vérification en Cascade** : Les suppressions de comptes ou de données locales demandent une confirmation explicite via un dialogue de sécurité destructif.
+
+## 4. Protection des Journaux (Log Sanitization)
 
 Pour éviter la fuite de secrets dans les fichiers de logs :
 
@@ -30,12 +37,12 @@ Pour éviter la fuite de secrets dans les fichiers de logs :
   - Hashs BCrypt (reconnaissance de signature `$2b$`).
   - Identifiants de connexion MySQL.
 
-## 👤 4. Authentification Utilisateur
+## 5. Authentification Utilisateur
 
 - **Hachage des Mots de Passe** : Utilisation de **BCrypt** avec un sel (salt) généré aléatoirement pour chaque utilisateur.
 - **Résistance aux attaques** : BCrypt est conçu pour être lent, ce qui protège contre les attaques par force brute (brute-force).
 
-## 🚀 5. Recommandations pour la Production
+## 6. Recommandations pour la Production
 
 Bien que la plateforme soit renforcée, les mesures suivantes sont impératives pour un déploiement réel :
 
@@ -44,4 +51,4 @@ Bien que la plateforme soit renforcée, les mesures suivantes sont impératives 
 3. **Mises à jour** : Maintenez régulièrement les dépendances de la plateforme via `flutter pub upgrade`.
 
 ---
-**Dernière révision de sécurité** : 25 Juin 2026
+**Dernière révision de sécurité** : 22 Juillet 2026
