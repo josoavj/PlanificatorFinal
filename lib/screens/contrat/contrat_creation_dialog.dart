@@ -55,6 +55,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
   // Configuration par service
   final Map<int, Map<String, dynamic>> _treatmentConfig = {};
+  final _treatmentDateController = TextEditingController();
 
   @override
   void initState() {
@@ -77,6 +78,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     for (var controller in _clientPhoneControllers) {
       controller.dispose();
     }
+    _treatmentDateController.dispose();
     _clientAdresse.dispose();
     _clientCategorie.dispose();
     _clientNif.dispose();
@@ -450,10 +452,21 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         
         // SECTION FRÉQUENCE
         AppSection(
-          title: 'Fréquence de passage',
+          title: 'Planification',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
+            _buildModernDateField(
+              _treatmentDateController, 
+              'Date du premier passage',
+              onChanged: (v) => _treatmentConfig[tId]!['debut'] = v,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'FRÉQUENCE DE PASSAGE',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2),
+            ),
+            const SizedBox(height: 12),
             _buildFrequencyGrid(tId),
           ],
         ),
@@ -565,13 +578,23 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildModernDateField(TextEditingController controller, String label) {
+  Widget _buildModernDateField(TextEditingController controller, String label, {Function(String)? onChanged}) {
     return TextField(
       controller: controller,
       readOnly: true,
       onTap: () async {
-        final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime(2100));
-        if (d != null) setState(() => controller.text = DateFormat('dd/MM/yyyy').format(d));
+        final initialDate = DateFormat('dd/MM/yyyy').tryParse(controller.text) ?? DateTime.now();
+        final d = await showDatePicker(
+          context: context, 
+          initialDate: initialDate, 
+          firstDate: DateTime(2020), 
+          lastDate: DateTime(2100)
+        );
+        if (d != null) {
+          final formatted = DateFormat('dd/MM/yyyy').format(d);
+          setState(() => controller.text = formatted);
+          if (onChanged != null) onChanged(formatted);
+        }
       },
       decoration: InputDecoration(
         labelText: label,
@@ -791,8 +814,13 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                 setState(() {
                   if (_mainStep == 2 && _treatmentIndex > 0) {
                     _treatmentIndex--;
+                    _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
                   } else {
                     _mainStep--;
+                    if (_mainStep == 2) {
+                      _treatmentIndex = _selectedTreatments.length - 1;
+                      _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+                    }
                   }
                 });
               }, 
@@ -828,13 +856,28 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     }
     if (_mainStep == 2) {
       if (_treatmentIndex < _selectedTreatments.length - 1) {
-        setState(() => _treatmentIndex++);
+        setState(() {
+          _treatmentIndex++;
+          _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+        });
         return;
       }
     }
 
     if (_mainStep < 3) {
-      setState(() => _mainStep++);
+      setState(() {
+        _mainStep++;
+        if (_mainStep == 2) {
+          _treatmentIndex = 0;
+          if (_selectedTreatments.isNotEmpty) {
+            final tId = _selectedTreatments[0];
+            if (!_treatmentConfig.containsKey(tId)) {
+              _treatmentConfig[tId] = {'redondance': 1, 'montant': '', 'debut': _dateDebut.text};
+            }
+            _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
+          }
+        }
+      });
       _saveProgress();
     } else {
       _finalSave();
@@ -881,14 +924,20 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       for (final tId in _selectedTreatments) {
         final traitId = await contratRepo.createTraitement(contratId: contratId, typeTraitementId: tId);
         final config = _treatmentConfig[tId]!;
+        final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(config['debut']);
         
         final planningId = await planningRepo.createPlanning(
-          traitementId: traitId, dateDebutPlanification: dateD,
-          moisDebut: dateD.month, dureeTraitement: duree, redondance: config['redondance'],
+          traitementId: traitId, 
+          dateDebutPlanification: treatmentStartDate,
+          moisDebut: treatmentStartDate.month, 
+          dureeTraitement: duree, 
+          redondance: config['redondance'],
         );
 
         final dates = date_utils.DateUtils.generatePlanningDates(
-          dateDebut: dateD, dureeTraitement: duree, redondance: config['redondance'],
+          dateDebut: treatmentStartDate, 
+          dureeTraitement: duree, 
+          redondance: config['redondance'],
         );
 
         for (final d in dates) {
