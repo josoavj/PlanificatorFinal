@@ -403,8 +403,26 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     final type = _allTypeTraitements.firstWhereOrNull((t) => t.id == tId);
     
     if (!_treatmentConfig.containsKey(tId)) {
-      _treatmentConfig[tId] = {'redondance': 1, 'montant': '', 'debut': _dateDebut.text};
+      _treatmentConfig[tId] = {
+        'redondance': 1, 
+        'montant': '', 
+        'debut': _dateDebut.text,
+        'mode': 'monthly' 
+      };
+    } else {
+      // Sécurité si l'entrée existait déjà sans certains champs
+      if (!_treatmentConfig[tId]!.containsKey('mode')) {
+        _treatmentConfig[tId]!['mode'] = 'monthly';
+      }
+      if (!_treatmentConfig[tId]!.containsKey('redondance')) {
+        _treatmentConfig[tId]!['redondance'] = 1;
+      }
+      if (!_treatmentConfig[tId]!.containsKey('debut')) {
+        _treatmentConfig[tId]!['debut'] = _dateDebut.text;
+      }
     }
+    
+    final String currentMode = _treatmentConfig[tId]!['mode'] ?? 'monthly';
 
     return Column(
       children: [
@@ -450,9 +468,43 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         ),
         const SizedBox(height: 32),
         
-        // SECTION FRÉQUENCE
+        // SÉLECTEUR DE MODE (MENSUEL VS HEBDO)
         AppSection(
-          title: 'Planification',
+          title: 'Type de planification',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          children: [
+            Row(
+              children: [
+                _buildModeCard(
+                  label: 'MENSUELLE / UNIQUE', 
+                  icon: Icons.calendar_month_rounded, 
+                  isActive: currentMode == 'monthly',
+                  onTap: () => setState(() {
+                    _treatmentConfig[tId]!['mode'] = 'monthly';
+                    _treatmentConfig[tId]!['redondance'] = 1; // Reset à mensuel
+                  }),
+                ),
+                const SizedBox(width: 16),
+                _buildModeCard(
+                  label: 'HEBDOMADAIRE', 
+                  icon: Icons.view_week_rounded, 
+                  isActive: currentMode == 'weekly',
+                  onTap: () => setState(() {
+                    _treatmentConfig[tId]!['mode'] = 'weekly';
+                    _treatmentConfig[tId]!['redondance'] = -1; // Reset à hebdo
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 32),
+        
+        // SECTION FRÉQUENCE (DYNAMIQUE)
+        AppSection(
+          title: 'Détails de passage',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
@@ -463,11 +515,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'FRÉQUENCE DE PASSAGE',
+              'CHOISISSEZ LE RYTHME PRÉCIS',
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2),
             ),
             const SizedBox(height: 12),
-            _buildFrequencyGrid(tId),
+            _buildFrequencyGrid(tId, currentMode),
           ],
         ),
         
@@ -669,19 +721,22 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildFrequencyGrid(int tId) {
-    final frequencies = [
-      {'label': 'Hebdomadaire', 'value': -1, 'icon': Icons.repeat_rounded},
-      {'label': '2 fois / semaine', 'value': -3, 'icon': Icons.flash_on_rounded},
-      {'label': '3 fois / semaine', 'value': -4, 'icon': Icons.auto_awesome_rounded},
-      {'label': 'Toutes les 2 semaines', 'value': -2, 'icon': Icons.update_rounded},
-      {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded},
-      {'label': 'Bimestriel', 'value': 2, 'icon': Icons.exposure_plus_2_rounded},
-      {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded},
-      {'label': 'Semestriel', 'value': 6, 'icon': Icons.event_note_rounded},
-      {'label': 'Annuel', 'value': 12, 'icon': Icons.event_available_rounded},
-      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded},
+  Widget _buildFrequencyGrid(int tId, String mode) {
+    final allFrequencies = [
+      {'label': 'Une seule fois', 'value': 0, 'icon': Icons.looks_one_rounded, 'mode': 'monthly'},
+      {'label': 'Mensuel', 'value': 1, 'icon': Icons.calendar_view_month_rounded, 'mode': 'monthly'},
+      {'label': 'Bimestriel', 'value': 2, 'icon': Icons.exposure_plus_2_rounded, 'mode': 'monthly'},
+      {'label': 'Trimestriel', 'value': 3, 'icon': Icons.date_range_rounded, 'mode': 'monthly'},
+      {'label': 'Semestriel', 'value': 6, 'icon': Icons.event_note_rounded, 'mode': 'monthly'},
+      {'label': 'Annuel', 'value': 12, 'icon': Icons.event_available_rounded, 'mode': 'monthly'},
+      
+      {'label': 'Hebdomadaire', 'value': -1, 'icon': Icons.repeat_rounded, 'mode': 'weekly'},
+      {'label': '2 fois / semaine', 'value': -3, 'icon': Icons.flash_on_rounded, 'mode': 'weekly'},
+      {'label': '3 fois / semaine', 'value': -4, 'icon': Icons.auto_awesome_rounded, 'mode': 'weekly'},
+      {'label': 'Toutes les 2 semaines', 'value': -2, 'icon': Icons.update_rounded, 'mode': 'weekly'},
     ];
+
+    final frequencies = allFrequencies.where((f) => f['mode'] == mode).toList();
     int current = _treatmentConfig[tId]!['redondance'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -691,7 +746,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       children: frequencies.map((f) {
         bool active = current == f['value'];
         return SizedBox(
-          width: 175, // Largeur adaptée pour 10 items sur Desktop
+          width: 175, 
           child: InkWell(
             onTap: () => setState(() => _treatmentConfig[tId]!['redondance'] = f['value']),
             borderRadius: BorderRadius.circular(16),
@@ -725,6 +780,49 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildModeCard({
+    required String label, 
+    required IconData icon, 
+    required bool isActive, 
+    required VoidCallback onTap
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          decoration: BoxDecoration(
+            color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.04)),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isActive ? AppTheme.primaryBlue : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.15)),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: isActive ? Colors.white : AppTheme.primaryBlue, size: 30),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900, 
+                  fontSize: 12, 
+                  letterSpacing: 1,
+                  color: isActive ? Colors.white : (isDark ? Colors.white70 : Colors.black87)
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -877,7 +975,17 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           if (_selectedTreatments.isNotEmpty) {
             final tId = _selectedTreatments[0];
             if (!_treatmentConfig.containsKey(tId)) {
-              _treatmentConfig[tId] = {'redondance': 1, 'montant': '', 'debut': _dateDebut.text};
+              _treatmentConfig[tId] = {
+                'redondance': 1, 
+                'montant': '', 
+                'debut': _dateDebut.text,
+                'mode': 'monthly'
+              };
+            } else {
+              // Sécurité pour les champs manquants
+              if (!_treatmentConfig[tId]!.containsKey('mode')) {
+                _treatmentConfig[tId]!['mode'] = 'monthly';
+              }
             }
             _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
           }
@@ -928,21 +1036,28 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       // 3. Créer les traitements et plannings
       for (final tId in _selectedTreatments) {
         final traitId = await contratRepo.createTraitement(contratId: contratId, typeTraitementId: tId);
-        final config = _treatmentConfig[tId]!;
-        final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(config['debut']);
+        final config = _treatmentConfig[tId] ?? {};
+        
+        // Sécurité sur les valeurs
+        final String debutStr = config['debut'] ?? _dateDebut.text;
+        final int redondance = config['redondance'] ?? 1;
+        final String montantRaw = (config['montant'] ?? '').toString().replaceAll(' ', '');
+        final int montant = int.tryParse(montantRaw) ?? 0;
+        
+        final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
         
         final planningId = await planningRepo.createPlanning(
           traitementId: traitId, 
           dateDebutPlanification: treatmentStartDate,
           moisDebut: treatmentStartDate.month, 
           dureeTraitement: duree, 
-          redondance: config['redondance'],
+          redondance: redondance,
         );
 
         final dates = date_utils.DateUtils.generatePlanningDates(
           dateDebut: treatmentStartDate, 
           dureeTraitement: duree, 
-          redondance: config['redondance'],
+          redondance: redondance,
         );
 
         for (final d in dates) {
@@ -950,7 +1065,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           if (detail != null) {
             await factureRepo.createFactureComplete(
               planningDetailId: detail.planningDetailId, referenceFacture: '',
-              montant: int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0,
+              montant: montant,
               etat: 'À venir', axe: _clientAxe.text, dateTraitement: d,
             );
           }
