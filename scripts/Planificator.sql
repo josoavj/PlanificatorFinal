@@ -226,9 +226,11 @@ CREATE TABLE Planning (
 CREATE TABLE PlanningDetails (
                                  planning_detail_id INT PRIMARY KEY AUTO_INCREMENT,
                                  planning_id INT NOT NULL,
+                                 facture_id INT NULL, -- Nouveau : lien vers la facture groupée
                                  date_planification DATE NOT NULL,
                                  statut ENUM ('Effectué', 'À venir') NOT NULL,
-                                 FOREIGN KEY (planning_id) REFERENCES Planning(planning_id) ON DELETE CASCADE
+                                 FOREIGN KEY (planning_id) REFERENCES Planning(planning_id) ON DELETE CASCADE,
+                                 FOREIGN KEY (facture_id) REFERENCES Facture(facture_id) ON DELETE SET NULL
 );
 
 /*
@@ -241,7 +243,7 @@ CREATE TABLE PlanningDetails (
 -- Table Facture (Pour la facturation de chaque service effectué)
 CREATE TABLE Facture (
                          facture_id INT PRIMARY KEY AUTO_INCREMENT,
-                         planning_detail_id INT NOT NULL,
+                         planning_detail_id INT NULL, -- Modifié : peut être NULL si groupé
                          reference_facture VARCHAR(30),
                          montant INT NOT NULL,
                          mode ENUM('Chèque', 'Espèce', 'Mobile Money', 'Virement'),
@@ -250,8 +252,7 @@ CREATE TABLE Facture (
                          numero_cheque VARCHAR(50) NULL,
                          date_traitement DATE NOT NULL,
                          etat ENUM('Payé', 'Non payé', 'À venir') DEFAULT 'Non payé',
-                         axe ENUM ('Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)') NOT NULL,
-                         FOREIGN KEY (planning_detail_id) REFERENCES PlanningDetails(planning_detail_id) ON DELETE CASCADE
+                         axe ENUM ('Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)') NOT NULL
 );
 
 -- Historique des prix
