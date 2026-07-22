@@ -12,6 +12,7 @@ import '../../repositories/index.dart';
 import '../../utils/number_formatter.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
+import '../../utils/date_utils.dart' as date_utils;
 import '../../utils/phone_formatter.dart';
 import '../../utils/nif_stat_formatter.dart';
 import '../../widgets/common/multi_phone_input.dart';
@@ -647,9 +648,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepValidation() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cat = _clientCategorie.text;
     final isParticular = cat == 'Particulier';
     final isSociety = cat == 'Société';
+    final duree = int.tryParse(_dureeContrat.text) ?? 12;
 
     final String entityLabel;
     if (isParticular) {
@@ -664,38 +667,229 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         ? '${_clientNom.text} ${_clientPrenom.text}' 
         : _clientNom.text;
 
+    // Calculs financiers globaux
+    int grandTotal = 0;
+    int totalPassages = 0;
+    final List<Map<String, dynamic>> serviceDetails = [];
+
+    for (final tId in _selectedTreatments) {
+      final type = _allTypeTraitements.firstWhereOrNull((t) => t.id == tId);
+      final config = _treatmentConfig[tId] ?? {};
+      final int redondance = config['redondance'] ?? 1;
+      final String debutStr = config['debut'] ?? _dateDebut.text;
+      final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
+      final int montantUnitaire = int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0;
+
+      final dates = date_utils.DateUtils.generatePlanningDates(
+        dateDebut: treatmentStartDate, 
+        dureeTraitement: duree, 
+        redondance: redondance,
+      );
+
+      final int totalService = dates.length * montantUnitaire;
+      grandTotal += totalService;
+      totalPassages += dates.length;
+
+      serviceDetails.add({
+        'name': type?.type ?? 'Service inconnu',
+        'rythme': _getFrequencyLabel(redondance),
+        'debut': debutStr,
+        'unitaire': montantUnitaire,
+        'count': dates.length,
+        'total': totalService,
+      });
+    }
+
     return Column(
       children: [
+        // 1. IDENTITÉ ET CONTRAT
         AppSection(
-          title: 'Récapitulatif Final',
+          title: 'Identité et Contrat',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
           children: [
-            _buildSummaryRow('Catégorie Client', cat),
-            _buildSummaryRow(entityLabel, clientDisplay),
-            if (!isParticular) _buildSummaryRow('Responsable', _clientPrenom.text),
-            _buildSummaryRow('Téléphone(s)', _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / ')),
-            if (isSociety) ...[
-              _buildSummaryRow('NIF', NifStatFormatter.formatNif(_clientNif.text)),
-              _buildSummaryRow('STAT', NifStatFormatter.formatStat(_clientStat.text)),
-            ],
-            const Divider(height: 32),
-            _buildSummaryRow('Référence Contrat', _numeroContrat.text),
-            _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
-            _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 20),
-            const Center(
-              child: Text(
-                'Voulez-vous valider et enregistrer ce contrat ?', 
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: AppInfoTile(
+                    icon: Icons.person_rounded, 
+                    label: entityLabel, 
+                    value: clientDisplay,
+                  ),
+                ),
+                Expanded(
+                  child: AppInfoTile(
+                    icon: Icons.category_outlined, 
+                    label: 'Catégorie', 
+                    value: cat,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            Row(
+              children: [
+                Expanded(
+                  child: AppInfoTile(
+                    icon: Icons.tag_rounded, 
+                    label: 'Référence Contrat', 
+                    value: _numeroContrat.text,
+                  ),
+                ),
+                Expanded(
+                  child: AppInfoTile(
+                    icon: Icons.timer_outlined, 
+                    label: 'Durée du contrat', 
+                    value: _isDeterminee ? '$duree mois' : 'Indéterminée',
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+
+        const SizedBox(height: 32),
+
+        // 2. SERVICES DÉTAILLÉS (EXTENSIBLES)
+        AppSection(
+          title: 'Détail des services (${_selectedTreatments.length})',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: [
+            ...serviceDetails.map((s) => Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.assignment_rounded, color: AppTheme.primaryBlue, size: 20),
+                ),
+                title: Text(
+                  s['name'] as String,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                subtitle: Text(
+                  '${s['count']} passage(s) • ${NumberFormatter.formatMontant(s['total'] as int)} Ar total',
+                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[600]),
+                ),
+                children: [
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(64, 0, 16, 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.03),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSummaryRowCompact('Rythme', s['rythme'] as String),
+                        _buildSummaryRowCompact('Premier passage', s['debut'] as String),
+                        _buildSummaryRowCompact('Prix par passage', '${NumberFormatter.formatMontant(s['unitaire'] as int)} Ar'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ),
+
+        const SizedBox(height: 32),
+
+        // 3. RÉSUMÉ FINANCIER GLOBAL
+        Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark 
+                ? [AppTheme.primaryDark, AppTheme.primaryDark.withValues(alpha: 0.7)]
+                : [AppTheme.primaryBlue, AppTheme.primaryBlue.withValues(alpha: 0.8)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              )
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'TOTAL GÉNÉRAL PRÉVU',
+                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                  ),
+                  Text(
+                    '$totalPassages PASSAGES',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Estimation du contrat',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    '${NumberFormatter.formatMontant(grandTotal)} Ar',
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(color: Colors.white24),
+              const SizedBox(height: 12),
+              const Center(
+                child: Text(
+                  'Voulez-vous valider et enregistrer ce contrat ?', 
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
+  }
+
+  Widget _buildSummaryRowCompact(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  String _getFrequencyLabel(int redondance) {
+    switch (redondance) {
+      case 0: return 'Une seule fois';
+      case 1: return 'Mensuel';
+      case 2: return 'Bimestriel';
+      case 3: return 'Trimestriel';
+      case 6: return 'Semestriel';
+      case 12: return 'Annuel';
+      case -1: return 'Hebdomadaire';
+      case -2: return 'Toutes les 2 semaines';
+      case -3: return '2 fois / semaine';
+      case -4: return '3 fois / semaine';
+      default: return 'Fréquence personnalisée';
+    }
   }
 
   // --- WIDGET HELPERS ---
@@ -991,18 +1185,6 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
 
   Widget _buildGroupingToggle() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
