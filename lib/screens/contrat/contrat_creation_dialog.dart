@@ -28,6 +28,9 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   int _mainStep = 0;
   int _treatmentIndex = 0;
   bool _isSaving = false;
+  bool _showSavedIndicator = false;
+  Timer? _savedTimer;
+  final ScrollController _scrollController = ScrollController();
 
   // Controllers Contrat
   final _numeroContrat = TextEditingController();
@@ -86,7 +89,19 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     _clientNif.dispose();
     _clientStat.dispose();
     _clientAxe.dispose();
+    _scrollController.dispose();
+    _savedTimer?.cancel();
     super.dispose();
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   Future<void> _loadTypeTraitements() async {
@@ -143,6 +158,13 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     };
     await prefs.setString('contract_saved_data', jsonEncode(data));
     await prefs.setBool('contract_in_progress', true);
+    
+    // Feedback visuel
+    setState(() => _showSavedIndicator = true);
+    _savedTimer?.cancel();
+    _savedTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showSavedIndicator = false);
+    });
   }
 
   Future<void> _loadSavedProgress() async {
@@ -223,7 +245,10 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                child: SingleChildScrollView(child: _buildCurrentStep()),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: _buildCurrentStep(),
+                ),
               ),
             ),
             _buildFooter(),
@@ -251,6 +276,30 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
               Text('Paramétrez les services et planifications du client', style: TextStyle(color: Colors.grey, fontSize: 13)),
             ],
           ),
+          const SizedBox(width: 24),
+          if (_showSavedIndicator)
+            AnimatedOpacity(
+              opacity: _showSavedIndicator ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.successGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.successGreen.withValues(alpha: 0.2)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: AppTheme.successGreen, size: 14),
+                    SizedBox(width: 8),
+                    Text(
+                      'PROGRESSION ENREGISTRÉE',
+                      style: TextStyle(color: AppTheme.successGreen, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           const Spacer(),
           IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, size: 30)),
         ],
@@ -1035,6 +1084,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                     }
                   }
                 });
+                _scrollToTop();
               }, 
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16), 
               label: const Text('PRÉCÉDENT'),
@@ -1074,6 +1124,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           _ensureTreatmentConfig(tId);
           _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
         });
+        _scrollToTop();
         return;
       }
     }
@@ -1090,6 +1141,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           }
         }
       });
+      _scrollToTop();
       _saveProgress();
     } else {
       _finalSave();
