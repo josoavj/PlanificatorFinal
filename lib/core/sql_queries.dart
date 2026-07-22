@@ -526,10 +526,10 @@ class SqlQueries {
   // --- PLANNING NEW ---
   static const String createPlanning = '''
     INSERT INTO Planning 
-    (traitementId, date_debut_planification, moisDebut, moisFin, duree_traitement, redondance, date_fin_planification)
+    (traitement_id, date_debut_planification, mois_debut, mois_fin, duree_traitement, redondance, date_fin_planification)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   ''';
-  static const String checkPlanningExistence = 'SELECT planning_id FROM Planning WHERE traitementId = ?';
+  static const String checkPlanningExistence = 'SELECT planning_id FROM Planning WHERE traitement_id = ?';
 
   // --- HISTORIQUE ---
   static const String getAllHistoriqueDetailed = '''
