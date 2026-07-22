@@ -702,47 +702,65 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
     return Column(
       children: [
-        // 1. IDENTITÉ ET CONTRAT
+        // 1. IDENTITÉ ET CONTACTS
         AppSection(
-          title: 'Identité et Contrat',
+          title: 'Identification du Client',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
+          showDividers: false,
           children: [
             Row(
               children: [
-                Expanded(
-                  child: AppInfoTile(
-                    icon: Icons.person_rounded, 
-                    label: entityLabel, 
-                    value: clientDisplay,
-                  ),
-                ),
-                Expanded(
-                  child: AppInfoTile(
-                    icon: Icons.category_outlined, 
-                    label: 'Catégorie', 
-                    value: cat,
-                  ),
-                ),
+                Expanded(child: AppInfoTile(icon: Icons.person_rounded, label: entityLabel, value: clientDisplay)),
+                Expanded(child: AppInfoTile(icon: Icons.category_outlined, label: 'Catégorie', value: cat)),
               ],
             ),
-            const Divider(height: 1),
+            const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: AppInfoTile(
-                    icon: Icons.tag_rounded, 
-                    label: 'Référence Contrat', 
-                    value: _numeroContrat.text,
-                  ),
-                ),
-                Expanded(
-                  child: AppInfoTile(
-                    icon: Icons.timer_outlined, 
-                    label: 'Durée du contrat', 
-                    value: _isDeterminee ? '$duree mois' : 'Indéterminée',
-                  ),
-                ),
+                Expanded(child: AppInfoTile(icon: Icons.alternate_email_rounded, label: 'Email de contact', value: _clientEmail.text)),
+                Expanded(child: AppInfoTile(icon: Icons.phone_android_rounded, label: 'Téléphone(s)', value: _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / '))),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.location_on_outlined, label: 'Adresse complète', value: _clientAdresse.text)),
+                Expanded(child: AppInfoTile(icon: Icons.map_outlined, label: 'Axe / Secteur', value: _clientAxe.text)),
+              ],
+            ),
+            if (isSociety) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: AppInfoTile(icon: Icons.description_outlined, label: 'NIF', value: NifStatFormatter.formatNif(_clientNif.text))),
+                  Expanded(child: AppInfoTile(icon: Icons.badge_outlined, label: 'STAT', value: NifStatFormatter.formatStat(_clientStat.text))),
+                ],
+              ),
+            ],
+          ],
+        ),
+
+        const SizedBox(height: 32),
+
+        // 2. RÉFÉRENCE CONTRAT
+        AppSection(
+          title: 'Détails du Contrat',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          showDividers: false,
+          children: [
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.tag_rounded, label: 'Référence', value: _numeroContrat.text)),
+                Expanded(child: AppInfoTile(icon: Icons.event_note_rounded, label: 'Signature', value: _dateContrat.text)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.play_circle_outline_rounded, label: 'Début prestation', value: _dateDebut.text)),
+                Expanded(child: AppInfoTile(icon: Icons.timer_outlined, label: 'Durée prévue', value: _isDeterminee ? '$duree mois' : 'Indéterminée')),
               ],
             ),
           ],
@@ -750,48 +768,54 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
         const SizedBox(height: 32),
 
-        // 2. SERVICES DÉTAILLÉS (EXTENSIBLES)
+        // 3. SERVICES DÉTAILLÉS (EXTENSIBLES)
         AppSection(
-          title: 'Détail des services (${_selectedTreatments.length})',
+          title: 'Prestations et Planification (${_selectedTreatments.length})',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.symmetric(vertical: 8),
+          showDividers: false,
           children: [
-            ...serviceDetails.map((s) => Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.assignment_rounded, color: AppTheme.primaryBlue, size: 20),
-                ),
-                title: Text(
-                  s['name'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                subtitle: Text(
-                  '${s['count']} passage(s) • ${NumberFormatter.formatMontant(s['total'] as int)} Ar total',
-                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[600]),
-                ),
-                children: [
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(64, 0, 16, 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.03),
-                      borderRadius: BorderRadius.circular(16),
+            ...serviceDetails.map((s) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Material(
+                color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.assignment_rounded, color: AppTheme.primaryBlue, size: 20),
                     ),
-                    child: Column(
-                      children: [
-                        _buildSummaryRowCompact('Rythme', s['rythme'] as String),
-                        _buildSummaryRowCompact('Premier passage', s['debut'] as String),
-                        _buildSummaryRowCompact('Prix par passage', '${NumberFormatter.formatMontant(s['unitaire'] as int)} Ar'),
-                      ],
+                    title: Text(
+                      s['name'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                     ),
+                    subtitle: Text(
+                      '${s['count']} passages prévus',
+                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[600]),
+                    ),
+                    trailing: Text(
+                      '${NumberFormatter.formatMontant(s['total'] as int)} Ar',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                    ),
+                    childrenPadding: const EdgeInsets.fromLTRB(60, 0, 24, 20),
+                    children: [
+                      _buildSummaryRowCompact('Rythme de passage', s['rythme'] as String),
+                      _buildSummaryRowCompact('Premier passage', s['debut'] as String),
+                      _buildSummaryRowCompact('Coût unitaire', '${NumberFormatter.formatMontant(s['unitaire'] as int)} Ar'),
+                      const SizedBox(height: 8),
+                      Divider(height: 1, color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
+                      const SizedBox(height: 8),
+                      _buildSummaryRowCompact('Total service', '${NumberFormatter.formatMontant(s['total'] as int)} Ar'),
+                    ],
                   ),
-                ],
+                ),
               ),
             )),
           ],
@@ -799,7 +823,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
         const SizedBox(height: 32),
 
-        // 3. RÉSUMÉ FINANCIER GLOBAL
+        // 4. RÉSUMÉ FINANCIER GLOBAL
         Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
@@ -823,11 +847,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'TOTAL GÉNÉRAL PRÉVU',
+                    'TOTAL GÉNÉRAL ESTIMÉ',
                     style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5),
                   ),
                   Text(
-                    '$totalPassages PASSAGES',
+                    '$totalPassages INTERVENTIONS',
                     style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -838,7 +862,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Text(
-                    'Estimation du contrat',
+                    'Montant du contrat',
                     style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   Text(
@@ -847,13 +871,24 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              const Divider(color: Colors.white24),
-              const SizedBox(height: 12),
-              const Center(
-                child: Text(
-                  'Voulez-vous valider et enregistrer ce contrat ?', 
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: Colors.white70, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Veuillez vérifier les informations ci-dessus avant de confirmer l\'enregistrement.',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
