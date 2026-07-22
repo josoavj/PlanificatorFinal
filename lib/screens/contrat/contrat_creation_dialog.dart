@@ -12,6 +12,7 @@ import '../../repositories/index.dart';
 import '../../utils/number_formatter.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
+import '../../utils/date_utils.dart' as date_utils;
 import '../../utils/phone_formatter.dart';
 import '../../utils/nif_stat_formatter.dart';
 import '../../widgets/common/multi_phone_input.dart';
@@ -28,6 +29,9 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   int _mainStep = 0;
   int _treatmentIndex = 0;
   bool _isSaving = false;
+  bool _showSavedIndicator = false;
+  Timer? _savedTimer;
+  final ScrollController _scrollController = ScrollController();
 
   // Controllers Contrat
   final _numeroContrat = TextEditingController();
@@ -60,8 +64,10 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   @override
   void initState() {
     super.initState();
-    _loadTypeTraitements();
-    _checkForSavedProgress();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTypeTraitements();
+      _checkForSavedProgress();
+    });
   }
 
   @override
@@ -84,7 +90,19 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     _clientNif.dispose();
     _clientStat.dispose();
     _clientAxe.dispose();
+    _scrollController.dispose();
+    _savedTimer?.cancel();
     super.dispose();
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   Future<void> _loadTypeTraitements() async {
@@ -141,6 +159,13 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     };
     await prefs.setString('contract_saved_data', jsonEncode(data));
     await prefs.setBool('contract_in_progress', true);
+    
+    // Feedback visuel
+    setState(() => _showSavedIndicator = true);
+    _savedTimer?.cancel();
+    _savedTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showSavedIndicator = false);
+    });
   }
 
   Future<void> _loadSavedProgress() async {
@@ -183,6 +208,26 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     await prefs.setBool('contract_in_progress', false);
   }
 
+  /// Garantit que la configuration d'un service est initialisée avec des valeurs par défaut
+  void _ensureTreatmentConfig(int tId) {
+    if (!_treatmentConfig.containsKey(tId)) {
+      _treatmentConfig[tId] = {
+        'redondance': 1,
+        'montant': '',
+        'debut': _dateDebut.text,
+        'mode': 'monthly'
+      };
+    } else {
+      // Compléter si des clés manquent
+      if (!_treatmentConfig[tId]!.containsKey('mode')) {
+        _treatmentConfig[tId]!['mode'] = 'monthly';
+      }
+      if (!_treatmentConfig[tId]!.containsKey('debut')) {
+        _treatmentConfig[tId]!['debut'] = _dateDebut.text;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -201,7 +246,10 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                child: SingleChildScrollView(child: _buildCurrentStep()),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: _buildCurrentStep(),
+                ),
               ),
             ),
             _buildFooter(),
@@ -229,6 +277,30 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
               Text('Paramétrez les services et planifications du client', style: TextStyle(color: Colors.grey, fontSize: 13)),
             ],
           ),
+          const SizedBox(width: 24),
+          if (_showSavedIndicator)
+            AnimatedOpacity(
+              opacity: _showSavedIndicator ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.successGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.successGreen.withValues(alpha: 0.2)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: AppTheme.successGreen, size: 14),
+                    SizedBox(width: 8),
+                    Text(
+                      'PROGRESSION ENREGISTRÉE',
+                      style: TextStyle(color: AppTheme.successGreen, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           const Spacer(),
           IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, size: 30)),
         ],
@@ -576,9 +648,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   }
 
   Widget _buildStepValidation() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cat = _clientCategorie.text;
     final isParticular = cat == 'Particulier';
     final isSociety = cat == 'Société';
+    final duree = int.tryParse(_dureeContrat.text) ?? 12;
 
     final String entityLabel;
     if (isParticular) {
@@ -593,38 +667,264 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
         ? '${_clientNom.text} ${_clientPrenom.text}' 
         : _clientNom.text;
 
+    // Calculs financiers globaux
+    int grandTotal = 0;
+    int totalPassages = 0;
+    final List<Map<String, dynamic>> serviceDetails = [];
+
+    for (final tId in _selectedTreatments) {
+      final type = _allTypeTraitements.firstWhereOrNull((t) => t.id == tId);
+      final config = _treatmentConfig[tId] ?? {};
+      final int redondance = config['redondance'] ?? 1;
+      final String debutStr = config['debut'] ?? _dateDebut.text;
+      final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
+      final int montantUnitaire = int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0;
+
+      final dates = date_utils.DateUtils.generatePlanningDates(
+        dateDebut: treatmentStartDate, 
+        dureeTraitement: duree, 
+        redondance: redondance,
+      );
+
+      final int totalService = dates.length * montantUnitaire;
+      grandTotal += totalService;
+      totalPassages += dates.length;
+
+      serviceDetails.add({
+        'name': type?.type ?? 'Service inconnu',
+        'rythme': _getFrequencyLabel(redondance),
+        'debut': debutStr,
+        'unitaire': montantUnitaire,
+        'count': dates.length,
+        'total': totalService,
+      });
+    }
+
     return Column(
       children: [
+        // 1. IDENTITÉ ET CONTACTS
         AppSection(
-          title: 'Récapitulatif Final',
+          title: 'Identification du Client',
           margin: EdgeInsets.zero,
           padding: const EdgeInsets.all(24),
+          showDividers: false,
           children: [
-            _buildSummaryRow('Catégorie Client', cat),
-            _buildSummaryRow(entityLabel, clientDisplay),
-            if (!isParticular) _buildSummaryRow('Responsable', _clientPrenom.text),
-            _buildSummaryRow('Téléphone(s)', _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / ')),
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.person_rounded, label: entityLabel, value: clientDisplay)),
+                Expanded(child: AppInfoTile(icon: Icons.category_outlined, label: 'Catégorie', value: cat)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.alternate_email_rounded, label: 'Email de contact', value: _clientEmail.text)),
+                Expanded(child: AppInfoTile(icon: Icons.phone_android_rounded, label: 'Téléphone(s)', value: _clientPhoneControllers.map((c) => c.text).where((t) => t.isNotEmpty).join(' / '))),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.location_on_outlined, label: 'Adresse complète', value: _clientAdresse.text)),
+                Expanded(child: AppInfoTile(icon: Icons.map_outlined, label: 'Axe / Secteur', value: _clientAxe.text)),
+              ],
+            ),
             if (isSociety) ...[
-              _buildSummaryRow('NIF', NifStatFormatter.formatNif(_clientNif.text)),
-              _buildSummaryRow('STAT', NifStatFormatter.formatStat(_clientStat.text)),
-            ],
-            const Divider(height: 32),
-            _buildSummaryRow('Référence Contrat', _numeroContrat.text),
-            _buildSummaryRow('Durée', _isDeterminee ? '${_dureeContrat.text} mois' : 'Indéterminée'),
-            _buildSummaryRow('Services', '${_selectedTreatments.length} services configurés'),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 20),
-            const Center(
-              child: Text(
-                'Voulez-vous valider et enregistrer ce contrat ?', 
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: AppInfoTile(icon: Icons.description_outlined, label: 'NIF', value: NifStatFormatter.formatNif(_clientNif.text))),
+                  Expanded(child: AppInfoTile(icon: Icons.badge_outlined, label: 'STAT', value: NifStatFormatter.formatStat(_clientStat.text))),
+                ],
               ),
+            ],
+          ],
+        ),
+
+        const SizedBox(height: 32),
+
+        // 2. RÉFÉRENCE CONTRAT
+        AppSection(
+          title: 'Détails du Contrat',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(24),
+          showDividers: false,
+          children: [
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.tag_rounded, label: 'Référence', value: _numeroContrat.text)),
+                Expanded(child: AppInfoTile(icon: Icons.event_note_rounded, label: 'Signature', value: _dateContrat.text)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: AppInfoTile(icon: Icons.play_circle_outline_rounded, label: 'Début prestation', value: _dateDebut.text)),
+                Expanded(child: AppInfoTile(icon: Icons.timer_outlined, label: 'Durée prévue', value: _isDeterminee ? '$duree mois' : 'Indéterminée')),
+              ],
             ),
           ],
         ),
+
+        const SizedBox(height: 32),
+
+        // 3. SERVICES DÉTAILLÉS (EXTENSIBLES)
+        AppSection(
+          title: 'Prestations et Planification (${_selectedTreatments.length})',
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          showDividers: false,
+          children: [
+            ...serviceDetails.map((s) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Material(
+                color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.assignment_rounded, color: AppTheme.primaryBlue, size: 20),
+                    ),
+                    title: Text(
+                      s['name'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      '${s['count']} passages prévus',
+                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[600]),
+                    ),
+                    trailing: Text(
+                      '${NumberFormatter.formatMontant(s['total'] as int)} Ar',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                    ),
+                    childrenPadding: const EdgeInsets.fromLTRB(60, 0, 24, 20),
+                    children: [
+                      _buildSummaryRowCompact('Rythme de passage', s['rythme'] as String),
+                      _buildSummaryRowCompact('Premier passage', s['debut'] as String),
+                      _buildSummaryRowCompact('Coût unitaire', '${NumberFormatter.formatMontant(s['unitaire'] as int)} Ar'),
+                      const SizedBox(height: 8),
+                      Divider(height: 1, color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
+                      const SizedBox(height: 8),
+                      _buildSummaryRowCompact('Total service', '${NumberFormatter.formatMontant(s['total'] as int)} Ar'),
+                    ],
+                  ),
+                ),
+              ),
+            )),
+          ],
+        ),
+
+        const SizedBox(height: 32),
+
+        // 4. RÉSUMÉ FINANCIER GLOBAL
+        Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark 
+                ? [AppTheme.primaryDark, AppTheme.primaryDark.withValues(alpha: 0.7)]
+                : [AppTheme.primaryBlue, AppTheme.primaryBlue.withValues(alpha: 0.8)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              )
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'TOTAL GÉNÉRAL ESTIMÉ',
+                    style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                  ),
+                  Text(
+                    '$totalPassages INTERVENTIONS',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Montant du contrat',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    '${NumberFormatter.formatMontant(grandTotal)} Ar',
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: Colors.white70, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Veuillez vérifier les informations ci-dessus avant de confirmer l\'enregistrement.',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
+  }
+
+  Widget _buildSummaryRowCompact(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  String _getFrequencyLabel(int redondance) {
+    switch (redondance) {
+      case 0: return 'Une seule fois';
+      case 1: return 'Mensuel';
+      case 2: return 'Bimestriel';
+      case 3: return 'Trimestriel';
+      case 6: return 'Semestriel';
+      case 12: return 'Annuel';
+      case -1: return 'Hebdomadaire';
+      case -2: return 'Toutes les 2 semaines';
+      case -3: return '2 fois / semaine';
+      case -4: return '3 fois / semaine';
+      default: return 'Fréquence personnalisée';
+    }
   }
 
   // --- WIDGET HELPERS ---
@@ -920,18 +1220,6 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
 
   Widget _buildGroupingToggle() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1000,15 +1288,20 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                 setState(() {
                   if (_mainStep == 2 && _treatmentIndex > 0) {
                     _treatmentIndex--;
-                    _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+                    final tId = _selectedTreatments[_treatmentIndex];
+                    _ensureTreatmentConfig(tId);
+                    _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
                   } else {
                     _mainStep--;
                     if (_mainStep == 2) {
                       _treatmentIndex = _selectedTreatments.length - 1;
-                      _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+                      final tId = _selectedTreatments[_treatmentIndex];
+                      _ensureTreatmentConfig(tId);
+                      _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
                     }
                   }
                 });
+                _scrollToTop();
               }, 
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16), 
               label: const Text('PRÉCÉDENT'),
@@ -1044,8 +1337,11 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       if (_treatmentIndex < _selectedTreatments.length - 1) {
         setState(() {
           _treatmentIndex++;
-          _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+          final tId = _selectedTreatments[_treatmentIndex];
+          _ensureTreatmentConfig(tId);
+          _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
         });
+        _scrollToTop();
         return;
       }
     }
@@ -1057,23 +1353,12 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           _treatmentIndex = 0;
           if (_selectedTreatments.isNotEmpty) {
             final tId = _selectedTreatments[0];
-            if (!_treatmentConfig.containsKey(tId)) {
-              _treatmentConfig[tId] = {
-                'redondance': 1, 
-                'montant': '', 
-                'debut': _dateDebut.text,
-                'mode': 'monthly'
-              };
-            } else {
-              // Sécurité pour les champs manquants
-              if (!_treatmentConfig[tId]!.containsKey('mode')) {
-                _treatmentConfig[tId]!['mode'] = 'monthly';
-              }
-            }
+            _ensureTreatmentConfig(tId);
             _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
           }
         }
       });
+      _scrollToTop();
       _saveProgress();
     } else {
       _finalSave();

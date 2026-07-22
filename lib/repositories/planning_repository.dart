@@ -107,7 +107,7 @@ class PlanningRepository extends ChangeNotifier {
 
       if (existing.isNotEmpty) {
         logger.i(
-          ' Planning existe déjà pour traitementId=$traitementId, ID=${existing[0]['planning_id']}',
+          ' Planning existe déjà pour traitement_id=$traitementId, ID=${existing[0]['planning_id']}',
         );
         return existing[0]['planning_id'] as int;
       }
