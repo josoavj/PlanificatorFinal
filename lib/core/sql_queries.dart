@@ -151,7 +151,7 @@ class SqlQueries {
         t.contrat_id, 
         tt.typeTraitement as nom,
         tt.categorieTraitement as type,
-        (SELECT GROUP_CONCAT(DISTINCT pd_inner.statut) 
+        (SELECT CAST(GROUP_CONCAT(DISTINCT pd_inner.statut) AS CHAR) 
          FROM PlanningDetails pd_inner 
          WHERE pd_inner.planning_id = (SELECT p_inner.planning_id FROM Planning p_inner WHERE p_inner.traitement_id = t.traitement_id LIMIT 1)) as statuts,
         (SELECT COUNT(*) 
@@ -206,7 +206,7 @@ class SqlQueries {
       cl.nom as clientNom,
       cl.prenom as clientPrenom,
       cl.categorie as clientCategorie,
-      GROUP_CONCAT(DISTINCT tt.typeTraitement SEPARATOR ' + ') as typeTreatment,
+      CAST(GROUP_CONCAT(DISTINCT tt.typeTraitement SEPARATOR ' + ') AS CHAR) as typeTreatment,
       pd.date_planification as datePlanification,
       pd.statut as etatPlanning
     FROM Facture f
@@ -238,7 +238,7 @@ class SqlQueries {
       COALESCE(cl.nom, 'Non associé') as clientNom,
       COALESCE(cl.prenom, '') as clientPrenom,
       COALESCE(cl.categorie, '') as clientCategorie,
-      GROUP_CONCAT(DISTINCT tt.typeTraitement SEPARATOR ' + ') as typeTreatment,
+      CAST(GROUP_CONCAT(DISTINCT tt.typeTraitement SEPARATOR ' + ') AS CHAR) as typeTreatment,
       COALESCE(f.date_traitement, '2000-01-01') as datePlanification,
       'Groupée' as etatPlanning
     FROM Facture f

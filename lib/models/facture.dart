@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 /// Modèle Facture
 /// Représente une facture pour un traitement
 class Facture {
@@ -55,20 +58,37 @@ class Facture {
       parsedDateTraitement = DateTime.now();
     }
 
+    // Helper pour convertir proprement les BLOB (Uint8List) en String
+    String? dbString(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is List<int>) return utf8.decode(value);
+      return value.toString();
+    }
+
+    // Helper pour convertir proprement les entiers
+    int? dbInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value);
+      return int.tryParse(value.toString());
+    }
+
     return Facture(
-      factureId: json['facture_id'] as int,
-      planningDetailsId: json['planning_detail_id'] as int?,
-      referenceFacture: json['reference_facture'] as String?,
-      montant: json['montant'] as int,
-      mode: json['mode'] as String?,
-      etablissementPayeur: json['etablissement_payeur'] as String?,
+      factureId: dbInt(json['facture_id']) ?? 0,
+      planningDetailsId: dbInt(json['planning_detail_id']),
+      referenceFacture: dbString(json['reference_facture']),
+      montant: dbInt(json['montant']) ?? 0,
+      mode: dbString(json['mode']),
+      etablissementPayeur: dbString(json['etablissement_payeur']),
       dateCheque: json['date_cheque'] != null
           ? DateTime.tryParse(json['date_cheque'].toString())
           : null,
-      numeroCheque: json['numero_cheque'] as String?,
+      numeroCheque: dbString(json['numero_cheque']),
       dateTraitement: parsedDateTraitement,
-      etat: json['etat'] as String? ?? 'Non payé',
-      axe: json['axe'] as String,
+      etat: dbString(json['etat']) ?? 'Non payé',
+      axe: dbString(json['axe']) ?? 'Centre (C)',
     );
   }
 
@@ -88,29 +108,46 @@ class Facture {
       parsedDateTraitement = DateTime.now();
     }
 
+    // Helper pour convertir proprement les BLOB (Uint8List) en String
+    String? dbString(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is List<int>) return utf8.decode(value);
+      return value.toString();
+    }
+
+    // Helper pour convertir proprement les entiers
+    int? dbInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value);
+      return int.tryParse(value.toString());
+    }
+
     return Facture(
-      factureId: map['facture_id'] as int? ?? 0,
-      planningDetailsId: map['planning_detail_id'] as int?,
-      referenceFacture: map['reference_facture'] as String?,
-      montant: map['montant'] as int? ?? 0,
-      mode: map['mode'] as String?,
-      etablissementPayeur: map['etablissement_payeur'] as String?,
+      factureId: dbInt(map['facture_id']) ?? 0,
+      planningDetailsId: dbInt(map['planning_detail_id']),
+      referenceFacture: dbString(map['reference_facture']),
+      montant: dbInt(map['montant']) ?? 0,
+      mode: dbString(map['mode']),
+      etablissementPayeur: dbString(map['etablissement_payeur']),
       dateCheque: map['date_cheque'] != null
           ? DateTime.tryParse(map['date_cheque'].toString())
           : null,
-      numeroCheque: map['numero_cheque'] as String?,
+      numeroCheque: dbString(map['numero_cheque']),
       dateTraitement: parsedDateTraitement,
-      etat: map['etat'] as String? ?? 'Non payé',
-      axe: map['axe'] as String? ?? 'Centre (C)',
-      clientId: map['client_id'] as int?,
-      clientNom: map['clientNom'] as String?,
-      clientPrenom: map['clientPrenom'] as String?,
-      clientCategorie: map['clientCategorie'] as String?,
-      typeTreatment: map['typeTreatment'] as String?,
+      etat: dbString(map['etat']) ?? 'Non payé',
+      axe: dbString(map['axe']) ?? 'Centre (C)',
+      clientId: dbInt(map['client_id']),
+      clientNom: dbString(map['clientNom']),
+      clientPrenom: dbString(map['clientPrenom']),
+      clientCategorie: dbString(map['clientCategorie']),
+      typeTreatment: dbString(map['typeTreatment']),
       datePlanification: map['datePlanification'] != null
           ? DateTime.tryParse(map['datePlanification'].toString())
           : null,
-      etatPlanning: map['etatPlanning'] as String?,
+      etatPlanning: dbString(map['etatPlanning']),
     );
   }
 
