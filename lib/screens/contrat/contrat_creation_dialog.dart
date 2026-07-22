@@ -60,8 +60,10 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
   @override
   void initState() {
     super.initState();
-    _loadTypeTraitements();
-    _checkForSavedProgress();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTypeTraitements();
+      _checkForSavedProgress();
+    });
   }
 
   @override
@@ -181,6 +183,26 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('contract_saved_data');
     await prefs.setBool('contract_in_progress', false);
+  }
+
+  /// Garantit que la configuration d'un service est initialisée avec des valeurs par défaut
+  void _ensureTreatmentConfig(int tId) {
+    if (!_treatmentConfig.containsKey(tId)) {
+      _treatmentConfig[tId] = {
+        'redondance': 1,
+        'montant': '',
+        'debut': _dateDebut.text,
+        'mode': 'monthly'
+      };
+    } else {
+      // Compléter si des clés manquent
+      if (!_treatmentConfig[tId]!.containsKey('mode')) {
+        _treatmentConfig[tId]!['mode'] = 'monthly';
+      }
+      if (!_treatmentConfig[tId]!.containsKey('debut')) {
+        _treatmentConfig[tId]!['debut'] = _dateDebut.text;
+      }
+    }
   }
 
   @override
@@ -1000,12 +1022,16 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                 setState(() {
                   if (_mainStep == 2 && _treatmentIndex > 0) {
                     _treatmentIndex--;
-                    _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+                    final tId = _selectedTreatments[_treatmentIndex];
+                    _ensureTreatmentConfig(tId);
+                    _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
                   } else {
                     _mainStep--;
                     if (_mainStep == 2) {
                       _treatmentIndex = _selectedTreatments.length - 1;
-                      _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+                      final tId = _selectedTreatments[_treatmentIndex];
+                      _ensureTreatmentConfig(tId);
+                      _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
                     }
                   }
                 });
@@ -1044,7 +1070,9 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
       if (_treatmentIndex < _selectedTreatments.length - 1) {
         setState(() {
           _treatmentIndex++;
-          _treatmentDateController.text = _treatmentConfig[_selectedTreatments[_treatmentIndex]]!['debut'];
+          final tId = _selectedTreatments[_treatmentIndex];
+          _ensureTreatmentConfig(tId);
+          _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
         });
         return;
       }
@@ -1057,19 +1085,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
           _treatmentIndex = 0;
           if (_selectedTreatments.isNotEmpty) {
             final tId = _selectedTreatments[0];
-            if (!_treatmentConfig.containsKey(tId)) {
-              _treatmentConfig[tId] = {
-                'redondance': 1, 
-                'montant': '', 
-                'debut': _dateDebut.text,
-                'mode': 'monthly'
-              };
-            } else {
-              // Sécurité pour les champs manquants
-              if (!_treatmentConfig[tId]!.containsKey('mode')) {
-                _treatmentConfig[tId]!['mode'] = 'monthly';
-              }
-            }
+            _ensureTreatmentConfig(tId);
             _treatmentDateController.text = _treatmentConfig[tId]!['debut'];
           }
         }
