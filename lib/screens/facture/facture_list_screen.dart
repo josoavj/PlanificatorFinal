@@ -5,6 +5,7 @@ import '../../repositories/index.dart';
 import '../../models/index.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
+import '../../utils/number_formatter.dart';
 
 class FactureListScreen extends StatefulWidget {
   final int? clientId; // Si null, affiche toutes les factures
@@ -223,12 +224,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
         .fold<double>(0, (sum, f) => sum + f.montant);
     final totalAmount = paidAmount + unpaidAmount;
 
-    final formatter = NumberFormat.currency(
-      locale: 'fr_MG',
-      symbol: ' Ar',
-      decimalDigits: 2,
-    );
-
     return Card(
       margin: const EdgeInsets.all(8.0),
       child: Padding(
@@ -238,9 +233,9 @@ class _FactureListScreenState extends State<FactureListScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _StatColumn('Total', formatter.format(totalAmount)),
-                _StatColumn('Payé', formatter.format(paidAmount)),
-                _StatColumn('Dû', formatter.format(unpaidAmount)),
+                _StatColumn('Total', '${NumberFormatter.formatMontant(totalAmount.toInt())} Ar'),
+                _StatColumn('Payé', '${NumberFormatter.formatMontant(paidAmount.toInt())} Ar'),
+                _StatColumn('Dû', '${NumberFormatter.formatMontant(unpaidAmount.toInt())} Ar'),
               ],
             ),
           ],
@@ -326,7 +321,7 @@ class _ClientFacturesCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'Payé: ${NumberFormat.currency(locale: 'fr_FR', symbol: '€').format(paidAmount)}',
+                              'Payé: ${NumberFormatter.formatMontant(paidAmount.toInt())} Ar',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.green.shade800,
@@ -346,7 +341,7 @@ class _ClientFacturesCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              'Dû: ${NumberFormat.currency(locale: 'fr_FR', symbol: '€').format(unpaidAmount)}',
+                              'Dû: ${NumberFormatter.formatMontant(unpaidAmount.toInt())} Ar',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.orange.shade800,
