@@ -6,6 +6,7 @@ import '../../../repositories/facture_repository.dart';
 import '../../../utils/date_helper.dart';
 import '../../../repositories/auth_repository.dart';
 import '../../../utils/app_snackbars.dart';
+import '../../../utils/number_formatter.dart';
 
 class RemarqueDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -301,7 +302,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              '${widget.facture.montant} Ar',
+                              '${NumberFormatter.formatMontant(widget.facture.montant)} Ar',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -366,6 +367,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                   TextField(
                     controller: _montantCtrl,
                     keyboardType: const TextInputType.numberWithOptions(),
+                    inputFormatters: [AmountInputFormatter()],
                     decoration: const InputDecoration(
                       labelText: 'Montant (Ar) - OBLIGATOIRE',
                       border: OutlineInputBorder(),
@@ -388,7 +390,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Montant: ${widget.facture.montant} Ar',
+                            'Montant: ${NumberFormatter.formatMontant(widget.facture.montant)} Ar',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
