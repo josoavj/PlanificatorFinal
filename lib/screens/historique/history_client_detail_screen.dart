@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../models/index.dart';
-import '../../repositories/index.dart';
 import '../../widgets/index.dart';
-import '../../utils/app_snackbars.dart';
-import '../planning/widgets/remark_dialog.dart';
 import 'widgets/history_intervention_tile.dart';
+import 'widgets/history_detail_dialog.dart';
 
 class HistoryClientDetailScreen extends StatelessWidget {
   final String clientName;
@@ -59,34 +55,7 @@ class HistoryClientDetailScreen extends StatelessWidget {
     );
   }
 
-  void _openInterventionDetail(BuildContext context, Map<String, dynamic> data) async {
-    final planningDetailId = data['planning_detail_id'] as int?;
-    if (planningDetailId == null) return;
-
-    final factureRepo = context.read<FactureRepository>();
-    final remarqueRepo = context.read<RemarqueRepository>();
-
-    // Charger les détails nécessaires
-    final factures = await factureRepo.getFacturesByPlanningDetail(planningDetailId);
-    final remarques = await remarqueRepo.getRemarques(planningDetailId);
-
-    if (!context.mounted) return;
-
-    if (factures.isEmpty) {
-      AppSnackBars.showInfo(context, 'Aucun détail financier pour ce passage');
-      return;
-    }
-
-    final pd = PlanningDetails.fromJson(data);
-    
-    AppDialogs.showBlurDialog(
-      context: context,
-      builder: (ctx) => RemarqueDialog(
-        planningDetail: pd,
-        facture: factures.first,
-        existingRemarque: remarques.isNotEmpty ? remarques.first : null,
-        onSaved: () => context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete(),
-      ),
-    );
+  void _openInterventionDetail(BuildContext context, Map<String, dynamic> data) {
+    HistoryDetailDialog.show(context, data);
   }
 }
