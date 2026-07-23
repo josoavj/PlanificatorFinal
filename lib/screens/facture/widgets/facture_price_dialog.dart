@@ -127,6 +127,7 @@ class FacturePriceDialog extends StatelessWidget {
                                     controller: prixNewCtrl,
                                     keyboardType: TextInputType.number,
                                     autofocus: true,
+                                    inputFormatters: [AmountInputFormatter()],
                                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
                                     decoration: InputDecoration(
                                       hintText: 'Ex: 85 000',
