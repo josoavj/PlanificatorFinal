@@ -10,12 +10,14 @@ import '../../../utils/app_snackbars.dart';
 class RemarqueDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
   final Facture facture;
+  final Remarque? existingRemarque; // Optionnel : pour l'édition
   final VoidCallback onSaved;
 
   const RemarqueDialog({
     super.key,
     required this.planningDetail,
     required this.facture,
+    this.existingRemarque,
     required this.onSaved,
   });
 
@@ -40,18 +42,23 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
   @override
   void initState() {
     super.initState();
-    _contenuCtrl = TextEditingController();
-    _problemeCtrl = TextEditingController();
-    _actionCtrl = TextEditingController();
-    _montantCtrl = TextEditingController(
-      text: widget.facture.montant.toString(),
+    final rem = widget.existingRemarque;
+    final fac = widget.facture;
+
+    _contenuCtrl = TextEditingController(text: rem?.contenu ?? '');
+    _problemeCtrl = TextEditingController(text: rem?.probleme ?? '');
+    _actionCtrl = TextEditingController(text: rem?.action ?? '');
+    _montantCtrl = TextEditingController(text: fac.montant.toString());
+    
+    _datePayementCtrl = TextEditingController(
+      text: fac.dateCheque != null ? DateHelper.format(fac.dateCheque!) : ''
     );
-    _datePayementCtrl = TextEditingController();
-    _etablissementCtrl = TextEditingController();
-    _numeroChequeCtrl = TextEditingController();
-    _referenceCtrl = TextEditingController(
-      text: widget.facture.referenceFacture ?? '',
-    );
+    _etablissementCtrl = TextEditingController(text: fac.etablissementPayeur ?? '');
+    _numeroChequeCtrl = TextEditingController(text: fac.numeroCheque ?? '');
+    _referenceCtrl = TextEditingController(text: fac.referenceFacture ?? '');
+
+    _estPayee = fac.isPaid;
+    _modePaiement = fac.mode;
   }
 
   @override
@@ -90,72 +97,94 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     setState(() => _isLoading = true);
 
     try {
+      final isEditing = widget.existingRemarque != null;
+      final repo = context.read<RemarqueRepository>();
+      final factureRepo = context.read<FactureRepository>();
+      final authRepo = context.read<AuthRepository>();
+
+      final currentMontant = int.tryParse(_montantCtrl.text.replaceAll(' ', '')) ?? 0;
+
       // Validation: si montant est 0, on doit en saisir un
-      if (widget.facture.montant == 0) {
-        final montant = int.tryParse(_montantCtrl.text) ?? 0;
-        if (montant == 0) {
-          setState(() => _isLoading = false);
-          AppSnackBars.showWarning(context, 'Veuillez entrer un montant valide');
-          return;
+      if (currentMontant == 0) {
+        setState(() => _isLoading = false);
+        AppSnackBars.showWarning(context, 'Veuillez entrer un montant valide');
+        return;
+      }
+
+      bool success = false;
+      if (isEditing) {
+        // MODE ÉDITION
+        success = await repo.updateRemarqueFull(
+          remarqueId: widget.existingRemarque!.id!,
+          factureId: widget.facture.factureId,
+          contenu: _contenuCtrl.text.isEmpty ? null : _contenuCtrl.text,
+          probleme: _problemeCtrl.text.isEmpty ? null : _problemeCtrl.text,
+          action: _actionCtrl.text.isEmpty ? null : _actionCtrl.text,
+          modePaiement: _estPayee ? _modePaiement : null,
+          datePayement: _estPayee && _datePayementCtrl.text.isNotEmpty
+              ? _datePayementCtrl.text
+              : null,
+          etablissement: _modePaiement == 'Chèque' ? _etablissementCtrl.text : null,
+          numeroCheque: _modePaiement == 'Chèque' ? _numeroChequeCtrl.text : null,
+          estPayee: _estPayee,
+        );
+
+        // Mettre à jour le montant si nécessaire
+        if (currentMontant != widget.facture.montant) {
+          await factureRepo.updateFacturePrice(
+            widget.facture.factureId,
+            currentMontant,
+            isAdmin: authRepo.isAdmin,
+          );
+        }
+
+        // Mettre à jour la référence
+        if (_referenceCtrl.text != (widget.facture.referenceFacture ?? '')) {
+          await factureRepo.updateFactureReference(
+            widget.facture.factureId,
+            _referenceCtrl.text,
+          );
+        }
+      } else {
+        // MODE CRÉATION (Comportement original)
+        success = await repo.createRemarque(
+          planningDetailsId: widget.planningDetail.planningDetailId,
+          factureId: widget.facture.factureId,
+          contenu: _contenuCtrl.text.isEmpty ? null : _contenuCtrl.text,
+          probleme: _problemeCtrl.text.isEmpty ? null : _problemeCtrl.text,
+          action: _actionCtrl.text.isEmpty ? null : _actionCtrl.text,
+          modePaiement: _estPayee ? _modePaiement : null,
+          datePayement: _estPayee && _datePayementCtrl.text.isNotEmpty
+              ? _datePayementCtrl.text
+              : null,
+          etablissement: _modePaiement == 'Chèque' ? _etablissementCtrl.text : null,
+          numeroCheque: _modePaiement == 'Chèque' ? _numeroChequeCtrl.text : null,
+          estPayee: _estPayee,
+        );
+
+        // Mises à jour supplémentaires si création
+        if (widget.facture.montant == 0) {
+          await factureRepo.updateFacturePrice(
+            widget.facture.factureId,
+            currentMontant,
+            isAdmin: authRepo.isAdmin,
+          );
+        }
+        if (_referenceCtrl.text.isNotEmpty) {
+          await factureRepo.updateFactureReference(
+            widget.facture.factureId,
+            _referenceCtrl.text,
+          );
         }
       }
 
-      final repo = context.read<RemarqueRepository>();
-
-      // Créer la remarque
-      await repo.createRemarque(
-        planningDetailsId: widget.planningDetail.planningDetailId,
-        factureId: widget.facture.factureId,
-        contenu: _contenuCtrl.text.isEmpty ? null : _contenuCtrl.text,
-        probleme: _problemeCtrl.text.isEmpty ? null : _problemeCtrl.text,
-        action: _actionCtrl.text.isEmpty ? null : _actionCtrl.text,
-        modePaiement: _estPayee ? _modePaiement : null,
-        datePayement: _estPayee
-            ? DateHelper.format(DateHelper.parseAny(_datePayementCtrl.text))
-            : null,
-        etablissement: _modePaiement == 'Chèque'
-            ? _etablissementCtrl.text
-            : null,
-        numeroCheque: _modePaiement == 'Chèque' ? _numeroChequeCtrl.text : null,
-        estPayee: _estPayee,
-      );
-      if (!mounted) return;
-
-      // Mettre à jour la facture
-      final factureRepo = context.read<FactureRepository>();
-
-      // Si montant était 0, le mettre à jour
-      if (widget.facture.montant == 0) {
-        final montant = int.tryParse(_montantCtrl.text) ?? 0;
-        final authRepo = context.read<AuthRepository>();
-        await factureRepo.updateFacturePrice(
-          widget.facture.factureId,
-          montant,
-          isAdmin: authRepo.isAdmin,
-        );
-        if (!mounted) return;
-      }
-
-      // Mettre à jour la référence si modifiée
-      if (_referenceCtrl.text.isNotEmpty &&
-          _referenceCtrl.text != (widget.facture.referenceFacture ?? '')) {
-        await factureRepo.updateFactureReference(
-          widget.facture.factureId,
-          _referenceCtrl.text,
-        );
-        if (!mounted) return;
-      }
-
-      // Marquer comme payée si nécessaire
-      if (_estPayee) {
-        await factureRepo.markAsPaid(widget.facture.factureId);
-        if (!mounted) return;
-      }
-
-      if (mounted) {
+      if (success && mounted) {
         widget.onSaved();
         Navigator.pop(context);
-        AppSnackBars.showSuccess(context, ' Remarque & Facture enregistrées');
+        AppSnackBars.showSuccess(
+          context, 
+          isEditing ? 'Informations mises à jour' : 'Remarque & Facture enregistrées'
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -196,7 +225,9 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Remarque - ${DateHelper.format(widget.planningDetail.datePlanification)}',
+                  widget.existingRemarque != null
+                      ? 'Édition - ${DateHelper.format(widget.planningDetail.datePlanification)}'
+                      : 'Remarque - ${DateHelper.format(widget.planningDetail.datePlanification)}',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
