@@ -168,6 +168,56 @@ class RemarqueRepository extends ChangeNotifier {
     }
   }
 
+  /// Met à jour une remarque existante et éventuellement la facture associée
+  Future<bool> updateRemarqueFull({
+    required int remarqueId,
+    required int factureId,
+    String? contenu,
+    String? probleme,
+    String? action,
+    String? modePaiement,
+    String? datePayement,
+    String? etablissement,
+    String? numeroCheque,
+    bool estPayee = false,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // 1. Mettre à jour la table Remarque
+      await _db.execute(SqlQueries.updateRemarqueBasic, [
+        contenu,
+        probleme,
+        action,
+        remarqueId,
+      ]);
+
+      // 2. Mettre à jour la table Facture
+      // On utilise updateFactureFull pour tout synchroniser
+      await _db.execute(SqlQueries.updateFactureFull, [
+        estPayee ? 'Payé' : 'Non payé',
+        modePaiement,
+        numeroCheque,
+        datePayement != null ? DateHelper.reverseFormat(datePayement) : null,
+        modePaiement == 'Chèque' ? etablissement : null,
+        factureId,
+      ]);
+
+      logger.i(' Mise à jour complète effectuée pour remarque $remarqueId');
+      await loadRemarques();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      logger.e('Erreur lors de la mise à jour de la remarque: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Supprime une remarque
   Future<bool> deleteRemarque(int remarqueId) async {
     _isLoading = true;
