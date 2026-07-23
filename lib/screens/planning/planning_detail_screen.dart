@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/facture.dart';
 import '../../models/planning_details.dart';
+import '../../models/remarque.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
@@ -23,6 +25,34 @@ class PlanningDetailScreen extends StatefulWidget {
 }
 
 class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
+  late Future<Map<String, dynamic>> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = _loadData();
+  }
+
+  Future<Map<String, dynamic>> _loadData() async {
+    final planningDetailId = widget.planningDetailId;
+    final factureRepo = context.read<FactureRepository>();
+    final remarqueRepo = context.read<RemarqueRepository>();
+
+    final factures = await factureRepo.getFacturesByPlanningDetail(planningDetailId);
+    final remarques = await remarqueRepo.getRemarques(planningDetailId);
+
+    return {
+      'facture': factures.isNotEmpty ? factures.first : null,
+      'remarque': remarques.isNotEmpty ? remarques.first : null,
+    };
+  }
+
+  void _refresh() {
+    setState(() {
+      _dataFuture = _loadData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -30,72 +60,144 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
     final axe = widget.treatment['axe']?.toString() ?? '';
     final etat = widget.treatment['etat']?.toString() ?? '';
     final isEffectue = etat.toLowerCase().contains('effectué');
-    final statusColor = isEffectue 
-        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen) 
-        : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 70),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  AppSection(
-                    title: 'Détails du Traitement',
-                    margin: EdgeInsets.zero,
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _dataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: LoadingWidget());
+          }
+
+          final facture = snapshot.data?['facture'] as Facture?;
+          final remarque = snapshot.data?['remarque'] as Remarque?;
+          
+          final isPaye = facture?.isPaid ?? false;
+          final isLocked = isEffectue && isPaye;
+
+          final statusColor = isEffectue 
+              ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen) 
+              : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: 70),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
                     children: [
-                      AppInfoTile(
-                        icon: Icons.medical_services_outlined, 
-                        label: 'Service', 
-                        value: trait,
-                      ),
-                      AppInfoTile(
-                        icon: Icons.map_outlined, 
-                        label: 'Axe / Secteur', 
-                        value: axe,
-                      ),
-                      AppInfoTile(
-                        icon: Icons.info_outline_rounded, 
-                        label: 'État actuel', 
-                        value: etat,
-                        trailing: Icon(
-                          isEffectue ? Icons.check_circle : Icons.pending,
-                          color: statusColor,
-                          size: 20,
+                      // BADGE DE STATUT FINAL
+                      if (isLocked)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.successGreen.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppTheme.successGreen.withValues(alpha: 0.2)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.verified_rounded, color: AppTheme.successGreen, size: 20),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('DOSSIER TERMINÉ', style: TextStyle(fontWeight: FontWeight.w900, color: AppTheme.successGreen, fontSize: 11, letterSpacing: 1)),
+                                    Text('Le passage a été effectué et la facture est réglée.', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+
+                      AppSection(
+                        title: 'Détails du Traitement',
+                        margin: EdgeInsets.zero,
+                        children: [
+                          AppInfoTile(
+                            icon: Icons.medical_services_outlined, 
+                            label: 'Service', 
+                            value: trait,
+                          ),
+                          AppInfoTile(
+                            icon: Icons.map_outlined, 
+                            label: 'Axe / Secteur', 
+                            value: axe,
+                          ),
+                          AppInfoTile(
+                            icon: Icons.info_outline_rounded, 
+                            label: 'État actuel', 
+                            value: etat.toUpperCase(),
+                            trailing: Icon(
+                              isEffectue ? Icons.check_circle : Icons.pending,
+                              color: statusColor,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      
+                      AppSection(
+                        title: isLocked ? 'Gestion Administrative' : 'Actions disponibles',
+                        margin: EdgeInsets.zero,
+                        children: [
+                          if (isLocked)
+                            AppActionCard(
+                              icon: Icons.edit_note_rounded, 
+                              title: 'Modifier les informations', 
+                              subtitle: 'Corriger la remarque ou les détails financiers', 
+                              onTap: () => _showEditRemarqueDialog(facture!, remarque),
+                            )
+                          else ...[
+                            AppActionCard(
+                              icon: Icons.edit_note_rounded, 
+                              title: 'Ajouter une remarque', 
+                              subtitle: 'Noter des précisions ou créer une facture', 
+                              onTap: _showRemarqueDialog,
+                            ),
+                            AppActionCard(
+                              icon: Icons.report_problem_outlined, 
+                              title: 'Signaler un problème', 
+                              subtitle: 'Enregistrer une anomalie durant le traitement', 
+                              onTap: _showSignalementDialog,
+                              isDestructive: true,
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
-                  AppSection(
-                    title: 'Actions disponibles',
-                    margin: EdgeInsets.zero,
-                    children: [
-                      AppActionCard(
-                        icon: Icons.edit_note_rounded, 
-                        title: 'Ajouter une remarque', 
-                        subtitle: 'Noter des précisions ou créer une facture', 
-                        onTap: _showRemarqueDialog,
-                      ),
-                      AppActionCard(
-                        icon: Icons.report_problem_outlined, 
-                        title: 'Signaler un problème', 
-                        subtitle: 'Enregistrer une anomalie durant le traitement', 
-                        onTap: _showSignalementDialog,
-                        isDestructive: true,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
+    );
+  }
+
+  void _showEditRemarqueDialog(Facture facture, Remarque? remarque) {
+    final pd = PlanningDetails.fromJson(widget.treatment);
+    AppDialogs.showBlurDialog(
+      context: context, 
+      builder: (ctx) => RemarqueDialog(
+        planningDetail: pd, 
+        facture: facture, 
+        existingRemarque: remarque,
+        onSaved: () async { 
+          await context.read<PlanningDetailsRepository>().refreshAll(); 
+          await context.read<FactureRepository>().loadAllFactures(); 
+          if (mounted) {
+            _refresh();
+          }
+        }
+      )
     );
   }
 
@@ -130,11 +232,12 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                         planningDetail: pd, 
                         facture: factures.first, 
                         onSaved: () async { 
-                          await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete(); 
+                          // Utilisation du refresh global consolidé
+                          await context.read<PlanningDetailsRepository>().refreshAll(); 
                           await context.read<FactureRepository>().loadAllFactures(); 
                           if (mounted) {
                             AppSnackBars.showSuccess(context, 'Remarque ajoutée'); 
-                            Navigator.of(context).pop();
+                            _refresh();
                           }
                         }
                       )
@@ -157,11 +260,12 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
       builder: (ctx) => SignalementDialog(
         planningDetail: pd, 
         onSaved: () async { 
-          await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete(); 
+          // Utilisation du refresh global consolidé
+          await context.read<PlanningDetailsRepository>().refreshAll(); 
           await context.read<FactureRepository>().loadAllFactures(); 
           if (mounted) {
             AppSnackBars.showSuccess(context, 'Signalement enregistré'); 
-            Navigator.of(context).pop(); 
+            _refresh();
           }
         }
       )

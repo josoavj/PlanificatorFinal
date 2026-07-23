@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import '../utils/number_formatter.dart';
 
 /// Modèle Facture
 /// Représente une facture pour un traitement
@@ -167,8 +167,7 @@ class Facture {
 
   /// Format montant avec séparateur de milliers
   String get montantFormatted {
-    final formatter = _NumberFormatter();
-    return '${formatter.format(montant)} Ar';
+    return '${NumberFormatter.formatMontant(montant)} Ar';
   }
 
   /// Nom complet du client
@@ -231,14 +230,4 @@ class Facture {
   @override
   String toString() =>
       'Facture(id: $factureId, montant: $montantFormatted, client: $clientFullName)';
-}
-
-/// Utilitaire pour formatter les nombres
-class _NumberFormatter {
-  String format(int number) {
-    return number.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (Match match) => ' ',
-    );
-  }
 }

@@ -18,7 +18,6 @@ class PlanningScreen extends StatefulWidget {
 class _PlanningScreenState extends State<PlanningScreen> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
-  final Map<String, List<Map<String, dynamic>>> _treatmentCache = {};
 
   @override
   void initState() {
@@ -30,11 +29,6 @@ class _PlanningScreenState extends State<PlanningScreen> {
 
   Future<void> _loadData() async {
     await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete();
-    if (mounted) {
-      setState(() {
-        _treatmentCache.clear();
-      });
-    }
   }
 
   String _convertToString(dynamic value) {
@@ -45,10 +39,7 @@ class _PlanningScreenState extends State<PlanningScreen> {
   }
 
   List<Map<String, dynamic>> _getTreatmentsForDay(DateTime day, List<Map<String, dynamic>> treatments) {
-    final dayKey = '${day.year}-${day.month}-${day.day}';
-    if (_treatmentCache.containsKey(dayKey)) return _treatmentCache[dayKey]!;
-
-    final result = treatments.where((t) {
+    return treatments.where((t) {
       try {
         final dateStr = _convertToString(t['date']);
         if (dateStr.isEmpty) return false;
@@ -58,9 +49,6 @@ class _PlanningScreenState extends State<PlanningScreen> {
         return isSameDay(tDate, DateTime(day.year, day.month, day.day));
       } catch (e) { return false; }
     }).toList();
-
-    _treatmentCache[dayKey] = result;
-    return result;
   }
 
   @override

@@ -456,4 +456,18 @@ class PlanningDetailsRepository extends ChangeNotifier {
       return [];
     }
   }
+
+  ///  Rechargement global de toutes les listes pour assurer la synchronisation
+  /// (Mois actuel, À venir, Historique complet)
+  Future<void> refreshAll() async {
+    logger.i('Refresh global du planning lancé...');
+    // Lancer les 3 chargements en parallèle pour l'efficience
+    await Future.wait([
+      loadCurrentMonthTreatmentsComplete(),
+      loadUpcomingTreatmentsComplete(),
+      loadAllTreatmentsComplete(),
+    ]);
+    logger.i('Refresh global terminé');
+    notifyListeners();
+  }
 }

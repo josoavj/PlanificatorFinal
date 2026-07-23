@@ -5,6 +5,9 @@ import '../../../repositories/signalement_repository.dart';
 import '../../../utils/date_helper.dart';
 import '../../../services/logging_service.dart';
 import '../../../utils/app_snackbars.dart';
+import '../../../core/theme.dart';
+import '../../../widgets/index.dart';
+import '../../../widgets/common/index.dart';
 
 class SignalementDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
@@ -72,81 +75,35 @@ class _SignalementDialogState extends State<SignalementDialog> {
         return;
       }
 
-      //  ÉTAPE 1: Créer le signalement (enregistre le motif)
+      //  ÉTAPE 1: Créer le signalement
       await repo.createSignalement(
         planningDetailsId: widget.planningDetail.planningDetailId,
         motif: _motifCtrl.text,
         type: _type,
       );
       if (!mounted) return;
-      logger.i(' Signalement créé');
 
-      // ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
-      logger.i(' Étape 2a: Modifier la date du planning courant');
-      logger.i(
-        '   planningDetailId=${widget.planningDetail.planningDetailId}, oldDate=$oldDate → newDate=$newDate',
-      );
+      // ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE
       await repo.modifierDatePlanning(
         planningDetailsId: widget.planningDetail.planningDetailId,
         newDate: newDate,
       );
       if (!mounted) return;
 
-      // ÉTAPE 2B: Appliquer la logique DÉCALER vs GARDER
+      // ÉTAPE 2B: Cascade
       if (_changerRedondance) {
-        // === MODE 1: DÉCALER TOUTES les dates futures ===
-        logger.i(
-          ' MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
-        );
-        logger.i(
-          '   ancienneDateModifiee=$oldDate, nouvelleDateModifiee=$newDate',
-        );
-
         await repo.modifierRedondance(
           planningId: widget.planningDetail.planningId,
           planningDetailsId: widget.planningDetail.planningDetailId,
           ancienneDateModifiee: oldDate,
           nouvelleDateModifiee: newDate,
         );
-        if (!mounted) return;
-      } else {
-        // === MODE 2: GARDER - on a déjà modifié JUSTE cette date en 2A ===
-        logger.i(' MODE GARDER: date modifiée (autres dates inchangées)');
       }
 
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
-
-        // Générer un message descriptif avec l'écart
-        final ecart = _calculateEcart();
-        final mois = ecart['mois'] as int;
-        final jours = ecart['jours'] as int;
-        final direction = ecart['direction'] as String;
-
-        String messageEcart = '';
-        if (direction == 'Décalage') {
-          messageEcart = 'Décaler de ';
-        } else if (direction == 'Avancement') {
-          messageEcart = 'Avancer de ';
-        } else {
-          messageEcart = 'Date modifiée: ';
-        }
-
-        if (mois != 0) {
-          messageEcart += '$mois mois';
-          if (jours != 0) {
-            messageEcart += ' et $jours jours';
-          }
-        } else if (jours != 0) {
-          messageEcart += '$jours jours';
-        }
-
-        final modeTexte = _changerRedondance
-            ? ' (toutes les dates futures)'
-            : ' (cette date uniquement)';
-
-        AppSnackBars.showSuccess(context, ' Signalement: $messageEcart$modeTexte');
+        AppSnackBars.showSuccess(context, 'Signalement enregistré avec succès');
       }
     } catch (e) {
       logger.e(' Erreur signalement: $e');
@@ -170,219 +127,284 @@ class _SignalementDialogState extends State<SignalementDialog> {
       );
 
       if (picked != null && mounted) {
-        setState(() => _dateCtrl.text = DateHelper.format(picked));
+        setState(() {
+          _dateCtrl.text = DateHelper.format(picked);
+          
+          // Auto-synchronisation du type
+          final oldDate = widget.planningDetail.datePlanification;
+          final d1 = DateTime(oldDate.year, oldDate.month, oldDate.day);
+          final d2 = DateTime(picked.year, picked.month, picked.day);
+          
+          if (d2.isBefore(d1)) {
+            _type = 'avancement';
+          } else if (d2.isAfter(d1)) {
+            _type = 'décalage';
+          }
+        });
       }
     } catch (e) {
       logger.e('Erreur sélection date: $e');
     }
   }
 
-  /// Calcule l'écart de mois et jours entre deux dates
   Map<String, dynamic> _calculateEcart() {
     final oldDate = widget.planningDetail.datePlanification;
     final newDate = DateHelper.parseAny(_dateCtrl.text);
 
-    if (newDate == null) {
-      return {'mois': 0, 'jours': 0, 'total': 0, 'direction': ''};
-    }
+    if (newDate == null) return {'total': 0, 'direction': ''};
 
-    final difference = newDate.difference(oldDate);
-    final totalJours = difference.inDays;
+    final d1 = DateTime(oldDate.year, oldDate.month, oldDate.day);
+    final d2 = DateTime(newDate.year, newDate.month, newDate.day);
+    final totalJours = d2.difference(d1).inDays;
 
-    // Calculer les mois entiers et les jours restants
-    int mois = 0;
-    int jours = totalJours;
-
-    if (totalJours.abs() >= 28) {
-      // Approximation: 1 mois ≈ 30 jours
-      mois = (totalJours / 30).toInt();
-      jours = totalJours % 30;
-    }
-
-    // Direction: Avancement ou Décalage
     String direction = '';
     if (totalJours < 0) {
-      direction = 'Avancement'; // Date antérieure
-      mois = mois.abs();
-      jours = jours.abs();
+      direction = 'Avancé';
     } else if (totalJours > 0) {
-      direction = 'Décalage'; // Date postérieure
+      direction = 'Décalé';
     }
 
-    return {
-      'mois': mois,
-      'jours': jours,
-      'total': totalJours,
-      'direction': direction,
-    };
+    return {'total': totalJours.abs(), 'direction': direction};
   }
 
-  /// Génère un texte formaté pour l'écart
   String _ecartText() {
     final ecart = _calculateEcart();
-    final mois = ecart['mois'] as int;
-    final jours = ecart['jours'] as int;
+    final total = ecart['total'] as int;
     final direction = ecart['direction'] as String;
 
-    if (direction.isEmpty) return '';
-
-    String texte = ' ';
-
-    if (mois != 0) {
-      texte += '$mois mois';
-      if (jours != 0) {
-        texte += ' et $jours jours';
-      }
-    } else if (jours != 0) {
-      texte += '$jours jours';
-    } else {
-      texte += 'Même date';
-    }
-
-    return texte;
+    if (direction.isEmpty || total == 0) return '';
+    final unit = total > 1 ? 'jours' : 'jour';
+    return '$direction de $total $unit';
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Signalement - ${DateHelper.format(widget.planningDetail.datePlanification)}',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-
-                // Type de signalement
-                Text(
-                  'Type de signalement',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(
-                      value: 'avancement',
-                      label: Text('Avancement'),
-                    ),
-                    ButtonSegment(value: 'décalage', label: Text('Décalage')),
-                  ],
-                  selected: {_type},
-                  onSelectionChanged: (newSelection) {
-                    setState(() => _type = newSelection.first);
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Motif
-                TextField(
-                  controller: _motifCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Motif du signalement',
-                    border: OutlineInputBorder(),
-                    hintText: 'Ex: Visite impossible, client absent, ...',
-                  ),
-                  maxLines: 4,
-                  minLines: 4,
-                ),
-                const SizedBox(height: 16),
-
-                // Nouvelle date
-                TextField(
-                  controller: _dateCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Nouvelle date de planification',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: _selectDate,
-                    ),
-                  ),
-                  readOnly: true,
-                  onChanged: (_) {
-                    setState(() {
-                      // Auto-détection du type en fonction de l'écart
-                      final ecart = _calculateEcart();
-                      final direction = ecart['direction'] as String;
-                      if (direction.isNotEmpty && direction != 'Même date') {
-                        _type = direction.toLowerCase();
-                      }
-                    });
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                //  Affichage de l'écart (jours/mois)
-                if (_ecartText().isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      border: Border.all(color: Colors.blue[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: 600,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(context),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    AppSection(
+                      title: 'Informations de l\'Intervention',
+                      margin: EdgeInsets.zero,
                       children: [
-                        Expanded(
-                          child: Text(
-                            _ecartText(),
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blue[700],
+                        AppInfoTile(
+                          icon: Icons.calendar_today_rounded, 
+                          label: 'Date initialement prévue', 
+                          value: DateHelper.format(widget.planningDetail.datePlanification),
+                        ),
+                        AppInfoTile(
+                          icon: Icons.info_outline_rounded, 
+                          label: 'Statut actuel', 
+                          value: widget.planningDetail.statut.toUpperCase(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    AppSection(
+                      title: 'Nouveau Planning',
+                      margin: EdgeInsets.zero,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Type de changement', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                child: SegmentedButton<String>(
+                                  segments: const [
+                                    ButtonSegment(value: 'avancement', label: Text('Avancement'), icon: Icon(Icons.fast_rewind_rounded)),
+                                    ButtonSegment(value: 'décalage', label: Text('Décalage'), icon: Icon(Icons.fast_forward_rounded)),
+                                  ],
+                                  selected: {_type},
+                                  onSelectionChanged: (v) => setState(() => _type = v.first),
                                 ),
+                              ),
+                              const SizedBox(height: 20),
+                              TextField(
+                                controller: _dateCtrl,
+                                readOnly: true,
+                                onTap: _selectDate,
+                                decoration: InputDecoration(
+                                  labelText: 'Nouvelle date souhaitée',
+                                  prefixIcon: const Icon(Icons.event_repeat_rounded, color: Colors.amber),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (_ecartText().trim().isNotEmpty) _buildGapBadge(),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TextField(
+                            controller: _motifCtrl,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              labelText: 'Motif du signalement',
+                              hintText: 'Pourquoi ce changement de date ?',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                // Décaler redondance
-                CheckboxListTile(
-                  title: const Text('Décaler TOUTES les dates futures'),
-                  subtitle: const Text('(sinon ne modifie que cette date)'),
-                  value: _changerRedondance,
-                  onChanged: (val) {
-                    setState(() => _changerRedondance = val ?? false);
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Boutons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Annuler'),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: _isLoading ? null : _saveSignalement,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Enregistrer'),
+                    AppSection(
+                      title: 'Impact sur le futur',
+                      margin: EdgeInsets.zero,
+                      children: [
+                        _buildCascadeSwitch(),
+                      ],
                     ),
                   ],
                 ),
+              ),
+            ),
+            _buildFooterActions(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.amber.shade700, Colors.orange.shade800],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+              child: const Icon(Icons.notification_important_rounded, color: Colors.white, size: 32),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'SIGNALEMENT & REPORT',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGapBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.timer_outlined, color: Colors.amber, size: 14),
+          const SizedBox(width: 8),
+          Text(
+            _ecartText().toUpperCase(),
+            style: const TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCascadeSwitch() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _changerRedondance ? AppTheme.primaryBlue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _changerRedondance ? Icons.dynamic_feed_rounded : Icons.looks_one_rounded, 
+              color: _changerRedondance ? AppTheme.primaryBlue : Colors.grey, 
+              size: 20
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Décaler en cascade ?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text('Appliquer ce décalage à TOUTES les dates futures', style: TextStyle(fontSize: 10, color: Colors.grey)),
               ],
             ),
           ),
-        ),
+          Switch.adaptive(
+            value: _changerRedondance, 
+            onChanged: (v) => setState(() => _changerRedondance = v)
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooterActions(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('ANNULER'),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: FilledButton(
+              onPressed: _isLoading ? null : _saveSignalement,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.orange.shade800,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: _isLoading 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('ENREGISTRER LE REPORT'),
+            ),
+          ),
+        ],
       ),
     );
   }
