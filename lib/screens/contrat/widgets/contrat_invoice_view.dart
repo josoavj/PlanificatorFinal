@@ -4,6 +4,7 @@ import '../../../models/index.dart';
 import '../../../services/database_service.dart';
 import '../../../core/sql_queries.dart';
 import '../../../widgets/index.dart';
+import '../../../utils/number_formatter.dart';
 import 'contrat_details_dialog.dart';
 
 class ContratInvoiceView extends StatelessWidget {
@@ -68,7 +69,7 @@ class ContratInvoiceView extends StatelessWidget {
                           dense: true,
                           leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(isPaid ? Icons.check_circle_outline : Icons.pending_actions_rounded, size: 18, color: statusColor)),
                           title: Text('Facture #${f['factureId']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          subtitle: Text('${f['montant']} Ar', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600])),
+                          subtitle: Text('${NumberFormatter.formatMontant(f['montant'] as int)} Ar', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600])),
                           trailing: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Text(etat.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900))),
                         ),
                       );
