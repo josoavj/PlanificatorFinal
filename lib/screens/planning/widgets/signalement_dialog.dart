@@ -121,35 +121,15 @@ class _SignalementDialogState extends State<SignalementDialog> {
         widget.onSaved();
         Navigator.pop(context);
 
-        // Générer un message descriptif avec l'écart
-        final ecart = _calculateEcart();
-        final mois = ecart['mois'] as int;
-        final jours = ecart['jours'] as int;
-        final direction = ecart['direction'] as String;
-
-        String messageEcart = '';
-        if (direction == 'Décalage') {
-          messageEcart = 'Décaler de ';
-        } else if (direction == 'Avancement') {
-          messageEcart = 'Avancer de ';
-        } else {
-          messageEcart = 'Date modifiée: ';
-        }
-
-        if (mois != 0) {
-          messageEcart += '$mois mois';
-          if (jours != 0) {
-            messageEcart += ' et $jours jours';
-          }
-        } else if (jours != 0) {
-          messageEcart += '$jours jours';
-        }
+        // Générer un message descriptif précis
+        final messageEcart = _ecartText();
+        final finalMessage = messageEcart.isNotEmpty ? messageEcart : 'Date modifiée';
 
         final modeTexte = _changerRedondance
             ? ' (toutes les dates futures)'
             : ' (cette date uniquement)';
 
-        AppSnackBars.showSuccess(context, ' Signalement: $messageEcart$modeTexte');
+        AppSnackBars.showSuccess(context, ' Signalement: $finalMessage$modeTexte');
       }
     } catch (e) {
       logger.e(' Erreur signalement: $e');
@@ -173,76 +153,63 @@ class _SignalementDialogState extends State<SignalementDialog> {
       );
 
       if (picked != null && mounted) {
-        setState(() => _dateCtrl.text = DateHelper.format(picked));
+        setState(() {
+          _dateCtrl.text = DateHelper.format(picked);
+          
+          // Auto-synchronisation du type (Avancement/Décalage)
+          final oldDate = widget.planningDetail.datePlanification;
+          final d1 = DateTime(oldDate.year, oldDate.month, oldDate.day);
+          final d2 = DateTime(picked.year, picked.month, picked.day);
+          
+          if (d2.isBefore(d1)) {
+            _type = 'avancement';
+          } else if (d2.isAfter(d1)) {
+            _type = 'décalage';
+          }
+        });
       }
     } catch (e) {
       logger.e('Erreur sélection date: $e');
     }
   }
 
-  /// Calcule l'écart de mois et jours entre deux dates
+  /// Calcule l'écart en jours entre deux dates
   Map<String, dynamic> _calculateEcart() {
     final oldDate = widget.planningDetail.datePlanification;
     final newDate = DateHelper.parseAny(_dateCtrl.text);
 
     if (newDate == null) {
-      return {'mois': 0, 'jours': 0, 'total': 0, 'direction': ''};
+      return {'total': 0, 'direction': ''};
     }
 
-    final difference = newDate.difference(oldDate);
-    final totalJours = difference.inDays;
+    // On ignore l'heure pour le calcul du nombre de jours
+    final d1 = DateTime(oldDate.year, oldDate.month, oldDate.day);
+    final d2 = DateTime(newDate.year, newDate.month, newDate.day);
+    final totalJours = d2.difference(d1).inDays;
 
-    // Calculer les mois entiers et les jours restants
-    int mois = 0;
-    int jours = totalJours;
-
-    if (totalJours.abs() >= 28) {
-      // Approximation: 1 mois ≈ 30 jours
-      mois = (totalJours / 30).toInt();
-      jours = totalJours % 30;
-    }
-
-    // Direction: Avancement ou Décalage
     String direction = '';
     if (totalJours < 0) {
-      direction = 'Avancement'; // Date antérieure
-      mois = mois.abs();
-      jours = jours.abs();
+      direction = 'Avancé';
     } else if (totalJours > 0) {
-      direction = 'Décalage'; // Date postérieure
+      direction = 'Décalé';
     }
 
     return {
-      'mois': mois,
-      'jours': jours,
-      'total': totalJours,
+      'total': totalJours.abs(),
       'direction': direction,
     };
   }
 
-  /// Génère un texte formaté pour l'écart
+  /// Génère un texte formaté précis pour l'écart (ex: "Décalé de 3 jours")
   String _ecartText() {
     final ecart = _calculateEcart();
-    final mois = ecart['mois'] as int;
-    final jours = ecart['jours'] as int;
+    final total = ecart['total'] as int;
     final direction = ecart['direction'] as String;
 
-    if (direction.isEmpty) return '';
+    if (direction.isEmpty || total == 0) return '';
 
-    String texte = ' ';
-
-    if (mois != 0) {
-      texte += '$mois mois';
-      if (jours != 0) {
-        texte += ' et $jours jours';
-      }
-    } else if (jours != 0) {
-      texte += '$jours jours';
-    } else {
-      texte += 'Même date';
-    }
-
-    return texte;
+    final unit = total > 1 ? 'jours' : 'jour';
+    return '$direction de $total $unit';
   }
 
   @override
