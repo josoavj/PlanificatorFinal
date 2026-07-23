@@ -36,54 +36,49 @@ class RemarqueRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      //  1. Créer la remarque
-      // Récupérer clientId depuis la BD
-      int clientId = 0;
-      try {
-        final result = await _db.queryOne(
+      return await _db.transaction((conn) async {
+        // 1. Récupérer clientId
+        int clientId = 0;
+        final clientRes = await conn.query(
           SqlQueries.getClientIdFromPlanningDetail,
           [planningDetailsId],
         );
-        clientId = result?['client_id'] as int? ?? 0;
-      } catch (e) {
-        clientId = 0;
-      }
+        if (clientRes.isNotEmpty) {
+          clientId = clientRes.first['client_id'] as int? ?? 0;
+        }
 
-      await _db.execute(SqlQueries.createRemarque, [
-        clientId,
-        planningDetailsId,
-        factureId,
-        contenu,
-        probleme,
-        action,
-      ]);
-
-      logger.i(' Remarque créée pour planning_detail_id=$planningDetailsId');
-
-      //  2. Marquer le planning detail comme "Effectué"
-      await _db.execute(SqlQueries.updatePlanningDetailStatut, ['Effectué', planningDetailsId]);
-      logger.i(' Planning detail $planningDetailsId marqué comme Effectué');
-
-      //  3. Si payée, mettre à jour l'état de la facture
-      if (estPayee) {
-        await _db.execute(SqlQueries.updateFactureFull, [
-          'Payé',
-          modePaiement,
-          numeroCheque,
-          datePayement != null ? DateHelper.reverseFormat(datePayement) : null,
-          modePaiement == 'Chèque' ? etablissement : null,
+        // 2. Créer la remarque
+        await conn.query(SqlQueries.createRemarque, [
+          clientId,
+          planningDetailsId,
           factureId,
+          contenu,
+          probleme,
+          action,
         ]);
 
-        logger.i(' Facture $factureId marquée comme payée');
-      }
+        // 3. Marquer le planning detail comme "Effectué"
+        await conn.query(SqlQueries.updatePlanningDetailStatut, ['Effectué', planningDetailsId]);
 
-      // Recharger les remarques
-      await loadRemarques();
-      return true;
+        // 4. Si payée, mettre à jour la facture
+        if (estPayee) {
+          await conn.query(SqlQueries.updateFactureFull, [
+            'Payé',
+            modePaiement,
+            numeroCheque,
+            datePayement != null ? DateHelper.reverseFormat(datePayement) : null,
+            modePaiement == 'Chèque' ? etablissement : null,
+            factureId,
+          ]);
+        }
+
+        logger.i(' Transaction Remarque réussie pour PD $planningDetailsId');
+        await loadRemarques();
+        return true;
+      });
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de la création de la remarque: $e');
+      logger.e('Erreur Transaction Remarque: $e');
       return false;
     } finally {
       _isLoading = false;
