@@ -274,11 +274,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                           label: 'Date prévue', 
                           value: DateHelper.format(widget.planningDetail.datePlanification),
                         ),
-                        AppInfoTile(
-                          icon: Icons.receipt_long_rounded, 
-                          label: 'Référence Facture', 
-                          value: _referenceCtrl.text.isNotEmpty ? _referenceCtrl.text : (widget.facture.referenceFacture ?? 'Génération auto'),
-                        ),
                         Padding(
                           padding: const EdgeInsets.all(16),
                           child: TextField(
