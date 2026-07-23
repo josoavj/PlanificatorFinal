@@ -18,7 +18,11 @@ class HistoryInterventionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isDone = status.toLowerCase().contains('effectué');
-    final statusColor = isDone ? AppTheme.successGreen : AppTheme.warningOrange;
+    
+    // Utilisation des couleurs thématiques standard
+    final statusColor = isDone 
+        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen) 
+        : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
     return ListTile(
       onTap: onTap,
