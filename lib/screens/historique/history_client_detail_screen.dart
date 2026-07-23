@@ -23,6 +23,30 @@ class HistoryClientDetailScreen extends StatelessWidget {
       services.putIfAbsent(type, () => []).add(i);
     }
 
+    // TRI INTELLIGENT POUR CHAQUE SERVICE
+    for (final key in services.keys) {
+      services[key]!.sort((a, b) {
+        final dateA = _parseDate(a);
+        final dateB = _parseDate(b);
+        final statusA = a['etat']?.toString().toLowerCase() ?? '';
+        final statusB = b['etat']?.toString().toLowerCase() ?? '';
+
+        final isDoneA = statusA.contains('effectué');
+        final isDoneB = statusB.contains('effectué');
+
+        // 1. Priorité aux passages réalisés (en haut)
+        if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+
+        if (dateA == null || dateB == null) return 0;
+
+        // 2. Passé : le plus récent en premier (DESC)
+        if (isDoneA) return dateB.compareTo(dateA);
+
+        // 3. Futur : le plus proche en premier (ASC)
+        return dateA.compareTo(dateB);
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(clientName),
@@ -53,6 +77,17 @@ class HistoryClientDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  DateTime? _parseDate(Map<String, dynamic> item) {
+    try {
+      final val = item['date_planification'] ?? item['date'];
+      if (val is DateTime) return val;
+      if (val != null) return DateTime.parse(val.toString());
+    } catch (e) {
+      // Ignorer
+    }
+    return null;
   }
 
   void _openInterventionDetail(BuildContext context, Map<String, dynamic> data) {
