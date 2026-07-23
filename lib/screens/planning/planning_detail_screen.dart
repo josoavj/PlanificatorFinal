@@ -130,7 +130,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                         planningDetail: pd, 
                         facture: factures.first, 
                         onSaved: () async { 
-                          await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete(); 
+                          // Utilisation du refresh global consolidé
+                          await context.read<PlanningDetailsRepository>().refreshAll(); 
                           await context.read<FactureRepository>().loadAllFactures(); 
                           if (mounted) {
                             AppSnackBars.showSuccess(context, 'Remarque ajoutée'); 
@@ -157,7 +158,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
       builder: (ctx) => SignalementDialog(
         planningDetail: pd, 
         onSaved: () async { 
-          await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete(); 
+          // Utilisation du refresh global consolidé
+          await context.read<PlanningDetailsRepository>().refreshAll(); 
           await context.read<FactureRepository>().loadAllFactures(); 
           if (mounted) {
             AppSnackBars.showSuccess(context, 'Signalement enregistré'); 
