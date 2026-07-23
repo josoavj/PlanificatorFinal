@@ -75,61 +75,35 @@ class _SignalementDialogState extends State<SignalementDialog> {
         return;
       }
 
-      //  ÉTAPE 1: Créer le signalement (enregistre le motif)
+      //  ÉTAPE 1: Créer le signalement
       await repo.createSignalement(
         planningDetailsId: widget.planningDetail.planningDetailId,
         motif: _motifCtrl.text,
         type: _type,
       );
       if (!mounted) return;
-      logger.i(' Signalement créé');
 
-      // ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE d'abord
-      logger.i(' Étape 2a: Modifier la date du planning courant');
-      logger.i(
-        '   planningDetailId=${widget.planningDetail.planningDetailId}, oldDate=$oldDate → newDate=$newDate',
-      );
+      // ÉTAPE 2A: TOUJOURS modifier la date ACTUELLE
       await repo.modifierDatePlanning(
         planningDetailsId: widget.planningDetail.planningDetailId,
         newDate: newDate,
       );
       if (!mounted) return;
 
-      // ÉTAPE 2B: Appliquer la logique DÉCALER vs GARDER
+      // ÉTAPE 2B: Cascade
       if (_changerRedondance) {
-        // === MODE 1: DÉCALER TOUTES les dates futures ===
-        logger.i(
-          ' MODE DÉCALER: appliquer l\'écart à TOUTES les dates futures',
-        );
-        logger.i(
-          '   ancienneDateModifiee=$oldDate, nouvelleDateModifiee=$newDate',
-        );
-
         await repo.modifierRedondance(
           planningId: widget.planningDetail.planningId,
           planningDetailsId: widget.planningDetail.planningDetailId,
           ancienneDateModifiee: oldDate,
           nouvelleDateModifiee: newDate,
         );
-        if (!mounted) return;
-      } else {
-        // === MODE 2: GARDER - on a déjà modifié JUSTE cette date en 2A ===
-        logger.i(' MODE GARDER: date modifiée (autres dates inchangées)');
       }
 
       if (mounted) {
         widget.onSaved();
         Navigator.pop(context);
-
-        // Générer un message descriptif précis
-        final messageEcart = _ecartText();
-        final finalMessage = messageEcart.isNotEmpty ? messageEcart : 'Date modifiée';
-
-        final modeTexte = _changerRedondance
-            ? ' (toutes les dates futures)'
-            : ' (cette date uniquement)';
-
-        AppSnackBars.showSuccess(context, ' Signalement: $finalMessage$modeTexte');
+        AppSnackBars.showSuccess(context, 'Signalement enregistré avec succès');
       }
     } catch (e) {
       logger.e(' Erreur signalement: $e');
@@ -156,7 +130,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
         setState(() {
           _dateCtrl.text = DateHelper.format(picked);
           
-          // Auto-synchronisation du type (Avancement/Décalage)
+          // Auto-synchronisation du type
           final oldDate = widget.planningDetail.datePlanification;
           final d1 = DateTime(oldDate.year, oldDate.month, oldDate.day);
           final d2 = DateTime(picked.year, picked.month, picked.day);
@@ -173,16 +147,12 @@ class _SignalementDialogState extends State<SignalementDialog> {
     }
   }
 
-  /// Calcule l'écart en jours entre deux dates
   Map<String, dynamic> _calculateEcart() {
     final oldDate = widget.planningDetail.datePlanification;
     final newDate = DateHelper.parseAny(_dateCtrl.text);
 
-    if (newDate == null) {
-      return {'total': 0, 'direction': ''};
-    }
+    if (newDate == null) return {'total': 0, 'direction': ''};
 
-    // On ignore l'heure pour le calcul du nombre de jours
     final d1 = DateTime(oldDate.year, oldDate.month, oldDate.day);
     final d2 = DateTime(newDate.year, newDate.month, newDate.day);
     final totalJours = d2.difference(d1).inDays;
@@ -194,20 +164,15 @@ class _SignalementDialogState extends State<SignalementDialog> {
       direction = 'Décalé';
     }
 
-    return {
-      'total': totalJours.abs(),
-      'direction': direction,
-    };
+    return {'total': totalJours.abs(), 'direction': direction};
   }
 
-  /// Génère un texte formaté précis pour l'écart (ex: "Décalé de 3 jours")
   String _ecartText() {
     final ecart = _calculateEcart();
     final total = ecart['total'] as int;
     final direction = ecart['direction'] as String;
 
     if (direction.isEmpty || total == 0) return '';
-
     final unit = total > 1 ? 'jours' : 'jour';
     return '$direction de $total $unit';
   }
@@ -231,7 +196,6 @@ class _SignalementDialogState extends State<SignalementDialog> {
                 padding: const EdgeInsets.all(32),
                 child: Column(
                   children: [
-                    // SECTION 1: PASSAGE ACTUEL
                     AppSection(
                       title: 'Informations de l\'Intervention',
                       margin: EdgeInsets.zero,
@@ -250,7 +214,6 @@ class _SignalementDialogState extends State<SignalementDialog> {
                     ),
                     const SizedBox(height: 24),
 
-                    // SECTION 2: MODIFICATION
                     AppSection(
                       title: 'Nouveau Planning',
                       margin: EdgeInsets.zero,
@@ -306,7 +269,6 @@ class _SignalementDialogState extends State<SignalementDialog> {
                     ),
                     const SizedBox(height: 24),
 
-                    // SECTION 3: OPTIONS DE CASCADE
                     AppSection(
                       title: 'Impact sur le futur',
                       margin: EdgeInsets.zero,
@@ -385,7 +347,7 @@ class _SignalementDialogState extends State<SignalementDialog> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: _changerRedondance ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+              color: _changerRedondance ? AppTheme.primaryBlue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
