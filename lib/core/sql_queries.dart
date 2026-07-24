@@ -225,6 +225,7 @@ class SqlQueries {
     SELECT 
       f.facture_id,
       MAX(pd.planning_detail_id) as planning_detail_id,
+      p.traitement_id as traitement_id,
       f.reference_facture,
       f.montant,
       f.mode,
@@ -293,6 +294,16 @@ class SqlQueries {
   static const String updateFacturePrice = 'UPDATE Facture SET montant = ? WHERE facture_id = ?';
   static const String markFactureAsPaid = 'UPDATE Facture SET etat = ? WHERE facture_id = ?';
   static const String updateFactureReference = 'UPDATE Facture SET reference_facture = ? WHERE facture_id = ?';
+
+  static const String massUpdateFutureFacturePrices = '''
+    UPDATE Facture f
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
+    INNER JOIN Planning p ON pd.planning_id = p.planning_id
+    SET f.montant = f.montant + ?
+    WHERE p.traitement_id = ? 
+    AND f.date_traitement >= ? 
+    AND f.etat NOT IN ('Payé', 'Payée')
+  ''';
 
   static const String getFactureAndTreatmentInfo = '''
     SELECT f.facture_id, f.date_traitement, pd.planning_id, p.traitement_id
