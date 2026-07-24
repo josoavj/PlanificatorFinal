@@ -77,7 +77,7 @@ class ContratDetailsDialog extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 56), // Augmentation
                         _buildSectionHeader(context, 'Client associé'),
                         if (client != null)
                           Container(
@@ -98,7 +98,7 @@ class ContratDetailsDialog extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(width: 32),
+                  const SizedBox(width: 48), // Augmentation de l'espace entre colonnes
 
                   // --- COLONNE DROITE (PROGRESSION & FINANCE) ---
                   Expanded(
@@ -116,7 +116,7 @@ class ContratDetailsDialog extends StatelessWidget {
                         else
                           ...traitements.map((t) => _buildTreatmentProgressCard(context, t, isDark)),
                         
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 56), // Augmentation de l'espace
                         _buildSectionHeader(context, 'Récapitulatif Financier'),
                         _buildFinancialRecapCard(context, totalContrat, traitements, isDark),
                       ],
@@ -128,7 +128,7 @@ class ContratDetailsDialog extends StatelessWidget {
           },
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      actionsPadding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
       actions: _buildActions(context),
     );
   }
@@ -137,7 +137,13 @@ class ContratDetailsDialog extends StatelessWidget {
     if (val == null) return 0;
     if (val is int) return val;
     if (val is double) return val.toInt();
+    
+    // Tentative de parsing propre (gestion des décimales .00 de MySQL)
     final str = val.toString().trim();
+    final parsed = double.tryParse(str);
+    if (parsed != null) return parsed.toInt();
+
+    // Fallback de secours (nettoyage si format bizarre)
     final numericOnly = str.replaceAll(RegExp(r'[^0-9]'), '');
     return int.tryParse(numericOnly) ?? 0;
   }
