@@ -110,8 +110,40 @@ class ContratInvoiceView extends StatelessWidget {
     for (final r in rows) {
       final type = r['typeTraitement'] ?? 'Sans type';
       if (!map.containsKey(type)) map[type] = [];
-      map[type]!.add({'factureId': r['facture_id'], 'montant': r['montant'], 'dateTraitement': r['date_traitement'] is String ? DateTime.parse(r['date_traitement']) : r['date_traitement'], 'etat': r['etat']});
+      map[type]!.add({
+        'factureId': r['facture_id'],
+        'montant': r['montant'],
+        'dateTraitement': r['date_traitement'] is String
+            ? DateTime.parse(r['date_traitement'])
+            : r['date_traitement'],
+        'etat': r['etat']
+      });
     }
+
+    // TRI INTELLIGENT : Passé (DESC) puis Futur (ASC)
+    final now = DateTime.now();
+
+    for (final key in map.keys) {
+      map[key]!.sort((a, b) {
+        final dateA = a['dateTraitement'] as DateTime;
+        final dateB = b['dateTraitement'] as DateTime;
+        final etatA = (a['etat'] as String? ?? '').toLowerCase();
+        final etatB = (b['etat'] as String? ?? '').toLowerCase();
+
+        final isDoneA = etatA.contains('payé') || etatA.contains('payée') || etatA.contains('effectué');
+        final isDoneB = etatB.contains('payé') || etatB.contains('payée') || etatB.contains('effectué');
+
+        // 1. Les faits en premier
+        if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+
+        // 2. Si les deux sont faits : le plus récent en premier (DESC)
+        if (isDoneA) return dateB.compareTo(dateA);
+
+        // 3. Si les deux sont à venir : le plus proche en premier (ASC)
+        return dateA.compareTo(dateB);
+      });
+    }
+
     return map;
   }
 }
