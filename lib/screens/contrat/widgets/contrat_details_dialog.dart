@@ -7,6 +7,7 @@ import '../../../repositories/index.dart';
 import '../../../services/database_service.dart';
 import '../../../core/sql_queries.dart';
 import '../../../widgets/index.dart';
+import '../../../utils/number_formatter.dart';
 import 'contrat_planning_view.dart';
 import 'contrat_invoice_view.dart';
 import 'contrat_action_dialogs.dart';
@@ -44,194 +45,238 @@ class ContratDetailsDialog extends StatelessWidget {
     return AlertDialog(
       title: _buildDialogHeader(context, 'Détails du Contrat', contrat.referenceContrat),
       content: SizedBox(
-        width: 550,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader(context, 'Client associé'),
-              if (client != null)
-                Container(
-                  decoration: AppTheme.cardDecoration(context, radius: 24),
-                  child: Material(
-                    color: Colors.transparent,
+        width: 950, // Largeur accrue pour 2 colonnes
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _loadTraitements(contrat.contratId),
+          builder: (context, snapshot) {
+            final traitements = snapshot.data ?? [];
+            final totalContrat = traitements.fold<int>(0, (sum, t) => sum + _parseValue(t['montant_total']));
+
+            return SingleChildScrollView(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- COLONNE GAUCHE (INFOS) ---
+                  Expanded(
+                    flex: 4,
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildDetailTile(context, Icons.person_outline, 'Nom Complet', client!.fullName, isDark),
-                        _buildSubtleDivider(isDark),
-                        _buildDetailTile(context, Icons.alternate_email_rounded, 'Email', client!.email, isDark),
-                        _buildSubtleDivider(isDark),
-                        _buildDetailTile(context, Icons.phone_outlined, 'Téléphone', client!.telephone, isDark),
+                        _buildSectionHeader(context, 'Paramètres du Contrat'),
+                        Container(
+                          decoration: AppTheme.cardDecoration(context, radius: 24),
+                          child: Column(
+                            children: [
+                              _buildDetailTile(context, Icons.tag_rounded, 'Référence', contrat.referenceContrat, isDark),
+                              _buildSubtleDivider(isDark),
+                              _buildDetailTile(context, Icons.event_note_rounded, 'Date Signature', DateFormat('dd/MM/yyyy').format(contrat.dateContrat), isDark),
+                              _buildSubtleDivider(isDark),
+                              _buildDetailTile(context, Icons.info_outline_rounded, 'Statut actuel', contrat.statutContrat, isDark, valueColor: _getStatusColor(contrat.statutContrat)),
+                              _buildSubtleDivider(isDark),
+                              _buildDetailTile(context, Icons.timer_outlined, 'Durée du contrat', _getDisplayDuration(contrat), isDark),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSectionHeader(context, 'Client associé'),
+                        if (client != null)
+                          Container(
+                            decoration: AppTheme.cardDecoration(context, radius: 24),
+                            child: Column(
+                              children: [
+                                _buildDetailTile(context, Icons.person_outline, 'Nom Complet', client!.fullName, isDark),
+                                _buildSubtleDivider(isDark),
+                                _buildDetailTile(context, Icons.alternate_email_rounded, 'Email', client!.email, isDark),
+                                _buildSubtleDivider(isDark),
+                                _buildDetailTile(context, Icons.phone_outlined, 'Téléphone', client!.telephone, isDark),
+                              ],
+                            ),
+                          )
+                        else
+                          const Text('Informations client non disponibles'),
                       ],
                     ),
                   ),
-                )
-              else
-                const Text('Informations client non disponibles'),
-              const SizedBox(height: 24),
 
-              _buildSectionHeader(context, 'Paramètres du Contrat'),
-              Container(
-                decoration: AppTheme.cardDecoration(context, radius: 24),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Column(
-                    children: [
-                      _buildDetailTile(context, Icons.tag_rounded, 'Référence', contrat.referenceContrat, isDark),
-                      _buildSubtleDivider(isDark),
-                      _buildDetailTile(context, Icons.event_note_rounded, 'Date Signature', DateFormat('dd/MM/yyyy').format(contrat.dateContrat), isDark),
-                      _buildSubtleDivider(isDark),
-                      _buildDetailTile(context, Icons.info_outline_rounded, 'Statut actuel', contrat.statutContrat, isDark, valueColor: _getStatusColor(contrat.statutContrat)),
-                      _buildSubtleDivider(isDark),
-                      _buildDetailTile(context, Icons.timer_outlined, 'Durée du contrat', _getDisplayDuration(contrat), isDark),
-                    ],
+                  const SizedBox(width: 32),
+
+                  // --- COLONNE DROITE (PROGRESSION & FINANCE) ---
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader(context, 'Services & Progression'),
+                        if (snapshot.connectionState == ConnectionState.waiting)
+                          const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
+                        else if (snapshot.hasError)
+                          _buildErrorState(snapshot.error.toString())
+                        else if (traitements.isEmpty)
+                          const Center(child: Text('Aucun service planifié', style: TextStyle(fontSize: 12, color: Colors.grey)))
+                        else
+                          ...traitements.map((t) => _buildTreatmentProgressCard(context, t, isDark)),
+                        
+                        const SizedBox(height: 32),
+                        _buildSectionHeader(context, 'Récapitulatif Financier'),
+                        _buildFinancialRecapCard(context, totalContrat, traitements, isDark),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 24),
-
-              _buildSectionHeader(context, 'Services & Progression'),
-              FutureBuilder<List<Map<String, dynamic>>>(
-                future: _loadTraitements(contrat.contratId),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(strokeWidth: 2)));
-                  
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 32),
-                            const SizedBox(height: 12),
-                            Text('Erreur de chargement des services', style: TextStyle(color: AppTheme.errorRed, fontWeight: FontWeight.bold, fontSize: 13)),
-                            Text(snapshot.error.toString(), textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  final traitements = snapshot.data ?? [];
-                  if (traitements.isEmpty) return const Center(child: Text('Aucun service planifié', style: TextStyle(fontSize: 12, color: Colors.grey)));
-                  
-                  return Column(
-                    children: traitements.map((t) {
-                      // Helper robuste pour parser les entiers venant de MySQL
-                      int parseValue(dynamic val) {
-                        if (val == null) return 0;
-                        if (val is int) return val;
-                        if (val is double) return val.toInt();
-                        final str = val.toString().trim();
-                        // Nettoyer la chaîne pour ne garder que les chiffres
-                        final numericOnly = str.replaceAll(RegExp(r'[^0-9]'), '');
-                        return int.tryParse(numericOnly) ?? 0;
-                      }
-
-                      final total = parseValue(t['total_planif']);
-                      final faites = parseValue(t['planif_faites']);
-                      
-                      // Gestion sécurisée des statuts concaténés
-                      final dynamic statutsRaw = t['statuts'];
-                      String statutsStr = '';
-                      if (statutsRaw is List<int>) {
-                        statutsStr = String.fromCharCodes(statutsRaw);
-                      } else {
-                        statutsStr = statutsRaw?.toString() ?? '';
-                      }
-                          
-                      final hasClassed = statutsStr.toLowerCase().contains('classé');
-                      final percent = total > 0 ? (faites / total).clamp(0.0, 1.0) : 0.0;
-                      
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: AppTheme.cardDecoration(context, radius: 16),
-                        child: ListTile(
-                          dense: true,
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: (hasClassed ? Colors.red : AppTheme.primaryBlue).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                            child: Icon(hasClassed ? Icons.cancel_outlined : Icons.calendar_today_rounded, size: 18, color: hasClassed ? Colors.red : AppTheme.primaryBlue),
-                          ),
-                          title: Text(t['nom'] ?? 'Service', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text('$faites / $total passages réalisés', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600])),
-                              if (total > 0) ...[
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(2),
-                                  child: LinearProgressIndicator(
-                                    value: percent,
-                                    backgroundColor: isDark ? Colors.white10 : Colors.grey[100],
-                                    color: percent >= 1.0 ? Colors.green : AppTheme.primaryBlue,
-                                    minHeight: 4,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          trailing: hasClassed 
-                              ? Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)), child: const Text('ARRÊTÉ', style: TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5)))
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      actions: [
-        TextButton.icon(icon: const Icon(Icons.close_rounded, size: 18), onPressed: () => Navigator.of(context).pop(), label: const Text('FERMER')),
-        if (numTraitements > 0) ...[
-          FilledButton.icon(
-            icon: const Icon(Icons.description_rounded, size: 18),
-            label: const Text('FACTURES'),
-            onPressed: () { 
-              Navigator.of(context).pop(); 
-              ContratInvoiceView.show(context, contrat, client, numTraitements, onDataChanged);
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryBlue),
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.calendar_month_rounded, size: 18),
-            label: const Text('PLANNING'),
-            onPressed: () { 
-              Navigator.of(context).pop(); 
-              ContratPlanningView.show(context, contrat, client, numTraitements, onDataChanged);
-            },
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.successGreen),
-          ),
-        ],
-        if (contrat.statutContrat == 'Actif' && context.read<AuthRepository>().isAdmin)
-          FilledButton.icon(
-            icon: const Icon(Icons.history_toggle_off_rounded, size: 18),
-            onPressed: () { 
-              Navigator.of(context).pop(); 
-              ContratAbrogationDialog.show(context, contrat, client, numTraitements, onDataChanged);
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
-            label: const Text('ABROGER'),
-          ),
-        if (context.read<AuthRepository>().isAdmin)
-          FilledButton.icon(
-            onPressed: () { 
-              Navigator.of(context).pop(); 
-              ContratDeleteDialog.show(context, contrat, client, numTraitements, onDataChanged);
-            },
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            label: const Text('SUPPRIMER'),
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed),
-          ),
-      ],
+      actions: _buildActions(context),
     );
+  }
+
+  int _parseValue(dynamic val) {
+    if (val == null) return 0;
+    if (val is int) return val;
+    if (val is double) return val.toInt();
+    final str = val.toString().trim();
+    final numericOnly = str.replaceAll(RegExp(r'[^0-9]'), '');
+    return int.tryParse(numericOnly) ?? 0;
+  }
+
+  Widget _buildTreatmentProgressCard(BuildContext context, Map<String, dynamic> t, bool isDark) {
+    final total = _parseValue(t['total_planif']);
+    final faites = _parseValue(t['planif_faites']);
+    final montant = _parseValue(t['montant_total']);
+    
+    final dynamic statutsRaw = t['statuts'];
+    String statutsStr = (statutsRaw is List<int>) ? String.fromCharCodes(statutsRaw) : (statutsRaw?.toString() ?? '');
+    final hasClassed = statutsStr.toLowerCase().contains('classé');
+    final percent = total > 0 ? (faites / total).clamp(0.0, 1.0) : 0.0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppTheme.cardDecoration(context, radius: 20),
+      child: ListTile(
+        dense: true,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: (hasClassed ? Colors.red : AppTheme.primaryBlue).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+          child: Icon(hasClassed ? Icons.cancel_outlined : Icons.calendar_today_rounded, size: 18, color: hasClassed ? Colors.red : AppTheme.primaryBlue),
+        ),
+        title: Text(t['nom'] ?? 'Service', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('$faites / $total passages', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey[600])),
+                Text('${NumberFormatter.formatMontant(montant)} Ar', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+              ],
+            ),
+            if (total > 0) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: percent,
+                  backgroundColor: isDark ? Colors.white10 : Colors.grey[100],
+                  color: percent >= 1.0 ? Colors.green : AppTheme.primaryBlue,
+                  minHeight: 4,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFinancialRecapCard(BuildContext context, int total, List<Map<String, dynamic>> treatments, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryBlue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('MONTANT TOTAL DU CONTRAT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+              Text(
+                '${NumberFormatter.formatMontant(total)} Ar',
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppTheme.primaryBlue),
+              ),
+            ],
+          ),
+          const Divider(height: 32),
+          ...treatments.map((t) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(t['nom'] ?? '-', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey[600])),
+                Text('${NumberFormatter.formatMontant(_parseValue(t['montant_total']))} Ar', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 32),
+            const SizedBox(height: 12),
+            const Text('Erreur de chargement', style: TextStyle(color: AppTheme.errorRed, fontWeight: FontWeight.bold)),
+            Text(error, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildActions(BuildContext context) {
+    final isAdmin = context.read<AuthRepository>().isAdmin;
+    return [
+      TextButton.icon(icon: const Icon(Icons.close_rounded, size: 18), onPressed: () => Navigator.of(context).pop(), label: const Text('FERMER')),
+      if (numTraitements > 0) ...[
+        FilledButton.icon(
+          icon: const Icon(Icons.description_rounded, size: 18),
+          label: const Text('FACTURES'),
+          onPressed: () { Navigator.of(context).pop(); ContratInvoiceView.show(context, contrat, client, numTraitements, onDataChanged); },
+          style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryBlue),
+        ),
+        FilledButton.icon(
+          icon: const Icon(Icons.calendar_month_rounded, size: 18),
+          label: const Text('PLANNING'),
+          onPressed: () { Navigator.of(context).pop(); ContratPlanningView.show(context, contrat, client, numTraitements, onDataChanged); },
+          style: FilledButton.styleFrom(backgroundColor: AppTheme.successGreen),
+        ),
+      ],
+      if (contrat.statutContrat == 'Actif' && isAdmin)
+        FilledButton.icon(
+          icon: const Icon(Icons.history_toggle_off_rounded, size: 18),
+          onPressed: () { Navigator.of(context).pop(); ContratAbrogationDialog.show(context, contrat, client, numTraitements, onDataChanged); },
+          style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+          label: const Text('ABROGER'),
+        ),
+      if (isAdmin)
+        FilledButton.icon(
+          onPressed: () { Navigator.of(context).pop(); ContratDeleteDialog.show(context, contrat, client, numTraitements, onDataChanged); },
+          icon: const Icon(Icons.delete_outline_rounded, size: 18),
+          label: const Text('SUPPRIMER'),
+          style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed),
+        ),
+    ];
   }
 
   // --- HELPERS ---
