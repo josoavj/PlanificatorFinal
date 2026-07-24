@@ -5,7 +5,6 @@ import '../../../models/index.dart';
 import '../../../repositories/remarque_repository.dart';
 import '../../../repositories/facture_repository.dart';
 import '../../../utils/date_helper.dart';
-import '../../../repositories/auth_repository.dart';
 import '../../../utils/app_snackbars.dart';
 import '../../../utils/number_formatter.dart';
 import '../../../core/theme.dart';
@@ -34,7 +33,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
   late TextEditingController _contenuCtrl;
   late TextEditingController _problemeCtrl;
   late TextEditingController _actionCtrl;
-  late TextEditingController _montantCtrl;
   late TextEditingController _datePayementCtrl;
   late TextEditingController _etablissementCtrl;
   late TextEditingController _numeroChequeCtrl;
@@ -54,9 +52,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     _contenuCtrl = TextEditingController(text: rem?.contenu ?? '');
     _problemeCtrl = TextEditingController(text: rem?.probleme ?? '');
     _actionCtrl = TextEditingController(text: rem?.action ?? '');
-    _montantCtrl = TextEditingController(
-      text: NumberFormatter.formatMontant(fac.montant),
-    );
     
     _datePayementCtrl = TextEditingController(
       text: fac.dateCheque != null ? DateHelper.format(fac.dateCheque!) : ''
@@ -81,7 +76,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
     _contenuCtrl.dispose();
     _problemeCtrl.dispose();
     _actionCtrl.dispose();
-    _montantCtrl.dispose();
     _datePayementCtrl.dispose();
     _etablissementCtrl.dispose();
     _numeroChequeCtrl.dispose();
@@ -126,16 +120,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
       final isEditing = widget.existingRemarque != null;
       final repo = context.read<RemarqueRepository>();
       final factureRepo = context.read<FactureRepository>();
-      final authRepo = context.read<AuthRepository>();
-
-      final currentMontant = NumberFormatter.parseMontant(_montantCtrl.text);
-
-      // Validation: si montant est 0, on doit en saisir un
-      if (currentMontant == 0) {
-        setState(() => _isLoading = false);
-        AppSnackBars.showWarning(context, 'Veuillez entrer un montant valide');
-        return;
-      }
 
       bool success = false;
       final pText = _anomalieDetectee ? (_problemeCtrl.text.isEmpty ? 'Non spécifié' : _problemeCtrl.text) : 'Aucun';
@@ -158,16 +142,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
           estPayee: _estPayee,
         );
 
-        // Mettre à jour le montant si nécessaire
-        if (currentMontant != widget.facture.montant) {
-          await factureRepo.updateFacturePrice(
-            widget.facture.factureId,
-            currentMontant,
-            isAdmin: authRepo.isAdmin,
-          );
-        }
-
-        // Mettre à jour la référence
+        // Mettre à jour la référence si modifiée
         if (_referenceCtrl.text != (widget.facture.referenceFacture ?? '')) {
           await factureRepo.updateFactureReference(
             widget.facture.factureId,
@@ -191,14 +166,7 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
           estPayee: _estPayee,
         );
 
-        // Mises à jour supplémentaires si création
-        if (widget.facture.montant == 0 || currentMontant != widget.facture.montant) {
-          await factureRepo.updateFacturePrice(
-            widget.facture.factureId,
-            currentMontant,
-            isAdmin: authRepo.isAdmin,
-          );
-        }
+        // Mises à jour de la référence si saisie
         if (_referenceCtrl.text.isNotEmpty) {
           await factureRepo.updateFactureReference(
             widget.facture.factureId,
@@ -335,6 +303,11 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                       title: 'Détails Financiers',
                       margin: EdgeInsets.zero,
                       children: [
+                        AppInfoTile(
+                          icon: Icons.payments_rounded, 
+                          label: 'Montant de la prestation', 
+                          value: '${NumberFormatter.formatMontant(widget.facture.montant)} Ar',
+                        ),
                         Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -344,18 +317,6 @@ class _RemarqueDialogState extends State<RemarqueDialog> {
                                 decoration: InputDecoration(
                                   labelText: 'Numéro de Facture',
                                   prefixIcon: const Icon(Icons.tag_rounded),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _montantCtrl,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [AmountInputFormatter()],
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                decoration: InputDecoration(
-                                  labelText: 'Montant à facturer (Ar)',
-                                  prefixIcon: const Icon(Icons.payments_outlined),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                                 ),
                               ),
