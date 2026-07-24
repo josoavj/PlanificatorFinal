@@ -57,7 +57,7 @@ class AuthRepository extends ChangeNotifier {
       }
 
       final row = await _db
-          .queryOne(SqlQueries.login, [username])
+          .queryOne(SqlQueries.login, params: [username])
           .timeout(
             const Duration(seconds: 20),
             onTimeout: () {
@@ -112,7 +112,7 @@ class AuthRepository extends ChangeNotifier {
 
     try {
       final existing = await _db
-          .queryOne(SqlQueries.checkUsername, [username])
+          .queryOne(SqlQueries.checkUsername, params: [username])
           .timeout(
             const Duration(seconds: 20),
             onTimeout: () {
@@ -203,7 +203,7 @@ class AuthRepository extends ChangeNotifier {
         WHERE id_compte = ?
       ''';
 
-      final row = await _db.queryOne(sql, [userId]);
+      final row = await _db.queryOne(sql, params: [userId]);
 
       if (row != null) {
         _currentUser = User.fromMap(row);
@@ -284,7 +284,7 @@ class AuthRepository extends ChangeNotifier {
 
     try {
       const sql = 'SELECT password FROM Account WHERE id_compte = ?';
-      final row = await _db.queryOne(sql, [_currentUser!.userId]);
+      final row = await _db.queryOne(sql, params: [_currentUser!.userId]);
       if (row == null) return false;
 
       return _verifyPassword(password, row['password'] as String);
@@ -311,7 +311,7 @@ class AuthRepository extends ChangeNotifier {
     try {
       // 1️⃣ Récupérer le hash actuel du mot de passe
       const selectSql = 'SELECT password FROM Account WHERE id_compte = ?';
-      final row = await _db.queryOne(selectSql, [_currentUser!.userId]);
+      final row = await _db.queryOne(selectSql, params: [_currentUser!.userId]);
 
       if (row == null) {
         _errorMessage = 'Utilisateur non trouvé';
@@ -390,7 +390,7 @@ class AuthRepository extends ChangeNotifier {
   Future<bool> usernameExists(String username) async {
     try {
       const sql = 'SELECT id_compte FROM Account WHERE username = ?';
-      final row = await _db.queryOne(sql, [username]);
+      final row = await _db.queryOne(sql, params: [username]);
       return row != null;
     } catch (e) {
       logger.e('Erreur lors de la vérification du username: $e');
