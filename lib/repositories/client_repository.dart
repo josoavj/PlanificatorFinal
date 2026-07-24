@@ -165,7 +165,7 @@ class ClientRepository extends ChangeNotifier {
       logger.i('Cache MISS: Executing SQL query for client $clientId');
 
       final row = await _db
-          .queryOne(SqlQueries.getClientById, [clientId])
+          .queryOne(SqlQueries.getClientById, params: [clientId])
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -479,7 +479,7 @@ class ClientRepository extends ChangeNotifier {
     try {
       const sql = 'SELECT client_id FROM Client WHERE email = ?';
       final row = await _db
-          .queryOne(sql, [email])
+          .queryOne(sql, params: [email])
           .timeout(
             const Duration(seconds: 20),
             onTimeout: () {
