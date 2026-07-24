@@ -140,10 +140,42 @@ class _HistoryClientListScreenState extends State<HistoryClientListScreen> {
   }
 
   List<String> _filterClients(Map<String, List<Map<String, dynamic>>> groupedData) {
-    final clients = groupedData.keys.toList()..sort();
+    final clients = groupedData.keys.toList();
+
+    // TRI PAR ACTIVITÉ RÉCENTE (DESC)
+    clients.sort((a, b) {
+      final lastA = _getLatestActivity(groupedData[a]!);
+      final lastB = _getLatestActivity(groupedData[b]!);
+      
+      if (lastA == null && lastB == null) return a.compareTo(b);
+      if (lastA == null) return 1;
+      if (lastB == null) return -1;
+      
+      return lastB.compareTo(lastA);
+    });
+
     if (_searchQuery.isEmpty) return clients;
     final q = _searchQuery.toLowerCase();
     return clients.where((c) => c.toLowerCase().contains(q)).toList();
+  }
+
+  DateTime? _getLatestActivity(List<Map<String, dynamic>> interventions) {
+    DateTime? latest;
+    for (final i in interventions) {
+      final date = _parseDate(i['date_planification'] ?? i['date']);
+      if (date != null) {
+        if (latest == null || date.isAfter(latest)) {
+          latest = date;
+        }
+      }
+    }
+    return latest;
+  }
+
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is DateTime) return val;
+    return DateTime.tryParse(val.toString());
   }
 
   void _showClientHistory(BuildContext context, String clientName, List<Map<String, dynamic>> interventions) {
