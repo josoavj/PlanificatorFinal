@@ -133,8 +133,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       logger.i(' Planning detail $planningDetailId statut => $newStatut');
 
-      // IMPORTANT: Recharger les données après la mise à jour
-      await loadUpcomingTreatmentsComplete();
+      // IMPORTANT: Recharger globalement sans cache pour la réactivité
+      await refreshAll();
 
       return true;
     } catch (e) {
@@ -161,7 +161,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// Récupère un détail complet par son ID (pour rafraîchissement)
   Future<Map<String, dynamic>?> getPlanningDetailComplete(int id) async {
     try {
-      final result = await _db.queryOne(SqlQueries.getPlanningDetailCompleteById, [id]);
+      // SÉCURITÉ : Ne pas utiliser le cache pour les détails individuels lors d'un rafraîchissement
+      final result = await _db.queryOne(SqlQueries.getPlanningDetailCompleteById, params: [id], useCache: false);
       return result;
     } catch (e) {
       logger.e(' Erreur getPlanningDetailComplete: $e');
@@ -201,8 +202,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   /// Charger les traitements du mois courant (table_en_cours) - Version complète avec JOINs
   /// Retourne: List<Map> avec clés: date, traitement, etat, axe
-  Future<List<Map<String, dynamic>>>
-  loadCurrentMonthTreatmentsComplete() async {
+  Future<List<Map<String, dynamic>>> loadCurrentMonthTreatmentsComplete({bool useCache = true}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -221,6 +221,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .query(
             SqlQueries.getCurrentMonthTreatmentsComplete,
             [currentYear, currentMonth],
+            useCache,
           )
           .timeout(
             const Duration(seconds: 60),
@@ -262,7 +263,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   /// Charger les traitements à venir (table_prevision) - Version complète avec JOINs
   /// [startDate] : Date à partir de laquelle charger les traitements (par défaut aujourd'hui)
-  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({DateTime? startDate}) async {
+  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({DateTime? startDate, bool useCache = true}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -280,6 +281,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .query(
             SqlQueries.getUpcomingTreatmentsComplete,
             [dateStr],
+            useCache,
           )
           .timeout(
             const Duration(seconds: 60),
@@ -319,7 +321,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
   /// IMPORTANT: Charge TOUS les records SANS filtrer par date
-  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete() async {
+  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({bool useCache = true}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -329,7 +331,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       // Requête SANS filtre de date - récupère TOUS les traitements
       final results = await _db
-          .query(SqlQueries.getAllTreatmentsComplete)
+          .query(SqlQueries.getAllTreatmentsComplete, null, useCache)
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -445,11 +447,11 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// (Mois actuel, À venir, Historique complet)
   Future<void> refreshAll() async {
     logger.i('Refresh global du planning lancé...');
-    // Lancer les 3 chargements en parallèle pour l'efficience
+    // Lancer les 3 chargements en parallèle pour l'efficience (SANS CACHE pour le refresh)
     await Future.wait([
-      loadCurrentMonthTreatmentsComplete(),
-      loadUpcomingTreatmentsComplete(),
-      loadAllTreatmentsComplete(),
+      loadCurrentMonthTreatmentsComplete(useCache: false),
+      loadUpcomingTreatmentsComplete(useCache: false),
+      loadAllTreatmentsComplete(useCache: false),
     ]);
     logger.i('Refresh global terminé');
     notifyListeners();
