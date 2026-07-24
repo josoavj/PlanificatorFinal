@@ -148,6 +148,25 @@ class ClientPlanningDialog extends StatelessWidget {
       if (!groupedMap.containsKey(typeTraitement)) groupedMap[typeTraitement] = [];
       if (planningData['planning_detail_id'] != null) groupedMap[typeTraitement]!.add(planningData);
     }
+
+    // TRI INTELLIGENT PAR TYPE
+    for (final key in groupedMap.keys) {
+      groupedMap[key]!.sort((a, b) {
+        final dateA = a['date_planification'] as DateTime?;
+        final dateB = b['date_planification'] as DateTime?;
+        final statusA = (a['etat'] as String? ?? '').toLowerCase();
+        final statusB = (b['etat'] as String? ?? '').toLowerCase();
+
+        final isDoneA = statusA.contains('effectué');
+        final isDoneB = statusB.contains('effectué');
+
+        if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+        if (dateA == null || dateB == null) return 0;
+        if (isDoneA) return dateB.compareTo(dateA); // Passé : Récent d'abord
+        return dateA.compareTo(dateB); // Futur : Prochain d'abord
+      });
+    }
+
     return groupedMap;
   }
 }

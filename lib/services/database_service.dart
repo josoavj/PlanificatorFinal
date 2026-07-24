@@ -285,10 +285,10 @@ class DatabaseService {
       try {
         // 2. Décider si on utilise un Isolate ou la connexion directe
         // PERFORMANCE: L'Isolate est coûteux (ouverture d'une nouvelle connexion MySQL).
-        // On ne l'utilise que pour les grosses requêtes SELECT (> 100 caractères ou mots clés de listes).
-        // Les petites requêtes sont plus rapides en direct via le pool de connexions.
-        bool isLikelyHeavy = sql.length > 100 || 
-                           sql.toLowerCase().contains('join') || 
+        // On ne l'utilise que pour les requêtes TRÈS lourdes (> 500 caractères ou agrégations massives).
+        // Les requêtes standards sont plus rapides en direct via le pool de connexions.
+        bool isLikelyHeavy = sql.length > 500 || 
+                           sql.toLowerCase().contains('group_concat') || 
                            sql.toLowerCase().contains('detailed');
         
         bool shouldShowIsolate = _useIsolates && 
@@ -296,25 +296,17 @@ class DatabaseService {
                                 isLikelyHeavy;
 
         if (shouldShowIsolate) {
-          rows = await DatabaseIsolateService.executeQuery(
-            sql, params, _host, _port, _user, _password, _database,
-          );
-        } else {
-          MySqlConnection? conn;
           try {
-            conn = await _getQueryConnection();
-            Results results = await conn.query(sql, params).timeout(const Duration(seconds: 30));
-
-            for (var row in results) {
-              Map<String, dynamic> map = {};
-              for (int i = 0; i < results.fields.length; i++) {
-                map[results.fields[i].name ?? 'field_$i'] = row[i];
-              }
-              rows.add(map);
-            }
-          } finally {
-            if (conn != null) _releaseQueryConnection(conn);
+            rows = await DatabaseIsolateService.executeQuery(
+              sql, params, _host, _port, _user, _password, _database,
+            );
+          } catch (isolateError) {
+            logger.w('⚠️ Isolate Query échouée ($isolateError). Tentative de secours en direct...');
+            // FALLBACK: Si l'isolate crash, on tente la requête en direct
+            rows = await _executeDirectQuery(sql, params);
           }
+        } else {
+          rows = await _executeDirectQuery(sql, params);
         }
       } finally {
         metric?.end();
@@ -329,6 +321,27 @@ class DatabaseService {
     } catch (e) {
       logger.e('Erreur lors de la query: $e');
       rethrow;
+    }
+  }
+
+  /// Exécute une requête directement via le pool de connexions (Thread principal)
+  Future<List<Map<String, dynamic>>> _executeDirectQuery(String sql, List? params) async {
+    MySqlConnection? conn;
+    try {
+      conn = await _getQueryConnection();
+      Results results = await conn.query(sql, params).timeout(const Duration(seconds: 30));
+
+      List<Map<String, dynamic>> rows = [];
+      for (var row in results) {
+        Map<String, dynamic> map = {};
+        for (int i = 0; i < results.fields.length; i++) {
+          map[results.fields[i].name ?? 'field_$i'] = row[i];
+        }
+        rows.add(map);
+      }
+      return rows;
+    } finally {
+      if (conn != null) _releaseQueryConnection(conn);
     }
   }
 
@@ -397,16 +410,17 @@ class DatabaseService {
 
   /// Récupère une seule ligne
   Future<Map<String, dynamic>?> queryOne(
-    String sql, [
+    String sql, {
     List<dynamic>? params,
-  ]) async {
-    List<Map<String, dynamic>> results = await query(sql, params);
+    bool useCache = true,
+  }) async {
+    List<Map<String, dynamic>> results = await query(sql, params, useCache);
     return results.isNotEmpty ? results.first : null;
   }
 
   /// Récupère une valeur unique
-  Future<dynamic> queryValue(String sql, [List<dynamic>? params]) async {
-    var result = await queryOne(sql, params);
+  Future<dynamic> queryValue(String sql, {List<dynamic>? params}) async {
+    var result = await queryOne(sql, params: params);
     return result?.values.first;
   }
 

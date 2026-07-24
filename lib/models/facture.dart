@@ -6,6 +6,7 @@ import '../utils/number_formatter.dart';
 class Facture {
   final int factureId;
   final int? planningDetailsId; // Modifié : NULL si facture groupée
+  final int? traitementId; // Nouveau : pour le filtrage local rapide
   final String? referenceFacture;
   final int montant; // Montant en Ar (entier)
   final String? mode; // 'Chèque', 'Espèce', 'Mobile Money', 'Virement'
@@ -28,6 +29,7 @@ class Facture {
   Facture({
     required this.factureId,
     required this.planningDetailsId,
+    this.traitementId,
     this.referenceFacture,
     required this.montant,
     this.mode,
@@ -78,6 +80,7 @@ class Facture {
     return Facture(
       factureId: dbInt(json['facture_id']) ?? 0,
       planningDetailsId: dbInt(json['planning_detail_id']),
+      traitementId: dbInt(json['traitement_id']),
       referenceFacture: dbString(json['reference_facture']),
       montant: dbInt(json['montant']) ?? 0,
       mode: dbString(json['mode']),
@@ -128,6 +131,7 @@ class Facture {
     return Facture(
       factureId: dbInt(map['facture_id']) ?? 0,
       planningDetailsId: dbInt(map['planning_detail_id']),
+      traitementId: dbInt(map['traitement_id']),
       referenceFacture: dbString(map['reference_facture']),
       montant: dbInt(map['montant']) ?? 0,
       mode: dbString(map['mode']),
@@ -189,6 +193,7 @@ class Facture {
   Facture copyWith({
     int? factureId,
     int? planningDetailsId,
+    int? traitementId,
     String? referenceFacture,
     int? montant,
     String? mode,
@@ -209,6 +214,7 @@ class Facture {
     return Facture(
       factureId: factureId ?? this.factureId,
       planningDetailsId: planningDetailsId ?? this.planningDetailsId,
+      traitementId: traitementId ?? this.traitementId,
       referenceFacture: referenceFacture ?? this.referenceFacture,
       montant: montant ?? this.montant,
       mode: mode ?? this.mode,

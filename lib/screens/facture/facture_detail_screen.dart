@@ -25,8 +25,22 @@ class FactureDetailScreen extends StatefulWidget {
 class _FactureDetailScreenState extends State<FactureDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    final sorted = List<Facture>.from(widget.factures)
-      ..sort((a, b) => b.dateTraitement.compareTo(a.dateTraitement));
+    final sorted = List<Facture>.from(widget.factures);
+    
+    // TRI INTELLIGENT : Passé (DESC) puis Futur (ASC)
+    sorted.sort((a, b) {
+      final isDoneA = a.isPaid || a.etat.toLowerCase().contains('effectué');
+      final isDoneB = b.isPaid || b.etat.toLowerCase().contains('effectué');
+
+      // 1. Les faits en premier
+      if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+
+      // 2. Si les deux sont faits : le plus récent en premier (DESC)
+      if (isDoneA) return b.dateTraitement.compareTo(a.dateTraitement);
+
+      // 3. Si les deux sont à venir : le plus proche en premier (ASC)
+      return a.dateTraitement.compareTo(b.dateTraitement);
+    });
     
     int total = 0;
     int unpaid = 0;

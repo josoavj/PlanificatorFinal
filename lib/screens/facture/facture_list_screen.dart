@@ -107,9 +107,17 @@ class _FactureListScreenState extends State<FactureListScreen> {
 
           for (final key in sortedKeys) {
             groupedByClient[key]!.sort((a, b) {
-              return b.dateTraitement.compareTo(
-                a.dateTraitement,
-              ); // Récent d'abord
+              final isDoneA = a.isPaid || a.etat.toLowerCase().contains('effectué');
+              final isDoneB = b.isPaid || b.etat.toLowerCase().contains('effectué');
+
+              // 1. Les faits en premier
+              if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+
+              // 2. Passé : le plus récent en premier (DESC)
+              if (isDoneA) return b.dateTraitement.compareTo(a.dateTraitement);
+
+              // 3. Futur : le plus proche en premier (ASC)
+              return a.dateTraitement.compareTo(b.dateTraitement);
             });
           }
 
@@ -375,9 +383,16 @@ class _FacturesListByClientScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Trier les factures par date croissante (plus anciennes en premier)
-    final sortedFactures = List<Facture>.from(factures)
-      ..sort((a, b) => a.dateTraitement.compareTo(b.dateTraitement));
+    // TRI INTELLIGENT : Passé (DESC) puis Futur (ASC)
+    final sortedFactures = List<Facture>.from(factures);
+    sortedFactures.sort((a, b) {
+      final isDoneA = a.isPaid || a.etat.toLowerCase().contains('effectué');
+      final isDoneB = b.isPaid || b.etat.toLowerCase().contains('effectué');
+
+      if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+      if (isDoneA) return b.dateTraitement.compareTo(a.dateTraitement);
+      return a.dateTraitement.compareTo(b.dateTraitement);
+    });
 
     return Scaffold(
       appBar: AppBar(title: Text(clientName)),

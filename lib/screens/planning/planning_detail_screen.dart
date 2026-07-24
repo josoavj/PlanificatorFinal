@@ -37,11 +37,21 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
     final planningDetailId = widget.planningDetailId;
     final factureRepo = context.read<FactureRepository>();
     final remarqueRepo = context.read<RemarqueRepository>();
+    final planningRepo = context.read<PlanningDetailsRepository>();
 
-    final factures = await factureRepo.getFacturesByPlanningDetail(planningDetailId);
-    final remarques = await remarqueRepo.getRemarques(planningDetailId);
+    // Charger les 3 sources en parallèle pour la réactivité (SANS CACHE lors du reload)
+    final results = await Future.wait([
+      planningRepo.getPlanningDetailComplete(planningDetailId),
+      factureRepo.getFacturesByPlanningDetail(planningDetailId, useCache: false),
+      remarqueRepo.getRemarques(planningDetailId, useCache: false),
+    ]);
+
+    final treatmentData = results[0] as Map<String, dynamic>?;
+    final factures = results[1] as List<Facture>;
+    final remarques = results[2] as List<Remarque>;
 
     return {
+      'treatment': treatmentData ?? widget.treatment,
       'facture': factures.isNotEmpty ? factures.first : null,
       'remarque': remarques.isNotEmpty ? remarques.first : null,
     };
@@ -56,10 +66,6 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final trait = widget.treatment['traitement']?.toString() ?? '';
-    final axe = widget.treatment['axe']?.toString() ?? '';
-    final etat = widget.treatment['etat']?.toString() ?? '';
-    final isEffectue = etat.toLowerCase().contains('effectué');
 
     return Scaffold(
       body: FutureBuilder<Map<String, dynamic>>(
@@ -69,8 +75,33 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
             return const Center(child: LoadingWidget());
           }
 
-          final facture = snapshot.data?['facture'] as Facture?;
-          final remarque = snapshot.data?['remarque'] as Remarque?;
+          if (snapshot.hasError) {
+            return Center(
+              child: ErrorDisplayWidget(
+                message: 'Erreur de chargement des données: ${snapshot.error}',
+                onRetry: _refresh,
+              ),
+            );
+          }
+
+          final data = snapshot.data;
+          if (data == null || data['treatment'] == null) {
+            return const Center(
+              child: EmptyStateWidget(
+                title: 'Détails indisponibles',
+                message: 'Impossible de charger les informations du passage.',
+              ),
+            );
+          }
+
+          final treatment = data['treatment'] as Map<String, dynamic>;
+          final facture = data['facture'] as Facture?;
+          final remarque = data['remarque'] as Remarque?;
+          
+          final trait = treatment['traitement']?.toString() ?? '';
+          final axe = treatment['axe']?.toString() ?? '';
+          final etat = treatment['etat']?.toString() ?? '';
+          final isEffectue = etat.toLowerCase().contains('effectué');
           
           final isPaye = facture?.isPaid ?? false;
           final isLocked = isEffectue && isPaye;
@@ -152,20 +183,20 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                               icon: Icons.edit_note_rounded, 
                               title: 'Modifier les informations', 
                               subtitle: 'Corriger la remarque ou les détails financiers', 
-                              onTap: () => _showEditRemarqueDialog(facture!, remarque),
+                              onTap: () => _showEditRemarqueDialog(treatment, facture!, remarque),
                             )
                           else ...[
                             AppActionCard(
                               icon: Icons.edit_note_rounded, 
                               title: 'Ajouter une remarque', 
                               subtitle: 'Noter des précisions ou créer une facture', 
-                              onTap: _showRemarqueDialog,
+                              onTap: () => _showRemarqueDialog(treatment),
                             ),
                             AppActionCard(
                               icon: Icons.report_problem_outlined, 
                               title: 'Signaler un problème', 
                               subtitle: 'Enregistrer une anomalie durant le traitement', 
-                              onTap: _showSignalementDialog,
+                              onTap: () => _showSignalementDialog(treatment),
                               isDestructive: true,
                             ),
                           ],
@@ -182,8 +213,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
     );
   }
 
-  void _showEditRemarqueDialog(Facture facture, Remarque? remarque) {
-    final pd = PlanningDetails.fromJson(widget.treatment);
+  void _showEditRemarqueDialog(Map<String, dynamic> treatment, Facture facture, Remarque? remarque) {
+    final pd = PlanningDetails.fromJson(treatment);
     AppDialogs.showBlurDialog(
       context: context, 
       builder: (ctx) => RemarqueDialog(
@@ -201,8 +232,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
     );
   }
 
-  void _showRemarqueDialog() {
-    final pd = PlanningDetails.fromJson(widget.treatment);
+  void _showRemarqueDialog(Map<String, dynamic> treatment) {
+    final pd = PlanningDetails.fromJson(treatment);
     AppDialogs.showBlurDialog(
       context: context, 
       barrierDismissible: false, 
@@ -218,7 +249,7 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                 referenceFacture: 'FAC-${DateTime.now().millisecondsSinceEpoch}', 
                 montant: 0, 
                 etat: 'À venir', 
-                axe: widget.treatment['axe'] ?? '', 
+                axe: treatment['axe'] ?? '', 
                 dateTraitement: pd.datePlanification
               );
               if (fId != -1) {
@@ -253,8 +284,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
     );
   }
 
-  void _showSignalementDialog() {
-    final pd = PlanningDetails.fromJson(widget.treatment);
+  void _showSignalementDialog(Map<String, dynamic> treatment) {
+    final pd = PlanningDetails.fromJson(treatment);
     AppDialogs.showBlurDialog(
       context: context, 
       builder: (ctx) => SignalementDialog(

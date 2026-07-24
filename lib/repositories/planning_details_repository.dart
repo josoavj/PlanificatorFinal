@@ -133,8 +133,8 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       logger.i(' Planning detail $planningDetailId statut => $newStatut');
 
-      // IMPORTANT: Recharger les données après la mise à jour
-      await loadUpcomingTreatmentsComplete();
+      // IMPORTANT: Recharger globalement sans cache pour la réactivité
+      await refreshAll();
 
       return true;
     } catch (e) {
@@ -155,6 +155,18 @@ class PlanningDetailsRepository extends ChangeNotifier {
     } catch (e) {
       logger.e(' Erreur supprimer planning_details: $e');
       return false;
+    }
+  }
+
+  /// Récupère un détail complet par son ID (pour rafraîchissement)
+  Future<Map<String, dynamic>?> getPlanningDetailComplete(int id) async {
+    try {
+      // SÉCURITÉ : Ne pas utiliser le cache pour les détails individuels lors d'un rafraîchissement
+      final result = await _db.queryOne(SqlQueries.getPlanningDetailCompleteById, params: [id], useCache: false);
+      return result;
+    } catch (e) {
+      logger.e(' Erreur getPlanningDetailComplete: $e');
+      return null;
     }
   }
 
@@ -190,8 +202,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   /// Charger les traitements du mois courant (table_en_cours) - Version complète avec JOINs
   /// Retourne: List<Map> avec clés: date, traitement, etat, axe
-  Future<List<Map<String, dynamic>>>
-  loadCurrentMonthTreatmentsComplete() async {
+  Future<List<Map<String, dynamic>>> loadCurrentMonthTreatmentsComplete({bool useCache = true}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -210,6 +221,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .query(
             SqlQueries.getCurrentMonthTreatmentsComplete,
             [currentYear, currentMonth],
+            useCache,
           )
           .timeout(
             const Duration(seconds: 60),
@@ -233,12 +245,12 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .toList();
 
       // Stocker aussi les données enrichies pour affichage
-      _currentMonthTreatmentsComplete = completeData;
+      _currentMonthTreatmentsComplete = _sortTreatmentsIntelligently(completeData);
 
       logger.i(
         ' ${_currentMonthTreatments.length} traitements du mois courant chargés',
       );
-      return completeData;
+      return _currentMonthTreatmentsComplete;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur charger traitements du mois: $e');
@@ -251,7 +263,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   /// Charger les traitements à venir (table_prevision) - Version complète avec JOINs
   /// [startDate] : Date à partir de laquelle charger les traitements (par défaut aujourd'hui)
-  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({DateTime? startDate}) async {
+  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({DateTime? startDate, bool useCache = true}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -269,6 +281,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .query(
             SqlQueries.getUpcomingTreatmentsComplete,
             [dateStr],
+            useCache,
           )
           .timeout(
             const Duration(seconds: 60),
@@ -292,10 +305,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .toList();
 
       //  Stocker aussi les données enrichies pour affichage
-      _upcomingTreatmentsComplete = completeData;
+      _upcomingTreatmentsComplete = _sortTreatmentsIntelligently(completeData);
 
       logger.i(' ${_upcomingTreatments.length} traitements à venir chargés');
-      return completeData;
+      return _upcomingTreatmentsComplete;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur charger traitements à venir: $e');
@@ -308,7 +321,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
   /// IMPORTANT: Charge TOUS les records SANS filtrer par date
-  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete() async {
+  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({bool useCache = true}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -318,7 +331,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       // Requête SANS filtre de date - récupère TOUS les traitements
       final results = await _db
-          .query(SqlQueries.getAllTreatmentsComplete)
+          .query(SqlQueries.getAllTreatmentsComplete, null, useCache)
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -338,40 +351,13 @@ class PlanningDetailsRepository extends ChangeNotifier {
         );
       }
 
-      // Assurer le tri DESC par date_planification (le plus récent en premier)
-      final completeData = results.cast<Map<String, dynamic>>();
-      completeData.sort((a, b) {
-        try {
-          final dateA = a['date_planification'];
-          final dateB = b['date_planification'];
-
-          DateTime? dateTimeA;
-          DateTime? dateTimeB;
-
-          if (dateA is DateTime) {
-            dateTimeA = dateA;
-          } else if (dateA is String) {
-            dateTimeA = DateTime.tryParse(dateA);
-          }
-          if (dateB is DateTime) {
-            dateTimeB = dateB;
-          } else if (dateB is String) {
-            dateTimeB = DateTime.tryParse(dateB);
-          }
-
-          if (dateTimeA == null || dateTimeB == null) return 0;
-          return dateTimeB.compareTo(dateTimeA); // DESC: plus récent en premier
-        } catch (e) {
-          return 0;
-        }
-      });
-
-      _allTreatmentsComplete = completeData;
+      // Assurer le tri intelligent centralisé
+      _allTreatmentsComplete = _sortTreatmentsIntelligently(results.cast<Map<String, dynamic>>());
 
       logger.i(
         ' ${_allTreatmentsComplete.length} traitements totaux chargés (tous les statuts)',
       );
-      return completeData;
+      return _allTreatmentsComplete;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur charger tous les traitements: $e');
@@ -461,13 +447,51 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// (Mois actuel, À venir, Historique complet)
   Future<void> refreshAll() async {
     logger.i('Refresh global du planning lancé...');
-    // Lancer les 3 chargements en parallèle pour l'efficience
+    // Lancer les 3 chargements en parallèle pour l'efficience (SANS CACHE pour le refresh)
     await Future.wait([
-      loadCurrentMonthTreatmentsComplete(),
-      loadUpcomingTreatmentsComplete(),
-      loadAllTreatmentsComplete(),
+      loadCurrentMonthTreatmentsComplete(useCache: false),
+      loadUpcomingTreatmentsComplete(useCache: false),
+      loadAllTreatmentsComplete(useCache: false),
     ]);
     logger.i('Refresh global terminé');
     notifyListeners();
+  }
+
+  /// Applique un tri intelligent :
+  /// 1. Interventions FAITES (Effectué) en premier, triées par date DESC (plus récent d'abord).
+  /// 2. Interventions À VENIR en second, triées par date ASC (plus proche d'abord).
+  List<Map<String, dynamic>> _sortTreatmentsIntelligently(List<Map<String, dynamic>> data) {
+    final list = List<Map<String, dynamic>>.from(data);
+    
+    list.sort((a, b) {
+      final statusA = (a['etat'] as String? ?? '').toLowerCase();
+      final statusB = (b['etat'] as String? ?? '').toLowerCase();
+      
+      final isDoneA = statusA.contains('effectué');
+      final isDoneB = statusB.contains('effectué');
+
+      // 1. Les faits en premier
+      if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+
+      // Extraire les dates pour le tri chronologique
+      DateTime? dateA = _parseDate(a['date_planification'] ?? a['date']);
+      DateTime? dateB = _parseDate(b['date_planification'] ?? b['date']);
+      
+      if (dateA == null || dateB == null) return 0;
+
+      // 2. Si les deux sont faits : le plus récent en premier (DESC)
+      if (isDoneA) return dateB.compareTo(dateA);
+
+      // 3. Si les deux sont à venir : le plus proche en premier (ASC)
+      return dateA.compareTo(dateB);
+    });
+
+    return list;
+  }
+
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is DateTime) return val;
+    return DateTime.tryParse(val.toString());
   }
 }

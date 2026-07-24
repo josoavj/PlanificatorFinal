@@ -10,8 +10,8 @@ class MockDatabaseService extends Mock implements DatabaseService {
   bool get isConnected => super.noSuchMethod(Invocation.getter(#isConnected), returnValue: false);
   
   @override
-  Future<Map<String, dynamic>?> queryOne(String? sql, [List<dynamic>? params]) =>
-      super.noSuchMethod(Invocation.method(#queryOne, [sql, params]), 
+  Future<Map<String, dynamic>?> queryOne(String sql, {List<dynamic>? params, bool useCache = true}) =>
+      super.noSuchMethod(Invocation.method(#queryOne, [sql], {#params: params, #useCache: useCache}), 
       returnValue: Future<Map<String, dynamic>?>.value());
 }
 
@@ -49,7 +49,7 @@ void main() {
     group('Login logic', () {
       test('login returns false if user not found', () async {
         when(mockDatabase.isConnected).thenReturn(true);
-        when(mockDatabase.queryOne(any, any)).thenAnswer((_) async => null);
+        when(mockDatabase.queryOne(any ?? '', params: anyNamed('params'))).thenAnswer((_) async => null);
 
         final result = await authRepository.login('unknown', 'password');
 
@@ -69,7 +69,7 @@ void main() {
         };
 
         when(mockDatabase.isConnected).thenReturn(true);
-        when(mockDatabase.queryOne(any, any)).thenAnswer((_) async => row);
+        when(mockDatabase.queryOne(any ?? '', params: anyNamed('params'))).thenAnswer((_) async => row);
 
         final result = await authRepository.login('testuser', 'wrong_password');
 

@@ -107,9 +107,9 @@ class RemarqueRepository extends ChangeNotifier {
   }
 
   /// Charge les remarques pour un planning detail
-  Future<List<Remarque>> getRemarques(int planningDetailId) async {
+  Future<List<Remarque>> getRemarques(int planningDetailId, {bool useCache = true}) async {
     try {
-      final rows = await _db.query(SqlQueries.getRemarquesByPlanningDetail, [planningDetailId]);
+      final rows = await _db.query(SqlQueries.getRemarquesByPlanningDetail, [planningDetailId], useCache);
       return rows.map((row) => Remarque.fromJson(row)).toList();
     } catch (e) {
       logger.e(' Erreur récupérer remarques: $e');

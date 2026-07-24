@@ -151,16 +151,17 @@ class SqlQueries {
         t.contrat_id, 
         tt.typeTraitement as nom,
         tt.categorieTraitement as type,
-        (SELECT CAST(GROUP_CONCAT(DISTINCT pd_inner.statut) AS CHAR) 
-         FROM PlanningDetails pd_inner 
-         WHERE pd_inner.planning_id = (SELECT p_inner.planning_id FROM Planning p_inner WHERE p_inner.traitement_id = t.traitement_id LIMIT 1)) as statuts,
-        (SELECT COUNT(*) 
-         FROM PlanningDetails pd_count 
-         WHERE pd_count.planning_id = (SELECT p_count.planning_id FROM Planning p_count WHERE p_count.traitement_id = t.traitement_id LIMIT 1)) as total_planif,
-        (SELECT COUNT(*) 
-         FROM PlanningDetails pd_done 
-         WHERE pd_done.planning_id = (SELECT p_done.planning_id FROM Planning p_done WHERE p_done.traitement_id = t.traitement_id LIMIT 1) 
-         AND pd_done.statut = 'Effectué') as planif_faites
+        (SELECT COUNT(*) FROM Planning p2 INNER JOIN PlanningDetails pd2 ON p2.planning_id = pd2.planning_id WHERE p2.traitement_id = t.traitement_id) as total_planif,
+        (SELECT COUNT(*) FROM Planning p3 INNER JOIN PlanningDetails pd3 ON p3.planning_id = pd3.planning_id WHERE p3.traitement_id = t.traitement_id AND pd3.statut = 'Effectué') as planif_faites,
+        (SELECT GROUP_CONCAT(DISTINCT pd4.statut) FROM Planning p4 INNER JOIN PlanningDetails pd4 ON p4.planning_id = pd4.planning_id WHERE p4.traitement_id = t.traitement_id) as statuts,
+        (SELECT SUM(f.montant) 
+         FROM Facture f 
+         WHERE f.facture_id IN (
+             SELECT DISTINCT pd5.facture_id 
+             FROM PlanningDetails pd5 
+             INNER JOIN Planning p5 ON pd5.planning_id = p5.planning_id 
+             WHERE p5.traitement_id = t.traitement_id
+         )) as montant_total
     FROM Traitement t
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     WHERE t.contrat_id = ?
@@ -186,7 +187,7 @@ class SqlQueries {
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
     INNER JOIN Client cl ON co.client_id = cl.client_id
     WHERE t.contrat_id = ?
-    ORDER BY cl.nom ASC
+    ORDER BY f.date_traitement DESC
   ''';
 
   static const String getFacturesByClientDetailed = '''
@@ -225,6 +226,7 @@ class SqlQueries {
     SELECT 
       f.facture_id,
       MAX(pd.planning_detail_id) as planning_detail_id,
+      p.traitement_id as traitement_id,
       f.reference_facture,
       f.montant,
       f.mode,
@@ -274,7 +276,7 @@ class SqlQueries {
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     WHERE t.contrat_id = ?
-    ORDER BY tt.typeTraitement ASC, f.date_traitement ASC
+    ORDER BY tt.typeTraitement ASC, f.date_traitement DESC
   ''';
 
   static const String getPriceHistory = '''
@@ -293,6 +295,16 @@ class SqlQueries {
   static const String updateFacturePrice = 'UPDATE Facture SET montant = ? WHERE facture_id = ?';
   static const String markFactureAsPaid = 'UPDATE Facture SET etat = ? WHERE facture_id = ?';
   static const String updateFactureReference = 'UPDATE Facture SET reference_facture = ? WHERE facture_id = ?';
+
+  static const String massUpdateFutureFacturePrices = '''
+    UPDATE Facture f
+    INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
+    INNER JOIN Planning p ON pd.planning_id = p.planning_id
+    SET f.montant = f.montant + ?
+    WHERE p.traitement_id = ? 
+    AND f.date_traitement >= ? 
+    AND f.etat NOT IN ('Payé', 'Payée')
+  ''';
 
   static const String getFactureAndTreatmentInfo = '''
     SELECT f.facture_id, f.date_traitement, pd.planning_id, p.traitement_id
@@ -408,6 +420,32 @@ class SqlQueries {
   static const String updatePlanningDetailStatut = 'UPDATE PlanningDetails SET statut = ? WHERE planning_detail_id = ?';
   static const String deletePlanningDetail = 'DELETE FROM PlanningDetails WHERE planning_detail_id = ?';
   static const String getAllPlanningDetails = 'SELECT * FROM PlanningDetails ORDER BY date_planification DESC';
+
+  static const String getPlanningDetailCompleteById = '''
+    SELECT 
+      pd.planning_detail_id,
+      pd.planning_id,
+      DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
+      CAST(CONCAT(COALESCE(tt.typeTraitement, 'Sans type'), ' pour ', COALESCE(c.prenom, ''), ' ', COALESCE(c.nom, '')) AS CHAR) as traitement,
+      COALESCE(pd.statut, 'Non planifié') as etat,
+      COALESCE(c.axe, 'Non défini') as axe,
+      COALESCE(tt.categorieTraitement, '') as categorieTraitement,
+      COALESCE(c.categorie, '') as categorie,
+      COALESCE(f.montant, 0) as montant,
+      COALESCE(f.etat, 'Non payé') as facture_etat,
+      c.telephone,
+      c.email,
+      c.client_id
+    FROM PlanningDetails pd
+    INNER JOIN Planning p ON pd.planning_id = p.planning_id
+    INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
+    INNER JOIN Client c ON ct.client_id = c.client_id
+    LEFT JOIN Facture f ON pd.facture_id = f.facture_id
+    WHERE pd.planning_detail_id = ?
+    LIMIT 1
+  ''';
 
   static const String getCurrentMonthTreatmentsComplete = '''
     SELECT 

@@ -198,7 +198,6 @@ class FacturePriceDialog extends StatelessWidget {
 
                               Navigator.pop(context);
                               AppSnackBars.showSuccess(context, 'Prix modifié avec succès');
-                              await factureRepo.loadAllFactures();
                               onDataChanged();
                             } catch (e) {
                               AppSnackBars.showError(context, 'Erreur: $e');

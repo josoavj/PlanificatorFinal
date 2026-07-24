@@ -89,7 +89,7 @@ class ContratRepository extends ChangeNotifier {
 
     try {
       final row = await _db
-          .queryOne(SqlQueries.getContratById, [contratId])
+          .queryOne(SqlQueries.getContratById, params: [contratId])
           .timeout(
             const Duration(seconds: 25),
             onTimeout: () {
