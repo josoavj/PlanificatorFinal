@@ -121,8 +121,6 @@ class ContratInvoiceView extends StatelessWidget {
     }
 
     // TRI INTELLIGENT : Passé (DESC) puis Futur (ASC)
-    final now = DateTime.now();
-
     for (final key in map.keys) {
       map[key]!.sort((a, b) {
         final dateA = a['dateTraitement'] as DateTime;
