@@ -132,12 +132,38 @@ class ContratPlanningView extends StatelessWidget {
         WHERE t.contrat_id = ?
         ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
     ''', [id]);
+    
     final map = <String, List<Map<String, dynamic>>>{};
     for (final r in rows) {
       final type = r['typeTraitement'] ?? 'Sans type';
       if (!map.containsKey(type)) map[type] = [];
-      map[type]!.add({'traitementId': r['traitement_id'], 'planning_detail_id': r['planning_detail_id'], 'date_planification': r['date_planification'] is String ? DateTime.parse(r['date_planification']) : r['date_planification'], 'etat': r['statut'], 'axe': r['axe']});
+      map[type]!.add({
+        'traitementId': r['traitement_id'], 
+        'planning_detail_id': r['planning_detail_id'], 
+        'date_planification': r['date_planification'] is String ? DateTime.parse(r['date_planification']) : r['date_planification'], 
+        'etat': r['statut'], 
+        'axe': r['axe']
+      });
     }
+
+    // TRI INTELLIGENT PAR TYPE
+    for (final key in map.keys) {
+      map[key]!.sort((a, b) {
+        final dateA = a['date_planification'] as DateTime?;
+        final dateB = b['date_planification'] as DateTime?;
+        final statusA = (a['etat'] as String? ?? '').toLowerCase();
+        final statusB = (b['etat'] as String? ?? '').toLowerCase();
+
+        final isDoneA = statusA.contains('effectué');
+        final isDoneB = statusB.contains('effectué');
+
+        if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+        if (dateA == null || dateB == null) return 0;
+        if (isDoneA) return dateB.compareTo(dateA); // Passé : Récent d'abord
+        return dateA.compareTo(dateB); // Futur : Prochain d'abord
+      });
+    }
+
     return map;
   }
 
