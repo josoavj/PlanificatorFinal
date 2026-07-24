@@ -68,7 +68,7 @@ class ClientDetailsDialog extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 56), // Augmentation
                     _buildSectionHeader(context, 'Localisation'),
                     Container(
                       decoration: AppTheme.cardDecoration(context, radius: 24),
@@ -107,7 +107,7 @@ class ClientDetailsDialog extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 48), // Augmentation
                     _buildSectionHeader(context, 'Services actifs'),
                     if (client.treatmentCount > 0)
                       FutureBuilder<List<Map<String, dynamic>>>(
@@ -131,7 +131,7 @@ class ClientDetailsDialog extends StatelessWidget {
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      actionsPadding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('FERMER')),
         if (client.treatmentCount > 0)
@@ -194,7 +194,14 @@ class ClientDetailsDialog extends StatelessWidget {
   int _parseValue(dynamic val) {
     if (val == null) return 0;
     if (val is int) return val;
+    if (val is double) return val.toInt();
+    
+    // Tentative de parsing propre (gestion des décimales .00 de MySQL)
     final str = val.toString().trim();
+    final parsed = double.tryParse(str);
+    if (parsed != null) return parsed.toInt();
+
+    // Fallback de secours (nettoyage si format bizarre)
     final numericOnly = str.replaceAll(RegExp(r'[^0-9]'), '');
     return int.tryParse(numericOnly) ?? 0;
   }
