@@ -397,16 +397,17 @@ class DatabaseService {
 
   /// Récupère une seule ligne
   Future<Map<String, dynamic>?> queryOne(
-    String sql, [
+    String sql, {
     List<dynamic>? params,
-  ]) async {
-    List<Map<String, dynamic>> results = await query(sql, params);
+    bool useCache = true,
+  }) async {
+    List<Map<String, dynamic>> results = await query(sql, params, useCache);
     return results.isNotEmpty ? results.first : null;
   }
 
   /// Récupère une valeur unique
-  Future<dynamic> queryValue(String sql, [List<dynamic>? params]) async {
-    var result = await queryOne(sql, params);
+  Future<dynamic> queryValue(String sql, {List<dynamic>? params}) async {
+    var result = await queryOne(sql, params: params);
     return result?.values.first;
   }
 
