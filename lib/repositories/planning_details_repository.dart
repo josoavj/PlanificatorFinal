@@ -233,12 +233,12 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .toList();
 
       // Stocker aussi les données enrichies pour affichage
-      _currentMonthTreatmentsComplete = completeData;
+      _currentMonthTreatmentsComplete = _sortTreatmentsIntelligently(completeData);
 
       logger.i(
         ' ${_currentMonthTreatments.length} traitements du mois courant chargés',
       );
-      return completeData;
+      return _currentMonthTreatmentsComplete;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur charger traitements du mois: $e');
@@ -292,10 +292,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .toList();
 
       //  Stocker aussi les données enrichies pour affichage
-      _upcomingTreatmentsComplete = completeData;
+      _upcomingTreatmentsComplete = _sortTreatmentsIntelligently(completeData);
 
       logger.i(' ${_upcomingTreatments.length} traitements à venir chargés');
-      return completeData;
+      return _upcomingTreatmentsComplete;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur charger traitements à venir: $e');
@@ -338,40 +338,13 @@ class PlanningDetailsRepository extends ChangeNotifier {
         );
       }
 
-      // Assurer le tri DESC par date_planification (le plus récent en premier)
-      final completeData = results.cast<Map<String, dynamic>>();
-      completeData.sort((a, b) {
-        try {
-          final dateA = a['date_planification'];
-          final dateB = b['date_planification'];
-
-          DateTime? dateTimeA;
-          DateTime? dateTimeB;
-
-          if (dateA is DateTime) {
-            dateTimeA = dateA;
-          } else if (dateA is String) {
-            dateTimeA = DateTime.tryParse(dateA);
-          }
-          if (dateB is DateTime) {
-            dateTimeB = dateB;
-          } else if (dateB is String) {
-            dateTimeB = DateTime.tryParse(dateB);
-          }
-
-          if (dateTimeA == null || dateTimeB == null) return 0;
-          return dateTimeB.compareTo(dateTimeA); // DESC: plus récent en premier
-        } catch (e) {
-          return 0;
-        }
-      });
-
-      _allTreatmentsComplete = completeData;
+      // Assurer le tri intelligent centralisé
+      _allTreatmentsComplete = _sortTreatmentsIntelligently(results.cast<Map<String, dynamic>>());
 
       logger.i(
         ' ${_allTreatmentsComplete.length} traitements totaux chargés (tous les statuts)',
       );
-      return completeData;
+      return _allTreatmentsComplete;
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur charger tous les traitements: $e');
@@ -469,5 +442,43 @@ class PlanningDetailsRepository extends ChangeNotifier {
     ]);
     logger.i('Refresh global terminé');
     notifyListeners();
+  }
+
+  /// Applique un tri intelligent :
+  /// 1. Interventions FAITES (Effectué) en premier, triées par date DESC (plus récent d'abord).
+  /// 2. Interventions À VENIR en second, triées par date ASC (plus proche d'abord).
+  List<Map<String, dynamic>> _sortTreatmentsIntelligently(List<Map<String, dynamic>> data) {
+    final list = List<Map<String, dynamic>>.from(data);
+    
+    list.sort((a, b) {
+      final statusA = (a['etat'] as String? ?? '').toLowerCase();
+      final statusB = (b['etat'] as String? ?? '').toLowerCase();
+      
+      final isDoneA = statusA.contains('effectué');
+      final isDoneB = statusB.contains('effectué');
+
+      // 1. Les faits en premier
+      if (isDoneA != isDoneB) return isDoneA ? -1 : 1;
+
+      // Extraire les dates pour le tri chronologique
+      DateTime? dateA = _parseDate(a['date_planification'] ?? a['date']);
+      DateTime? dateB = _parseDate(b['date_planification'] ?? b['date']);
+      
+      if (dateA == null || dateB == null) return 0;
+
+      // 2. Si les deux sont faits : le plus récent en premier (DESC)
+      if (isDoneA) return dateB.compareTo(dateA);
+
+      // 3. Si les deux sont à venir : le plus proche en premier (ASC)
+      return dateA.compareTo(dateB);
+    });
+
+    return list;
+  }
+
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is DateTime) return val;
+    return DateTime.tryParse(val.toString());
   }
 }
