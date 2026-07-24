@@ -158,6 +158,17 @@ class PlanningDetailsRepository extends ChangeNotifier {
     }
   }
 
+  /// Récupère un détail complet par son ID (pour rafraîchissement)
+  Future<Map<String, dynamic>?> getPlanningDetailComplete(int id) async {
+    try {
+      final result = await _db.queryOne(SqlQueries.getPlanningDetailCompleteById, [id]);
+      return result;
+    } catch (e) {
+      logger.e(' Erreur getPlanningDetailComplete: $e');
+      return null;
+    }
+  }
+
   /// Charger tous les détails de planning
   Future<void> loadAllDetails() async {
     _isLoading = true;
