@@ -39,11 +39,11 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
     final remarqueRepo = context.read<RemarqueRepository>();
     final planningRepo = context.read<PlanningDetailsRepository>();
 
-    // Charger les 3 sources en parallèle pour la réactivité
+    // Charger les 3 sources en parallèle pour la réactivité (SANS CACHE lors du reload)
     final results = await Future.wait([
       planningRepo.getPlanningDetailComplete(planningDetailId),
-      factureRepo.getFacturesByPlanningDetail(planningDetailId),
-      remarqueRepo.getRemarques(planningDetailId),
+      factureRepo.getFacturesByPlanningDetail(planningDetailId, useCache: false),
+      remarqueRepo.getRemarques(planningDetailId, useCache: false),
     ]);
 
     final treatmentData = results[0] as Map<String, dynamic>?;
@@ -75,9 +75,28 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
             return const Center(child: LoadingWidget());
           }
 
-          final treatment = snapshot.data?['treatment'] as Map<String, dynamic>;
-          final facture = snapshot.data?['facture'] as Facture?;
-          final remarque = snapshot.data?['remarque'] as Remarque?;
+          if (snapshot.hasError) {
+            return Center(
+              child: ErrorDisplayWidget(
+                message: 'Erreur de chargement des données: ${snapshot.error}',
+                onRetry: _refresh,
+              ),
+            );
+          }
+
+          final data = snapshot.data;
+          if (data == null || data['treatment'] == null) {
+            return const Center(
+              child: EmptyStateWidget(
+                title: 'Détails indisponibles',
+                message: 'Impossible de charger les informations du passage.',
+              ),
+            );
+          }
+
+          final treatment = data['treatment'] as Map<String, dynamic>;
+          final facture = data['facture'] as Facture?;
+          final remarque = data['remarque'] as Remarque?;
           
           final trait = treatment['traitement']?.toString() ?? '';
           final axe = treatment['axe']?.toString() ?? '';
