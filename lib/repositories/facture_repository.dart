@@ -105,11 +105,12 @@ class FactureRepository extends ChangeNotifier {
 
   /// Récupère les factures associées à un planning_detail_id
   Future<List<Facture>> getFacturesByPlanningDetail(
-    int planningDetailId,
-  ) async {
+    int planningDetailId, {
+    bool useCache = true,
+  }) async {
     try {
       final rows = await _db
-          .query(SqlQueries.getFacturesByPlanningDetail, [planningDetailId])
+          .query(SqlQueries.getFacturesByPlanningDetail, [planningDetailId], useCache)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -438,12 +439,12 @@ class FactureRepository extends ChangeNotifier {
       if (axe == null || axe.isEmpty || axe == 'Non défini') {
         try {
           final axeResult = await _db
-              .queryOne(SqlQueries.getClientIdFromPlanningDetail, [planningDetailId]);
+              .queryOne(SqlQueries.getClientIdFromPlanningDetail, params: [planningDetailId]);
           if (axeResult != null) {
             // Note: getClientIdFromPlanningDetail ne renvoie que client_id.
             // On va utiliser une requête plus complète ou enchaîner.
             final clientInfo = await _db
-                .queryOne(SqlQueries.getClientById, [axeResult['client_id']]);
+                .queryOne(SqlQueries.getClientById, params: [axeResult['client_id']]);
             if (clientInfo != null && clientInfo['axe'] != null) {
               finalAxe = clientInfo['axe'] as String;
               logger.i(' Axe récupéré automatiquement du client: $finalAxe');
