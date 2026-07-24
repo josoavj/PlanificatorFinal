@@ -151,23 +151,20 @@ class SqlQueries {
         t.contrat_id, 
         tt.typeTraitement as nom,
         tt.categorieTraitement as type,
-        COALESCE(COUNT(pd.planning_detail_id), 0) as total_planif,
-        COALESCE(SUM(CASE WHEN pd.statut = 'Effectué' THEN 1 ELSE 0 END), 0) as planif_faites,
-        CAST(IFNULL(GROUP_CONCAT(DISTINCT pd.statut), '') AS CHAR) as statuts,
+        (SELECT COUNT(*) FROM Planning p2 INNER JOIN PlanningDetails pd2 ON p2.planning_id = pd2.planning_id WHERE p2.traitement_id = t.traitement_id) as total_planif,
+        (SELECT COUNT(*) FROM Planning p3 INNER JOIN PlanningDetails pd3 ON p3.planning_id = pd3.planning_id WHERE p3.traitement_id = t.traitement_id AND pd3.statut = 'Effectué') as planif_faites,
+        (SELECT GROUP_CONCAT(DISTINCT pd4.statut) FROM Planning p4 INNER JOIN PlanningDetails pd4 ON p4.planning_id = pd4.planning_id WHERE p4.traitement_id = t.traitement_id) as statuts,
         (SELECT SUM(f.montant) 
          FROM Facture f 
          WHERE f.facture_id IN (
-             SELECT DISTINCT pd2.facture_id 
-             FROM PlanningDetails pd2 
-             INNER JOIN Planning p2 ON pd2.planning_id = p2.planning_id 
-             WHERE p2.traitement_id = t.traitement_id
+             SELECT DISTINCT pd5.facture_id 
+             FROM PlanningDetails pd5 
+             INNER JOIN Planning p5 ON pd5.planning_id = p5.planning_id 
+             WHERE p5.traitement_id = t.traitement_id
          )) as montant_total
     FROM Traitement t
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-    LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
-    LEFT JOIN PlanningDetails pd ON p.planning_id = pd.planning_id
     WHERE t.contrat_id = ?
-    GROUP BY t.traitement_id
   ''';
 
   static const String getFuturePlanningsByTreatment = 'SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?';
