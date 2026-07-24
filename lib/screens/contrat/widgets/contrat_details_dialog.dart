@@ -96,16 +96,50 @@ class ContratDetailsDialog extends StatelessWidget {
                 future: _loadTraitements(contrat.contratId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(strokeWidth: 2)));
+                  
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 32),
+                            const SizedBox(height: 12),
+                            Text('Erreur de chargement des services', style: TextStyle(color: AppTheme.errorRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(snapshot.error.toString(), textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
                   final traitements = snapshot.data ?? [];
                   if (traitements.isEmpty) return const Center(child: Text('Aucun service planifié', style: TextStyle(fontSize: 12, color: Colors.grey)));
                   
                   return Column(
                     children: traitements.map((t) {
-                      final total = t['total_planif'] is int ? t['total_planif'] as int : int.tryParse(t['total_planif']?.toString() ?? '0') ?? 0;
-                      final faites = t['planif_faites'] is int ? t['planif_faites'] as int : int.tryParse(t['planif_faites']?.toString() ?? '0') ?? 0;
+                      // Helper robuste pour parser les entiers venant de MySQL
+                      int parseValue(dynamic val) {
+                        if (val == null) return 0;
+                        if (val is int) return val;
+                        if (val is double) return val.toInt();
+                        final str = val.toString().trim();
+                        // Nettoyer la chaîne pour ne garder que les chiffres
+                        final numericOnly = str.replaceAll(RegExp(r'[^0-9]'), '');
+                        return int.tryParse(numericOnly) ?? 0;
+                      }
+
+                      final total = parseValue(t['total_planif']);
+                      final faites = parseValue(t['planif_faites']);
                       
+                      // Gestion sécurisée des statuts concaténés
                       final dynamic statutsRaw = t['statuts'];
-                      final String statutsStr = statutsRaw is List<int> ? String.fromCharCodes(statutsRaw) : (statutsRaw?.toString() ?? '');
+                      String statutsStr = '';
+                      if (statutsRaw is List<int>) {
+                        statutsStr = String.fromCharCodes(statutsRaw);
+                      } else {
+                        statutsStr = statutsRaw?.toString() ?? '';
+                      }
                           
                       final hasClassed = statutsStr.toLowerCase().contains('classé');
                       final percent = total > 0 ? (faites / total).clamp(0.0, 1.0) : 0.0;
