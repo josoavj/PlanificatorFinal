@@ -153,7 +153,15 @@ class SqlQueries {
         tt.categorieTraitement as type,
         COALESCE(COUNT(pd.planning_detail_id), 0) as total_planif,
         COALESCE(SUM(CASE WHEN pd.statut = 'Effectué' THEN 1 ELSE 0 END), 0) as planif_faites,
-        CAST(IFNULL(GROUP_CONCAT(DISTINCT pd.statut), '') AS CHAR) as statuts
+        CAST(IFNULL(GROUP_CONCAT(DISTINCT pd.statut), '') AS CHAR) as statuts,
+        (SELECT SUM(f.montant) 
+         FROM Facture f 
+         WHERE f.facture_id IN (
+             SELECT DISTINCT pd2.facture_id 
+             FROM PlanningDetails pd2 
+             INNER JOIN Planning p2 ON pd2.planning_id = p2.planning_id 
+             WHERE p2.traitement_id = t.traitement_id
+         )) as montant_total
     FROM Traitement t
     LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
