@@ -186,7 +186,7 @@ class SqlQueries {
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
     INNER JOIN Client cl ON co.client_id = cl.client_id
     WHERE t.contrat_id = ?
-    ORDER BY cl.nom ASC
+    ORDER BY f.date_traitement DESC
   ''';
 
   static const String getFacturesByClientDetailed = '''
@@ -274,7 +274,7 @@ class SqlQueries {
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
     INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
     WHERE t.contrat_id = ?
-    ORDER BY tt.typeTraitement ASC, f.date_traitement ASC
+    ORDER BY tt.typeTraitement ASC, f.date_traitement DESC
   ''';
 
   static const String getPriceHistory = '''
