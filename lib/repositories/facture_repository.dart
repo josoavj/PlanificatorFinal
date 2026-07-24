@@ -290,14 +290,13 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Étape 1: Récupérer la facture et sa date
-      final factureRows = await _db.query(SqlQueries.getFactureAndTreatmentInfo, [factureId]);
-      if (factureRows.isEmpty) {
+      final factureRows = await _db.queryOne(SqlQueries.getFactureAndTreatmentInfo, params: [factureId]);
+      if (factureRows == null) {
         throw Exception('Facture non trouvée');
       }
 
-      final factureRow = factureRows[0];
-      final dateTraitement = factureRow['date_traitement'];
-      final traitementId = factureRow['traitement_id'];
+      final dateTraitement = factureRows['date_traitement'];
+      final traitementId = factureRows['traitement_id'];
 
       if (dateTraitement == null || traitementId == null) {
         throw Exception('Données incomplètes pour la facture');
@@ -309,61 +308,52 @@ class FactureRepository extends ChangeNotifier {
         ' Différence de prix: $prixDiff Ar (ancien: $oldMontant, nouveau: $newMontant)',
       );
 
-      // Étape 3: Récupérer toutes les factures du même traitement avec date >= dateActuelle
-      final otherFactures = await _db.query(SqlQueries.getOtherFacturesByTreatmentFromDate, [
-        traitementId,
-        dateTraitement,
-      ]);
-
-      // Étape 4: Mettre à jour tous les montants et créer l'historique dans une TRANSACTION
-      int updatedCount = 0;
-      final now = DateTime.now();
-
+      // Étape 3: Mouvements en base de données via une TRANSACTION
       await _db.transaction((conn) async {
+        // A. Mise à jour massive des prix (Performant)
+        await conn.query(SqlQueries.massUpdateFutureFacturePrices, [
+          prixDiff,
+          traitementId,
+          dateTraitement,
+        ]);
+
+        // B. Création de l'historique (On récupère les factures impactées pour les logs historiques)
+        final otherFactures = await conn.query(SqlQueries.getOtherFacturesByTreatmentFromDate, [
+          traitementId,
+          dateTraitement,
+        ]);
+
+        final now = DateTime.now().toIso8601String();
         for (final row in otherFactures) {
           final fId = row['facture_id'] as int;
-          final ancienMontant = row['montant'] as int;
-          final etat = (row['etat'] as String?)?.trim() ?? '';
-
-          if (etat == 'Payé' || etat == 'Payée') continue;
-
-          final nouveauMontant = ancienMontant + prixDiff;
-
-          // Utiliser la connexion de la transaction directement
-          await conn.query(SqlQueries.updateFacturePrice, [nouveauMontant, fId]);
+          final mAncien = row['montant'] as int;
+          final mNouveau = mAncien + prixDiff;
+          
           await conn.query(SqlQueries.createPriceHistoryEntry, [
             fId,
-            ancienMontant,
-            nouveauMontant,
-            now.toIso8601String(),
+            mAncien,
+            mNouveau,
+            now,
           ]);
-
-          updatedCount++;
         }
       });
 
-      // Étape 5: Mettre à jour la liste locale seulement si la transaction a réussi
-      for (final facture in _factures) {
-        if (facture.dateTraitement.compareTo(
-                  DateTime.parse(dateTraitement.toString()),
-                ) >=
-                0 &&
-            facture.montant > 0) {
-          //  LOGIQUE: Ne pas modifier les factures payées
-          if (facture.etat != 'Payé' && facture.etat != 'Payée') {
-            final newMontantLocal = facture.montant + prixDiff;
-            final index = _factures.indexOf(facture);
-            if (index != -1) {
-              _factures[index] = facture.copyWith(montant: newMontantLocal);
-            }
-          }
+      // Étape 4: Mise à jour de la liste locale en mémoire (Instantané pour l'UI)
+      final dtRef = DateTime.parse(dateTraitement.toString());
+      
+      for (int i = 0; i < _factures.length; i++) {
+        final f = _factures[i];
+        
+        // On ne filtre QUE sur le même traitement et les dates postérieures
+        if (f.traitementId == traitementId && 
+            f.dateTraitement.compareTo(dtRef) >= 0 &&
+            !f.isPaid) {
+          
+          _factures[i] = f.copyWith(montant: f.montant + prixDiff);
         }
       }
 
-      logger.i(
-        ' $updatedCount facture(s) mises à jour avec la différence de $prixDiff Ar',
-      );
-
+      logger.i(' Mise à jour locale terminée pour traitement $traitementId');
       notifyListeners();
       return true;
     } catch (e) {
