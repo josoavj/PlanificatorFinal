@@ -309,7 +309,7 @@ class FactureRepository extends ChangeNotifier {
       );
 
       // Étape 3: Mouvements en base de données via une TRANSACTION
-      await _db.transaction((conn) async {
+      await _db.transaction<void>((conn) async {
         // A. Mise à jour massive des prix (Performant)
         await conn.query(SqlQueries.massUpdateFutureFacturePrices, [
           prixDiff,

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planificator/repositories/contrat_repository.dart';
 import 'package:planificator/models/contrat.dart';
-import 'auth_repository_test.dart'; // Pour MockDatabaseService
+import '../config/mocks.dart';
 
 void main() {
   late ContratRepository repository;
@@ -51,10 +51,6 @@ void main() {
 
       final duration = repository.getContractDurationInMonths(contrat);
       expect(duration, equals(0));
-    });
-
-    test('getActiveContrats filtre correctement selon la date actuelle', () {
-      // Test de logique de filtrage sur une liste
     });
   });
 }

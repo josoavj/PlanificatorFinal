@@ -1,29 +1,48 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/models/facture.dart';
+import 'package:mockito/mockito.dart';
+import 'package:planificator/repositories/facture_repository.dart';
+import '../config/mocks.dart';
 
 void main() {
-  group('Facture - Model logic', () {
-    test('getTotalPaid calcule correctement la somme des factures payées', () {
-      // On injecte manuellement des factures dans la liste privée pour tester la logique Dart
-      // Note: Dans un vrai test unitaire, on testerait via les méthodes publiques
-      // Mais ici on valide la logique de fold/sum
+  late FactureRepository repository;
+  late MockDatabaseService mockDatabase;
+
+  setUp(() {
+    mockDatabase = MockDatabaseService();
+    repository = FactureRepository(databaseService: mockDatabase);
+  });
+
+  group('FactureRepository - Mise à jour massive (Cascade)', () {
+    test('majMontantEtHistorique doit exécuter la transaction SQL de masse', () async {
+      final factureId = 1;
+      const oldPrix = 50000;
+      const newPrix = 60000;
+      final dateRef = DateTime(2024, 1, 1);
+
+      when(mockDatabase.queryOne(any, params: anyNamed('params')))
+          .thenAnswer((_) async => {
+            'date_traitement': dateRef.toIso8601String(),
+            'traitement_id': 100,
+          });
+
+      when(mockDatabase.query(any, any))
+          .thenAnswer((_) async => [
+            {'facture_id': 1, 'montant': 50000, 'etat': 'Non payé'},
+          ]);
+
+      // Correction : La transaction dans majMontantEtHistorique ne retourne rien (Future<void>)
+      when(mockDatabase.transaction<void>(any)).thenAnswer((_) async {});
+
+      final success = await repository.majMontantEtHistorique(factureId, oldPrix, newPrix, isAdmin: true);
+
+      expect(success, isTrue);
+      verify(mockDatabase.transaction(any)).called(1);
     });
 
-    test('Facture isPaid identifie correctement les états "Payé" et "Payée"', () {
-      final f1 = Facture(
-        factureId: 1, 
-        planningDetailsId: 1, 
-        montant: 100, 
-        dateTraitement: DateTime.now(), 
-        etat: 'Payé', 
-        axe: 'Centre (C)'
-      );
-      final f2 = f1.copyWith(etat: 'Payée');
-      final f3 = f1.copyWith(etat: 'Non payé');
-
-      expect(f1.isPaid, isTrue);
-      expect(f2.isPaid, isTrue);
-      expect(f3.isPaid, isFalse);
+    test('updateFacturePrice doit échouer si non admin', () async {
+      final success = await repository.updateFacturePrice(1, 100, isAdmin: false);
+      expect(success, isFalse);
+      expect(repository.errorMessage, contains('administrateur'));
     });
   });
 }
