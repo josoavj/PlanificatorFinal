@@ -5,9 +5,12 @@ import '../services/index.dart';
 import '../core/sql_queries.dart';
 
 class ClientRepository extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
   final QueryCacheService _cache = QueryCacheService();
   final logger = createLoggerWithFileOutput(name: 'client_repository');
+
+  ClientRepository({DatabaseService? databaseService})
+      : _db = databaseService ?? DatabaseService();
 
   List<Client> _clients = [];
   Client? _currentClient;

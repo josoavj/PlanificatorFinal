@@ -7,8 +7,11 @@ import '../core/sql_queries.dart';
 /// Repository pour la gestion des remarques
 /// Conforme à Kivy create_remarque() - crée remarque + met à jour état planning + facture
 class RemarqueRepository extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
   final logger = createLoggerWithFileOutput(name: 'remarque_repository');
+
+  RemarqueRepository({DatabaseService? databaseService})
+      : _db = databaseService ?? DatabaseService();
 
   List<Remarque> _remarques = [];
   bool _isLoading = false;

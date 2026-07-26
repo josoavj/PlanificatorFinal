@@ -5,8 +5,11 @@ import '../utils/date_helper.dart';
 import '../core/sql_queries.dart';
 
 class SignalementRepository extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService();
+  final DatabaseService _db;
   final logger = createLoggerWithFileOutput(name: 'signalement_repository');
+
+  SignalementRepository({DatabaseService? databaseService})
+      : _db = databaseService ?? DatabaseService();
 
   List<Signalement> _signalements = [];
   bool _isLoading = false;

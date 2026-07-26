@@ -6,10 +6,13 @@ import 'package:planificator/services/index.dart';
 import 'package:planificator/core/sql_queries.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {
-  final _db = DatabaseService();
+  final DatabaseService _db;
   final logger = createLoggerWithFileOutput(
     name: 'planning_details_repository',
   );
+
+  PlanningDetailsRepository({DatabaseService? databaseService})
+      : _db = databaseService ?? DatabaseService();
 
   List<PlanningDetails> _details = [];
   List<PlanningDetails> _currentMonthTreatments = [];
