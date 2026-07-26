@@ -1,19 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:planificator/repositories/auth_repository.dart';
-import 'package:planificator/services/database_service.dart';
 import 'package:bcrypt/bcrypt.dart';
-
-// Mock manuel pour DatabaseService
-class MockDatabaseService extends Mock implements DatabaseService {
-  @override
-  bool get isConnected => super.noSuchMethod(Invocation.getter(#isConnected), returnValue: false);
-  
-  @override
-  Future<Map<String, dynamic>?> queryOne(String sql, {List<dynamic>? params, bool useCache = true}) =>
-      super.noSuchMethod(Invocation.method(#queryOne, [sql], {#params: params, #useCache: useCache}), 
-      returnValue: Future<Map<String, dynamic>?>.value());
-}
+import '../config/mocks.dart';
 
 void main() {
   late AuthRepository authRepository;
@@ -38,7 +27,7 @@ void main() {
 
     group('BCrypt Logic', () {
       test('Password verification logic', () {
-        final password = 'Password123!';
+        const password = 'Password123!';
         final hash = BCrypt.hashpw(password, BCrypt.gensalt());
         
         expect(BCrypt.checkpw(password, hash), isTrue);
@@ -48,8 +37,8 @@ void main() {
 
     group('Login logic', () {
       test('login returns false if user not found', () async {
-        when(mockDatabase.isConnected).thenReturn(true);
-        when(mockDatabase.queryOne(any ?? '', params: anyNamed('params'))).thenAnswer((_) async => null);
+        mockDatabase.isConnected = true;
+        when(mockDatabase.queryOne(any, params: anyNamed('params'))).thenAnswer((_) async => null);
 
         final result = await authRepository.login('unknown', 'password');
 
@@ -68,8 +57,8 @@ void main() {
           'type_compte': 'Utilisateur',
         };
 
-        when(mockDatabase.isConnected).thenReturn(true);
-        when(mockDatabase.queryOne(any ?? '', params: anyNamed('params'))).thenAnswer((_) async => row);
+        when(mockDatabase.queryOne(any, params: anyNamed('params'))).thenAnswer((_) async => row);
+        mockDatabase.isConnected = true;
 
         final result = await authRepository.login('testuser', 'wrong_password');
 
