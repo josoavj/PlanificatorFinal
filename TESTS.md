@@ -51,14 +51,31 @@ Garantit la performance de l'application sans sacrifier la fraîcheur des donné
 
 ### 6. Logique Contrat et Transaction (test/repositories/contrat_repository_test.dart)
 
-- **Sauvegarde Atomique** : Vérifie que le repository lance bien une transaction pour la création de contrats complexes.
 - **Calcul de Durée** : Vérifie le calcul automatique des mois entre deux dates.
+- **Filtrage Dynamique** : Test du statut Actif/Inactif selon le calendrier.
+
+### 7. Planning et Tri Intelligent (test/repositories/planning_details_repository_test.dart)
+
+- **Tri Hybride** : Valide la règle critique "Effectués (Récent d'abord) / À venir (Prochain d'abord)".
+- **Zéro Doublon** : Garantit qu'une date de planning ne peut pas être créée deux fois pour le même service.
+
+### 8. Sécurité Financière (test/repositories/facture_repository_test.dart)
+
+- **Mise à jour Cascade** : Vérifie que le changement de prix d'un contrat impacte bien l'intégralité des factures futures.
+- **Droits Admin** : Teste le verrouillage des prix pour les utilisateurs non-administrateurs.
+
+### 9. Transactions Atomiques (test/repositories/remarque_repository_test.dart)
+
+- **Cohérence multi-tables** : S'assure que l'insertion d'une remarque et la mise à jour du planning/facture sont indissociables (Tout ou rien).
 
 ---
 
-## Stratégie de Mocking
+## Stratégie de Mocking et Robustesse
 
-Pour tester les composants sans avoir besoin d'une vraie base de données MySQL, nous utilisons des **Mocks manuels** pour le `DatabaseService`. Cela permet de simuler des scénarios comme une perte de connexion ou des timeouts.
+Pour garantir la fiabilité totale du système, nous utilisons une infrastructure de **Mocks professionnels** (`test/config/mocks.dart`) qui simule :
+- Les **Transactions SQL** complexes.
+- Les erreurs de **Socket réseau** (reconnexion automatique).
+- Le décodage des types de données MySQL variés (Blobs, Casts).
 
 ---
-**Dernière mise à jour** : 22 Juillet 2026
+**Dernière mise à jour** : 27 Juillet 2026
