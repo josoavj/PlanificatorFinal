@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=for-the-badge" alt="Desktop Platforms">
-  <img src="https://img.shields.io/badge/Version-2.2.0-green?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Version-2.1.1-green?style=for-the-badge" alt="Version">
 </p>
 
 <h1 align="center">Planificator</h1>
@@ -22,6 +22,7 @@
 ## Table des Matières
 
 - [À Propos](#à-propos)
+- [Panoramic Intelligence (v2.1.1)](#panoramic-intelligence-v211)
 - [Modernisation et Flexibilité (v2.2.0)](#modernisation-et-flexibilité-v220)
 - [Architecture Industrielle](#architecture-industrielle)
 - [Fonctionnalités](#fonctionnalités)
@@ -40,7 +41,19 @@
 
 ## À Propos
 
-**Planificator** est une plateforme Flutter native pour Desktop (Windows, macOS, Linux) conçue pour la gestion intensive des contrats et de la facturation. En version **2.2.0**, elle introduit des capacités de planification avancées et une flexibilité accrue pour les entités morales et les particuliers.
+**Planificator** est une plateforme Flutter native pour Desktop (Windows, macOS, Linux) conçue pour la gestion intensive des contrats et de la facturation. En version **2.1.1**, elle introduit des capacités d'audit approfondies et une ergonomie panoramique optimisée pour les flux financiers.
+
+---
+
+## Panoramic Intelligence (v2.1.1)
+
+La version **2.1.1** marque un tournant dans la maturité de la plateforme avec un focus sur la traçabilité et la performance :
+
+- **Expérience Panoramique (Zéro Scroll)** : Refonte des dialogues Clients et Contrats en mode 2 colonnes (950px), offrant une visibilité immédiate sur 100% des données sans défilement.
+- **Journal de Bord 360°** : Nouveau module de consultation d'historique retraçant toute la vie d'une intervention (Planning initial, Signalements, Facturation et Historique des tarifs).
+- **Moteur de Tri Intelligent** : Algorithme centralisé harmonisant l'affichage dans toute l'app (Passé : plus récent en haut | Futur : plus proche en haut).
+- **Optimisation Massive des Prix** : Mise à jour des tarifs en cascade ultra-rapide via SQL direct, éliminant les latences réseau.
+- **Bouclier de Tests Infaillible** : Suite de tests de régression couvrant l'intégralité de la logique métier et des transactions financières.
 
 ---
 
