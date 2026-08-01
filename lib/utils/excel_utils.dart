@@ -16,7 +16,7 @@ class FolderManager {
       List<Directory> paths = [];
 
       for (var nom in dossiers) {
-        final dir = Directory(p.join(desktop.path, nom));
+        final dir = Directory(p.join(desktop.path, 'Planificator', nom));
         try {
           if (!dir.existsSync()) {
             dir.createSync(recursive: true);
@@ -651,7 +651,7 @@ class ExcelService {
     workbook.dispose();
 
     final folder2 = Directory(
-      p.join(FolderManager._getDesktopPath().path, 'Exports'),
+      p.join(FolderManager._getDesktopPath().path, 'Planificator', 'Exports'),
     );
     if (!folder2.existsSync()) {
       folder2.createSync(recursive: true);
