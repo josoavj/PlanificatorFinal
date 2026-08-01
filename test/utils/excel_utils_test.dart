@@ -3,9 +3,9 @@ import 'package:planificator/utils/excel_utils.dart';
 
 void main() {
   group('ExcelService - Path Logic', () {
-    test('initDesktopStructure crée les dossiers nécessaires', () {
-      final paths = FolderManager.initDesktopStructure();
-      expect(paths.length, equals(2));
+    test('initDesktopStructure crée les dossiers nécessaires', () async {
+      final paths = await FolderManager.initDesktopStructure();
+      expect(paths.length, equals(3));
       expect(paths[0].path, contains('Factures'));
       expect(paths[1].path, contains('Traitements'));
     });
