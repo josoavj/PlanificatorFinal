@@ -84,8 +84,7 @@ class _MyAppState extends State<MyApp> {
             routes: AppRoutes.routes,
           );
         },
-      ),
-    );
+      ));
   }
 }
 

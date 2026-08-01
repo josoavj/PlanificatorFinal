@@ -19,7 +19,7 @@ void main() {
       const newPrix = 60000;
       final dateRef = DateTime(2024, 1, 1);
 
-      when(mockDatabase.queryOne(any, params: anyNamed('params')))
+      when(mockDatabase.queryOne(any ?? '', params: anyNamed('params')))
           .thenAnswer((_) async => {
             'date_traitement': dateRef.toIso8601String(),
             'traitement_id': 100,

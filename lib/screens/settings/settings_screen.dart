@@ -7,7 +7,9 @@ import '../../core/theme.dart';
 import '../../services/theme_provider.dart';
 import '../../widgets/index.dart';
 import '../../utils/app_snackbars.dart';
+import '../../utils/excel_utils.dart';
 import '../../widgets/features_dialog.dart';
+import 'package:file_picker/file_picker.dart';
 import 'widgets/database_config_dialog.dart';
 import 'widgets/profile_list_dialog.dart';
 import 'widgets/notification_time_dialog.dart';
@@ -23,6 +25,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _autoSaveEnabled = true;
   String _language = 'fr';
+  String _exportPath = 'Chargement...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExportPath();
+  }
+
+  Future<void> _loadExportPath() async {
+    final dir = await FolderManager.getExportBasePath();
+    if (mounted) setState(() => _exportPath = dir.path);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +113,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: 'Gérer les données en cache',
                       onTap: () => _showCacheDialog(context),
                       isDestructive: true,
+                    ),
+                  ],
+                ),
+                AppSection(
+                  title: 'Export & Fichiers',
+                  children: [
+                    AppActionCard(
+                      icon: Icons.folder_open_outlined,
+                      title: 'Emplacement des exports',
+                      subtitle: _exportPath,
+                      onTap: () => _pickExportDirectory(),
+                    ),
+                    AppActionCard(
+                      icon: Icons.restart_alt_rounded,
+                      title: 'Réinitialiser l\'emplacement',
+                      subtitle: 'Revenir au dossier Bureau par défaut',
+                      onTap: () => _resetExportPath(),
                     ),
                   ],
                 ),
@@ -239,5 +270,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showLanguageDialog() {
     AppDialogs.selection(context, title: 'Sélectionner une langue', items: const ['fr', 'en'], itemLabel: (i) => i == 'fr' ? 'Français' : 'English', selectedItem: _language).then((s) { if (s != null) setState(() => _language = s); });
+  }
+
+  Future<void> _pickExportDirectory() async {
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+
+    if (selectedDirectory != null) {
+      await FolderManager.setCustomPath(selectedDirectory);
+      await _loadExportPath();
+      if (mounted) AppSnackBars.showSuccess(context, 'Nouvel emplacement enregistré');
+    }
+  }
+
+  Future<void> _resetExportPath() async {
+    await FolderManager.resetToDefault();
+    await _loadExportPath();
+    if (mounted) AppSnackBars.showSuccess(context, 'Emplacement réinitialisé sur le Bureau');
   }
 }
