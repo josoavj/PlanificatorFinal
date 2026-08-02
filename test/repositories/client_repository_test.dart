@@ -45,15 +45,16 @@ void main() {
       final success = await repository.deleteClient(1, isAdmin: false);
       expect(success, isFalse);
       expect(repository.errorMessage, contains('administrateur'));
-      verifyNever(mockDatabase.transaction<bool>(any));
+      verifyNever(mockDatabase.transaction(any));
     });
 
     test('deleteClient doit appeler la transaction si admin', () async {
-      when(mockDatabase.transaction<bool>(any)).thenAnswer((_) async => true);
+      // Pour deleteClient, T est dynamic (void), donc on mock sans spécifier T ou avec any
+      when(mockDatabase.transaction(any)).thenAnswer((_) async => null);
 
       final success = await repository.deleteClient(1, isAdmin: true);
       expect(success, isTrue);
-      verify(mockDatabase.transaction<bool>(any)).called(1);
+      verify(mockDatabase.transaction(any)).called(1);
     });
   });
 }
