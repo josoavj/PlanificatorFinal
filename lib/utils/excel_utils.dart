@@ -92,17 +92,19 @@ class FolderManager {
 }
 
 class ExcelService {
-  /// Génère dynamiquement les chemins pour chaque export
-  Future<List<Directory>> _getPaths() async => await FolderManager.initDesktopStructure();
-
-  final Map<String, Style> _styleCache = {};
-
-  String _getSafeName(String name) {
+  /// Nettoie un nom pour être utilisable comme nom de fichier
+  static String getSafeName(String name) {
     return name
+        .trim()
         .replaceAll(RegExp(r'[^\w\s-]'), '')
         .replaceAll(' ', '_')
         .replaceAll(RegExp(r'_+$'), '');
   }
+
+  /// Génère dynamiquement les chemins pour chaque export
+  Future<List<Directory>> _getPaths() async => await FolderManager.initDesktopStructure();
+
+  final Map<String, Style> _styleCache = {};
 
   // --- 1. FONCTION : generate_comprehensive_facture_excel (Annuel) ---
   Future<String> generateComprehensiveFactureExcel(
@@ -113,7 +115,7 @@ class ExcelService {
     final paths = await _getPaths();
 
     final int reportPeriod = DateTime.now().year;
-    final String safeName = _getSafeName(clientFullName);
+    final String safeName = ExcelService.getSafeName(clientFullName);
 
     final Workbook workbook = Workbook();
     final Worksheet sheet = workbook.worksheets[0];
@@ -143,7 +145,7 @@ class ExcelService {
     _styleCache.clear();
     final paths = await _getPaths();
 
-    final String safeName = _getSafeName(clientFullName);
+    final String safeName = ExcelService.getSafeName(clientFullName);
     final Workbook workbook = Workbook();
     final Worksheet sheet = workbook.worksheets[0];
 
