@@ -39,4 +39,21 @@ void main() {
       expect(repository.clients.first.nom, 'Client A');
     });
   });
+
+  group('ClientRepository - Sécurité', () {
+    test('deleteClient doit utiliser une transaction et échouer si non admin', () async {
+      final success = await repository.deleteClient(1, isAdmin: false);
+      expect(success, isFalse);
+      expect(repository.errorMessage, contains('administrateur'));
+      verifyNever(mockDatabase.transaction<bool>(any));
+    });
+
+    test('deleteClient doit appeler la transaction si admin', () async {
+      when(mockDatabase.transaction<bool>(any)).thenAnswer((_) async => true);
+
+      final success = await repository.deleteClient(1, isAdmin: true);
+      expect(success, isTrue);
+      verify(mockDatabase.transaction<bool>(any)).called(1);
+    });
+  });
 }
