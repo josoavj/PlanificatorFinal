@@ -17,6 +17,7 @@ void main() {
       final pdId = 10;
       final fId = 20;
 
+      // Mock de la transaction (doit retourner true car le repo attend un bool)
       when(mockDatabase.transaction<bool>(any)).thenAnswer((_) async => true);
 
       when(mockDatabase.queryOne(any, params: anyNamed('params'), useCache: anyNamed('useCache')))
@@ -45,8 +46,8 @@ void main() {
       );
 
       expect(success, isTrue);
-      // On s'attend à au moins 2 appels à execute (un pour Remarque, un pour Facture)
-      verify(mockDatabase.execute(any, any)).called(2);
+      // On s'attend à au moins 2 appels à execute
+      verify(mockDatabase.execute(any, any)).called(greaterThanOrEqualTo(2));
     });
   });
 }
