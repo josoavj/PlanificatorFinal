@@ -39,4 +39,22 @@ void main() {
       expect(repository.clients.first.nom, 'Client A');
     });
   });
+
+  group('ClientRepository - Sécurité', () {
+    test('deleteClient doit utiliser une transaction et échouer si non admin', () async {
+      final success = await repository.deleteClient(1, isAdmin: false);
+      expect(success, isFalse);
+      expect(repository.errorMessage, contains('administrateur'));
+      verifyNever(mockDatabase.transaction(any));
+    });
+
+    test('deleteClient doit appeler la transaction si admin', () async {
+      // Pour deleteClient, T est dynamic (void), donc on mock sans spécifier T ou avec any
+      when(mockDatabase.transaction(any)).thenAnswer((_) async => null);
+
+      final success = await repository.deleteClient(1, isAdmin: true);
+      expect(success, isTrue);
+      verify(mockDatabase.transaction(any)).called(1);
+    });
+  });
 }

@@ -17,11 +17,10 @@ void main() {
       final pdId = 10;
       final fId = 20;
 
-      // Correction : Spécifier explicitement le type T de la transaction
+      // Mock de la transaction (doit retourner true car le repo attend un bool)
       when(mockDatabase.transaction<bool>(any)).thenAnswer((_) async => true);
 
-      // Mock de récupération client_id
-      when(mockDatabase.queryOne(any, params: anyNamed('params')))
+      when(mockDatabase.queryOne(any, params: anyNamed('params'), useCache: anyNamed('useCache')))
           .thenAnswer((_) async => {'client_id': 1});
 
       await repository.createRemarque(
@@ -33,7 +32,22 @@ void main() {
         estPayee: true,
       );
 
-      verify(mockDatabase.transaction(any)).called(1);
+      verify(mockDatabase.transaction<bool>(any)).called(1);
+    });
+
+    test('updateRemarqueFull doit synchroniser Remarque et Facture', () async {
+      when(mockDatabase.execute(any, any)).thenAnswer((_) async {});
+
+      final success = await repository.updateRemarqueFull(
+        remarqueId: 1,
+        factureId: 2,
+        contenu: 'Modifié',
+        estPayee: true,
+      );
+
+      expect(success, isTrue);
+      // On s'attend à au moins 2 appels à execute
+      verify(mockDatabase.execute(any, any)).called(greaterThanOrEqualTo(2));
     });
   });
 }

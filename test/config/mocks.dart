@@ -42,6 +42,6 @@ class MockDatabaseService extends Mock implements DatabaseService {
   Future<T> _getFutureDefaultValue<T>() {
     if (T == bool) return Future.value(true as T);
     if (T == int) return Future.value(0 as T);
-    return Future<T>.value(); // Pour void ou types nullables
+    return Future<T>.value(null as T);
   }
 }
