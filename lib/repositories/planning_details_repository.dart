@@ -20,7 +20,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
   List<Map<String, dynamic>> _currentMonthTreatmentsComplete = [];
   List<Map<String, dynamic>> _upcomingTreatmentsComplete = [];
   List<Map<String, dynamic>> _allTreatmentsComplete = [];
+  Map<String, int> _historyCategoryCounts = {};
   bool _isLoading = false;
+  bool _hasMoreHistory = true;
   String? _errorMessage;
 
   List<PlanningDetails> get details => _details;
@@ -32,8 +34,39 @@ class PlanningDetailsRepository extends ChangeNotifier {
       _upcomingTreatmentsComplete;
   List<Map<String, dynamic>> get allTreatmentsComplete =>
       _allTreatmentsComplete;
+  Map<String, int> get historyCategoryCounts => _historyCategoryCounts;
   bool get isLoading => _isLoading;
+  bool get hasMoreHistory => _hasMoreHistory;
   String? get errorMessage => _errorMessage;
+
+  ///  NOUVEAU: Charger seulement les compteurs par catégorie (Performance ++ )
+  Future<void> loadHistoryCategoryCounts() async {
+    try {
+      final results = await _db.query(SqlQueries.countTreatmentsByCategory);
+      final Map<String, int> counts = {'AT': 0, 'PC': 0, 'NI': 0, 'RO': 0};
+      
+      for (final row in results) {
+        final cat = row['categorieTraitement']?.toString() ?? '';
+        final count = int.tryParse(row['count']?.toString() ?? '0') ?? 0;
+        final code = _normalizeCategoryCode(cat);
+        if (counts.containsKey(code)) {
+          counts[code] = counts[code]! + count;
+        }
+      }
+      _historyCategoryCounts = counts;
+      notifyListeners();
+    } catch (e) {
+      logger.e('Erreur compteurs historique: $e');
+    }
+  }
+
+  String _normalizeCategoryCode(String raw) {
+    final upper = raw.toUpperCase().trim();
+    if (upper.startsWith('AT') || upper.contains('ANTI TERMITES')) return 'AT';
+    if (upper.startsWith('NI') || upper.contains('NETTOYAGE')) return 'NI';
+    if (upper.startsWith('RO') || upper.contains('RAMASSAGE')) return 'RO';
+    return 'PC';
+  }
 
   /// Créer un détail de planning
   /// Vérifie et évite les doublons (ne crée pas si la date existe déjà)
@@ -323,52 +356,48 @@ class PlanningDetailsRepository extends ChangeNotifier {
   }
 
   ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
-  /// IMPORTANT: Charge TOUS les records SANS filtrer par date
-  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({bool useCache = true}) async {
-    _isLoading = true;
+  /// Supporte désormais la PAGINATION pour les flux élevés
+  Future<List<Map<String, dynamic>>> loadHistoryPage({
+    int page = 0,
+    int pageSize = 100,
+    bool useCache = true,
+  }) async {
+    _isLoading = page == 0;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      logger.i('🔍 Chargement COMPLET tous les traitements (passés + futurs)');
-
-      // Requête SANS filtre de date - récupère TOUS les traitements
+      final offset = page * pageSize;
       final results = await _db
-          .query(SqlQueries.getAllTreatmentsComplete, null, useCache)
-          .timeout(
-            const Duration(seconds: 60),
-            onTimeout: () {
-              logger.e('Timeout loading all treatments complete');
-              throw TimeoutException('Database query timeout');
-            },
-          );
+          .query(SqlQueries.getAllTreatmentsPaginated, [pageSize, offset], useCache)
+          .timeout(const Duration(seconds: 45));
 
-      logger.i(' Reçu ${results.length} traitements (tous les statuts)');
-      if (results.isNotEmpty) {
-        logger.d('Colonnes: ${results.first.keys.toList()}');
-        logger.d(
-          'Nombre d\'effectués: ${results.where((r) => (r['etat'] as String?)?.contains('Effectué') ?? false).length}',
-        );
-        logger.d(
-          'Nombre d\'à venir: ${results.where((r) => (r['etat'] as String?)?.contains('À venir') ?? false).length}',
-        );
+      final sorted = _sortTreatmentsIntelligently(results.cast<Map<String, dynamic>>());
+
+      if (page == 0) {
+        _allTreatmentsComplete = sorted;
+      } else {
+        _allTreatmentsComplete.addAll(sorted);
       }
 
-      // Assurer le tri intelligent centralisé
-      _allTreatmentsComplete = _sortTreatmentsIntelligently(results.cast<Map<String, dynamic>>());
+      _hasMoreHistory = results.length == pageSize;
 
-      logger.i(
-        ' ${_allTreatmentsComplete.length} traitements totaux chargés (tous les statuts)',
-      );
-      return _allTreatmentsComplete;
+      logger.i('Page $page: ${results.length} interventions chargées (Total: ${_allTreatmentsComplete.length}, Plus: $_hasMoreHistory)');
+      return sorted;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e(' Erreur charger tous les traitements: $e');
+      logger.e(' Erreur pagination historique: $e');
       return [];
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
+  /// Obsolète pour les gros flux, privilégier loadHistoryPage
+  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({bool useCache = true}) async {
+    return await loadHistoryPage(page: 0, pageSize: 5000, useCache: useCache);
   }
 
   /// Récupère les traitements d'un mois/année spécifique, optionnellement filtrés par client
