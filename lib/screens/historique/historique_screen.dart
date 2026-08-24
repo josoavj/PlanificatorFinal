@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
-import '../../widgets/index.dart';
 import 'widgets/history_category_card.dart';
 import 'history_client_list_screen.dart';
 
@@ -50,7 +49,13 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
   }
 
   Future<void> _loadData() async {
-    await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete();
+    final repo = context.read<PlanningDetailsRepository>();
+    // On charge d'abord les compteurs (ultra rapide)
+    await repo.loadHistoryCategoryCounts();
+    // On lance le chargement de la première page en fond si besoin
+    if (repo.allTreatmentsComplete.isEmpty) {
+      repo.loadHistoryPage(page: 0);
+    }
   }
 
   @override
@@ -59,16 +64,8 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
       backgroundColor: Colors.transparent,
       body: Consumer<PlanningDetailsRepository>(
         builder: (context, repo, _) {
-          if (repo.isLoading && repo.allTreatmentsComplete.isEmpty) {
-            return const LoadingWidget(message: 'Initialisation de l\'historique...');
-          }
-
-          if (repo.errorMessage != null) {
-            return ErrorDisplayWidget(message: repo.errorMessage!, onRetry: _loadData);
-          }
-
-          // Répartition par catégorie
-          final Map<String, int> counts = _calculateCategoryCounts(repo.allTreatmentsComplete);
+          // Utiliser les compteurs pré-chargés
+          final Map<String, int> counts = repo.historyCategoryCounts;
 
           return Padding(
             padding: const EdgeInsets.all(32),
@@ -100,7 +97,7 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
                             icon: section['icon'] as IconData,
                             color: section['color'] as Color,
                             count: count,
-                            onTap: () => _navigateToCategory(section, _getTreatmentsForCategory(repo.allTreatmentsComplete, code)),
+                            onTap: () => _navigateToCategory(section, repo),
                           );
                         },
                       ),
@@ -138,40 +135,14 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
     );
   }
 
-  Map<String, int> _calculateCategoryCounts(List<Map<String, dynamic>> data) {
-    final Map<String, int> counts = {'AT': 0, 'PC': 0, 'NI': 0, 'RO': 0};
-    for (final item in data) {
-      final code = _normalizeCategoryCode(item['categorieTraitement']?.toString() ?? '');
-      if (counts.containsKey(code)) {
-        counts[code] = counts[code]! + 1;
-      }
-    }
-    return counts;
-  }
-
-  List<Map<String, dynamic>> _getTreatmentsForCategory(List<Map<String, dynamic>> data, String categoryCode) {
-    return data.where((item) {
-      final code = _normalizeCategoryCode(item['categorieTraitement']?.toString() ?? '');
-      return code == categoryCode;
-    }).toList();
-  }
-
-  String _normalizeCategoryCode(String raw) {
-    final upper = raw.toUpperCase().trim();
-    if (upper.startsWith('AT') || upper.contains('ANTI TERMITES')) return 'AT';
-    if (upper.startsWith('NI') || upper.contains('NETTOYAGE')) return 'NI';
-    if (upper.startsWith('RO') || upper.contains('RAMASSAGE')) return 'RO';
-    return 'PC';
-  }
-
-  void _navigateToCategory(Map<String, dynamic> section, List<Map<String, dynamic>> treatments) {
+  void _navigateToCategory(Map<String, dynamic> section, PlanningDetailsRepository repo) {
     Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => HistoryClientListScreen(
           title: section['title'] as String,
           code: section['code'] as String,
-          treatments: treatments,
+          repository: repo,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: SlideTransition(

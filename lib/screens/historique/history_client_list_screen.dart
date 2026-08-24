@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../widgets/index.dart';
+import '../../repositories/planning_details_repository.dart';
 import 'widgets/history_client_card.dart';
 import 'history_client_detail_screen.dart';
 
 class HistoryClientListScreen extends StatefulWidget {
   final String title;
   final String code;
-  final List<Map<String, dynamic>> treatments;
+  final PlanningDetailsRepository repository;
 
   const HistoryClientListScreen({
     super.key,
     required this.title,
     required this.code,
-    required this.treatments,
+    required this.repository,
   });
 
   @override
@@ -23,6 +24,18 @@ class HistoryClientListScreen extends StatefulWidget {
 class _HistoryClientListScreenState extends State<HistoryClientListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  int _currentPage = 0;
+  bool _isMoreLoading = false;
+  
+  // Données groupées persistantes pour éviter le recalcul en build
+  Map<String, List<Map<String, dynamic>>> _cachedGroupedData = {};
+  List<String> _cachedFilteredClients = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _processData();
+  }
 
   @override
   void dispose() {
@@ -30,10 +43,46 @@ class _HistoryClientListScreenState extends State<HistoryClientListScreen> {
     super.dispose();
   }
 
+  void _processData() {
+    // Filtrer par catégorie
+    final treatments = widget.repository.allTreatmentsComplete.where((item) {
+      final code = _normalizeCategoryCode(item['categorieTraitement']?.toString() ?? '');
+      return code == widget.code;
+    }).toList();
+
+    _cachedGroupedData = _groupDataByClient(treatments);
+    _cachedFilteredClients = _filterClients(_cachedGroupedData);
+  }
+
+  String _normalizeCategoryCode(String raw) {
+    final upper = raw.toUpperCase().trim();
+    if (upper.startsWith('AT') || upper.contains('ANTI TERMITES')) return 'AT';
+    if (upper.startsWith('NI') || upper.contains('NETTOYAGE')) return 'NI';
+    if (upper.startsWith('RO') || upper.contains('RAMASSAGE')) return 'RO';
+    return 'PC';
+  }
+
+  Future<void> _loadMore() async {
+    if (_isMoreLoading) return;
+    setState(() => _isMoreLoading = true);
+    
+    _currentPage++;
+    await widget.repository.loadHistoryPage(page: _currentPage);
+    
+    if (mounted) {
+      setState(() {
+        _processData();
+        _isMoreLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final groupedData = _groupDataByClient(widget.treatments);
-    final filteredClients = _filterClients(groupedData);
+    // On ne recalcule que si la recherche change
+    final filteredClients = _searchQuery.isEmpty 
+        ? _cachedFilteredClients 
+        : _cachedFilteredClients.where((c) => c.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -45,18 +94,21 @@ class _HistoryClientListScreenState extends State<HistoryClientListScreen> {
         children: [
           _buildHeader(filteredClients.length),
           Expanded(
-            child: filteredClients.isEmpty
+            child: filteredClients.isEmpty && !widget.repository.isLoading
                 ? const EmptyStateWidget(
                     title: 'Aucun client',
                     message: 'Aucune intervention trouvée pour cette catégorie.',
                     icon: Icons.person_search_rounded,
                   )
-                : ListView.builder(
+                : PaginatedListView(
                     padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
-                    itemCount: filteredClients.length,
+                    items: filteredClients,
+                    isLoading: _isMoreLoading || widget.repository.isLoading,
+                    hasMore: widget.repository.hasMoreHistory,
+                    onLoadMore: _loadMore,
                     itemBuilder: (context, index) {
                       final clientName = filteredClients[index];
-                      final interventions = groupedData[clientName]!;
+                      final interventions = _cachedGroupedData[clientName]!;
                       final completedCount = interventions.where((i) => i['etat']?.toString().contains('Effectué') ?? false).length;
 
                       return HistoryClientCard(
