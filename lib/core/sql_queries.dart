@@ -252,8 +252,10 @@ class SqlQueries {
     LEFT JOIN Client cl ON co.client_id = cl.client_id
     GROUP BY f.facture_id
     ORDER BY f.date_traitement DESC
-    LIMIT 10000
+    LIMIT ? OFFSET ?
   ''';
+
+  static const String countAllFactures = 'SELECT COUNT(*) as count FROM Facture';
 
   static const String getFacturesByPlanningDetail = '''
     SELECT f.*
@@ -526,6 +528,41 @@ class SqlQueries {
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
     ORDER BY pd.date_planification DESC
+  ''';
+
+  static const String getAllTreatmentsPaginated = '''
+    SELECT 
+      pd.planning_detail_id,
+      pd.planning_id,
+      DATE_FORMAT(pd.date_planification, '%Y-%m-%d') as date,
+      pd.date_planification,
+      CONCAT(tt.typeTraitement, ' pour ', c.prenom, ' ', c.nom) as traitement,
+      pd.statut as etat,
+      c.axe,
+      tt.categorieTraitement,
+      tt.id_type_traitement,
+      c.client_id,
+      ct.contrat_id,
+      c.categorie
+    FROM PlanningDetails pd
+    INNER JOIN Planning p ON pd.planning_id = p.planning_id
+    INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
+    INNER JOIN Client c ON ct.client_id = c.client_id
+    ORDER BY pd.date_planification DESC
+    LIMIT ? OFFSET ?
+  ''';
+
+  static const String countAllTreatments = 'SELECT COUNT(*) as count FROM PlanningDetails';
+
+  static const String countTreatmentsByCategory = '''
+    SELECT tt.categorieTraitement, COUNT(*) as count
+    FROM PlanningDetails pd
+    INNER JOIN Planning p ON pd.planning_id = p.planning_id
+    INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    GROUP BY tt.categorieTraitement
   ''';
 
   static const String getTreatmentsByMonthAndClientBase = '''
