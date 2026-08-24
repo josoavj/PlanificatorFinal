@@ -13,6 +13,7 @@ class FactureRepository extends ChangeNotifier {
 
   List<Facture> _factures = [];
   bool _isLoading = false;
+  bool _hasMoreFactures = true;
   String? _errorMessage;
 
   // Constructeur avec injection optionnelle
@@ -21,7 +22,42 @@ class FactureRepository extends ChangeNotifier {
 
   List<Facture> get factures => _factures;
   bool get isLoading => _isLoading;
+  bool get hasMoreFactures => _hasMoreFactures;
   String? get errorMessage => _errorMessage;
+
+  /// Charge les factures par page
+  Future<void> loadFacturesPage(int page, {int pageSize = 100}) async {
+    _isLoading = page == 0;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final offset = page * pageSize;
+      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [pageSize, offset]);
+      
+      final newFactures = rows.map((row) => Facture.fromMap(row)).toList();
+      
+      if (page == 0) {
+        _factures = newFactures;
+      } else {
+        _factures.addAll(newFactures);
+      }
+
+      _hasMoreFactures = newFactures.length == pageSize;
+      logger.i('Page $page: ${newFactures.length} factures chargées (Total: ${_factures.length}, Plus: $_hasMoreFactures)');
+    } catch (e) {
+      _errorMessage = e.toString();
+      logger.e(' Erreur pagination factures: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Charge toutes les factures (Legacy wrapper)
+  Future<void> loadAllFactures() async {
+    await loadFacturesPage(0, pageSize: 1000);
+  }
 
   ///  Charge les factures d'un contrat
   Future<List<Facture>> loadFacturesForContrat(int contratId) async {
@@ -64,36 +100,6 @@ class FactureRepository extends ChangeNotifier {
       logger.i(
         ' ${_factures.length} factures chargées pour le client $clientId avec tous détails',
       );
-    } catch (e) {
-      _errorMessage = e.toString();
-      logger.e(' Erreur lors du chargement des factures: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Charge toutes les factures avec tous les détails jointes
-  Future<void> loadAllFactures() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      // Requête optimisée: utilise INNER JOIN pour les liens critiques
-      // et LEFT JOIN pour les données optionnelles
-      final rows = await _db
-          .query(SqlQueries.getAllFacturesDetailed)
-          .timeout(
-            const Duration(seconds: 60),
-            onTimeout: () {
-              logger.e('Timeout loading all factures');
-              throw TimeoutException('Database query timeout');
-            },
-          );
-      _factures = rows.map((row) => Facture.fromMap(row)).toList();
-
-      logger.i(' ${_factures.length} factures chargées avec tous détails');
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur lors du chargement des factures: $e');
