@@ -54,7 +54,7 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
     await repo.loadHistoryCategoryCounts();
     // On lance le chargement de la première page en fond si besoin
     if (repo.allTreatmentsComplete.isEmpty) {
-      repo.loadHistoryPage(page: 0);
+      repo.loadHistoryPage();
     }
   }
 
