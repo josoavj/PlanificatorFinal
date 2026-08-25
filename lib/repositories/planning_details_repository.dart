@@ -397,7 +397,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
   ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
   /// Obsolète pour les gros flux, privilégier loadHistoryPage
   Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({bool useCache = true}) async {
-    return await loadHistoryPage(page: 0, pageSize: 5000, useCache: useCache);
+    return await loadHistoryPage(pageSize: 5000, useCache: useCache);
   }
 
   /// Récupère les traitements d'un mois/année spécifique, optionnellement filtrés par client
