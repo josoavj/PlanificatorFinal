@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:planificator/repositories/facture_repository.dart';
 import 'package:planificator/models/facture.dart';
-import 'package:planificator/core/sql_queries.dart';
 import '../config/mocks.dart';
 
 void main() {
@@ -19,7 +18,7 @@ void main() {
       final factureId = 1;
       const oldPrix = 50000;
       const newPrix = 60000;
-      final dateRef = DateTime(2024, 1, 1);
+      final dateRef = DateTime(2024);
 
       when(mockDatabase.queryOne(any, params: anyNamed('params'), useCache: anyNamed('useCache')))
           .thenAnswer((_) async => {
