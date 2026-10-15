@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
 import '../../../repositories/index.dart';
 import '../../../utils/app_snackbars.dart';
+import '../../../utils/email_validator.dart';
 import '../../../widgets/app_dialogs.dart';
 
 class ProfileEditDialog extends StatefulWidget {
@@ -126,7 +127,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                 AppSnackBars.showError(context, 'L\'identifiant et l\'email sont requis');
                 return;
               }
-              if (!emailCtrl.text.contains('@')) {
+              if (!EmailValidator.isValidEmail(emailCtrl.text.trim())) {
                 AppSnackBars.showError(context, 'Veuillez saisir un email valide');
                 return;
               }
