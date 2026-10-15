@@ -51,4 +51,4 @@ Bien que la plateforme soit renforcée, les mesures suivantes sont impératives 
 3. **Mises à jour** : Maintenez régulièrement les dépendances de la plateforme via `flutter pub upgrade`.
 
 ---
-**Dernière révision de sécurité** : 22 Juillet 2026
+**Dernière révision de sécurité** : 15 Octobre  2026
