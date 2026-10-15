@@ -65,7 +65,7 @@ class AppTheme {
       bodyColor: darkGrey,
       displayColor: darkGrey,
     ),
-    fontFamily: _baseTextTheme.bodyLarge?.fontFamily,
+    fontFamily: GoogleFonts.poppins().fontFamily,
 
     // AppBar
     appBarTheme: const AppBarTheme(
