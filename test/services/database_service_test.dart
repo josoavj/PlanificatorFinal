@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/services/database_service.dart';
 
 void main() {
   group('DatabaseService - Fallback Mechanism (Concept Test)', () {
