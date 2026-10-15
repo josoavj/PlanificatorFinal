@@ -82,24 +82,28 @@ La version actuelle apporte des améliorations majeures pour l'expérience utili
 ## Fonctionnalités
 
 ### Sécurité et Authentification
+
 - Connexion sécurisée avec hash **BCrypt**.
 - Chiffrement des identifiants base de données via **Secure Storage**.
 - Protection contre les injections SQL via requêtes paramétrées.
 - Validation d'identité pour les actions critiques (Config DB).
 
 ### Gestion des Clients et Contrats
+
 - Cycle de vie complet : Création, édition, catégories et axes géographiques.
 - Formulaire adaptatif selon le type de client (Particulier, Organisation, Société).
 - Contrats déterminés et indéterminés avec calcul automatique de durée.
 - Dates de début personnalisables par service au sein d'un même contrat.
 
 ### Facturation Avancée
+
 - Modification de prix en cascade protégée par transaction.
 - Regroupement intelligent des factures par date de passage.
 - Suivi des états de paiement (Payé, À venir, Non payé).
 - Historique complet des modifications de tarifs.
 
 ### Planning et Signalements
+
 - Calendrier interactif et prévisions dynamiques.
 - Système de signalement pour décaler ou avancer des interventions.
 - Algorithme de répartition équilibré pour les passages multiples par semaine.
@@ -123,6 +127,7 @@ lib/
 ## Base de Données
 
 ### Relations Principales
+
 - **Client** ↔ **Contrat** ↔ **Traitement** ↔ **Planning** ↔ **PlanningDetails**.
 - **PlanningDetails** ↔ **Facture** (Relation N-1 pour le support groupé).
 - Table **Historique** technique pour le suivi des interventions.
@@ -143,6 +148,7 @@ lib/
 ## Démarrage Rapide
 
 ### Installation
+
 1. Cloner le dépôt.
 2. `flutter pub get`.
 3. Configurer votre serveur MySQL (Version ≥ 8.0).
@@ -182,10 +188,10 @@ Si vous souhaitez contribuer au projet, veuillez lire le guide détaillé [CONTR
 ## Auteur
 
 **Josoa** - Développeur principal
-- 📧 Email: contact@planificator.app
-- 🐙 GitHub: [@josoavj](https://github.com/josoavj)
+- GitHub: [@josoavj](https://github.com/josoavj)
 
 ## Licence
+
 Ce projet est sous licence **MIT**.
 
 **Dernière mise à jour** : 22 Juillet 2026
