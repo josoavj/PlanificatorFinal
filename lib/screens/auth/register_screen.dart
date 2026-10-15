@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import '../../utils/password_validator.dart';
+import '../../utils/email_validator.dart';
 import '../legal/privacy_policy_screen.dart';
 import 'login_screen.dart';
 import '../../utils/app_snackbars.dart';
@@ -328,7 +329,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                 hintText: 'exemple@mail.com',
                 prefixIcon: Icon(Icons.email_outlined),
               ),
-              validator: (v) => v!.contains('@') ? null : 'Email invalide',
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Email requis';
+                if (!EmailValidator.isValidEmail(v.trim())) return 'Format d\'email invalide';
+                return null;
+              },
             ),
           ),
           const SizedBox(height: 20),

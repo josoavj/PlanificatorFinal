@@ -8,6 +8,7 @@ import '../../widgets/index.dart';
 import '../../core/theme.dart';
 import '../../utils/nif_stat_formatter.dart';
 import '../../utils/phone_formatter.dart';
+import '../../utils/email_validator.dart';
 import '../../widgets/common/multi_phone_input.dart';
 
 class ClientDetailScreen extends StatefulWidget {
@@ -493,6 +494,12 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
 
   void _saveClient() {
     if (_formKey.currentState!.validate()) {
+      final email = _emailController.text.trim();
+      if (email.isNotEmpty && !EmailValidator.isValidEmail(email)) {
+        AppSnackBars.showError(context, 'Adresse email invalide');
+        return;
+      }
+
       final updated = _client!.copyWith(
         nom: _nomController.text,
         prenom: _prenomController.text,

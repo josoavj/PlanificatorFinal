@@ -265,10 +265,10 @@ void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
     try {
       log.info('Tâche planifiée exécutée: $taskName', source: 'Workmanager');
-      return Future.value(true);
+      return true;
     } catch (e) {
       log.error('Erreur exécution tâche: $e', source: 'Workmanager');
-      return Future.value(false);
+      return false;
     }
   });
 }

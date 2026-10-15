@@ -329,7 +329,7 @@ class DatabaseService {
     MySqlConnection? conn;
     try {
       conn = await _getQueryConnection();
-      Results results = await conn.query(sql, params).timeout(const Duration(seconds: 30));
+      Result results = await conn.query(sql, params).timeout(const Duration(seconds: 30));
 
       List<Map<String, dynamic>> rows = [];
       for (var row in results) {
@@ -399,7 +399,7 @@ class DatabaseService {
       }
 
       // Sinon, utiliser la connexion existante
-      Results result = await _connection.query(sql, params);
+      Result result = await _connection.query(sql, params);
       logger.i('Insert réussi');
       return result.insertId ?? 0;
     } catch (e) {
