@@ -273,7 +273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _pickExportDirectory() async {
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    String? selectedDirectory = await FilePicker.getDirectoryPath();
 
     if (selectedDirectory != null) {
       await FolderManager.setCustomPath(selectedDirectory);
