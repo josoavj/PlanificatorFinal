@@ -8,6 +8,7 @@ import '../../../widgets/index.dart';
 import '../../../core/theme.dart';
 import '../../../utils/nif_stat_formatter.dart';
 import '../../../utils/phone_formatter.dart';
+import '../../../utils/email_validator.dart';
 import '../../../widgets/common/multi_phone_input.dart';
 import 'client_details_dialog.dart';
 
@@ -172,6 +173,12 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
           icon: const Icon(Icons.save, size: 18),
           label: const Text('Enregistrer'),
           onPressed: () async {
+            final email = emailController.text.trim();
+            if (email.isNotEmpty && !EmailValidator.isValidEmail(email)) {
+              AppSnackBars.showError(context, 'Adresse email invalide');
+              return;
+            }
+
             if (nomController.text.isNotEmpty && prenomController.text.isNotEmpty) {
               final updatedClient = Client(
                 clientId: widget.client.clientId,
