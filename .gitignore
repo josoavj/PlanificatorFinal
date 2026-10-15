@@ -403,3 +403,9 @@ build/
 .idea/workspace.xml
 .idea/workspace.xml
 .idea/libraries/
+
+## Others
+
+planificator.iml
+.flutter-plugins-dependencies
+
