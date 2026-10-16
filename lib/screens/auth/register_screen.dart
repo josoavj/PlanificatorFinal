@@ -109,10 +109,10 @@ class _RegisterScreenState extends State<RegisterScreen>
       return;
     }
 
+    final authRepository = context.read<AuthRepository>();
+
     if (_selectedAccountType == 'Administrateur' && !_isFirstUser) {
-      // Nettoyage complet : suppression de tous les espaces et insensible à la casse
-      final typedSecret = _adminSecretController.text.replaceAll(' ', '').toUpperCase();
-      if (typedSecret != 'ADMIN2026') {
+      if (!authRepository.verifyAdminActivationCode(_adminSecretController.text)) {
         _showErrorSnackBar("Le code d'activation Administrateur est incorrect");
         return;
       }
@@ -123,7 +123,6 @@ class _RegisterScreenState extends State<RegisterScreen>
       return;
     }
 
-    final authRepository = context.read<AuthRepository>();
     final success = await authRepository.register(
       _usernameController.text.trim(),
       _emailController.text.trim(),

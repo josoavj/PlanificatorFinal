@@ -24,6 +24,15 @@ class AuthRepository extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
 
+  /// Clé d'activation par défaut pour la création d'un compte Administrateur
+  static const String _adminActivationKey = 'ADMIN2026';
+
+  /// Vérifie le code d'activation administrateur
+  bool verifyAdminActivationCode(String inputCode) {
+    final cleaned = inputCode.replaceAll(' ', '').trim().toUpperCase();
+    return cleaned == _adminActivationKey;
+  }
+
   /// Hache un mot de passe avec bcrypt (sécurisé)
   String _hashPassword(String password) {
     return BCrypt.hashpw(password, BCrypt.gensalt());
