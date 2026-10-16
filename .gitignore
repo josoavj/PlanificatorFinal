@@ -392,21 +392,9 @@ FodyWeavers.xsd
 *.msi
 *.msix
 *.msm
-*.msp
-
-# JetBrains Rider
-*.sln.iml
+# Flutter & IDE files
+*.iml
+.flutter-plugins-dependencies
 .dart_tool/
 .idea/
 build/
-.idea/workspace.xml
-.idea/workspace.xml
-.idea/workspace.xml
-.idea/libraries/
-
-## Others
-
-planificator.iml
-.flutter-plugins-dependencies
-
-planificator.iml
