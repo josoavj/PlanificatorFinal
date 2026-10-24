@@ -7,8 +7,6 @@ Ce document détaille les mesures de sécurité implementées dans la plateforme
 La plateforme ne stocke jamais les identifiants de la base de données en texte clair.
 
 - **Stockage Chiffré** : Utilisation du package `flutter_secure_storage`.
-  - **Android** : Chiffrement via **AES** avec une clé protégée par le **Android Keystore**.
-  - **iOS** : Stockage sécurisé dans le **Keychain**.
   - **Windows** : Utilisation de **DPAPI** (Data Protection API).
 - **Séparation des données** : 
   - Les données non sensibles (hôte, port) sont dans `SharedPreferences`.
