@@ -43,13 +43,19 @@ class AppTheme {
   ];
 
   /// Retourne une décoration de carte adaptée au thème (Optimisé performance)
-  static BoxDecoration cardDecoration(BuildContext context, {double radius = 12, bool showShadow = true}) {
+  static BoxDecoration cardDecoration(
+    BuildContext context, {
+    double radius = 12,
+    bool showShadow = true,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(
       color: isDark ? darkCardBg : Colors.white,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: isDark ? glassBorder.withValues(alpha: 0.1) : mediumGrey.withValues(alpha: 0.2),
+        color: isDark
+            ? glassBorder.withValues(alpha: 0.1)
+            : mediumGrey.withValues(alpha: 0.2),
       ),
       boxShadow: (showShadow && !isDark) ? softShadow : null,
     );
@@ -61,6 +67,13 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     primaryColor: primaryBlue,
     scaffoldBackgroundColor: Colors.white,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.linux: SmoothPageTransitionsBuilder(),
+        TargetPlatform.macOS: SmoothPageTransitionsBuilder(),
+        TargetPlatform.windows: SmoothPageTransitionsBuilder(),
+      },
+    ),
     textTheme: _baseTextTheme.apply(
       bodyColor: darkGrey,
       displayColor: darkGrey,
@@ -191,6 +204,13 @@ class AppTheme {
     primaryColor: accentBlue,
     scaffoldBackgroundColor: darkBg,
     fontFamily: _baseTextTheme.bodyLarge?.fontFamily,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.linux: SmoothPageTransitionsBuilder(),
+        TargetPlatform.macOS: SmoothPageTransitionsBuilder(),
+        TargetPlatform.windows: SmoothPageTransitionsBuilder(),
+      },
+    ),
 
     // AppBar avec glassmorphism
     appBarTheme: AppBarTheme(
@@ -338,6 +358,34 @@ class AppTheme {
         end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(12),
+    );
+  }
+}
+
+class SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
+  const SmoothPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curvedAnimation = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    final offsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.025),
+      end: Offset.zero,
+    ).animate(curvedAnimation);
+
+    return FadeTransition(
+      opacity: curvedAnimation,
+      child: SlideTransition(position: offsetAnimation, child: child),
     );
   }
 }
