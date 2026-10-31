@@ -1,0 +1,112 @@
+name: Build and Release Planificator Linux
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (for example v1.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: stable
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            libsecret-1-dev
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Linux bundle
+        run: flutter build linux --release
+
+      - name: Create Linux archive
+        env:
+          VERSION_INPUT: ${{ inputs.version || github.ref_name }}
+        run: |
+          VERSION="${VERSION_INPUT#v}"
+          mkdir -p release/bundle release/Database
+          cp -R build/linux/x64/release/bundle/. release/bundle/
+          cp scripts/Planificator.sql release/Database/
+          tar -czf planificator-linux-x64.tar.gz \
+            -C release bundle Database
+
+          mkdir -p package/DEBIAN package/opt/planificator \
+            package/usr/bin package/usr/share/applications \
+            package/usr/share/icons/hicolor/256x256/apps \
+            package/usr/share/planificator/Database
+          cp -R build/linux/x64/release/bundle/. package/opt/planificator/
+          cp scripts/Planificator.sql package/usr/share/planificator/Database/
+          cp assets/Pictures/'Logo Planificator.png' package/usr/share/icons/hicolor/256x256/apps/planificator.png
+          ln -s /opt/planificator/planificator package/usr/bin/planificator
+          cat > package/usr/share/applications/planificator.desktop <<'EOF'
+          [Desktop Entry]
+          Name=Planificator
+          Comment=Gestion de planning, clients et facturation
+          Exec=planificator
+          Icon=planificator
+          Terminal=false
+          Type=Application
+          Categories=Office;ContactManagement;
+          EOF
+          cat > package/DEBIAN/control <<EOF
+          Package: planificator
+          Version: ${VERSION}
+          Section: office
+          Priority: optional
+          Architecture: amd64
+          Maintainer: APEXNova Labs <josoavonjiniaina13@gmail.com>
+          Depends: libgtk-3-0, libsecret-1-0, libc6, libstdc++6
+          Description: Planificator desktop
+           Gestion de planning, clients, contrats et facturation.
+          EOF
+          dpkg-deb --build --root-owner-group package "planificator_${VERSION}_amd64.deb"
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            planificator-linux-x64.tar.gz
+            planificator_*_amd64.deb
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload manual release artifact
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          files: |
+            planificator-linux-x64.tar.gz
+            planificator_*_amd64.deb
+          tag_name: ${{ inputs.version }}
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
