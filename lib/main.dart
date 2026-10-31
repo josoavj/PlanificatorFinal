@@ -7,6 +7,7 @@ import 'config/database_config.dart';
 import 'config/app_routes.dart';
 import 'config/app_providers.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/setup/database_config_screen.dart';
 import 'core/theme.dart';
@@ -84,7 +85,8 @@ class _MyAppState extends State<MyApp> {
             routes: AppRoutes.routes,
           );
         },
-      ));
+      ),
+    );
   }
 }
 
@@ -97,21 +99,42 @@ class _AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<_AuthGate> {
+  late Future<bool> _bootstrapFuture;
+
   @override
   void initState() {
     super.initState();
-    log.info('AuthGate initialized - data loading deferred to screens', source: 'main');
+    _bootstrapFuture = context.read<AuthRepository>().hasNoUsers();
+    log.info(
+      'AuthGate initialized - data loading deferred to screens',
+      source: 'main',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Selector<AuthRepository, bool>(
-      selector: (_, auth) => auth.isAuthenticated,
-      builder: (_, isAuthenticated, _) {
-        if (isAuthenticated) {
+      selector: (_, auth) =>
+          auth.isAuthenticated || auth.lastGeneratedRecoveryCode != null,
+      builder: (context, _, _) {
+        final auth = context.read<AuthRepository>();
+        if (auth.isAuthenticated) {
           return const HomeScreen();
         }
-        return const LoginScreen();
+        if (auth.lastGeneratedRecoveryCode != null) return const LoginScreen();
+        return FutureBuilder<bool>(
+          future: _bootstrapFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return snapshot.data == true
+                ? const RegisterScreen(isBootstrap: true)
+                : const LoginScreen();
+          },
+        );
       },
     );
   }
