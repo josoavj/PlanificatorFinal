@@ -41,12 +41,13 @@ class User {
       nom: map['nom'] as String? ?? '',
       prenom: map['prenom'] as String? ?? '',
       isAdmin:
-          (map['isAdmin'] as int?) == 1 || 
+          (map['isAdmin'] as int?) == 1 ||
           (map['isAdmin'] as bool?) == true ||
           (map['is_admin'] as int?) == 1 ||
           map['type_compte'] == 'Administrateur' ||
           map['type_comte'] == 'Administrateur', // Gestion de la typo
-      token: map['password'] as String? ?? map['token'] as String? ?? '',
+      // Never copy the database password hash into the public token field.
+      token: map['token'] as String? ?? '',
       createdAt: _parseDateTime(map['createdAt'] ?? map['date_creation']),
     );
   }
