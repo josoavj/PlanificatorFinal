@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/recover_account_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/client/client_list_screen.dart';
 import '../screens/contrat/contrat_screen.dart';
@@ -13,6 +14,7 @@ import '../screens/about/about_screen.dart';
 class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
+  static const String recoverAccount = '/recover-account';
   static const String home = '/home';
   static const String clients = '/clients';
   static const String contrats = '/contrats';
@@ -25,6 +27,7 @@ class AppRoutes {
   static Map<String, WidgetBuilder> get routes => {
     login: (context) => const LoginScreen(),
     register: (context) => const RegisterScreen(),
+    recoverAccount: (context) => const RecoverAccountScreen(),
     home: (context) => const HomeScreen(),
     clients: (context) => const ClientListScreen(),
     contrats: (context) => const ContratScreen(),
