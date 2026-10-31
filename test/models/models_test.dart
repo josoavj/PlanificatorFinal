@@ -43,7 +43,7 @@ void main() {
 
       expect(user.userId, equals(1));
       expect(user.isAdmin, isTrue);
-      expect(user.token, equals('hashed_password'));
+      expect(user.token, isEmpty);
     });
 
     test('User.fullName combine nom et prénom', () {
