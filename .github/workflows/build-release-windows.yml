@@ -1,0 +1,94 @@
+name: Build and Release Planificator Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: 'stable'
+      
+      - name: Get Flutter dependencies
+        run: |
+          flutter pub get
+          flutter config --enable-windows-desktop
+      
+      - name: Build Windows executable
+        run: |
+          flutter config --enable-windows-desktop
+          flutter build windows --release
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress --yes
+
+      - name: Download Visual C++ runtime
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" `
+            -OutFile "VC_redist.x64.exe"
+
+      - name: Build Windows installer
+        shell: pwsh
+        env:
+          VERSION_INPUT: ${{ inputs.version || github.ref_name }}
+        run: |
+          $version = $env:VERSION_INPUT -replace '^v', ''
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DAppVersion=$version" "/DOutputBaseFilename=Planificator_Setup_v$version" "scripts\windows_installer\planificator_setup.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Create Release Artifact
+        shell: pwsh
+        env:
+          VERSION_INPUT: ${{ inputs.version || github.ref_name }}
+        run: |
+          $version = $env:VERSION_INPUT -replace '^v', ''
+          New-Item -ItemType Directory -Force -Path "release" | Out-Null
+          Copy-Item -Path "build\windows\x64\runner\Release\*" -Destination "release\" -Recurse
+          New-Item -ItemType Directory -Force -Path "release\Database" | Out-Null
+          Copy-Item -Path "scripts\Planificator.sql" -Destination "release\Database\" 
+          Compress-Archive -Path "release\*" -DestinationPath "planificator-windows-x64-v$version.zip"
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            planificator-windows-x64-v*.zip
+            installers/Planificator_Setup_v*.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Manual Release Upload
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            planificator-windows-x64-v*.zip
+            installers/Planificator_Setup_v*.exe
+          tag_name: ${{ github.event.inputs.version }}
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
