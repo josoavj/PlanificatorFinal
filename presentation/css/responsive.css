@@ -1,0 +1,16 @@
+/* 5. Adaptation aux écrans (du plus large au plus étroit) */
+@media(max-width:1024px){.stats__grid{grid-template-columns:repeat(2,1fr)}.site-nav{gap:14px;font-size:14px}}
+@media(max-width:860px){
+ .hero__grid,.grid--2,.site-footer__grid{grid-template-columns:1fr}
+ .menu-toggle{display:block}
+ .site-nav{display:none;position:absolute;left:0;right:0;top:100%;flex-direction:column;align-items:stretch;gap:0;margin:0;background:#fff;border-bottom:1px solid var(--line);padding:8px 20px 16px}
+ .site-nav.is-open{display:flex}.site-nav a{padding:12px 0;border-top:1px solid var(--line)}
+ .site-header__cta{display:none}
+}
+@media(max-width:560px){
+ .stats__grid{grid-template-columns:1fr 1fr;gap:12px}.stat{padding:14px}
+ .btn-row .btn{width:100%}.hero__facts{gap:6px 16px}
+ .steps li{grid-template-columns:36px 1fr;gap:12px}.steps li::before{width:36px;height:36px;font-size:16px}
+ pre{font-size:12.5px;padding:14px}th,td{padding:10px 12px}
+}
+@media(max-width:360px){.stats__grid{grid-template-columns:1fr}}
