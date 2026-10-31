@@ -42,6 +42,13 @@ Pour éviter la fuite de secrets dans les fichiers de logs :
 
 ## 6. Recommandations pour la Production
 
+### Protections applicatives intégrées
+
+- Limitation à cinq tentatives de connexion sur dix minutes, avec verrouillage temporaire.
+- Code de récupération administrateur généré aléatoirement et stocké sous forme de hash.
+- Migrations contrôlées pour les colonnes de récupération.
+- Sauvegardes SQL incluant structure, données, triggers et routines.
+
 Bien que la plateforme soit renforcée, les mesures suivantes sont impératives pour un déploiement réel :
 
 1. **SSL/TLS (HTTPS)** : Activez impérativement le chiffrement SSL sur votre serveur MySQL pour éviter l'interception des données en transit.
