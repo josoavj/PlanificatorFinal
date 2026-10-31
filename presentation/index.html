@@ -2,62 +2,344 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Planificator, la plateforme desktop de gestion des clients, contrats, interventions et facturation.">
-  <title>Planificator - Planning, clients et facturation</title>
-  <link rel="stylesheet" href="presentation.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Planificator – Contrats, plannings et factures sur votre bureau</title>
+  <meta name="description" content="Planificator : application de bureau (Windows, Linux, macOS) pour gérer clients, contrats, plannings d'interventions et facturation. Données sur votre base MySQL.">
+  <meta name="theme-color" content="#2563EB">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Planificator – Gestion des contrats, plannings et factures">
+  <meta property="og:description" content="Planifiez vos interventions et facturez sans erreur. Vos données restent sur votre base MySQL.">
+  <meta property="og:image" content="assets/banner-social.svg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600&family=Poppins:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/sections.css">
+  <link rel="stylesheet" href="css/responsive.css">
 </head>
-<body>
-  <header class="nav">
-    <a class="brand" href="#top">Planificator</a>
-    <nav>
-      <a href="#fonctionnalites">Fonctionnalités</a>
-      <a href="#installation">Installation</a>
-      <a href="https://github.com/josoavj/PlanificatorFinal">GitHub</a>
-    </nav>
+<body id="top">
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <!-- En-tête -->
+  <header class="site-header">
+    <div class="container site-header__bar">
+      <a class="site-header__logo" href="#top"><img src="assets/logo-full.svg" alt="Planificator"></a>
+      <nav class="site-nav" id="site-nav" aria-label="Navigation principale">
+        <a href="#fonctions">Fonctionnalités</a>
+        <a href="#madagascar">Madagascar</a>
+        <a href="#securite">Sécurité</a>
+        <a href="#tests">Tests</a>
+        <a href="#versions">Versions</a>
+        <a href="#telecharger">Télécharger</a>
+        <a href="#docs">Documentation</a>
+      </nav>
+      <a class="btn site-header__cta" href="#telecharger">Télécharger</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">☰</button>
+    </div>
   </header>
 
-  <main id="top">
+  <main id="contenu">
+    <!-- Hero -->
     <section class="hero">
-      <div>
-        <p class="eyebrow">PLATEFORME DESKTOP · VERSION 2.1.1</p>
-        <h1>Vos clients, vos contrats, votre planning.</h1>
-        <p class="lead">Planificator centralise les interventions, le suivi des contrats et la facturation sur votre propre base MySQL.</p>
-        <div class="actions">
-          <a class="button primary" href="#installation">Démarrer</a>
-          <a class="button secondary" href="https://github.com/josoavj/PlanificatorFinal/releases">Télécharger</a>
+      <div class="container hero__grid">
+        <div>
+          <h1>Chaque intervention planifiée, chaque facture juste.</h1>
+          <p class="hero__lead">Planificator est une application de bureau pour gérer vos clients, vos contrats, vos plannings d’interventions et votre facturation. Vos données restent sur votre base MySQL.</p>
+          <div class="btn-row">
+            <a class="btn" href="#telecharger">Télécharger Planificator</a>
+            <a class="btn btn--ghost" href="https://github.com/josoavj/PlanificatorFinal">Voir sur GitHub</a>
+          </div>
+          <ul class="hero__facts">
+            <li>Version 2.1.1</li><li>Windows, Linux et macOS</li><li>Flutter et MySQL 8+</li><li>Licence MIT</li>
+          </ul>
         </div>
-        <ul class="badges"><li>Windows</li><li>Linux</li><li>macOS</li><li>Stockage souverain</li></ul>
-      </div>
-      <div class="dashboard" aria-label="Aperçu du tableau de bord">
-        <div class="window-bar"><i></i><i></i><i></i><span>Planificator</span></div>
-        <div class="dashboard-body">
-          <aside><b>Planificator</b><span class="active">Accueil</span><span>Contrats</span><span>Clients</span><span>Planning</span><span>Factures</span><span>Historique</span></aside>
-          <div class="overview"><h2>Vue d'ensemble</h2><div class="metrics"><b>Clients actifs<em>24</em></b><b>Interventions à venir<em>18</em></b><b>Factures à suivre<em>9</em></b></div><div class="chart"><span></span><span></span><span></span><span></span><span></span><span></span></div><p>Un aperçu illustratif de l'espace de gestion.</p></div>
+        <div class="calendar" role="img" aria-label="Exemple de planning : deux services prévus le 14 novembre sont regroupés sur une seule facture">
+          <div class="calendar__head"><span>Novembre</span><span>Planning client</span></div>
+          <div class="calendar__grid">
+            <b>L</b><b>M</b><b>M</b><b>J</b><b>V</b><b>S</b><b>D</b>
+            <span class="is-out">27</span><span class="is-out">28</span><span class="is-out">29</span><span class="is-out">30</span><span class="is-out">31</span><span>1</span><span class="is-out">2</span>
+            <span>3</span><span class="is-visit">4</span><span>5</span><span>6</span><span class="is-visit">7</span><span>8</span><span class="is-out">9</span>
+            <span>10</span><span class="is-visit">11</span><span>12</span><span>13</span><span class="is-grouped">14</span><span>15</span><span class="is-out">16</span>
+            <span>17</span><span class="is-visit">18</span><span>19</span><span>20</span><span class="is-visit">21</span><span>22</span><span class="is-out">23</span>
+          </div>
+          <div class="calendar__invoice"><strong>14 novembre : une seule facture</strong>Dératisation + Désinfection <em>regroupées car prévues le même jour</em></div>
         </div>
       </div>
     </section>
 
-    <section id="fonctionnalites" class="section">
-      <p class="eyebrow">UN OUTIL MÉTIER COMPLET</p>
-      <h2>Tout le cycle d'une intervention, au même endroit.</h2>
-      <div class="cards">
-        <article><strong>Clients & contrats</strong><p>Gérez les coordonnées, catégories, axes géographiques et le cycle de vie des contrats.</p></article>
-        <article><strong>Planning intelligent</strong><p>Planifiez les passages, fréquences, reports et signalements avec une vue calendrier.</p></article>
-        <article><strong>Facturation</strong><p>Regroupez les services, suivez les paiements et tracez les changements de tarifs.</p></article>
-        <article><strong>Sécurité & administration</strong><p>BCrypt, stockage sécurisé, rôles administrateur, migrations et sauvegardes SQL.</p></article>
-        <article><strong>Historique 360°</strong><p>Retrouvez les interventions, remarques, signalements et événements financiers.</p></article>
-        <article><strong>Exports & rapports</strong><p>Exportez vos données métier en Excel ou sauvegardez votre base SQL.</p></article>
+    <!-- Chiffres clés -->
+    <div class="stats">
+      <div class="container stats__grid">
+        <div class="stat"><span class="stat__value">3</span><span class="stat__label">plateformes de bureau</span></div>
+        <div class="stat"><span class="stat__value">4</span><span class="stat__label">étapes réunies : clients, contrats, planning et factures</span></div>
+        <div class="stat"><span class="stat__value">1</span><span class="stat__label">base partagée par votre équipe, sur votre réseau</span></div>
+        <div class="stat"><span class="stat__value">1 facture</span><span class="stat__label">peut réunir plusieurs services du même passage</span></div>
+      </div>
+    </div>
+
+    <!-- Fonctionnalités -->
+    <section class="section" id="fonctions">
+      <div class="container">
+        <div class="section__head"><h2>Tout pour tenir vos contrats et vos plannings</h2><p>Du premier client à la dernière facture, un seul outil, rapide et sûr.</p></div>
+        <div class="grid grid--auto">
+          <article class="card"><h3 class="card__title">Clients et contrats</h3><ul class="list">
+            <li><b>Cycle de vie complet</b><span>Création, édition, catégories et axes géographiques.</span></li>
+            <li><b>Formulaire adaptatif</b><span>Particulier, organisation ou société.</span></li>
+            <li><b>Contrats déterminés ou non</b><span>Durée en mois calculée automatiquement.</span></li>
+            <li><b>Dates par service</b><span>Chaque service d’un contrat a sa propre date de début.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Planning et signalements</h3><ul class="list">
+            <li><b>Calendrier interactif</b><span>Prévisions dynamiques de toutes les interventions.</span></li>
+            <li><b>Fréquences avancées</b><span>Mensuel, 1x, 2x ou 3x par semaine, bimestriel, mois à 5 semaines.</span></li>
+            <li><b>Signalements</b><span>Décalez ou avancez une intervention en quelques clics.</span></li>
+            <li><b>Zéro doublon</b><span>Une date ne peut exister qu’une fois par service.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Facturation</h3><ul class="list">
+            <li><b>Facturation groupée</b><span>Plusieurs services le même jour, une seule facture.</span></li>
+            <li><b>États de paiement</b><span>Payé, à venir, non payé.</span></li>
+            <li><b>Prix en cascade</b><span>Un changement de prix met à jour toutes les factures futures, en une transaction.</span></li>
+            <li><b>Historique des tarifs</b><span>Chaque changement de montant reste consultable.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Historique et suivi</h3><ul class="list">
+            <li><b>Journal de bord 360°</b><span>Planning, signalements, facture et tarifs d’une intervention.</span></li>
+            <li><b>Vue par client</b><span>Navigation maître-détail, dialogues en 2 colonnes sans défilement.</span></li>
+            <li><b>Tri intelligent</b><span>Passé : récent en haut. Futur : proche en haut.</span></li>
+            <li><b>Rapports Excel</b><span>Export professionnel via ExcelService.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Performance</h3><ul class="list">
+            <li><b>Cache SQL global</b><span>Moins d’allers-retours réseau.</span></li>
+            <li><b>Pool de connexions</b><span>Plus de délai d’authentification à chaque requête.</span></li>
+            <li><b>Isolates Dart</b><span>Calculs lourds hors de l’interface, avec bascule de secours.</span></li>
+            <li><b>Défilement infini</b><span>Historique des interventions paginé.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Outils intégrés</h3><ul class="list">
+            <li><b>Journaux persistants</b><span>LoggingService : logs rotatifs, données sensibles masquées.</span></li>
+            <li><b>Sauvegardes SQL</b><span>Structure, données, triggers et routines.</span></li>
+            <li><b>Récapitulatif financier</b><span>Total cumulé par service et par contrat, en temps réel.</span></li></ul></article>
+        </div>
       </div>
     </section>
 
-    <section id="installation" class="section dark">
-      <p class="eyebrow">MISE EN ROUTE</p>
-      <h2>Installation en trois étapes.</h2>
-      <ol class="steps"><li><b>Préparez MySQL</b><span>Installez MySQL 8 ou MariaDB sur votre machine ou serveur.</span></li><li><b>Lancez Planificator</b><span>Saisissez les paramètres de connexion lors du premier démarrage.</span></li><li><b>Travaillez sereinement</b><span>Le schéma et les migrations sont vérifiés automatiquement.</span></li></ol>
-      <a class="button light" href="installation.html">Lire le guide d'installation</a>
+    <!-- Spécificités Madagascar -->
+    <section class="section section--alt" id="madagascar">
+      <div class="container">
+        <div class="section__head"><h2>Pensé pour Madagascar</h2><p>Calendrier, fiscalité, téléphone et monnaie : les standards locaux sont gérés pour vous.</p></div>
+        <div class="grid grid--2">
+          <div class="card"><h3 class="card__title">Calendrier malgache</h3>
+            <p class="card__text">Une intervention qui tombe un dimanche ou un jour férié est décalée au prochain jour ouvré.</p>
+            <ul class="chips"><li>29 mars</li><li>1er mai</li><li>26 juin</li><li>Noël</li><li>et les autres jours fériés</li></ul></div>
+          <div class="table-wrap"><table>
+            <caption class="sr-only">Formats pris en charge</caption>
+            <thead><tr><th scope="col">Donnée</th><th scope="col">Format géré</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">NIF</th><td>10 chiffres, espaces aux positions standards</td></tr>
+              <tr><th scope="row">STAT</th><td>17 chiffres, espaces aux positions standards</td></tr>
+              <tr><th scope="row">Téléphone</th><td>03X XX XXX XX</td></tr>
+              <tr><th scope="row">Montants</th><td>Ariary, séparateurs de milliers, « 1 500 000 Ar » compris à la saisie</td></tr>
+            </tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sécurité -->
+    <section class="section" id="securite">
+      <div class="container">
+        <div class="section__head"><h2>La sécurité, à tous les niveaux</h2><p>Identifiants, base de données, actions critiques et journaux : chaque couche est protégée.</p></div>
+        <div class="grid grid--auto">
+          <article class="card"><h3 class="card__title">Identifiants</h3><ul class="list">
+            <li><b>Stockage chiffré</b><span>flutter_secure_storage, avec DPAPI sous Windows.</span></li>
+            <li><b>Données séparées</b><span>Hôte et port dans les préférences ; utilisateur et mot de passe uniquement dans le stockage chiffré.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Base de données</h3><ul class="list">
+            <li><b>Requêtes paramétrées</b><span>Aucune entrée utilisateur n’est concaténée dans le SQL.</span></li>
+            <li><b>Transactions atomiques</b><span>Les changements multi-étapes critiques sont regroupés et annulés en cas d’erreur.</span></li>
+            <li><b>Triggers de protection</b><span>Limite d’un à trois administrateurs et validation du format d’e-mail.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Authentification</h3><ul class="list">
+            <li><b>BCrypt avec sel aléatoire</b><span>Hachage lent, résistant à la force brute.</span></li>
+            <li><b>5 tentatives en 10 minutes</b><span>Verrouillage temporaire pendant 15 minutes.</span></li>
+            <li><b>Code de récupération admin</b><span>Généré aléatoirement, stocké sous forme de hash.</span></li></ul></article>
+          <article class="card"><h3 class="card__title">Actions critiques</h3><ul class="list">
+            <li><b>Verrouillage admin en 3 étapes</b><span>Mot de passe de la session exigé avant de modifier la config de la base.</span></li>
+            <li><b>Suppressions confirmées</b><span>Dialogue de sécurité explicite.</span></li>
+            <li><b>Journaux assainis</b><span>Mots de passe, hashs BCrypt et identifiants MySQL masqués.</span></li></ul></article>
+        </div>
+        <p class="callout" style="margin-top:24px"><b>En production :</b> utilisez un compte SQL dédié, activez SSL/TLS si le réseau n’est pas fiable, limitez le port 3306 aux postes autorisés et chiffrez les sauvegardes. <a href="docs/securite.html">Lire le guide de sécurité</a></p>
+      </div>
+    </section>
+
+    <!-- Tests -->
+    <section class="section section--alt" id="tests">
+      <div class="container">
+        <div class="section__head"><h2>Une suite de tests qui protège vos données</h2><p>Le dépôt contient 14 fichiers de tests pour les repositories, services, modèles, validateurs et règles métier. Lancez <code>flutter test</code> pour les exécuter.</p></div>
+        <div class="table-wrap"><table>
+          <caption class="sr-only">Domaines couverts par les tests automatisés</caption>
+          <thead><tr><th scope="col">Module</th><th scope="col">Ce qui est vérifié</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Calendrier</th><td>Jours fériés, décalage week-end, dates mensuelles et hebdomadaires</td></tr>
+            <tr><th scope="row">Calculs financiers</th><td>Saisie interactive, lecture de « 1 500 000 Ar », séparateurs</td></tr>
+            <tr><th scope="row">Formateurs malgaches</th><td>NIF, STAT et téléphone</td></tr>
+            <tr><th scope="row">Authentification</th><td>BCrypt, session, verrouillage admin</td></tr>
+            <tr><th scope="row">Cache</th><td>Expiration et invalidation des données</td></tr>
+            <tr><th scope="row">Contrats</th><td>Durée en mois, statut actif ou inactif</td></tr>
+            <tr><th scope="row">Planning</th><td>Tri hybride, zéro doublon</td></tr>
+            <tr><th scope="row">Facturation</th><td>Prix en cascade, droits administrateur</td></tr>
+            <tr><th scope="row">Transactions</th><td>Remarque, planning et facture : tout ou rien</td></tr>
+          </tbody></table></div>
+        <p class="arch__note">Un mock de base de données simule les transactions SQL, les erreurs de socket réseau et les types MySQL variés.</p>
+      </div>
+    </section>
+
+    <!-- Versions -->
+    <section class="section" id="versions">
+      <div class="container">
+        <div class="section__head">
+          <h2>Planificator évolue avec votre activité</h2>
+          <p>Des améliorations concrètes pour mieux organiser le travail, garder les bonnes informations à portée de main et suivre les paiements simplement.</p>
+        </div>
+        <div class="release-layout">
+          <article class="release-card release-card--current">
+            <div class="release-card__top"><span class="release-badge"><span aria-hidden="true">✦</span> Version actuelle</span><span class="release-card__number">2.1.1</span></div>
+            <h3>Du planning au paiement, gardez le fil</h3>
+            <p class="release-card__intro">Retrouvez le parcours de chaque client, du contrat aux interventions, puis jusqu’aux factures et aux règlements.</p>
+            <div class="release-features">
+              <div class="release-feature"><span class="release-feature__icon" aria-hidden="true">↗</span><div><h4>Plusieurs services sur une facture</h4><p>Regroupez les services prévus le même jour pour remettre à votre client une facture plus claire.</p></div></div>
+              <div class="release-feature"><span class="release-feature__icon" aria-hidden="true">▦</span><div><h4>Un calendrier qui suit votre rythme</h4><p>Programmez des passages chaque semaine, chaque mois ou tous les deux mois. Les dimanches et jours fériés malgaches sont pris en compte.</p></div></div>
+              <div class="release-feature"><span class="release-feature__icon" aria-hidden="true">◷</span><div><h4>Le dossier client en un coup d’œil</h4><p>Retrouvez plus facilement ses contrats, ses interventions et les principaux montants dans une vue mieux organisée.</p></div></div>
+              <div class="release-feature"><span class="release-feature__icon" aria-hidden="true">✓</span><div><h4>Un historique utile pour toute l’équipe</h4><p>Retrouvez les reports, remarques et factures. Les nouveaux tarifs sont repris dans les factures à venir, avec leur évolution conservée.</p></div></div>
+            </div>
+          </article>
+          <article class="release-card release-card--previous">
+            <span class="release-card__eyebrow">Version précédente</span>
+            <span class="release-card__number">2.0.0</span>
+            <h3>Les essentiels réunis au même endroit</h3>
+            <p>Clients, contrats, interventions et factures : la version 2.0 a rassemblé les principales étapes de gestion dans une seule application.</p>
+            <ul class="release-checklist"><li>Retrouver rapidement les informations d’un client.</li><li>Planifier les passages à venir et suivre ceux déjà réalisés.</li><li>Consulter les factures et l’état des paiements.</li><li>Utiliser Planificator sur Windows, Linux ou macOS.</li></ul>
+          </article>
+        </div>
+        <p class="release-more"><a href="docs/versions.html">Voir l’historique des versions de Planificator <span aria-hidden="true">→</span></a></p>
+      </div>
+    </section>
+
+    <!-- Technique -->
+    <section class="section section--alt" id="technique">
+      <div class="container">
+        <div class="section__head"><h2>Une architecture pensée pour la fiabilité</h2><p>Du code organisé par rôle et des requêtes centralisées dans <code>lib/core/sql_queries.dart</code>.</p></div>
+        <div class="grid grid--2">
+          <div>
+<pre class="arch__tree">lib/
+├── core/          SQL centralisé, thèmes, constantes
+├── models/        Modèles de données
+├── repositories/  Logique métier, transactions SQL
+├── services/      Base de données, pool, cache
+├── screens/       Interface utilisateur
+└── utils/         Dates, NIF/STAT, téléphone</pre>
+            <p class="arch__note">Relations : <code>Client</code> ↔ <code>Contrat</code> ↔ <code>Traitement</code> ↔ <code>Planning</code> ↔ <code>PlanningDetails</code> ↔ <code>Facture</code> (N-1 pour le groupé), plus <code>Historique</code> et <code>Remarque</code>.</p>
+          </div>
+          <div class="table-wrap"><table>
+            <caption class="sr-only">Fiche technique</caption>
+            <tbody>
+              <tr><th scope="row">Version</th><td>2.1.1+1</td></tr>
+              <tr><th scope="row">SDK Dart</th><td>^3.10.4</td></tr>
+              <tr><th scope="row">Base de données</th><td>MySQL 8.0 ou plus</td></tr>
+              <tr><th scope="row">Plateformes</th><td>Windows, Linux, macOS</td></tr>
+              <tr><th scope="row">Licence</th><td>MIT</td></tr>
+              <tr><th scope="row">État</th><td>Architecture industrialisée, intégrité transactionnelle</td></tr>
+            </tbody></table></div>
+        </div>
+        <ul class="chips" style="margin-top:24px"><li>Flutter</li><li>mysql1</li><li>Provider</li><li>table_calendar</li><li>bcrypt</li><li>flutter_secure_storage</li><li>Syncfusion XlsIO</li><li>flutter_local_notifications</li><li>google_fonts</li></ul>
+      </div>
+    </section>
+
+    <!-- Téléchargement -->
+    <section class="section" id="telecharger">
+      <div class="container">
+        <div class="section__head"><h2>Télécharger Planificator</h2><p>Les installateurs sont publiés dans les Releases du dépôt GitHub.</p></div>
+        <div class="grid grid--auto">
+          <div class="card"><h3 class="card__title">Windows</h3><p class="card__text">Exécutables Windows à décompresser ou installer.</p><a class="btn" href="https://github.com/josoavj/PlanificatorFinal/releases/latest">Télécharger pour Windows</a></div>
+          <div class="card"><h3 class="card__title">Linux</h3><p class="card__text">Version de bureau Linux, ou compilation depuis les sources.</p><a class="btn" href="https://github.com/josoavj/PlanificatorFinal/releases/latest">Télécharger pour Linux</a></div>
+          <div class="card"><h3 class="card__title">Guide d’installation</h3><p class="card__text">Vous ne savez pas par où commencer ? Suivez les étapes pour préparer la base et connecter votre équipe.</p><a class="btn btn--ghost" href="docs/installation.html">Voir le guide</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Installation -->
+    <section class="section section--alt" id="installation">
+      <div class="container">
+        <div class="section__head"><h2>Commencez à utiliser Planificator</h2><p>Quelques étapes suffisent pour installer l’application et la relier à la base de données de votre organisation.</p></div>
+        <ol class="steps">
+          <li><div><h3>Préparez votre base</h3><p>Demandez à la personne qui gère votre réseau de préparer la base MySQL locale ou partagée.</p></div></li>
+          <li><div><h3>Installez l’application</h3><p>Utilisez le paquet correspondant à votre ordinateur, fourni par votre organisation.</p></div></li>
+          <li><div><h3>Connectez-vous à la base</h3><p>Au premier lancement, saisissez les paramètres de connexion transmis par votre administrateur.</p></div></li>
+          <li><div><h3>Créez votre compte</h3><p>Sur une base neuve, l’administrateur crée le premier compte puis peut ajouter les autres membres de l’équipe.</p></div></li>
+        </ol>
+        <div class="btn-row" style="margin-top:28px"><a class="btn" href="docs/installation.html">Consulter le guide d’installation</a></div>
+        <p class="arch__note" style="margin-top:22px">Pour les personnes chargées de la maintenance technique : <a href="docs/developpement.html">instructions de développement et de compilation</a>.</p>
+      </div>
+    </section>
+
+    <!-- Documentation -->
+    <section class="section" id="docs">
+      <div class="container">
+        <div class="section__head"><h2>Documentation et ressources</h2></div>
+        <div class="grid grid--auto">
+          <a class="doc-link" href="docs/index.html">Tous les guides<span>Installation, utilisation, administration et exploitation</span></a>
+          <a class="doc-link" href="docs/guide.html">Guide utilisateur<span>Clients, contrats, plannings et factures</span></a>
+          <a class="doc-link" href="docs/administration.html">Administration<span>Création du premier admin et gestion des comptes</span></a>
+          <a class="doc-link" href="docs/securite.html">Sécurité<span>Architecture locale, contrôles et recommandations réseau</span></a>
+          <a class="doc-link" href="docs/versions.html">Versions<span>Évolutions du produit et version courante</span></a>
+          <a class="doc-link" href="docs/tests.html">Tests et qualité<span>Analyse statique et périmètre des tests automatisés</span></a>
+          <a class="doc-link" href="docs/conditions.html">Conditions d’utilisation<span>Licence et responsabilités</span></a>
+          <a class="doc-link" href="docs/confidentialite.html">Confidentialité<span>Données traitées et contrôles de l’organisation</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Équipe -->
+    <section class="section section--alt" id="equipe">
+      <div class="container">
+        <div class="section__head">
+          <h2>Une équipe de deux développeurs, portée par APEXNova Labs</h2>
+          <p>Planificator est conçu et développé par Josoa Vonjiniaina et Maminirina Andriamasinoro, au sein d’APEXNova Labs. Le projet réunit leurs compétences pour répondre aux besoins concrets des équipes qui organisent leurs clients, leurs contrats et leurs interventions.</p>
+        </div>
+        <div class="team-grid">
+          <article class="profile-card">
+            <div class="profile-card__identity">
+              <span class="profile-card__avatar-wrap"><span class="avatar-fallback" aria-hidden="true">JV</span><img class="profile-card__avatar" data-profile-avatar src="https://github.com/josoavj.png" alt="" loading="lazy"></span>
+              <div><h3>Josoa Vonjiniaina</h3><p class="profile-card__role">Développement full-stack · architecture et expérience utilisateur</p></div>
+            </div>
+            <p class="profile-card__description">Josoa travaille sur la conception de Planificator, son architecture et son interface. Il porte une attention particulière à la clarté des parcours et à la fluidité de l’application au quotidien.</p>
+            <a class="profile-card__link" href="https://github.com/josoavj" target="_blank" rel="noopener noreferrer">Voir son profil GitHub <span aria-hidden="true">↗</span></a>
+          </article>
+          <article class="profile-card">
+            <div class="profile-card__identity">
+              <span class="profile-card__avatar-wrap profile-card__avatar-wrap--cyan"><span class="avatar-fallback" aria-hidden="true">MA</span><img class="profile-card__avatar" data-profile-avatar src="https://github.com/AinaMaminirina18.png" alt="" loading="lazy"></span>
+              <div><h3>Maminirina Andriamasinoro</h3><p class="profile-card__role">Développement full-stack · intégration des processus métier</p></div>
+            </div>
+            <p class="profile-card__description">Maminirina contribue à relier les besoins métier au fonctionnement de l’application. Son travail aide à rendre les parcours de gestion cohérents, de l’organisation des interventions jusqu’à leur suivi.</p>
+            <a class="profile-card__link" href="https://github.com/AinaMaminirina18" target="_blank" rel="noopener noreferrer">Voir son profil GitHub <span aria-hidden="true">↗</span></a>
+          </article>
+        </div>
+        <article class="organization-card">
+          <a class="organization-card__mark" href="https://github.com/APEXNovaLabs" target="_blank" rel="noopener noreferrer" aria-label="Voir APEXNova Labs sur GitHub"><span class="avatar-fallback" aria-hidden="true">APEX</span><img data-profile-avatar src="https://github.com/APEXNovaLabs.png" alt="" loading="lazy"></a>
+          <div class="organization-card__content">
+            <p class="organization-card__eyebrow">Organisation du projet</p>
+            <h3>APEXNova Labs</h3>
+            <p>Une équipe dédiée à la conception de solutions logicielles. APEXNova Labs accompagne le développement de Planificator et rassemble les compétences qui font évoluer le produit.</p>
+            <a class="profile-card__link" href="https://github.com/APEXNovaLabs" target="_blank" rel="noopener noreferrer">Découvrir l’organisation <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+        <div class="team-contact">
+          <p>Une question sur Planificator ? Consultez les <a href="docs/index.html">guides de documentation</a> ou écrivez à <a href="mailto:support@apexnova-labs.com">support@apexnova-labs.com</a>.</p>
+        </div>
+      </div>
     </section>
   </main>
-  <footer><b>Planificator</b><span>Gestion de planning et services · <a href="terms.html">Conditions</a> · <a href="privacy.html">Confidentialité</a></span></footer>
+
+  <footer class="site-footer">
+    <div class="container site-footer__grid">
+      <div><img src="assets/logo-white.svg" alt="Planificator"><p>Gestion des contrats, plannings et factures, sur votre bureau.</p><p class="site-footer__legal">© 2026 Josoa Vonjiniaina · Licence MIT</p></div>
+      <div><b>Explorer</b><a href="#fonctions">Fonctionnalités</a><a href="#securite">Sécurité</a><a href="#versions">Versions</a><a href="#telecharger">Téléchargements</a></div>
+      <div><b>Projet</b><a href="docs/index.html">Documentation</a><a href="mailto:support@apexnova-labs.com">Support</a><a href="https://github.com/josoavj/PlanificatorFinal">Voir sur GitHub</a></div>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
 </body>
 </html>
