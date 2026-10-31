@@ -3,14 +3,21 @@ import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
+import 'auth_repository.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db;
+  AuthRepository? _authRepository;
   final QueryCacheService _cache = QueryCacheService();
   final logger = createLoggerWithFileOutput(name: 'client_repository');
 
-  ClientRepository({DatabaseService? databaseService})
-      : _db = databaseService ?? DatabaseService();
+  ClientRepository({
+    DatabaseService? databaseService,
+    AuthRepository? authRepository,
+  }) : _db = databaseService ?? DatabaseService(),
+       _authRepository = authRepository;
+
+  set authRepository(AuthRepository value) => _authRepository = value;
 
   List<Client> _clients = [];
   Client? _currentClient;
@@ -65,7 +72,9 @@ class ClientRepository extends ChangeNotifier {
         } else {
           _clients.addAll(
             (cachedRows as List)
-                .map<Client>((row) => Client.fromMap(row as Map<String, dynamic>))
+                .map<Client>(
+                  (row) => Client.fromMap(row as Map<String, dynamic>),
+                )
                 .toList(),
           );
         }
@@ -283,8 +292,8 @@ class ClientRepository extends ChangeNotifier {
   /// Invalide le cache après suppression
   /// Utilisé TRANSACTION pour garantir l'intégrité
   /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
-  Future<bool> deleteClient(int clientId, {required bool isAdmin}) async {
-    if (!isAdmin) {
+  Future<bool> deleteClient(int clientId) async {
+    if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour supprimer un client';
       notifyListeners();
       return false;
@@ -395,9 +404,7 @@ class ClientRepository extends ChangeNotifier {
               throw TimeoutException('Database query timeout');
             },
           );
-      _clients = rows
-          .map<Client>((row) => Client.fromMap(row))
-          .toList();
+      _clients = rows.map<Client>((row) => Client.fromMap(row)).toList();
 
       // Tri garantis par Dart (en plus du SQL)
       _clients.sort((a, b) {
@@ -438,9 +445,7 @@ class ClientRepository extends ChangeNotifier {
       ''';
 
       final rows = await _db.query(sql, [category]);
-      _clients = rows
-          .map<Client>((row) => Client.fromMap(row))
-          .toList();
+      _clients = rows.map<Client>((row) => Client.fromMap(row)).toList();
 
       logger.i(
         '${_clients.length} clients trouvés pour la catégorie: $category',
