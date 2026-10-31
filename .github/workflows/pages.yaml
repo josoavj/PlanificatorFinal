@@ -1,14 +1,18 @@
-name: Documentation
+name: Déploiement de Planificator sur GitHub Pages
 
 on:
   push:
-    branches: [main, 2.1.1]
+    branches: [master, main]
+    paths: ['presentation/**']
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true 
 jobs:
   deploy:
     runs-on: ubuntu-latest
