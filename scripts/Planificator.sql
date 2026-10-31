@@ -21,6 +21,8 @@ CREATE TABLE Account (
                          password VARCHAR(255) NOT NULL,
                          type_compte ENUM('Administrateur', 'Utilisateur') NOT NULL,  -- Type de compte
                          date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Date de création du compte
+                         recovery_code_hash VARCHAR(255) NULL,
+                         recovery_code_created_at TIMESTAMP NULL,
                          UNIQUE (nom, prenom)                -- Contrainte d'unicité sur le nom et prénom
 );
 
@@ -39,8 +41,8 @@ CREATE TRIGGER avant_ajout_compte
     BEFORE INSERT ON Account
     FOR EACH ROW
 BEGIN
-    IF NEW.type_compte = 'Administrateur' AND (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') > 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Un compte Administrateur existe déjà.';
+    IF NEW.type_compte = 'Administrateur' AND (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') >= 2 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La limite de 2 comptes Administrateur est atteinte.';
     END IF;
 END$$
 
@@ -122,8 +124,16 @@ END$$
 
 DELIMITER ;
 
+-- Maintenance intégrée : migration et index de sécurité/authentification.
+CREATE TABLE IF NOT EXISTS SchemaMigration (
+    version INT NOT NULL PRIMARY KEY,
+    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO SchemaMigration (version) VALUES (1);
+
 /*
-    Début du script pour l'ensemble des tables utilisées dans Planificator
+   Début du script pour l'ensemble des tables utilisées dans Planificator
     Structuration:
     - Table Client: Pour les informations sur les clients
     - Table Contrat: Pour les informations sur les contrats des clients
@@ -229,8 +239,7 @@ CREATE TABLE PlanningDetails (
                                  facture_id INT NULL, -- Nouveau : lien vers la facture groupée
                                  date_planification DATE NOT NULL,
                                  statut ENUM ('Effectué', 'À venir') NOT NULL,
-                                 FOREIGN KEY (planning_id) REFERENCES Planning(planning_id) ON DELETE CASCADE,
-                                 FOREIGN KEY (facture_id) REFERENCES Facture(facture_id) ON DELETE SET NULL
+                                 FOREIGN KEY (planning_id) REFERENCES Planning(planning_id) ON DELETE CASCADE
 );
 
 /*
@@ -310,7 +319,57 @@ CREATE TABLE Historique (
                             FOREIGN KEY (facture_id) REFERENCES Facture(facture_id) ON DELETE CASCADE
 );
 
+ALTER TABLE PlanningDetails
+    ADD CONSTRAINT fk_planning_details_facture
+    FOREIGN KEY (facture_id) REFERENCES Facture(facture_id) ON DELETE SET NULL;
+
+-- Maintenance intégrée au schéma initial.
+CREATE INDEX idx_account_username ON Account(username);
+CREATE INDEX idx_account_email ON Account(email);
+CREATE INDEX idx_account_recovery_code ON Account(recovery_code_hash);
+CREATE INDEX idx_client_nom ON Client(nom);
+CREATE INDEX idx_client_email ON Client(email);
+CREATE INDEX idx_client_nom_prenom ON Client(nom, prenom);
+CREATE INDEX idx_client_categorie ON Client(categorie);
+CREATE INDEX idx_client_axe ON Client(axe);
+CREATE INDEX idx_client_date_ajout ON Client(date_ajout);
+CREATE INDEX idx_contrat_client_id ON Contrat(client_id);
+CREATE INDEX idx_contrat_statut ON Contrat(statut_contrat);
+CREATE INDEX idx_contrat_date_debut ON Contrat(date_debut);
+CREATE INDEX idx_contrat_date_fin ON Contrat(date_fin);
+CREATE INDEX idx_contrat_client_statut ON Contrat(client_id, statut_contrat);
+CREATE INDEX idx_traitement_contrat_id ON Traitement(contrat_id);
+CREATE INDEX idx_traitement_type_id ON Traitement(id_type_traitement);
+CREATE INDEX idx_traitement_contrat_type ON Traitement(contrat_id, id_type_traitement);
+CREATE INDEX idx_planning_traitement_id ON Planning(traitement_id);
+CREATE INDEX idx_planning_traitement_date ON Planning(traitement_id, date_debut_planification);
+CREATE INDEX idx_planning_date_debut ON Planning(date_debut_planification);
+CREATE INDEX idx_planning_date_fin ON Planning(date_fin_planification);
+CREATE INDEX idx_planning_redondance ON Planning(redondance);
+CREATE INDEX idx_planning_details_planning ON PlanningDetails(planning_id);
+CREATE INDEX idx_planning_details_date ON PlanningDetails(date_planification);
+CREATE INDEX idx_planning_details_statut ON PlanningDetails(statut);
+CREATE INDEX idx_planning_details_planning_date ON PlanningDetails(planning_id, date_planification);
+CREATE INDEX idx_facture_planning_detail ON Facture(planning_detail_id);
+CREATE INDEX idx_facture_etat ON Facture(etat);
+CREATE INDEX idx_facture_axe ON Facture(axe);
+CREATE INDEX idx_facture_date_traitement ON Facture(date_traitement);
+CREATE INDEX idx_remarque_client ON Remarque(client_id);
+CREATE INDEX idx_remarque_planning_detail ON Remarque(planning_detail_id);
+CREATE INDEX idx_remarque_facture ON Remarque(facture_id);
+CREATE INDEX idx_signalement_planning_detail ON Signalement(planning_detail_id);
+CREATE INDEX idx_signalement_type ON Signalement(type);
+CREATE INDEX idx_historique_facture ON Historique(facture_id);
+CREATE INDEX idx_historique_planning_detail ON Historique(planning_detail_id);
+CREATE INDEX idx_historique_signalement ON Historique(signalement_id);
+CREATE INDEX idx_historique_date ON Historique(date_historique);
+CREATE INDEX idx_historique_prix_facture ON Historique_prix(facture_id);
+
 /*
-    Historique regroupe toutes les informations utiles pour chaque traitement effectué
-    Modifié et corrigé le 16 Juillet 2025
+    Mise à jour des statistiques après la création du schéma.
+    Les colonnes date_emission, date_echeance et contrat_id sur Facture
+    n'existent pas dans le modèle actuel et ne sont donc pas indexées.
 */
+ANALYZE TABLE Facture, PlanningDetails, Planning, Traitement,
+    TypeTraitement, Contrat, Client, Account, Remarque,
+    Signalement, Historique, Historique_prix;
