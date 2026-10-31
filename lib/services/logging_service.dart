@@ -176,7 +176,7 @@ class LoggingService {
   Future<void> _initializeFileLogging() async {
     try {
       final appDocDir = await getApplicationDocumentsDirectory();
-      final logsDir = Directory(path.join(appDocDir.path, 'logs'));
+      final logsDir = Directory(path.join(appDocDir.path, 'Planificator/logs'));
 
       if (!await logsDir.exists()) {
         await logsDir.create(recursive: true);
@@ -192,9 +192,7 @@ class LoggingService {
 
       // Ajouter un en-tête au fichier si c'est un nouveau fichier
       if (!await _currentLogFile!.exists()) {
-        await _currentLogFile!.writeAsString(
-          _getLogFileHeader(),
-        );
+        await _currentLogFile!.writeAsString(_getLogFileHeader());
       }
 
       // Vérifier la rotation des fichiers
@@ -293,10 +291,7 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
       // Format structuré et lisible pour le fichier, sans codes ANSI
       String logLine = _formatLogForFile(entry);
 
-      await _currentLogFile!.writeAsString(
-        '$logLine\n',
-        mode: FileMode.append,
-      );
+      await _currentLogFile!.writeAsString('$logLine\n', mode: FileMode.append);
     } catch (e) {
       // Ignorer silencieusement les erreurs d'écriture fichier
     }
@@ -503,7 +498,7 @@ Résumé des Logs:
     if (!_config.enableFileLogging) return null;
     try {
       final appDocDir = await getApplicationDocumentsDirectory();
-      return path.join(appDocDir.path, 'logs');
+      return path.join(appDocDir.path, 'Planificator/logs');
     } catch (e) {
       return null;
     }
