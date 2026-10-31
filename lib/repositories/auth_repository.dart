@@ -5,6 +5,8 @@ import 'package:bcrypt/bcrypt.dart';
 import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
+import '../utils/email_validator.dart';
+import '../utils/password_validator.dart';
 
 class AuthRepository extends ChangeNotifier {
   final DatabaseService _db;
@@ -16,6 +18,7 @@ class AuthRepository extends ChangeNotifier {
   bool _isAuthenticated = false;
   String? _lastGeneratedRecoveryCode;
   final RateLimitService _rateLimit = RateLimitService();
+  final RateLimitService _recoveryRateLimit = RateLimitService();
 
   // Constructeur avec injection optionnelle (pour tests)
   AuthRepository({DatabaseService? databaseService})
@@ -27,14 +30,6 @@ class AuthRepository extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
   String? get lastGeneratedRecoveryCode => _lastGeneratedRecoveryCode;
-
-  static const String _adminActivationKey = String.fromEnvironment(
-    'PLANIFICATOR_ADMIN_ACTIVATION_KEY',
-  );
-
-  bool verifyAdminActivationCode(String inputCode) =>
-      _adminActivationKey.isNotEmpty &&
-      inputCode.trim().toUpperCase() == _adminActivationKey.toUpperCase();
 
   /// Hache un mot de passe avec bcrypt (sécurisé)
   String _hashPassword(String password) {
@@ -113,90 +108,313 @@ class AuthRepository extends ChangeNotifier {
     }
   }
 
-  /// Inscription utilisateur
+  /// Inscription publique : crée uniquement des comptes Utilisateur.
   Future<bool> register(
     String username,
     String email,
     String nom,
     String prenom,
-    String password, {
-    String typeCompte = 'Utilisateur',
-  }) async {
+    String password,
+  ) async {
+    final normalizedUsername = username.trim();
+    final normalizedEmail = EmailValidator.normalizeEmail(email);
+    if (normalizedUsername.length < 3 ||
+        !EmailValidator.isValidEmail(normalizedEmail)) {
+      _errorMessage = 'Identifiant ou adresse e-mail invalide';
+      return false;
+    }
+    final passwordError = PasswordValidator.validatePassword(
+      password,
+      password,
+      nom.trim(),
+      prenom.trim(),
+    );
+    if (passwordError.isNotEmpty) {
+      _errorMessage = passwordError;
+      return false;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-
     try {
-      final existing = await _db
-          .queryOne(SqlQueries.checkUsername, params: [username])
-          .timeout(
-            const Duration(seconds: 20),
-            onTimeout: () {
-              logger.e(
-                'Timeout checking existing username for registration: $username',
-              );
-              throw TimeoutException('Database query timeout');
-            },
-          );
-
-      if (existing != null) {
-        _errorMessage = 'Ce nom d\'utilisateur est déjà utilisé';
-        logger.w(
-          'Tentative d\'inscription avec un username existant: $username',
+      await _ensureAccountBootstrapLock();
+      await _db.transaction((conn) async {
+        await conn.query(
+          'SELECT lock_id FROM AccountBootstrapLock WHERE lock_id = 1 FOR UPDATE',
         );
-        return false;
-      }
-
-      // Créer le nouvel utilisateur
-      final recoveryCode = typeCompte == 'Administrateur'
-          ? _generateRecoveryCode()
-          : null;
-      final insertSql = '''
-        INSERT INTO Account (
-          username, email, nom, prenom, password, type_compte, date_creation,
-          recovery_code_hash, recovery_code_created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ''';
-
-      final hashedPassword = _hashPassword(password);
-      final userId = await _db
-          .insert(insertSql, [
-            username,
-            email,
-            nom,
-            prenom,
-            hashedPassword,
-            typeCompte,
+        final countRows = await conn.query(
+          'SELECT COUNT(*) AS count FROM Account',
+        );
+        if (((countRows.first['count'] as num?)?.toInt() ?? 0) == 0) {
+          throw StateError('Créez d’abord le compte administrateur initial.');
+        }
+        final existing = await conn.query(
+          'SELECT id_compte FROM Account WHERE username = ? OR email = ?',
+          [normalizedUsername, normalizedEmail],
+        );
+        if (existing.isNotEmpty) {
+          throw StateError('Cet identifiant ou e-mail est déjà utilisé');
+        }
+        await conn.query(
+          """INSERT INTO Account (
+            username, email, nom, prenom, password, type_compte, date_creation,
+            recovery_code_hash, recovery_code_created_at
+          ) VALUES (?, ?, ?, ?, ?, 'Utilisateur', ?, NULL, NULL)""",
+          [
+            normalizedUsername,
+            normalizedEmail,
+            nom.trim(),
+            prenom.trim(),
+            _hashPassword(password),
             DateTime.now().toIso8601String(),
-            recoveryCode == null ? null : _hashPassword(recoveryCode),
-            recoveryCode == null ? null : DateTime.now().toIso8601String(),
-          ])
-          .timeout(
-            const Duration(seconds: 25),
-            onTimeout: () {
-              logger.e(
-                'Timeout inserting new user account for registration: $username',
-              );
-              throw TimeoutException('Database query timeout');
-            },
-          );
-
-      _currentUser = User(
-        userId: userId,
-        email: email,
-        nom: nom,
-        prenom: prenom,
-        isAdmin: typeCompte == 'Administrateur',
-        createdAt: DateTime.now(),
-      );
-      _isAuthenticated = true;
-      _lastGeneratedRecoveryCode = recoveryCode;
-
-      logger.i('Nouvel utilisateur créé: $username ($typeCompte)');
+          ],
+        );
+      });
+      _currentUser = null;
+      _isAuthenticated = false;
+      _lastGeneratedRecoveryCode = null;
+      logger.i('Nouvel utilisateur créé: $normalizedUsername (Utilisateur)');
       return true;
     } catch (e) {
       _errorMessage = e.toString();
-      logger.e('Erreur lors de l\'inscription: $e');
+      logger.e('Erreur lors de l’inscription: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Création unique du premier administrateur d’une base vide.
+  Future<String?> createFirstAdmin(
+    String username,
+    String email,
+    String nom,
+    String prenom,
+    String password,
+  ) async {
+    final normalizedUsername = username.trim();
+    final normalizedEmail = EmailValidator.normalizeEmail(email);
+    if (normalizedUsername.length < 3 ||
+        !EmailValidator.isValidEmail(normalizedEmail)) {
+      _errorMessage = 'Identifiant ou adresse e-mail invalide';
+      return null;
+    }
+    final passwordError = PasswordValidator.validatePassword(
+      password,
+      password,
+      nom.trim(),
+      prenom.trim(),
+    );
+    if (passwordError.isNotEmpty) {
+      _errorMessage = passwordError;
+      return null;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _ensureAccountBootstrapLock();
+      final recoveryCode = _generateRecoveryCode();
+      await _db.transaction((conn) async {
+        await conn.query(
+          'SELECT lock_id FROM AccountBootstrapLock WHERE lock_id = 1 FOR UPDATE',
+        );
+        final countRows = await conn.query(
+          'SELECT COUNT(*) AS count FROM Account',
+        );
+        if (((countRows.first['count'] as num?)?.toInt() ?? 0) != 0) {
+          throw StateError('Un compte existe déjà dans cette base de données.');
+        }
+        final existing = await conn.query(
+          'SELECT id_compte FROM Account WHERE username = ? OR email = ?',
+          [normalizedUsername, normalizedEmail],
+        );
+        if (existing.isNotEmpty) {
+          throw StateError('Cet identifiant ou e-mail est déjà utilisé');
+        }
+        await conn.query(
+          """INSERT INTO Account (
+            username, email, nom, prenom, password, type_compte, date_creation,
+            recovery_code_hash, recovery_code_created_at
+          ) VALUES (?, ?, ?, ?, ?, 'Administrateur', ?, ?, ?)""",
+          [
+            normalizedUsername,
+            normalizedEmail,
+            nom.trim(),
+            prenom.trim(),
+            _hashPassword(password),
+            DateTime.now().toIso8601String(),
+            _hashPassword(recoveryCode),
+            DateTime.now().toIso8601String(),
+          ],
+        );
+      });
+      _currentUser = null;
+      _isAuthenticated = false;
+      _lastGeneratedRecoveryCode = recoveryCode;
+      logger.i('Premier compte administrateur créé: $normalizedUsername');
+      return recoveryCode;
+    } catch (e) {
+      _errorMessage = e.toString();
+      logger.e('Erreur lors de la création du premier admin: $e');
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _ensureAccountBootstrapLock() async {
+    await _db.execute(
+      'CREATE TABLE IF NOT EXISTS AccountBootstrapLock '
+      '(lock_id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB',
+    );
+    await _db.execute(
+      'INSERT IGNORE INTO AccountBootstrapLock (lock_id) VALUES (1)',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getAllAccounts() async {
+    if (!isAdmin) throw StateError('Accès réservé aux administrateurs.');
+    return _db.query(
+      'SELECT id_compte, username, email, nom, prenom, type_compte, date_creation '
+      'FROM Account ORDER BY nom, prenom, username',
+    );
+  }
+
+  Future<bool> updateAccountRole(
+    int accountId,
+    String newRole,
+    String adminPassword,
+  ) async {
+    if (!isAdmin || _currentUser == null) {
+      _errorMessage = 'Accès réservé aux administrateurs.';
+      return false;
+    }
+    if (accountId == _currentUser!.userId) {
+      _errorMessage = 'Vous ne pouvez pas modifier votre propre rôle.';
+      return false;
+    }
+    if (!const {'Administrateur', 'Utilisateur'}.contains(newRole)) {
+      _errorMessage = 'Type de compte invalide.';
+      return false;
+    }
+    if (!await verifyCurrentPassword(adminPassword)) {
+      _errorMessage = 'Mot de passe administrateur incorrect.';
+      return false;
+    }
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _ensureAccountBootstrapLock();
+      await _db.transaction((conn) async {
+        await conn.query(
+          'SELECT lock_id FROM AccountBootstrapLock WHERE lock_id = 1 FOR UPDATE',
+        );
+        final actor = await conn.query(
+          'SELECT type_compte FROM Account WHERE id_compte = ?',
+          [_currentUser!.userId],
+        );
+        if (actor.isEmpty || actor.first['type_compte'] != 'Administrateur') {
+          throw StateError(
+            'Vos privilèges administrateur ne sont plus actifs.',
+          );
+        }
+        final rows = await conn.query(
+          'SELECT type_compte FROM Account WHERE id_compte = ?',
+          [accountId],
+        );
+        if (rows.isEmpty) throw StateError('Compte introuvable.');
+        final oldRole = rows.first['type_compte'] as String?;
+        final admins = await conn.query(
+          "SELECT COUNT(*) AS count FROM Account WHERE type_compte = 'Administrateur'",
+        );
+        final count = (admins.first['count'] as num?)?.toInt() ?? 0;
+        if (oldRole == 'Administrateur' && newRole != oldRole && count <= 1) {
+          throw StateError('Il doit rester au moins un administrateur.');
+        }
+        if (oldRole != 'Administrateur' &&
+            newRole == 'Administrateur' &&
+            count >= 3) {
+          throw StateError('La base est limitée à trois administrateurs.');
+        }
+        await conn.query(
+          'UPDATE Account SET type_compte = ? WHERE id_compte = ?',
+          [newRole, accountId],
+        );
+      });
+      return true;
+    } catch (e) {
+      _errorMessage = e is StateError
+          ? e.message.toString()
+          : 'Impossible de modifier le rôle.';
+      logger.e('Erreur modification rôle compte $accountId: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> adminDeleteAccount(int accountId, String adminPassword) async {
+    if (!isAdmin || _currentUser == null) {
+      _errorMessage = 'Accès réservé aux administrateurs.';
+      return false;
+    }
+    if (accountId == _currentUser!.userId) {
+      _errorMessage =
+          'Utilisez « Supprimer mon compte » pour votre propre compte.';
+      return false;
+    }
+    if (!await verifyCurrentPassword(adminPassword)) {
+      _errorMessage = 'Mot de passe administrateur incorrect.';
+      return false;
+    }
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _ensureAccountBootstrapLock();
+      await _db.transaction((conn) async {
+        await conn.query(
+          'SELECT lock_id FROM AccountBootstrapLock WHERE lock_id = 1 FOR UPDATE',
+        );
+        final actor = await conn.query(
+          'SELECT type_compte FROM Account WHERE id_compte = ?',
+          [_currentUser!.userId],
+        );
+        if (actor.isEmpty || actor.first['type_compte'] != 'Administrateur') {
+          throw StateError(
+            'Vos privilèges administrateur ne sont plus actifs.',
+          );
+        }
+        final rows = await conn.query(
+          'SELECT type_compte FROM Account WHERE id_compte = ?',
+          [accountId],
+        );
+        if (rows.isEmpty) throw StateError('Compte introuvable.');
+        if (rows.first['type_compte'] == 'Administrateur') {
+          final admins = await conn.query(
+            "SELECT COUNT(*) AS count FROM Account WHERE type_compte = 'Administrateur'",
+          );
+          if (((admins.first['count'] as num?)?.toInt() ?? 0) <= 1) {
+            throw StateError('Il doit rester au moins un administrateur.');
+          }
+        }
+        await conn.query('DELETE FROM Account WHERE id_compte = ?', [
+          accountId,
+        ]);
+      });
+      return true;
+    } catch (e) {
+      _errorMessage = e is StateError
+          ? e.message.toString()
+          : 'Impossible de supprimer ce compte.';
+      logger.e('Erreur suppression compte $accountId: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -218,8 +436,9 @@ class AuthRepository extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
+      await _recoveryRateLimit.check(email);
       final row = await _db.queryOne(
-        'SELECT id_compte, password, recovery_code_hash '
+        'SELECT id_compte, password, recovery_code_hash, nom, prenom '
         'FROM Account WHERE email = ? AND type_compte = ?',
         params: [email.trim(), 'Administrateur'],
         useCache: false,
@@ -228,7 +447,18 @@ class AuthRepository extends ChangeNotifier {
       if (row == null ||
           recoveryHash == null ||
           !_verifyPassword(recoveryCode.trim().toUpperCase(), recoveryHash)) {
+        await _recoveryRateLimit.recordFailure(email);
         _errorMessage = 'Code de récupération invalide';
+        return false;
+      }
+      final passwordError = PasswordValidator.validatePassword(
+        newPassword,
+        newPassword,
+        row['nom'] as String? ?? '',
+        row['prenom'] as String? ?? '',
+      );
+      if (passwordError.isNotEmpty) {
+        _errorMessage = passwordError;
         return false;
       }
       await _db.execute(
@@ -236,6 +466,7 @@ class AuthRepository extends ChangeNotifier {
         'recovery_code_created_at = NULL WHERE id_compte = ?',
         [_hashPassword(newPassword), row['id_compte']],
       );
+      await _recoveryRateLimit.recordSuccess(email);
       return true;
     } catch (e) {
       _errorMessage = 'Impossible de réinitialiser le mot de passe';
@@ -456,9 +687,35 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
-      const sql = 'DELETE FROM Account WHERE id_compte = ?';
-
-      await _db.execute(sql, [_currentUser!.userId]);
+      if (!await verifyCurrentPassword(password)) {
+        _errorMessage = 'Mot de passe incorrect';
+        return false;
+      }
+      await _db.execute(
+        'CREATE TABLE IF NOT EXISTS AccountBootstrapLock '
+        '(lock_id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB',
+      );
+      await _db.execute(
+        'INSERT IGNORE INTO AccountBootstrapLock (lock_id) VALUES (1)',
+      );
+      await _db.transaction((conn) async {
+        await conn.query(
+          'SELECT lock_id FROM AccountBootstrapLock WHERE lock_id = 1 FOR UPDATE',
+        );
+        if (isAdmin) {
+          final admins = await conn.query(
+            "SELECT COUNT(*) AS count FROM Account WHERE type_compte = 'Administrateur'",
+          );
+          if (((admins.first['count'] as num?)?.toInt() ?? 0) <= 1) {
+            throw StateError(
+              'Transférez le rôle administrateur avant de supprimer ce dernier compte admin',
+            );
+          }
+        }
+        await conn.query('DELETE FROM Account WHERE id_compte = ?', [
+          _currentUser!.userId,
+        ]);
+      });
 
       final deletedUserId = _currentUser!.userId;
       _currentUser = null;
@@ -467,7 +724,7 @@ class AuthRepository extends ChangeNotifier {
       logger.i('Compte de l\'utilisateur $deletedUserId supprimé');
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e is StateError ? e.message.toString() : e.toString();
       logger.e('Erreur lors de la suppression du compte: $e');
       return false;
     } finally {
@@ -494,7 +751,7 @@ class AuthRepository extends ChangeNotifier {
     try {
       const sql = 'SELECT COUNT(*) as count FROM Account';
       final result = await _db.queryOne(sql);
-      final count = result?['count'] as int? ?? 0;
+      final count = (result?['count'] as num?)?.toInt() ?? 0;
       return count == 0;
     } catch (e) {
       logger.e('Erreur lors du comptage des utilisateurs: $e');
