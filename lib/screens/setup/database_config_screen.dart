@@ -118,7 +118,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
         host: _hostController.text.trim(),
         port: int.parse(_portController.text.trim()),
         user: _userController.text.trim(),
-        password: _passwordController.text, // Ne pas trimmer le mot de passe
+        password: _passwordController.text,
         database: _databaseController.text.trim(),
       );
 
