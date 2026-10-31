@@ -86,7 +86,10 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -122,7 +125,7 @@ class AboutScreen extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(60),
               child: Image.asset(
-                'assets/Pictures/Logo Planificator.png',
+                'assets/icons/icon.png',
                 height: 110,
                 width: 110,
                 fit: BoxFit.contain,
@@ -204,13 +207,15 @@ class AboutScreen extends StatelessWidget {
         _buildBenefitCard(
           icon: Icons.speed_outlined,
           title: 'Productivité Accrue',
-          desc: 'Automatisez vos tâches répétitives et concentrez-vous sur vos clients.',
+          desc:
+              'Automatisez vos tâches répétitives et concentrez-vous sur vos clients.',
           color: Colors.blue,
         ),
         _buildBenefitCard(
           icon: Icons.shield_outlined,
           title: 'Sécurité Maximale',
-          desc: 'Vos données restent sous votre contrôle, loin des nuages opaques.',
+          desc:
+              'Vos données restent sous votre contrôle, loin des nuages opaques.',
           color: Colors.green,
         ),
         _buildBenefitCard(
@@ -232,15 +237,15 @@ class AboutScreen extends StatelessWidget {
     return Builder(
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             color: isDark ? AppTheme.darkCardBg : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isDark 
-                  ? AppTheme.glassBorder.withValues(alpha: 0.1) 
+              color: isDark
+                  ? AppTheme.glassBorder.withValues(alpha: 0.1)
                   : Colors.grey.withValues(alpha: 0.25),
             ),
             boxShadow: isDark ? [] : AppTheme.mediumShadow,
@@ -273,7 +278,7 @@ class AboutScreen extends StatelessWidget {
                       Text(
                         desc,
                         style: TextStyle(
-                          color: isDark ? Colors.white70 : Colors.grey[600], 
+                          color: isDark ? Colors.white70 : Colors.grey[600],
                           fontSize: 13,
                         ),
                       ),
@@ -284,7 +289,7 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
         );
-      }
+      },
     );
   }
 
@@ -294,7 +299,7 @@ class AboutScreen extends StatelessWidget {
     ColorScheme colorScheme,
   ) {
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -309,8 +314,8 @@ class AboutScreen extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: isDark 
-                  ? AppTheme.glassBorder.withValues(alpha: 0.1) 
+              color: isDark
+                  ? AppTheme.glassBorder.withValues(alpha: 0.1)
                   : Colors.grey.withValues(alpha: 0.25),
             ),
             boxShadow: isDark ? [] : AppTheme.mediumShadow,
@@ -320,7 +325,8 @@ class AboutScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => _launchURL(context, 'https://github.com/APEXNovaLabs'),
+              onTap: () =>
+                  _launchURL(context, 'https://github.com/APEXNovaLabs'),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -347,7 +353,9 @@ class AboutScreen extends StatelessWidget {
                           Text(
                             'Équipe de développement spécialisée dans les solutions logicielles et mobiles',
                             style: TextStyle(
-                              color: isDark ? Colors.white70 : colorScheme.onSurfaceVariant,
+                              color: isDark
+                                  ? Colors.white70
+                                  : colorScheme.onSurfaceVariant,
                               fontSize: 13,
                               height: 1.4,
                             ),
@@ -355,7 +363,11 @@ class AboutScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Icon(Icons.open_in_new_rounded, size: 20, color: colorScheme.primary.withValues(alpha: 0.5)),
+                    Icon(
+                      Icons.open_in_new_rounded,
+                      size: 20,
+                      color: colorScheme.primary.withValues(alpha: 0.5),
+                    ),
                   ],
                 ),
               ),
@@ -416,13 +428,13 @@ class AboutScreen extends StatelessWidget {
     required ColorScheme colorScheme,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark 
-              ? AppTheme.glassBorder.withValues(alpha: 0.1) 
+          color: isDark
+              ? AppTheme.glassBorder.withValues(alpha: 0.1)
               : Colors.grey.withValues(alpha: 0.25),
         ),
         boxShadow: isDark ? [] : AppTheme.softShadow,
@@ -468,7 +480,9 @@ class AboutScreen extends StatelessWidget {
                       Text(
                         desc,
                         style: TextStyle(
-                          color: isDark ? Colors.white60 : colorScheme.onSurfaceVariant,
+                          color: isDark
+                              ? Colors.white60
+                              : colorScheme.onSurfaceVariant,
                           fontSize: 12,
                           height: 1.4,
                         ),
@@ -476,7 +490,11 @@ class AboutScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.link_rounded, size: 20, color: colorScheme.primary.withValues(alpha: 0.3)),
+                Icon(
+                  Icons.link_rounded,
+                  size: 20,
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                ),
               ],
             ),
           ),
@@ -500,9 +518,8 @@ class AboutScreen extends StatelessWidget {
           width: radius * 2,
           height: radius * 2,
           fit: BoxFit.cover,
-          errorBuilder:
-              (context, error, stackTrace) =>
-                  Icon(fallbackIcon, color: colorScheme.primary, size: radius),
+          errorBuilder: (context, error, stackTrace) =>
+              Icon(fallbackIcon, color: colorScheme.primary, size: radius),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return Center(
@@ -511,11 +528,10 @@ class AboutScreen extends StatelessWidget {
                 height: radius,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  value:
-                      loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
                 ),
               ),
             );
@@ -541,7 +557,9 @@ class AboutScreen extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+                isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.2),
                 Colors.transparent,
               ],
             ),
