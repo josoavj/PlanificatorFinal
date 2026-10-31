@@ -30,19 +30,19 @@ CREATE TABLE Account (
     Pour la table Account:
     - Il est recommandé d'utiliser un mot de passe crypté: veuillez crypter votre mot de passe en fonction du techno ou langage utilisé
     - Le mot de passe ne doit pas contenir des informations sensibles (Informations personnelles)
-    - Un seul compte Administrateur est requis.
-    - Seul l'administrateur qui possède le droit de supprimer des comptes dans la base de données.
+    - La base conserve au moins un administrateur et en accepte au maximum trois.
+    - Les changements de rôle et suppressions sont réservés aux administrateurs dans l'application.
 */
 
--- Compte administrateur unique
+-- Limiter le nombre de comptes administrateur à trois
 DELIMITER $$
 
 CREATE TRIGGER avant_ajout_compte
     BEFORE INSERT ON Account
     FOR EACH ROW
 BEGIN
-    IF NEW.type_compte = 'Administrateur' AND (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') >= 2 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La limite de 2 comptes Administrateur est atteinte.';
+    IF NEW.type_compte = 'Administrateur' AND (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') >= 3 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La limite de 3 comptes Administrateur est atteinte.';
     END IF;
 END$$
 
@@ -71,15 +71,20 @@ END$$
 
 DELIMITER ;
 
--- Modification du type de compte
+-- Garde-fous sur les changements de rôle administrateur
 DELIMITER $$
 
 CREATE TRIGGER avant_maj_compte
     BEFORE UPDATE ON Account
     FOR EACH ROW
 BEGIN
-    IF OLD.type_compte != NEW.type_compte THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Le type de compte ne peut pas être modifié.';
+    IF OLD.type_compte != NEW.type_compte AND NEW.type_compte = 'Administrateur'
+       AND (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') >= 3 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La limite de 3 comptes Administrateur est atteinte.';
+    END IF;
+    IF OLD.type_compte = 'Administrateur' AND NEW.type_compte != 'Administrateur'
+       AND (SELECT COUNT(*) FROM Account WHERE type_compte = 'Administrateur') <= 1 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La base doit conserver au moins un administrateur.';
     END IF;
 END$$
 
@@ -365,11 +370,7 @@ CREATE INDEX idx_historique_signalement ON Historique(signalement_id);
 CREATE INDEX idx_historique_date ON Historique(date_historique);
 CREATE INDEX idx_historique_prix_facture ON Historique_prix(facture_id);
 
-/*
-    Mise à jour des statistiques après la création du schéma.
-    Les colonnes date_emission, date_echeance et contrat_id sur Facture
-    n'existent pas dans le modèle actuel et ne sont donc pas indexées.
-*/
+
 ANALYZE TABLE Facture, PlanningDetails, Planning, Traitement,
     TypeTraitement, Contrat, Client, Account, Remarque,
     Signalement, Historique, Historique_prix;
