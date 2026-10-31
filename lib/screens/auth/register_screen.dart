@@ -135,6 +135,25 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (!mounted) return;
 
     if (success) {
+      final recoveryCode = authRepository.lastGeneratedRecoveryCode;
+      if (recoveryCode != null && mounted) {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Code de récupération administrateur'),
+            content: SelectableText(
+              'Conservez ce code hors de l’application :\n\n$recoveryCode',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('J’ai sauvegardé le code'),
+              ),
+            ],
+          ),
+        );
+      }
       AppSnackBars.showSuccess(context, 'Compte créé avec succès ! Connectez-vous.');
       Navigator.of(context).pushReplacementNamed('/login');
     } else {
