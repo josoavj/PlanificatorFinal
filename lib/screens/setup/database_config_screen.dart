@@ -127,6 +127,7 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
       if (!mounted) return;
 
       if (connected) {
+        await DatabaseMigrationService(database: db).migrate();
         // Sauvegarder la configuration
         await DatabaseConfig().saveConfig(
           host: _hostController.text.trim(),
