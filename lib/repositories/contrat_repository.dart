@@ -5,9 +5,11 @@ import '../models/index.dart';
 import '../services/index.dart';
 import '../core/sql_queries.dart';
 import '../utils/date_utils.dart' as date_utils;
+import 'auth_repository.dart';
 
 class ContratRepository extends ChangeNotifier {
   final DatabaseService _db;
+  AuthRepository? _authRepository;
   final logger = createLoggerWithFileOutput(name: 'contrat_repository');
 
   List<Contrat> _contrats = [];
@@ -16,8 +18,13 @@ class ContratRepository extends ChangeNotifier {
   String? _errorMessage;
 
   // Constructeur avec injection optionnelle
-  ContratRepository({DatabaseService? databaseService})
-    : _db = databaseService ?? DatabaseService();
+  ContratRepository({
+    DatabaseService? databaseService,
+    AuthRepository? authRepository,
+  }) : _db = databaseService ?? DatabaseService(),
+       _authRepository = authRepository;
+
+  set authRepository(AuthRepository value) => _authRepository = value;
 
   // Pagination
   static const int paginationSize = 30;
@@ -220,7 +227,10 @@ class ContratRepository extends ChangeNotifier {
         // 2. CRÉER LE CONTRAT
         int? dureeContrat;
         if (dateFin != null) {
-          dureeContrat = dateFin.month - dateDebut.month + 12 * (dateFin.year - dateDebut.year);
+          dureeContrat =
+              dateFin.month -
+              dateDebut.month +
+              12 * (dateFin.year - dateDebut.year);
         }
 
         final contratResults = await conn.query(SqlQueries.createContrat, [
@@ -244,13 +254,16 @@ class ContratRepository extends ChangeNotifier {
         for (final tId in selectedTreatmentIds) {
           final config = treatmentConfigs[tId] ?? {};
           final int redondance = config['redondance'] ?? 1;
-          final String debutStr = config['debut'] ?? DateFormat('dd/MM/yyyy').format(dateDebut);
+          final String debutStr =
+              config['debut'] ?? DateFormat('dd/MM/yyyy').format(dateDebut);
           final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
-          final int montant = int.tryParse(config['montant'].toString().replaceAll(' ', '')) ?? 0;
+          final int montant =
+              int.tryParse(config['montant'].toString().replaceAll(' ', '')) ??
+              0;
 
           final dates = date_utils.DateUtils.generatePlanningDates(
-            dateDebut: treatmentStartDate, 
-            dureeTraitement: duree, 
+            dateDebut: treatmentStartDate,
+            dureeTraitement: duree,
             redondance: redondance,
           );
 
@@ -267,18 +280,24 @@ class ContratRepository extends ChangeNotifier {
         final Map<int, int> planningIdsByTreatment = {};
         for (final tId in selectedTreatmentIds) {
           final config = treatmentConfigs[tId] ?? {};
-          
-          final traitResults = await conn.query(SqlQueries.createTraitement, [contratId, tId]);
+
+          final traitResults = await conn.query(SqlQueries.createTraitement, [
+            contratId,
+            tId,
+          ]);
           final traitId = traitResults.insertId ?? 0;
-          
-          final String debutStr = config['debut'] ?? DateFormat('dd/MM/yyyy').format(dateDebut);
+
+          final String debutStr =
+              config['debut'] ?? DateFormat('dd/MM/yyyy').format(dateDebut);
           final treatmentStartDate = DateFormat('dd/MM/yyyy').parse(debutStr);
-          
+
           final endMonth = treatmentStartDate.month - 1 + (duree - 1);
           final endYear = treatmentStartDate.year + (endMonth ~/ 12);
           final endNewMonth = (endMonth % 12) + 1;
           final daysInMonth = DateTime(endYear, endNewMonth + 1, 0).day;
-          final day = treatmentStartDate.day > daysInMonth ? treatmentStartDate.day : treatmentStartDate.day;
+          final day = treatmentStartDate.day > daysInMonth
+              ? treatmentStartDate.day
+              : treatmentStartDate.day;
           final dateFinPlanification = DateTime(endYear, endNewMonth, day);
 
           final planResults = await conn.query(SqlQueries.createPlanning, [
@@ -290,7 +309,7 @@ class ContratRepository extends ChangeNotifier {
             config['redondance'] ?? 1,
             dateFinPlanification.toIso8601String().split('T')[0],
           ]);
-          
+
           planningIdsByTreatment[tId] = planResults.insertId ?? 0;
         }
 
@@ -301,17 +320,23 @@ class ContratRepository extends ChangeNotifier {
 
           if (groupInvoicesByDate) {
             // MODE GROUPÉ : Une seule facture pour tous les services de ce jour
-            final int totalMontant = services.fold(0, (sum, s) => sum + (s['montant'] as int));
-            
-            final factResults = await conn.query(SqlQueries.createFactureComplete, [
-              null, // planning_detail_id
-              null, // reference
-              totalMontant,
-              null, // mode
-              dateStr,
-              'À venir',
-              client.axe,
-            ]);
+            final int totalMontant = services.fold(
+              0,
+              (sum, s) => sum + (s['montant'] as int),
+            );
+
+            final factResults = await conn.query(
+              SqlQueries.createFactureComplete,
+              [
+                null, // planning_detail_id
+                null, // reference
+                totalMontant,
+                null, // mode
+                dateStr,
+                'À venir',
+                client.axe,
+              ],
+            );
             final factureId = factResults.insertId ?? 0;
 
             for (final s in services) {
@@ -325,15 +350,18 @@ class ContratRepository extends ChangeNotifier {
           } else {
             // MODE CLASSIQUE : Une facture par service
             for (final s in services) {
-              final factResults = await conn.query(SqlQueries.createFactureComplete, [
-                null,
-                null,
-                s['montant'],
-                null,
-                dateStr,
-                'À venir',
-                client.axe,
-              ]);
+              final factResults = await conn.query(
+                SqlQueries.createFactureComplete,
+                [
+                  null,
+                  null,
+                  s['montant'],
+                  null,
+                  dateStr,
+                  'À venir',
+                  client.axe,
+                ],
+              );
               final fId = factResults.insertId ?? 0;
 
               await conn.query(SqlQueries.insertPlanningDetailWithStatut, [
@@ -411,8 +439,8 @@ class ContratRepository extends ChangeNotifier {
 
   /// Supprime un contrat
   /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
-  Future<bool> deleteContrat(int contratId, {required bool isAdmin}) async {
-    if (!isAdmin) {
+  Future<bool> deleteContrat(int contratId) async {
+    if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour supprimer un contrat';
       notifyListeners();
       return false;
@@ -473,7 +501,10 @@ class ContratRepository extends ChangeNotifier {
 
     try {
       final searchTerm = '%$query%';
-      final rows = await _db.query(SqlQueries.searchContrats, [searchTerm, searchTerm]);
+      final rows = await _db.query(SqlQueries.searchContrats, [
+        searchTerm,
+        searchTerm,
+      ]);
       _contrats = rows.map((row) => Contrat.fromMap(row)).toList();
 
       logger.i(
@@ -495,7 +526,10 @@ class ContratRepository extends ChangeNotifier {
     required int typeTraitementId,
   }) async {
     try {
-      final id = await _db.insert(SqlQueries.createTraitement, [contratId, typeTraitementId]);
+      final id = await _db.insert(SqlQueries.createTraitement, [
+        contratId,
+        typeTraitementId,
+      ]);
 
       logger.i('Traitement créé avec l\'ID: $id pour contrat $contratId');
       return id;
@@ -512,9 +546,8 @@ class ContratRepository extends ChangeNotifier {
     required int contratId,
     required DateTime abrogationDate,
     String? motif,
-    required bool isAdmin,
   }) async {
-    if (!isAdmin) {
+    if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour résilier un contrat';
       notifyListeners();
       return false;
@@ -536,23 +569,27 @@ class ContratRepository extends ChangeNotifier {
       logger.i('Contrat $contratId marqué comme Résilié à $abrogationDate');
 
       // 2. Trouver tous les traitements du contrat
-      final treatments = await _db.query(SqlQueries.getTreatmentsByContrat, [contratId]);
+      final treatments = await _db.query(SqlQueries.getTreatmentsByContrat, [
+        contratId,
+      ]);
 
       // 3. Pour chaque traitement, marquer les plannings futurs comme 'Classé sans suite'
       for (final treatment in treatments) {
         final treatmentId = treatment['traitement_id'];
 
         // Récupérer tous les plannings futurs pour ce traitement
-        final plannings = await _db.query(SqlQueries.getFuturePlanningsByTreatment, [
-          treatmentId,
-          abrogationDate.toString().split(' ')[0],
-        ]);
+        final plannings = await _db.query(
+          SqlQueries.getFuturePlanningsByTreatment,
+          [treatmentId, abrogationDate.toString().split(' ')[0]],
+        );
 
         // Supprimer chaque planning et ses détails futurs
         for (final planning in plannings) {
           final planningId = planning['planning_id'];
 
-          await _db.execute(SqlQueries.deleteFuturePlanningDetailsByPlanning, [planningId]);
+          await _db.execute(SqlQueries.deleteFuturePlanningDetailsByPlanning, [
+            planningId,
+          ]);
 
           logger.i(
             'Détails futurs du planning $planningId supprimés pour traitement $treatmentId',
