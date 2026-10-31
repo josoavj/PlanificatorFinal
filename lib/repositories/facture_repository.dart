@@ -6,9 +6,11 @@ import '../utils/excel_utils.dart';
 import '../utils/date_helper.dart';
 import '../utils/date_utils.dart' as date_utils;
 import '../core/sql_queries.dart';
+import 'auth_repository.dart';
 
 class FactureRepository extends ChangeNotifier {
   final DatabaseService _db;
+  AuthRepository? _authRepository;
   final logger = createLoggerWithFileOutput(name: 'facture_repository');
 
   List<Facture> _factures = [];
@@ -17,8 +19,13 @@ class FactureRepository extends ChangeNotifier {
   String? _errorMessage;
 
   // Constructeur avec injection optionnelle
-  FactureRepository({DatabaseService? databaseService})
-    : _db = databaseService ?? DatabaseService();
+  FactureRepository({
+    DatabaseService? databaseService,
+    AuthRepository? authRepository,
+  }) : _db = databaseService ?? DatabaseService(),
+       _authRepository = authRepository;
+
+  set authRepository(AuthRepository value) => _authRepository = value;
 
   List<Facture> get factures => _factures;
   bool get isLoading => _isLoading;
@@ -33,10 +40,13 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       final offset = page * pageSize;
-      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [pageSize, offset]);
-      
+      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [
+        pageSize,
+        offset,
+      ]);
+
       final newFactures = rows.map((row) => Facture.fromMap(row)).toList();
-      
+
       if (page == 0) {
         _factures = newFactures;
       } else {
@@ -44,7 +54,9 @@ class FactureRepository extends ChangeNotifier {
       }
 
       _hasMoreFactures = newFactures.length == pageSize;
-      logger.i('Page $page: ${newFactures.length} factures chargées (Total: ${_factures.length}, Plus: $_hasMoreFactures)');
+      logger.i(
+        'Page $page: ${newFactures.length} factures chargées (Total: ${_factures.length}, Plus: $_hasMoreFactures)',
+      );
     } catch (e) {
       _errorMessage = e.toString();
       logger.e(' Erreur pagination factures: $e');
@@ -116,7 +128,9 @@ class FactureRepository extends ChangeNotifier {
   }) async {
     try {
       final rows = await _db
-          .query(SqlQueries.getFacturesByPlanningDetail, [planningDetailId], useCache)
+          .query(SqlQueries.getFacturesByPlanningDetail, [
+            planningDetailId,
+          ], useCache)
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
@@ -165,8 +179,8 @@ class FactureRepository extends ChangeNotifier {
   /// Met à jour le prix d'une facture et recharge les données
   /// (La somme totale se mettra à jour automatiquement grâce à notifyListeners())
   /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
-  Future<bool> updateFacturePrice(int factureId, int newPrice, {required bool isAdmin}) async {
-    if (!isAdmin) {
+  Future<bool> updateFacturePrice(int factureId, int newPrice) async {
+    if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour modifier un montant';
       notifyListeners();
       return false;
@@ -236,7 +250,10 @@ class FactureRepository extends ChangeNotifier {
     try {
       // Envoyer null à la BD si vide, sinon la nouvelle valeur
       final refValue = newReference.isEmpty ? null : newReference;
-      await _db.execute(SqlQueries.updateFactureReference, [refValue, factureId]);
+      await _db.execute(SqlQueries.updateFactureReference, [
+        refValue,
+        factureId,
+      ]);
 
       // Mettre à jour dans la liste locale
       final index = _factures.indexWhere((f) => f.factureId == factureId);
@@ -281,10 +298,9 @@ class FactureRepository extends ChangeNotifier {
   Future<bool> majMontantEtHistorique(
     int factureId,
     int oldMontant,
-    int newMontant, {
-    required bool isAdmin,
-  }) async {
-    if (!isAdmin) {
+    int newMontant,
+  ) async {
+    if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour cette opération';
       notifyListeners();
       return false;
@@ -296,7 +312,10 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Étape 1: Récupérer la facture et sa date
-      final factureRows = await _db.queryOne(SqlQueries.getFactureAndTreatmentInfo, params: [factureId]);
+      final factureRows = await _db.queryOne(
+        SqlQueries.getFactureAndTreatmentInfo,
+        params: [factureId],
+      );
       if (factureRows == null) {
         throw Exception('Facture non trouvée');
       }
@@ -324,17 +343,17 @@ class FactureRepository extends ChangeNotifier {
         ]);
 
         // B. Création de l'historique (On récupère les factures impactées pour les logs historiques)
-        final otherFactures = await conn.query(SqlQueries.getOtherFacturesByTreatmentFromDate, [
-          traitementId,
-          dateTraitement,
-        ]);
+        final otherFactures = await conn.query(
+          SqlQueries.getOtherFacturesByTreatmentFromDate,
+          [traitementId, dateTraitement],
+        );
 
         final now = DateTime.now().toIso8601String();
         for (final row in otherFactures) {
           final fId = row['facture_id'] as int;
           final mAncien = row['montant'] as int;
           final mNouveau = mAncien + prixDiff;
-          
+
           await conn.query(SqlQueries.createPriceHistoryEntry, [
             fId,
             mAncien,
@@ -346,15 +365,14 @@ class FactureRepository extends ChangeNotifier {
 
       // Étape 4: Mise à jour de la liste locale en mémoire (Instantané pour l'UI)
       final dtRef = DateTime.parse(dateTraitement.toString());
-      
+
       for (int i = 0; i < _factures.length; i++) {
         final f = _factures[i];
-        
+
         // On ne filtre QUE sur le même traitement et les dates postérieures
-        if (f.traitementId == traitementId && 
+        if (f.traitementId == traitementId &&
             f.dateTraitement.compareTo(dtRef) >= 0 &&
             !f.isPaid) {
-          
           _factures[i] = f.copyWith(montant: f.montant + prixDiff);
         }
       }
@@ -420,8 +438,9 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // 1. Vérifier si une facture existe déjà
-      final existing =
-          await _db.query(SqlQueries.checkFactureExistence, [planningDetailId]);
+      final existing = await _db.query(SqlQueries.checkFactureExistence, [
+        planningDetailId,
+      ]);
 
       if (existing.isNotEmpty) {
         logger.i(
@@ -434,20 +453,26 @@ class FactureRepository extends ChangeNotifier {
       String finalAxe = axe ?? 'Centre (C)';
       if (axe == null || axe.isEmpty || axe == 'Non défini') {
         try {
-          final axeResult = await _db
-              .queryOne(SqlQueries.getClientIdFromPlanningDetail, params: [planningDetailId]);
+          final axeResult = await _db.queryOne(
+            SqlQueries.getClientIdFromPlanningDetail,
+            params: [planningDetailId],
+          );
           if (axeResult != null) {
             // Note: getClientIdFromPlanningDetail ne renvoie que client_id.
             // On va utiliser une requête plus complète ou enchaîner.
-            final clientInfo = await _db
-                .queryOne(SqlQueries.getClientById, params: [axeResult['client_id']]);
+            final clientInfo = await _db.queryOne(
+              SqlQueries.getClientById,
+              params: [axeResult['client_id']],
+            );
             if (clientInfo != null && clientInfo['axe'] != null) {
               finalAxe = clientInfo['axe'] as String;
               logger.i(' Axe récupéré automatiquement du client: $finalAxe');
             }
           }
         } catch (e) {
-          logger.w(' Impossible de récupérer l\'axe auto, utilisation du défaut: $e');
+          logger.w(
+            ' Impossible de récupérer l\'axe auto, utilisation du défaut: $e',
+          );
         }
       }
 
@@ -476,8 +501,8 @@ class FactureRepository extends ChangeNotifier {
 
   /// Supprime une facture
   /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
-  Future<bool> deleteFacture(int factureId, {required bool isAdmin}) async {
-    if (!isAdmin) {
+  Future<bool> deleteFacture(int factureId) async {
+    if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour supprimer une facture';
       notifyListeners();
       return false;
@@ -526,7 +551,10 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Charger les données complètes: Facture + Planning + TypeTraitement
-      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [clientId]); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
+      final rows = await _db.query(
+        SqlQueries.getAllFacturesDetailed,
+        [clientId],
+      ); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
 
       // Préparer les données pour Excel
       final List<Map<String, dynamic>> excelData = [];
@@ -603,15 +631,19 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       logger.i(' REPAIR: Planning + Factures pour traitement $traitementId');
-      
+
       // On regroupe tout dans une seule transaction pour éviter les données partielles
       return await _db.transaction((conn) async {
         // 1. Récupérer l'axe et le Planning
-        final axeRes = await conn.query(SqlQueries.getClientAxeByTreatment, [traitementId]);
+        final axeRes = await conn.query(SqlQueries.getClientAxeByTreatment, [
+          traitementId,
+        ]);
         if (axeRes.isEmpty) throw Exception('Traitement non trouvé');
         final axe = axeRes.first['axe'] as String;
 
-        final planRes = await conn.query(SqlQueries.getPlanningByTreatment, [traitementId]);
+        final planRes = await conn.query(SqlQueries.getPlanningByTreatment, [
+          traitementId,
+        ]);
         if (planRes.isEmpty) throw Exception('Planning non trouvé');
         final pRow = planRes.first;
 
@@ -620,12 +652,16 @@ class FactureRepository extends ChangeNotifier {
         final redondance = pRow['redondance'] as int;
 
         // 2. Créer les PlanningDetails manquants
-        final countRes = await conn.query(SqlQueries.countPlanningDetails, [planningId]);
+        final countRes = await conn.query(SqlQueries.countPlanningDetails, [
+          planningId,
+        ]);
         final existingCount = (countRes.first['count'] as int?) ?? 0;
 
         int planningDetailsCreated = 0;
         if (existingCount == 0) {
-          final dateDebut = DateTime.parse(pRow['date_debut_planification'] as String);
+          final dateDebut = DateTime.parse(
+            pRow['date_debut_planification'] as String,
+          );
           final planningDates = _generatePlanningDates(
             dateDebut: dateDebut,
             dureeTraitement: dureeTraitement,
@@ -633,13 +669,19 @@ class FactureRepository extends ChangeNotifier {
           );
 
           for (final date in planningDates) {
-            await conn.query(SqlQueries.insertPlanningDetail, [planningId, date.toIso8601String()]);
+            await conn.query(SqlQueries.insertPlanningDetail, [
+              planningId,
+              date.toIso8601String(),
+            ]);
             planningDetailsCreated++;
           }
         }
 
         // 3. Créer les factures
-        final pdRows = await conn.query(SqlQueries.getPlanningDetailsByPlanningIdOrdered, [planningId]);
+        final pdRows = await conn.query(
+          SqlQueries.getPlanningDetailsByPlanningIdOrdered,
+          [planningId],
+        );
         int facturesCreated = 0;
         int sequenceNumber = 1;
 
@@ -647,7 +689,9 @@ class FactureRepository extends ChangeNotifier {
           final pdId = pd['planning_detail_id'] as int;
           final dateStr = pd['date_planification'] as String;
 
-          final checkFac = await conn.query(SqlQueries.checkFactureExistence, [pdId]);
+          final checkFac = await conn.query(SqlQueries.checkFactureExistence, [
+            pdId,
+          ]);
           if (checkFac.isNotEmpty && !deleteExisting) continue;
 
           final ref = '$referencePrefix-$sequenceNumber';
@@ -665,7 +709,9 @@ class FactureRepository extends ChangeNotifier {
           sequenceNumber++;
         }
 
-        logger.i('TRANSACTION REUSSIE: $planningDetailsCreated PD + $facturesCreated factures');
+        logger.i(
+          'TRANSACTION REUSSIE: $planningDetailsCreated PD + $facturesCreated factures',
+        );
         return facturesCreated;
       });
     } catch (e) {
