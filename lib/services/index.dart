@@ -6,3 +6,6 @@ export 'query_cache_service.dart';
 export 'logging_service.dart';
 export 'notification_service.dart';
 export 'theme_provider.dart';
+export 'rate_limit_service.dart';
+export 'backup_service.dart';
+export 'database_migration_service.dart';

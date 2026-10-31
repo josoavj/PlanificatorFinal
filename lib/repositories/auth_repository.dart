@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../models/index.dart';
@@ -13,6 +14,8 @@ class AuthRepository extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isAuthenticated = false;
+  String? _lastGeneratedRecoveryCode;
+  final RateLimitService _rateLimit = RateLimitService();
 
   // Constructeur avec injection optionnelle (pour tests)
   AuthRepository({DatabaseService? databaseService})
@@ -23,15 +26,15 @@ class AuthRepository extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _isAuthenticated;
   bool get isAdmin => _currentUser?.isAdmin ?? false;
+  String? get lastGeneratedRecoveryCode => _lastGeneratedRecoveryCode;
 
-  /// Clé d'activation par défaut pour la création d'un compte Administrateur
-  static const String _adminActivationKey = 'ADMIN2026';
+  static const String _adminActivationKey = String.fromEnvironment(
+    'PLANIFICATOR_ADMIN_ACTIVATION_KEY',
+  );
 
-  /// Vérifie le code d'activation administrateur
-  bool verifyAdminActivationCode(String inputCode) {
-    final cleaned = inputCode.replaceAll(' ', '').trim().toUpperCase();
-    return cleaned == _adminActivationKey;
-  }
+  bool verifyAdminActivationCode(String inputCode) =>
+      _adminActivationKey.isNotEmpty &&
+      inputCode.trim().toUpperCase() == _adminActivationKey.toUpperCase();
 
   /// Hache un mot de passe avec bcrypt (sécurisé)
   String _hashPassword(String password) {
@@ -55,6 +58,7 @@ class AuthRepository extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _rateLimit.check(username);
       // Vérifier que la base de données est connectée
       if (!_db.isConnected) {
         final connected = await _db.connect();
@@ -76,6 +80,7 @@ class AuthRepository extends ChangeNotifier {
           );
 
       if (row == null) {
+        await _rateLimit.recordFailure(username);
         _errorMessage = 'Nom d\'utilisateur ou mot de passe incorrect';
         logger.w(
           'Tentative de connexion avec un username inexistant: $username',
@@ -86,6 +91,7 @@ class AuthRepository extends ChangeNotifier {
       // Vérifier le mot de passe avec bcrypt
       final storedHash = row['password'] as String;
       if (!_verifyPassword(password, storedHash)) {
+        await _rateLimit.recordFailure(username);
         _errorMessage = 'Nom d\'utilisateur ou mot de passe incorrect';
         logger.w('Tentative de connexion échouée pour: $username');
         return false;
@@ -93,6 +99,7 @@ class AuthRepository extends ChangeNotifier {
 
       _currentUser = User.fromMap(row);
       _isAuthenticated = true;
+      await _rateLimit.recordSuccess(username);
 
       logger.i('Utilisateur ${_currentUser!.email} connecté');
       return true;
@@ -141,9 +148,14 @@ class AuthRepository extends ChangeNotifier {
       }
 
       // Créer le nouvel utilisateur
-      const insertSql = '''
-        INSERT INTO Account (username, email, nom, prenom, password, type_compte, date_creation)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+      final recoveryCode = typeCompte == 'Administrateur'
+          ? _generateRecoveryCode()
+          : null;
+      final insertSql = '''
+        INSERT INTO Account (
+          username, email, nom, prenom, password, type_compte, date_creation,
+          recovery_code_hash, recovery_code_created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''';
 
       final hashedPassword = _hashPassword(password);
@@ -156,6 +168,8 @@ class AuthRepository extends ChangeNotifier {
             hashedPassword,
             typeCompte,
             DateTime.now().toIso8601String(),
+            recoveryCode == null ? null : _hashPassword(recoveryCode),
+            recoveryCode == null ? null : DateTime.now().toIso8601String(),
           ])
           .timeout(
             const Duration(seconds: 25),
@@ -176,6 +190,7 @@ class AuthRepository extends ChangeNotifier {
         createdAt: DateTime.now(),
       );
       _isAuthenticated = true;
+      _lastGeneratedRecoveryCode = recoveryCode;
 
       logger.i('Nouvel utilisateur créé: $username ($typeCompte)');
       return true;
@@ -187,6 +202,58 @@ class AuthRepository extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> resetPasswordWithRecoveryCode(
+    String email,
+    String recoveryCode,
+    String newPassword,
+  ) async {
+    if (newPassword.length < 8) {
+      _errorMessage =
+          'Le nouveau mot de passe doit contenir au moins 8 caractères';
+      return false;
+    }
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final row = await _db.queryOne(
+        'SELECT id_compte, password, recovery_code_hash '
+        'FROM Account WHERE email = ? AND type_compte = ?',
+        params: [email.trim(), 'Administrateur'],
+        useCache: false,
+      );
+      final recoveryHash = row?['recovery_code_hash'] as String?;
+      if (row == null ||
+          recoveryHash == null ||
+          !_verifyPassword(recoveryCode.trim().toUpperCase(), recoveryHash)) {
+        _errorMessage = 'Code de récupération invalide';
+        return false;
+      }
+      await _db.execute(
+        'UPDATE Account SET password = ?, recovery_code_hash = NULL, '
+        'recovery_code_created_at = NULL WHERE id_compte = ?',
+        [_hashPassword(newPassword), row['id_compte']],
+      );
+      return true;
+    } catch (e) {
+      _errorMessage = 'Impossible de réinitialiser le mot de passe';
+      logger.e('Erreur récupération compte: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  String _generateRecoveryCode() {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final random = Random.secure();
+    return List.generate(
+      16,
+      (_) => alphabet[random.nextInt(alphabet.length)],
+    ).join();
   }
 
   /// Déconnexion
@@ -251,11 +318,17 @@ class AuthRepository extends ChangeNotifier {
 
     try {
       // 1. Vérifier si le username ou email est déjà pris par quelqu'un d'autre
-      const checkSql = 'SELECT id_compte FROM Account WHERE (username = ? OR email = ?) AND id_compte != ?';
-      final existing = await _db.query(checkSql, [username, email, _currentUser!.userId]);
-      
+      const checkSql =
+          'SELECT id_compte FROM Account WHERE (username = ? OR email = ?) AND id_compte != ?';
+      final existing = await _db.query(checkSql, [
+        username,
+        email,
+        _currentUser!.userId,
+      ]);
+
       if (existing.isNotEmpty) {
-        _errorMessage = 'Cet identifiant ou cet email est déjà utilisé par un autre compte';
+        _errorMessage =
+            'Cet identifiant ou cet email est déjà utilisé par un autre compte';
         return false;
       }
 
@@ -266,7 +339,13 @@ class AuthRepository extends ChangeNotifier {
         WHERE id_compte = ?
       ''';
 
-      await _db.execute(sql, [nom, prenom, email, username, _currentUser!.userId]);
+      await _db.execute(sql, [
+        nom,
+        prenom,
+        email,
+        username,
+        _currentUser!.userId,
+      ]);
 
       // 3. Mettre à jour l'état local
       _currentUser = _currentUser!.copyWith(
@@ -275,7 +354,9 @@ class AuthRepository extends ChangeNotifier {
         email: email,
       );
 
-      logger.i('Profil complet de l\'utilisateur ${_currentUser!.userId} mis à jour');
+      logger.i(
+        'Profil complet de l\'utilisateur ${_currentUser!.userId} mis à jour',
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();

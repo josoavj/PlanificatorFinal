@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme.dart';
 import '../../../services/database_service.dart';
+import '../../../services/database_migration_service.dart';
 import '../../../config/database_config.dart';
 import '../../../widgets/app_dialogs.dart';
 import '../../../utils/app_snackbars.dart';
@@ -90,6 +91,7 @@ class _DatabaseConfigDialogState extends State<DatabaseConfigDialog> {
       
       final connected = await db.connect();
       if (connected) {
+        await DatabaseMigrationService(database: db).migrate();
         await DatabaseConfig().saveConfig(
           host: hostController.text, 
           port: int.parse(portController.text), 

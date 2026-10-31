@@ -29,10 +29,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
+      sha256: "0d58d1fa1fddf6588251ccf2819f3fb3b6d0452c1b2813ac7413a05592bfbefe"
       url: "https://pub.dev"
     source: hosted
-    version: "3.6.1"
+    version: "4.5.2"
   args:
     dependency: transitive
     description:
@@ -404,10 +404,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: f31d52537dc417fdcde36088fdf11d191026fd5e4fae742491ebd40e5a8bea7d
+      sha256: "89ed75b2f8231fe676808c5564f9590d728024ded7ac782a7ed8474f1c95b72a"
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.0"
+    version: "4.12.0"
   intl:
     dependency: "direct main"
     description:
@@ -648,6 +648,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.3"
+  posix:
+    dependency: transitive
+    description:
+      name: posix
+      sha256: "613646d076944f3acc125830af935b48d4b8a57a388691547bbfd25b434f4d63"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.5.4"
   provider:
     dependency: "direct main"
     description:
@@ -793,26 +801,26 @@ packages:
     dependency: transitive
     description:
       name: syncfusion_flutter_core
-      sha256: bee87cdfe527b31705190162e3bd27bf468d591ae7c68182244bdfd94e21f737
+      sha256: "366faa4c374fdc0a789eb1d234c78ddbaca34ae575fe8a6481f9f72db5eb0d69"
       url: "https://pub.dev"
     source: hosted
-    version: "29.2.11"
+    version: "35.1.42"
   syncfusion_flutter_xlsio:
     dependency: "direct main"
     description:
       name: syncfusion_flutter_xlsio
-      sha256: "71d6d34cb39c626c82c1066f085f9087adc9b39507f2acbfeb653c2a4ea0916b"
+      sha256: "24c7dd074db00943da15627f3516385cd49e2ec6ea63dbe767bd0d616e458439"
       url: "https://pub.dev"
     source: hosted
-    version: "29.2.11"
+    version: "35.1.42"
   syncfusion_officecore:
     dependency: transitive
     description:
       name: syncfusion_officecore
-      sha256: "2c5f64d307d39f3c1e7c1ed2de07f04bc93365d590cee03e2f0307acb47ccc47"
+      sha256: "43b5c8c47b17dea963f869f8ddd11612f61a71162f71f3bcfd9cd570098b834c"
       url: "https://pub.dev"
     source: hosted
-    version: "29.2.11"
+    version: "35.1.42"
   table_calendar:
     dependency: "direct main"
     description:
@@ -1025,10 +1033,10 @@ packages:
     dependency: transitive
     description:
       name: xml
-      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      sha256: "0fe8cc98946def31cbcbc8734aa4067031e6f65ea3a78a508060bfed2200bfeb"
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.1"
+    version: "7.1.0"
   yaml:
     dependency: transitive
     description:

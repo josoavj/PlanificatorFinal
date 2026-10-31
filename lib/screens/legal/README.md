@@ -39,13 +39,12 @@ Les documents sont accessibles via :
 
 ### Conformité
 
-✅ **Conforme avec :**
+Les documents décrivent les mesures disponibles et les responsabilités de
+l'organisation qui exploite Planificator. Ils ne constituent pas une certification
+juridique automatique : la conformité RGPD, CCPA ou PIPEDA dépend du contexte,
+des durées de conservation et des procédures mises en place par l'organisation.
 
-- RGPD (Règlement Général sur la Protection des Données)
-- CCPA (California Consumer Privacy Act)
-- PIPEDA (Loi de protection des renseignements personnels)
-- Standards de sécurité SSL/TLS
-- Chiffrement des données
+La connexion MySQL chiffrée TLS est recommandée en production.
 
 ### Contact
 

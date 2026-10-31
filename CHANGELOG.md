@@ -6,6 +6,11 @@ Ce fichier centralise toutes les évolutions, corrections de bugs et optimisatio
 **Statut**: PRODUCTION READY  
 **Dernière mise à jour**: 2026-07-27
 
+## [2.1.1] - Documentation et distribution
+- Ajout du site de présentation Planificator avec pages d'installation, conditions et confidentialité.
+- Ajout des guides publics d'installation, d'architecture et de démarrage rapide.
+- Alignement des workflows Windows, Linux et GitHub Pages sur les artefacts Planificator.
+
 ---
 
 ## [2.1.1] - Panoramic Intelligence & Robustness (2026-07-27)

@@ -81,6 +81,8 @@ class AppInitializer {
     try {
       await db.connect();
       log.info('Connexion à la base de données établie', source: 'AppInitializer');
+      await DatabaseMigrationService(database: db).migrate();
+      log.info('Migrations de base de données appliquées', source: 'AppInitializer');
       
       // Charger les traitements du lendemain
       final notifRepo = NotificationRepository();

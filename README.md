@@ -33,6 +33,8 @@
 - [État du Projet](#état-du-projet)
 - [Sécurité](#sécurité)
 - [Tests Automatisés](#tests-automatisés)
+- [Exploitation et déploiement](./docs/OPERATIONS.md)
+- [Site de présentation](./presentation/index.html)
 - [Contribution](#contribution)
 - [Auteur](#auteur)
 - [Licence](#licence)
@@ -154,6 +156,12 @@ lib/
 3. Configurer votre serveur MySQL (Version ≥ 8.0).
 4. Importer `scripts/Planificator.sql`.
 5. Lancer : `flutter run`.
+
+Le détail des migrations, sauvegardes, scripts de maintenance et workflows CI/CD est
+documenté dans [docs/OPERATIONS.md](./docs/OPERATIONS.md).
+
+La présentation publique, les guides d'installation et les documents légaux sont
+disponibles dans [presentation/](./presentation/) et [docs/](./docs/).
 
 ---
 

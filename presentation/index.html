@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Planificator, la plateforme desktop de gestion des clients, contrats, interventions et facturation.">
+  <title>Planificator - Planning, clients et facturation</title>
+  <link rel="stylesheet" href="presentation.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top">Planificator</a>
+    <nav>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#installation">Installation</a>
+      <a href="https://github.com/josoavj/PlanificatorFinal">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">PLATEFORME DESKTOP · VERSION 2.1.1</p>
+        <h1>Vos clients, vos contrats, votre planning.</h1>
+        <p class="lead">Planificator centralise les interventions, le suivi des contrats et la facturation sur votre propre base MySQL.</p>
+        <div class="actions">
+          <a class="button primary" href="#installation">Démarrer</a>
+          <a class="button secondary" href="https://github.com/josoavj/PlanificatorFinal/releases">Télécharger</a>
+        </div>
+        <ul class="badges"><li>Windows</li><li>Linux</li><li>macOS</li><li>Stockage souverain</li></ul>
+      </div>
+      <div class="dashboard" aria-label="Aperçu du tableau de bord">
+        <div class="window-bar"><i></i><i></i><i></i><span>Planificator</span></div>
+        <div class="dashboard-body">
+          <aside><b>Planificator</b><span class="active">Accueil</span><span>Contrats</span><span>Clients</span><span>Planning</span><span>Factures</span><span>Historique</span></aside>
+          <div class="overview"><h2>Vue d'ensemble</h2><div class="metrics"><b>Clients actifs<em>24</em></b><b>Interventions à venir<em>18</em></b><b>Factures à suivre<em>9</em></b></div><div class="chart"><span></span><span></span><span></span><span></span><span></span><span></span></div><p>Un aperçu illustratif de l'espace de gestion.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="fonctionnalites" class="section">
+      <p class="eyebrow">UN OUTIL MÉTIER COMPLET</p>
+      <h2>Tout le cycle d'une intervention, au même endroit.</h2>
+      <div class="cards">
+        <article><strong>Clients & contrats</strong><p>Gérez les coordonnées, catégories, axes géographiques et le cycle de vie des contrats.</p></article>
+        <article><strong>Planning intelligent</strong><p>Planifiez les passages, fréquences, reports et signalements avec une vue calendrier.</p></article>
+        <article><strong>Facturation</strong><p>Regroupez les services, suivez les paiements et tracez les changements de tarifs.</p></article>
+        <article><strong>Sécurité & administration</strong><p>BCrypt, stockage sécurisé, rôles administrateur, migrations et sauvegardes SQL.</p></article>
+        <article><strong>Historique 360°</strong><p>Retrouvez les interventions, remarques, signalements et événements financiers.</p></article>
+        <article><strong>Exports & rapports</strong><p>Exportez vos données métier en Excel ou sauvegardez votre base SQL.</p></article>
+      </div>
+    </section>
+
+    <section id="installation" class="section dark">
+      <p class="eyebrow">MISE EN ROUTE</p>
+      <h2>Installation en trois étapes.</h2>
+      <ol class="steps"><li><b>Préparez MySQL</b><span>Installez MySQL 8 ou MariaDB sur votre machine ou serveur.</span></li><li><b>Lancez Planificator</b><span>Saisissez les paramètres de connexion lors du premier démarrage.</span></li><li><b>Travaillez sereinement</b><span>Le schéma et les migrations sont vérifiés automatiquement.</span></li></ol>
+      <a class="button light" href="installation.html">Lire le guide d'installation</a>
+    </section>
+  </main>
+  <footer><b>Planificator</b><span>Gestion de planning et services · <a href="terms.html">Conditions</a> · <a href="privacy.html">Confidentialité</a></span></footer>
+</body>
+</html>
