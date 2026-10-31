@@ -6,12 +6,21 @@ import '../../core/theme.dart';
 import '../../utils/password_validator.dart';
 import '../../utils/email_validator.dart';
 import '../legal/privacy_policy_screen.dart';
+import '../legal/terms_of_service_screen.dart';
 import 'login_screen.dart';
+import 'auth_page_shell.dart';
 import '../../utils/app_snackbars.dart';
 
 /// Écran d'inscription moderne et intuitif
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final bool embedded;
+  final bool isBootstrap;
+
+  const RegisterScreen({
+    super.key,
+    this.embedded = false,
+    this.isBootstrap = false,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -25,12 +34,9 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _prenomController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _adminSecretController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _obscureAdminSecret = true;
-  String _selectedAccountType = 'Utilisateur';
 
   // Password criteria states
   bool _hasMinLength = false;
@@ -42,7 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _passwordsMatch = false;
   int _strengthScore = 0;
   bool _acceptedPrivacyPolicy = false;
-  bool _isFirstUser = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -54,22 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     _confirmPasswordController.addListener(_updatePasswordCriteria);
     _nomController.addListener(_updatePasswordCriteria);
     _prenomController.addListener(_updatePasswordCriteria);
-    
-    // Vérifier si c'est la première inscription
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkFirstUser();
-    });
-  }
-
-  Future<void> _checkFirstUser() async {
-    final authRepo = context.read<AuthRepository>();
-    final noUsers = await authRepo.hasNoUsers();
-    if (mounted && noUsers) {
-      setState(() {
-        _isFirstUser = true;
-        _selectedAccountType = 'Administrateur';
-      });
-    }
   }
 
   void _updatePasswordCriteria() {
@@ -77,13 +66,17 @@ class _RegisterScreenState extends State<RegisterScreen>
     final confirm = _confirmPasswordController.text;
     final nom = _nomController.text;
     final prenom = _prenomController.text;
-    
+
     setState(() {
       _hasMinLength = password.length >= 8;
       _hasUppercase = password.contains(RegExp(r'[A-Z]'));
       _hasLowercase = password.contains(RegExp(r'[a-z]'));
       _hasDigits = password.contains(RegExp(r'[0-9]'));
-      _hasNoPersonalInfo = !PasswordValidator.isPasswordPersonalInfo(password, nom, prenom);
+      _hasNoPersonalInfo = !PasswordValidator.isPasswordPersonalInfo(
+        password,
+        nom,
+        prenom,
+      );
       _passwordsMatch = password.isNotEmpty && password == confirm;
       _strengthScore = PasswordValidator.getPasswordStrength(password);
     });
@@ -97,7 +90,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     _prenomController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _adminSecretController.dispose();
     super.dispose();
   }
 
@@ -105,38 +97,41 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (!_formKey.currentState!.validate()) return;
 
     if (!_acceptedPrivacyPolicy) {
-      _showErrorSnackBar('Vous devez accepter la politique de confidentialité');
+      _showErrorSnackBar(
+        'Vous devez accepter les conditions d\'utilisation et la politique de confidentialité',
+      );
       return;
     }
 
     final authRepository = context.read<AuthRepository>();
-
-    if (_selectedAccountType == 'Administrateur' && !_isFirstUser) {
-      if (!authRepository.verifyAdminActivationCode(_adminSecretController.text)) {
-        _showErrorSnackBar("Le code d'activation Administrateur est incorrect");
-        return;
-      }
-    }
 
     if (_passwordController.text != _confirmPasswordController.text) {
       _showErrorSnackBar('Les mots de passe ne correspondent pas');
       return;
     }
 
-    final success = await authRepository.register(
-      _usernameController.text.trim(),
-      _emailController.text.trim(),
-      _nomController.text.trim(),
-      _prenomController.text.trim(),
-      _passwordController.text,
-      typeCompte: _selectedAccountType,
-    );
+    final recoveryCode = widget.isBootstrap
+        ? await authRepository.createFirstAdmin(
+            _usernameController.text.trim(),
+            _emailController.text.trim(),
+            _nomController.text.trim(),
+            _prenomController.text.trim(),
+            _passwordController.text,
+          )
+        : (await authRepository.register(
+                _usernameController.text.trim(),
+                _emailController.text.trim(),
+                _nomController.text.trim(),
+                _prenomController.text.trim(),
+                _passwordController.text,
+              )
+              ? ''
+              : null);
 
     if (!mounted) return;
 
-    if (success) {
-      final recoveryCode = authRepository.lastGeneratedRecoveryCode;
-      if (recoveryCode != null && mounted) {
+    if (recoveryCode != null) {
+      if (widget.isBootstrap) {
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
@@ -154,10 +149,17 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
         );
       }
-      AppSnackBars.showSuccess(context, 'Compte créé avec succès ! Connectez-vous.');
-      Navigator.of(context).pushReplacementNamed('/login');
+      AppSnackBars.showSuccess(
+        context,
+        widget.isBootstrap
+            ? 'Compte administrateur créé avec succès.'
+            : 'Compte créé avec succès.',
+      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
     } else {
-      _showErrorSnackBar(authRepository.errorMessage ?? 'Erreur d\'inscription');
+      _showErrorSnackBar(
+        authRepository.errorMessage ?? 'Erreur d\'inscription',
+      );
     }
   }
 
@@ -168,136 +170,15 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 900) {
-            return Row(
-              children: [
-                // Panneau de gauche : Formulaire
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    color: isDark ? AppTheme.darkBg : Colors.white,
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 450),
-                          child: _buildRegisterForm(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Panneau de droite : Branding
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: -50,
-                          right: -50,
-                          child: _buildCircle(250, Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        Positioned(
-                          bottom: 100,
-                          left: 100,
-                          child: _buildCircle(150, Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(40.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Hero(
-                                  tag: 'app_logo',
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(30),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.2),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 10),
-                                        )
-                                      ],
-                                    ),
-                                    padding: const EdgeInsets.all(15),
-                                    child: Image.asset(
-                                      'assets/Pictures/Logo Planificator.png',
-                                      height: 100,
-                                      width: 100,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 30),
-                                Text(
-                                  'Rejoignez-nous',
-                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontSize: 40,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 15),
-                                Text(
-                                  'Créez votre compte en quelques instants et commencez à gérer vos plannings clients efficacement.',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w300,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          } else {
-            // Vue mobile
-            return Container(
-              decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-              ),
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Card(
-                    elevation: 10,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: _buildRegisterForm(context),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }
-        },
-      ),
+    return AuthPageShell(
+      showBrandPanel: !widget.embedded,
+      form: _buildRegisterForm(context),
     );
   }
 
   Widget _buildRegisterForm(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Form(
       key: _formKey,
       child: Column(
@@ -305,19 +186,23 @@ class _RegisterScreenState extends State<RegisterScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Inscription',
+            widget.isBootstrap
+                ? 'Créer le compte administrateur'
+                : 'Inscription',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.w800,
               color: isDark ? Colors.white : AppTheme.darkGrey,
             ),
           ),
           const SizedBox(height: 30),
-          
+
           // Nom & Prénom en ligne sur Desktop
           Row(
             children: [
               Expanded(
-                child: _buildFieldLabel(context, 'Nom', 
+                child: _buildFieldLabel(
+                  context,
+                  'Nom',
                   TextFormField(
                     controller: _nomController,
                     decoration: const InputDecoration(hintText: 'Votre nom'),
@@ -327,7 +212,9 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildFieldLabel(context, 'Prénom', 
+                child: _buildFieldLabel(
+                  context,
+                  'Prénom',
                   TextFormField(
                     controller: _prenomController,
                     decoration: const InputDecoration(hintText: 'Votre prénom'),
@@ -338,8 +225,10 @@ class _RegisterScreenState extends State<RegisterScreen>
             ],
           ),
           const SizedBox(height: 20),
-          
-          _buildFieldLabel(context, 'Email', 
+
+          _buildFieldLabel(
+            context,
+            'Email',
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -349,14 +238,18 @@ class _RegisterScreenState extends State<RegisterScreen>
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Email requis';
-                if (!EmailValidator.isValidEmail(v.trim())) return 'Format d\'email invalide';
+                if (!EmailValidator.isValidEmail(v.trim())) {
+                  return 'Format d\'email invalide';
+                }
                 return null;
               },
             ),
           ),
           const SizedBox(height: 20),
-          
-          _buildFieldLabel(context, 'Nom d\'utilisateur', 
+
+          _buildFieldLabel(
+            context,
+            'Nom d\'utilisateur',
             TextFormField(
               controller: _usernameController,
               decoration: const InputDecoration(
@@ -367,10 +260,13 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
           const SizedBox(height: 20),
-          
-          _buildFieldLabel(context, 'Mot de passe', 
+
+          _buildFieldLabel(
+            context,
+            'Mot de passe',
             Focus(
-              onFocusChange: (hasFocus) => setState(() => _showCriteria = hasFocus),
+              onFocusChange: (hasFocus) =>
+                  setState(() => _showCriteria = hasFocus),
               child: TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -378,13 +274,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                   hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Requis';
-                  if (!_hasMinLength || !_hasUppercase || !_hasLowercase || !_hasDigits) {
+                  if (!_hasMinLength ||
+                      !_hasUppercase ||
+                      !_hasLowercase ||
+                      !_hasDigits) {
                     return 'Le mot de passe est trop faible';
                   }
                   if (!_hasNoPersonalInfo) {
@@ -397,16 +302,18 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
-            child: _showCriteria 
+            child: _showCriteria
                 ? Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: _buildPasswordLiveCriteria(context),
-                  ) 
+                  )
                 : const SizedBox.shrink(),
           ),
           const SizedBox(height: 20),
-          
-          _buildFieldLabel(context, 'Confirmer le mot de passe', 
+
+          _buildFieldLabel(
+            context,
+            'Confirmer le mot de passe',
             TextFormField(
               controller: _confirmPasswordController,
               obscureText: _obscureConfirmPassword,
@@ -414,60 +321,37 @@ class _RegisterScreenState extends State<RegisterScreen>
                 hintText: '••••••••',
                 prefixIcon: const Icon(Icons.lock_reset_outlined),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
-                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(
+                    () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                  ),
                 ),
               ),
-              validator: (v) => v != _passwordController.text ? 'Les mots de passe ne correspondent pas' : null,
+              validator: (v) => v != _passwordController.text
+                  ? 'Les mots de passe ne correspondent pas'
+                  : null,
             ),
           ),
           _buildMatchIndicator(context),
-          
+
           const SizedBox(height: 24),
-          
-          _buildFieldLabel(context, 'Type de compte', _buildAccountTypeSelector(context)),
-          
-          if (_selectedAccountType == 'Administrateur' && !_isFirstUser) ...[
-            const SizedBox(height: 20),
-            _buildFieldLabel(context, "Code d'activation Administrateur", 
-              TextFormField(
-                controller: _adminSecretController,
-                obscureText: _obscureAdminSecret,
-                decoration: InputDecoration(
-                  hintText: 'Code requis pour le rôle Admin',
-                  prefixIcon: const Icon(Icons.vpn_key_outlined),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureAdminSecret ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => _obscureAdminSecret = !_obscureAdminSecret),
-                  ),
-                ),
-                validator: (v) => v!.isEmpty ? 'Requis pour Administrateur' : null,
-              ),
+
+          if (widget.isBootstrap)
+            const Text(
+              'Ce compte sera le premier administrateur de cette base de données.',
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.warning_amber_rounded, color: AppTheme.warningOrange, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Privilèges étendus : suppression, prix, config DB.',
-                    style: TextStyle(color: AppTheme.warningOrange, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ],
 
           const SizedBox(height: 30),
-          
+
           _buildPrivacyPolicyCheckbox(context),
-          
+
           const SizedBox(height: 30),
-          
+
           Selector<AuthRepository, bool>(
             selector: (_, auth) => auth.isLoading,
             builder: (context, isLoading, _) {
@@ -478,15 +362,30 @@ class _RegisterScreenState extends State<RegisterScreen>
                   onPressed: isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(elevation: 4),
                   child: isLoading
-                      ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : const Text('CRÉER MON COMPTE', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text(
+                          'CRÉER MON COMPTE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
                 ),
               );
             },
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           Center(
             child: TextButton(
               onPressed: () {
@@ -496,15 +395,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                         const LoginScreen(),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: child,
-                      );
-                    },
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
                   ),
                 );
               },
-              child: const Text('Déjà inscrit ? Se connecter', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Déjà inscrit ? Se connecter',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -516,7 +418,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         field,
       ],
@@ -525,7 +432,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildPasswordLiveCriteria(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -586,7 +493,9 @@ class _RegisterScreenState extends State<RegisterScreen>
       child: Row(
         children: [
           Icon(
-            isMet ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            isMet
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
             size: 16,
             color: isMet ? AppTheme.successGreen : Colors.grey[400],
           ),
@@ -606,7 +515,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildMatchIndicator(BuildContext context) {
     if (_confirmPasswordController.text.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.only(top: 8, left: 4),
       child: Row(
@@ -614,15 +523,21 @@ class _RegisterScreenState extends State<RegisterScreen>
           Icon(
             _passwordsMatch ? Icons.check_circle_outline : Icons.error_outline,
             size: 14,
-            color: _passwordsMatch ? AppTheme.successGreen : AppTheme.warningOrange,
+            color: _passwordsMatch
+                ? AppTheme.successGreen
+                : AppTheme.warningOrange,
           ),
           const SizedBox(width: 8),
           Text(
-            _passwordsMatch ? 'Les mots de passe correspondent' : 'Les mots de passe sont différents',
+            _passwordsMatch
+                ? 'Les mots de passe correspondent'
+                : 'Les mots de passe sont différents',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: _passwordsMatch ? AppTheme.successGreen : AppTheme.warningOrange,
+              color: _passwordsMatch
+                  ? AppTheme.successGreen
+                  : AppTheme.warningOrange,
             ),
           ),
         ],
@@ -630,23 +545,19 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  Widget _buildCircle(double size, Color color) {
-    return Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
-  }
-
   Widget _buildPrivacyPolicyCheckbox(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _acceptedPrivacyPolicy 
-            ? AppTheme.primaryBlue.withValues(alpha: 0.05) 
+        color: _acceptedPrivacyPolicy
+            ? AppTheme.primaryBlue.withValues(alpha: 0.05)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _acceptedPrivacyPolicy 
-              ? AppTheme.primaryBlue.withValues(alpha: 0.3) 
+          color: _acceptedPrivacyPolicy
+              ? AppTheme.primaryBlue.withValues(alpha: 0.3)
               : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
@@ -658,9 +569,12 @@ class _RegisterScreenState extends State<RegisterScreen>
             width: 24,
             child: Checkbox(
               value: _acceptedPrivacyPolicy,
-              onChanged: (value) => setState(() => _acceptedPrivacyPolicy = value ?? false),
+              onChanged: (value) =>
+                  setState(() => _acceptedPrivacyPolicy = value ?? false),
               activeColor: AppTheme.primaryBlue,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -674,7 +588,24 @@ class _RegisterScreenState extends State<RegisterScreen>
                   fontFamily: 'Poppins',
                 ),
                 children: [
-                  const TextSpan(text: 'J\'ai lu et j\'accepte la '),
+                  const TextSpan(text: 'J\'ai lu et j\'accepte les '),
+                  TextSpan(
+                    text: 'conditions d\'utilisation',
+                    style: const TextStyle(
+                      color: AppTheme.primaryBlue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const TermsOfServiceScreen(),
+                          ),
+                        );
+                      },
+                  ),
+                  const TextSpan(text: ' et la '),
                   TextSpan(
                     text: 'politique de confidentialité',
                     style: const TextStyle(
@@ -685,54 +616,18 @@ class _RegisterScreenState extends State<RegisterScreen>
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const PrivacyPolicyScreen(),
+                          ),
                         );
                       },
                   ),
-                  const TextSpan(text: ' de la plateforme Planificator.'),
+                  const TextSpan(text: ' de Planificator.'),
                 ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAccountTypeSelector(BuildContext context) {
-    return SegmentedButton<String>(
-      segments: const [
-        ButtonSegment<String>(
-          value: 'Utilisateur',
-          label: Text('Utilisateur'),
-          icon: Icon(Icons.person_outline),
-        ),
-        ButtonSegment<String>(
-          value: 'Administrateur',
-          label: Text('Admin'),
-          icon: Icon(Icons.shield_outlined),
-        ),
-      ],
-      selected: {_selectedAccountType},
-      onSelectionChanged: (Set<String> newSelection) {
-        setState(() {
-          _selectedAccountType = newSelection.first;
-        });
-      },
-      style: ButtonStyle(
-        side: WidgetStateProperty.all(BorderSide(color: Colors.grey.shade300)),
-        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppTheme.primaryBlue;
-          }
-          return null;
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-          if (states.contains(WidgetState.selected)) {
-            return Colors.white;
-          }
-          return null;
-        }),
       ),
     );
   }
