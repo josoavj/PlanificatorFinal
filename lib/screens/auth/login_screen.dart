@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
 import '../../core/theme.dart';
 import 'register_screen.dart';
+import 'recover_account_screen.dart';
 
 /// Écran de connexion moderne et intuitif
 class LoginScreen extends StatefulWidget {
@@ -263,9 +264,11 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
               TextButton(
-                onPressed: () {
-                  // TODO: Logique mot de passe oublié
-                },
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const RecoverAccountScreen(),
+                  ),
+                ),
                 child: const Text('Mot de passe oublié ?', style: TextStyle(fontSize: 12)),
               ),
             ],
