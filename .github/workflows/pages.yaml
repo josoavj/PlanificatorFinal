@@ -2,7 +2,7 @@ name: Déploiement de Planificator sur GitHub Pages
 
 on:
   push:
-    branches: [master, main]
+    branches: [master]
     paths: ['presentation/**']
 
 permissions:
