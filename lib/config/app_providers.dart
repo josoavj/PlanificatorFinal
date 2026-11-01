@@ -10,9 +10,18 @@ class AppProviders {
 
     // Repositories
     ChangeNotifierProvider(create: (_) => AuthRepository()),
-    ChangeNotifierProvider(create: (_) => ClientRepository()),
-    ChangeNotifierProvider(create: (_) => FactureRepository()),
-    ChangeNotifierProvider(create: (_) => ContratRepository()),
+    ChangeNotifierProxyProvider<AuthRepository, ClientRepository>(
+      create: (_) => ClientRepository(),
+      update: (_, auth, repository) => repository!..authRepository = auth,
+    ),
+    ChangeNotifierProxyProvider<AuthRepository, FactureRepository>(
+      create: (_) => FactureRepository(),
+      update: (_, auth, repository) => repository!..authRepository = auth,
+    ),
+    ChangeNotifierProxyProvider<AuthRepository, ContratRepository>(
+      create: (_) => ContratRepository(),
+      update: (_, auth, repository) => repository!..authRepository = auth,
+    ),
     ChangeNotifierProvider(create: (_) => PlanningRepository()),
     ChangeNotifierProvider(create: (_) => PlanningDetailsRepository()),
     ChangeNotifierProvider(create: (_) => HistoriqueRepository()),

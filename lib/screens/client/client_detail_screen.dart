@@ -541,7 +541,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
       final nav = Navigator.of(context);
       context
           .read<ClientRepository>()
-          .deleteClient(_client!.clientId, isAdmin: authRepo.isAdmin)
+          .deleteClient(_client!.clientId)
           .then((success) {
             if (mounted && success) {
               nav.pop(true);

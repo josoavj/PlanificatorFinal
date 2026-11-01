@@ -63,7 +63,7 @@ class ContratAbrogationDialog extends StatelessWidget {
           ),
           FilledButton.icon(icon: const Icon(Icons.check_circle_outline, size: 18), label: const Text('CONFIRMER'), style: FilledButton.styleFrom(backgroundColor: Colors.orange), onPressed: () async {
             Navigator.pop(context);
-            await context.read<ContratRepository>().abrogateContract(contratId: contrat.contratId, abrogationDate: selectedDate, motif: motif, isAdmin: true);
+            await context.read<ContratRepository>().abrogateContract(contratId: contrat.contratId, abrogationDate: selectedDate, motif: motif);
             onDataChanged();
           }),
         ],
@@ -114,7 +114,7 @@ class ContratDeleteDialog extends StatelessWidget {
         ),
         FilledButton.icon(icon: const Icon(Icons.delete_forever_rounded, size: 18), label: const Text('SUPPRIMER'), style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed), onPressed: () async {
           Navigator.pop(context);
-          await context.read<ContratRepository>().deleteContrat(contrat.contratId, isAdmin: context.read<AuthRepository>().isAdmin);
+          await context.read<ContratRepository>().deleteContrat(contrat.contratId);
           onDataChanged();
         }),
       ],

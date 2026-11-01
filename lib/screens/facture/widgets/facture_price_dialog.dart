@@ -181,13 +181,11 @@ class FacturePriceDialog extends StatelessWidget {
                                 return;
                               }
 
-                              final authRepo = context.read<AuthRepository>();
                               final factureRepo = context.read<FactureRepository>();
                               final success = await factureRepo.majMontantEtHistorique(
                                 facture.factureId, 
                                 oldPrix, 
-                                newPrix, 
-                                isAdmin: authRepo.isAdmin
+                                newPrix,
                               );
 
                               if (!context.mounted) return;

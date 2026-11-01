@@ -63,7 +63,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPage(int index) {
     return RepaintBoundary(
-      child: _getPage(index),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final offsetAnimation = Tween<Offset>(
+            begin: const Offset(0, 0.025),
+            end: Offset.zero,
+          ).animate(animation);
+
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: offsetAnimation,
+              child: child,
+            ),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<int>(index),
+          child: _getPage(index),
+        ),
+      ),
     );
   }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
-import '../../services/database_service.dart';
 import '../../services/logging_service.dart';
 import '../../core/theme.dart';
 import '../../services/theme_provider.dart';
@@ -11,7 +10,7 @@ import '../../utils/excel_utils.dart';
 import '../../widgets/features_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'widgets/database_config_dialog.dart';
-import 'widgets/profile_list_dialog.dart';
+import 'users_management_screen.dart';
 import 'widgets/notification_time_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -54,7 +53,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Notifications',
                       subtitle: 'Recevoir les notifications',
                       value: _notificationsEnabled,
-                      onChanged: (v) => setState(() => _notificationsEnabled = v),
+                      onChanged: (v) =>
+                          setState(() => _notificationsEnabled = v),
                     ),
                     if (_notificationsEnabled)
                       AppActionCard(
@@ -66,11 +66,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Selector<ThemeProvider, bool>(
                       selector: (_, tp) => tp.isDarkMode,
                       builder: (context, isDark, _) => AppSwitchCard(
-                        icon: isDark ? Icons.wb_sunny_outlined : Icons.mode_night_outlined,
+                        icon: isDark
+                            ? Icons.wb_sunny_outlined
+                            : Icons.mode_night_outlined,
                         title: isDark ? 'Mode clair' : 'Mode sombre',
-                        subtitle: isDark ? 'Utiliser le thème clair' : 'Utiliser le thème sombre',
+                        subtitle: isDark
+                            ? 'Utiliser le thème clair'
+                            : 'Utiliser le thème sombre',
                         value: isDark,
-                        onChanged: (v) => context.read<ThemeProvider>().toggleTheme(),
+                        onChanged: (v) =>
+                            context.read<ThemeProvider>().toggleTheme(),
                       ),
                     ),
                     AppSwitchCard(
@@ -104,7 +109,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () => AppDialogs.info(
                         context,
                         title: 'Aide',
-                        message: 'Bienvenue dans l\'aide de Planificator. Pour toute question, veuillez nous contacter.',
+                        message:
+                            'Bienvenue dans l\'aide de Planificator. Pour toute question, veuillez nous contacter.',
                       ),
                     ),
                     AppActionCard(
@@ -163,7 +169,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).brightness == Brightness.dark
                               ? AppTheme.warningOrange.withValues(alpha: 0.15)
@@ -171,12 +180,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded, color: AppTheme.warningOrange, size: 22),
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: AppTheme.warningOrange,
+                              size: 22,
+                            ),
                             SizedBox(width: 16),
                             Expanded(
                               child: Text(
                                 'Configuration critique - À manipuler avec prudence',
-                                style: TextStyle(color: AppTheme.warningOrange, fontWeight: FontWeight.bold, fontSize: 12),
+                                style: TextStyle(
+                                  color: AppTheme.warningOrange,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ],
@@ -196,9 +213,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       AppActionCard(
                         icon: Icons.group_outlined,
-                        title: 'Liste des profils',
-                        subtitle: 'Voir tous les profils et leurs types',
-                        onTap: () => ProfileListDialog.show(context),
+                        title: 'Gestion des comptes',
+                        subtitle: 'Modifier les rôles ou supprimer des comptes',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const UsersManagementScreen(),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -222,7 +243,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                const Center(child: Text('Planificator 2.1.1', style: TextStyle(color: Colors.grey))),
+                const Center(
+                  child: Text(
+                    'Planificator 2.1.1',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -233,43 +259,137 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCacheDialog(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Vider le cache', message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.', confirmText: 'Vider la cache', isDestructive: true).then((c) { if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé'); });
+    AppDialogs.confirm(
+      context,
+      title: 'Vider le cache',
+      message:
+          'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.',
+      confirmText: 'Vider la cache',
+      isDestructive: true,
+    ).then((c) {
+      if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé');
+    });
   }
 
   void _logout(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Déconnexion', message: 'Êtes-vous sûr de vouloir vous déconnecter ?', confirmText: 'Se déconnecter', isDestructive: true).then((c) { if (c == true) { context.read<AuthRepository>().logout(); Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false); } });
-  }
-
-  void _deleteAccount(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Supprimer le compte', message: 'Cette action est irréversible. Tous vos données seront supprimées. Êtes-vous sûr ?', confirmText: 'Supprimer définitivement', isDestructive: true).then((c) async {
+    AppDialogs.confirm(
+      context,
+      title: 'Déconnexion',
+      message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+      confirmText: 'Se déconnecter',
+      isDestructive: true,
+    ).then((c) {
       if (c == true) {
-        try {
-          final auth = context.read<AuthRepository>();
-          if (auth.currentUser != null) await DatabaseService().execute('DELETE FROM Account WHERE id_compte = ?', [auth.currentUser!.userId]);
-          if (!mounted) return;
-          AppDialogs.info(context, title: 'Compte supprimé', message: 'Votre compte a été supprimé.').then((_) { auth.logout(); Navigator.of(context).pushNamedAndRemoveUntil('/register', (route) => false); });
-        } catch (e) { if (mounted) AppDialogs.error(context, message: 'Erreur: $e'); }
+        context.read<AuthRepository>().logout();
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     });
   }
 
+  Future<void> _deleteAccount(BuildContext context) async {
+    final passwordController = TextEditingController();
+    final password = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirmer la suppression du compte'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Cette action est irréversible. Confirmez avec votre mot de passe.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Mot de passe actuel',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed),
+            onPressed: () =>
+                Navigator.pop(dialogContext, passwordController.text),
+            child: const Text('Supprimer définitivement'),
+          ),
+        ],
+      ),
+    );
+    passwordController.dispose();
+    if (password == null || password.isEmpty || !mounted) return;
+
+    final auth = context.read<AuthRepository>();
+    final deleted = await auth.deleteAccount(password);
+    if (!mounted) return;
+    if (!deleted) {
+      AppSnackBars.showError(
+        context,
+        auth.errorMessage ?? 'Impossible de supprimer le compte.',
+      );
+      return;
+    }
+    Navigator.of(context).pushNamedAndRemoveUntil('/register', (_) => false);
+  }
+
   void _showLogViewer(BuildContext context) {
-    AppDialogs.showBlurDialog(context: context, builder: (context) => SizedBox(width: MediaQuery.of(context).size.width * 0.95, height: MediaQuery.of(context).size.height * 0.95, child: const LogViewerDialog()));
+    AppDialogs.showBlurDialog(
+      context: context,
+      builder: (context) => SizedBox(
+        width: MediaQuery.of(context).size.width * 0.95,
+        height: MediaQuery.of(context).size.height * 0.95,
+        child: const LogViewerDialog(),
+      ),
+    );
   }
 
   Future<void> _exportLogs() async {
-    try { final dir = await log.getLogsDirectory(); if (mounted) AppSnackBars.showSuccess(context, 'Logs sauvegardés: $dir'); }
-    catch (e) { if (mounted) AppSnackBars.showError(context, 'Erreur: $e'); }
+    try {
+      final dir = await log.getLogsDirectory();
+      if (mounted) AppSnackBars.showSuccess(context, 'Logs sauvegardés: $dir');
+    } catch (e) {
+      if (mounted) AppSnackBars.showError(context, 'Erreur: $e');
+    }
   }
 
   void _clearLogs(BuildContext context) {
-    AppDialogs.confirm(context, title: 'Effacer les logs', message: 'Supprimer tous les logs en mémoire et sur disque ?', confirmText: 'Effacer les logs', isDestructive: true).then((c) async {
-      if (c == true) { log.clear(); await log.clearLogFiles(); if (mounted) AppSnackBars.showSuccess(context, 'Logs effacés avec succès'); }
+    AppDialogs.confirm(
+      context,
+      title: 'Effacer les logs',
+      message: 'Supprimer tous les logs en mémoire et sur disque ?',
+      confirmText: 'Effacer les logs',
+      isDestructive: true,
+    ).then((c) async {
+      if (c == true) {
+        log.clear();
+        await log.clearLogFiles();
+        if (mounted) {
+          AppSnackBars.showSuccess(context, 'Logs effacés avec succès');
+        }
+      }
     });
   }
 
   void _showLanguageDialog() {
-    AppDialogs.selection(context, title: 'Sélectionner une langue', items: const ['fr', 'en'], itemLabel: (i) => i == 'fr' ? 'Français' : 'English', selectedItem: _language).then((s) { if (s != null) setState(() => _language = s); });
+    AppDialogs.selection(
+      context,
+      title: 'Sélectionner une langue',
+      items: const ['fr', 'en'],
+      itemLabel: (i) => i == 'fr' ? 'Français' : 'English',
+      selectedItem: _language,
+    ).then((s) {
+      if (s != null) setState(() => _language = s);
+    });
   }
 
   Future<void> _pickExportDirectory() async {
@@ -278,13 +398,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (selectedDirectory != null) {
       await FolderManager.setCustomPath(selectedDirectory);
       await _loadExportPath();
-      if (mounted) AppSnackBars.showSuccess(context, 'Nouvel emplacement enregistré');
+      if (mounted) {
+        AppSnackBars.showSuccess(context, 'Nouvel emplacement enregistré');
+      }
     }
   }
 
   Future<void> _resetExportPath() async {
     await FolderManager.resetToDefault();
     await _loadExportPath();
-    if (mounted) AppSnackBars.showSuccess(context, 'Emplacement réinitialisé sur le Bureau');
+    if (mounted) {
+      AppSnackBars.showSuccess(
+        context,
+        'Emplacement réinitialisé sur le Bureau',
+      );
+    }
   }
 }

@@ -223,7 +223,7 @@ class LegalDocumentsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Dernière mise à jour : 15 janvier 2026',
+                    'Dernière mise à jour : 31 Octobre 2026',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
                 ],

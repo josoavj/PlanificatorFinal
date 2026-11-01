@@ -1,0 +1,13 @@
+/* 1. Design tokens, reset et typographie */
+:root{--ink:#0B1B3F;--brand:#2563EB;--brand-dark:#1D4ED8;--brand-light:#60A5FA;--accent:#38BDF8;--tint:#EAF1FF;--paper:#F6F9FF;--white:#fff;--line:#D8E3F7;--muted:#4A5B7A;--radius:14px;--gap:clamp(16px,2.5vw,24px);--section-y:clamp(56px,8vw,88px);--font-head:"Lexend",system-ui,sans-serif;--font-body:"Poppins",system-ui,sans-serif;--font-mono:ui-monospace,Consolas,monospace}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px;-webkit-text-size-adjust:100%}
+body{margin:0;font:400 clamp(15px,.35vw + 14px,16.5px)/1.65 var(--font-body);color:var(--ink);background:var(--paper);overflow-x:hidden}
+img,svg{max-width:100%;height:auto}
+h1,h2,h3{font-family:var(--font-head);font-weight:600;line-height:1.15;margin:0;text-wrap:balance}
+p{margin:0}a{color:var(--brand)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+code{font:.9em var(--font-mono);background:var(--tint);padding:2px 6px;border-radius:6px;overflow-wrap:anywhere}
+pre{max-width:100%;margin:0;background:var(--ink);color:#D5E3FF;border-radius:var(--radius);padding:20px;overflow-x:auto;font:14px/1.6 var(--font-mono)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}

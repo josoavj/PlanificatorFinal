@@ -1,0 +1,24 @@
+/* 3. Composants réutilisables */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 22px;border-radius:10px;font-weight:600;text-decoration:none;background:var(--brand);color:#fff;border:1.5px solid var(--brand);transition:background .2s}
+.btn:hover{background:var(--brand-dark)}.btn--ghost{background:transparent;color:var(--ink);border-color:var(--ink)}.btn--ghost:hover{background:var(--tint)}
+.btn-row{display:flex;flex-wrap:wrap;gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:clamp(18px,3vw,26px)}
+.section--alt .card{background:var(--paper)}
+.card__title{font-size:20px;margin-bottom:12px}.card__text{color:var(--muted);font-size:15.5px;margin-bottom:16px}
+.list{margin:0;padding:0;list-style:none}.list li{padding:8px 0;border-top:1px solid var(--line);font-size:15.5px}.list li:first-child{border:0}
+.list b{display:block;font-weight:600}.list span{color:var(--muted)}
+.stat{padding:18px 20px;border-radius:var(--radius);background:#fff;border:1px solid var(--line)}
+.stat__value{display:block;font:600 clamp(26px,4vw,36px)/1.1 var(--font-head);color:var(--brand)}.stat__label{color:var(--muted);font-size:14.5px}
+.timeline{border-left:3px solid var(--brand-light);margin-left:6px;padding-left:clamp(18px,3vw,28px);display:grid;gap:30px}
+.timeline__tag{color:var(--brand);font-weight:600;font-size:14px}.timeline h3{font-size:clamp(19px,2.4vw,22px)}.timeline p{color:var(--muted);margin-top:6px}
+.timeline ul{margin:8px 0 0;padding-left:18px}.timeline li{margin:4px 0}
+.steps{counter-reset:s;display:grid;gap:16px;padding:0;margin:0;list-style:none}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:16px}
+.steps li::before{content:counter(s);width:44px;height:44px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font:600 18px var(--font-head)}
+.steps h3{font-size:19px}.steps p{color:var(--muted)}
+.table-wrap{width:100%;min-width:0;max-width:100%;overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:15px;min-width:420px}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--tint);font-weight:600}tr:last-child>*{border-bottom:0}
+.doc-link{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;text-decoration:none;color:var(--ink);min-height:44px}
+.doc-link:hover{border-color:var(--brand)}.doc-link span{display:block;color:var(--muted);font-size:14.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}.chips li{background:var(--tint);color:var(--brand-dark);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:500}
