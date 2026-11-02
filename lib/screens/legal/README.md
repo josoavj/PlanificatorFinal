@@ -35,7 +35,7 @@ Cette section contient tous les documents légaux et réglementaires de Planific
 Les documents sont accessibles via :
 
 1. **Paramètres** → Documents Légaux
-2. **Accès direct** via `Navigator.push()` avec `LegalDocumentsScreen()`
+2. **Lors de la création du compte** 
 
 ### Conformité
 
@@ -50,12 +50,13 @@ La connexion MySQL chiffrée TLS est recommandée en production.
 
 **APEXNova Labs**
 
-- Email: <contact@apexnova-labs.com>
-- Localisation: Madagascar
+- Email: <josoavonjiniaina13@gmail.com>
+- Localisation: Antananarivo, Madagascar
 - Délai de réponse: 10 jours ouvrables
 
 ### Mise à Jour
 
-- **Date**: 15 janvier 2026
+- **Date**: 02 Novembre 2026
 - **Version**: 2.1.1
-- **Responsable**: APEXNova Labs
+- **Organisation Responsable**: APEXNova Labs
+- **Principal Mainteneur**: [Josoa Vonjiniaina](https://github.com/josoavj)
