@@ -378,17 +378,17 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
     try {
       // Déterminer le niveau du log à partir du contenu
       LogLevel level = LogLevel.info;
-      if (line.contains('VERBOSE') || line.contains('💬')) {
+      if (line.contains('VERBOSE') || line.contains('verbose')) {
         level = LogLevel.debug;
-      } else if (line.contains('DEBUG') || line.contains('')) {
+      } else if (line.contains('DEBUG') || line.contains('debug')) {
         level = LogLevel.debug;
-      } else if (line.contains('INFO') || line.contains('ℹ️')) {
+      } else if (line.contains('INFO') || line.contains('ℹnfo')) {
         level = LogLevel.info;
-      } else if (line.contains('WARNING') || line.contains('')) {
+      } else if (line.contains('WARNING') || line.contains('warning')) {
         level = LogLevel.warning;
-      } else if (line.contains('ERROR') || line.contains('')) {
+      } else if (line.contains('ERROR') || line.contains('error')) {
         level = LogLevel.error;
-      } else if (line.contains('WTF') || line.contains('')) {
+      } else if (line.contains('WTF') || line.contains('AAA TSY AIKO INTSONY')) {
         level = LogLevel.critical;
       }
 

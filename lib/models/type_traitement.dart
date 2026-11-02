@@ -3,12 +3,14 @@ class TypeTraitement {
   final String categorie;
   final String type;
   final DateTime? createdAt;
+  final bool actif;
 
   TypeTraitement({
     this.id,
     required this.categorie,
     required this.type,
     this.createdAt,
+    this.actif = true,
   });
 
   // Serialization from JSON (MySQL result)
@@ -20,6 +22,9 @@ class TypeTraitement {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'].toString())
           : null,
+      actif: json['actif'] is bool
+          ? json['actif'] as bool
+          : (json['actif'] as num?)?.toInt() != 0,
     );
   }
 
@@ -30,6 +35,7 @@ class TypeTraitement {
       'categorieTraitement': categorie,
       'typeTraitement': type,
       'created_at': createdAt?.toIso8601String(),
+      'actif': actif ? 1 : 0,
     };
   }
 

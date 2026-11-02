@@ -161,17 +161,24 @@ class _SidebarNavigationState extends State<SidebarNavigation>
                       label: 'Mon Profil',
                       index: 7,
                     ),
+                    if (context.watch<AuthRepository>().isAdmin)
+                      _buildNavItem(
+                        context,
+                        icon: Icons.manage_accounts_rounded,
+                        label: 'Gestion des comptes',
+                        index: 8,
+                      ),
                     _buildNavItem(
                       context,
                       icon: Icons.info_rounded,
                       label: 'À propos',
-                      index: 8,
+                      index: 9,
                     ),
                     _buildNavItem(
                       context,
                       icon: Icons.settings_rounded,
                       label: 'Paramètres',
-                      index: 9,
+                      index: 10,
                     ),
                   ],
                 ),

@@ -1,12 +1,13 @@
 /// Centralisation de toutes les requêtes SQL du projet
-/// Permet une maintenance facile et évite la duplication.
+/// Dernière mise à jour de ce fichier : 02 Novembre 2026
 class SqlQueries {
   // --- AUTH ---
   static const String login = '''
     SELECT id_compte as userId, email, nom, prenom, password, type_compte, date_creation as createdAt
     FROM Account WHERE username = ?
   ''';
-  static const String checkUsername = 'SELECT id_compte FROM Account WHERE username = ?';
+  static const String checkUsername =
+      'SELECT id_compte FROM Account WHERE username = ?';
 
   // --- CLIENTS ---
   static const String getClientsPaginated = '''
@@ -75,9 +76,11 @@ class SqlQueries {
     ORDER BY COALESCE(c.nom, 'Z') ASC, COALESCE(c.prenom, '') ASC
   ''';
 
-  static const String checkEmail = 'SELECT client_id FROM Client WHERE email = ?';
+  static const String checkEmail =
+      'SELECT client_id FROM Client WHERE email = ?';
 
-  static const String getCategories = 'SELECT DISTINCT categorie FROM Client ORDER BY categorie ASC';
+  static const String getCategories =
+      'SELECT DISTINCT categorie FROM Client ORDER BY categorie ASC';
 
   static const String getAllClientsBasic = '''
     SELECT 
@@ -117,7 +120,8 @@ class SqlQueries {
     WHERE contrat_id = ?
   ''';
 
-  static const String deleteContrat = 'DELETE FROM Contrat WHERE contrat_id = ?';
+  static const String deleteContrat =
+      'DELETE FROM Contrat WHERE contrat_id = ?';
 
   static const String searchContrats = '''
     SELECT 
@@ -142,8 +146,10 @@ class SqlQueries {
     WHERE contrat_id = ?
   ''';
 
-  static const String getTreatmentsByContrat = 'SELECT traitement_id FROM Traitement WHERE contrat_id = ?';
-  static const String countTreatmentsByContrat = 'SELECT COUNT(*) as count FROM Traitement WHERE contrat_id = ?';
+  static const String getTreatmentsByContrat =
+      'SELECT traitement_id FROM Traitement WHERE contrat_id = ?';
+  static const String countTreatmentsByContrat =
+      'SELECT COUNT(*) as count FROM Traitement WHERE contrat_id = ?';
 
   static const String getTraitementsDetailedByContrat = '''
     SELECT 
@@ -163,11 +169,13 @@ class SqlQueries {
              WHERE p5.traitement_id = t.traitement_id
          )) as montant_total
     FROM Traitement t
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     WHERE t.contrat_id = ?
   ''';
 
-  static const String getFuturePlanningsByTreatment = 'SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?';
+  static const String getFuturePlanningsByTreatment =
+      'SELECT planning_id FROM Planning WHERE traitement_id = ? AND date_debut_planification > ?';
 
   static const String deleteFuturePlanningDetailsByPlanning = '''
     DELETE FROM PlanningDetails 
@@ -175,8 +183,6 @@ class SqlQueries {
   ''';
 
   // --- FACTURES ---
-  // Note: Toutes les requêtes de factures utilisent désormais le lien réciproque (PlanningDetails.facture_id)
-  // pour supporter les factures groupées (N passages -> 1 Facture)
 
   static const String getFacturesByContrat = '''
     SELECT DISTINCT f.*
@@ -214,7 +220,8 @@ class SqlQueries {
     INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
     INNER JOIN Client cl ON co.client_id = cl.client_id
     WHERE cl.client_id = ?
@@ -247,7 +254,8 @@ class SqlQueries {
     LEFT JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     LEFT JOIN Planning p ON pd.planning_id = p.planning_id
     LEFT JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     LEFT JOIN Contrat co ON t.contrat_id = co.contrat_id
     LEFT JOIN Client cl ON co.client_id = cl.client_id
     GROUP BY f.facture_id
@@ -255,7 +263,8 @@ class SqlQueries {
     LIMIT ? OFFSET ?
   ''';
 
-  static const String countAllFactures = 'SELECT COUNT(*) as count FROM Facture';
+  static const String countAllFactures =
+      'SELECT COUNT(*) as count FROM Facture';
 
   static const String getFacturesByPlanningDetail = '''
     SELECT f.*
@@ -276,7 +285,8 @@ class SqlQueries {
     INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     WHERE t.contrat_id = ?
     ORDER BY tt.typeTraitement ASC, f.date_traitement DESC
   ''';
@@ -294,9 +304,12 @@ class SqlQueries {
     ORDER BY change_date ASC
   ''';
 
-  static const String updateFacturePrice = 'UPDATE Facture SET montant = ? WHERE facture_id = ?';
-  static const String markFactureAsPaid = 'UPDATE Facture SET etat = ? WHERE facture_id = ?';
-  static const String updateFactureReference = 'UPDATE Facture SET reference_facture = ? WHERE facture_id = ?';
+  static const String updateFacturePrice =
+      'UPDATE Facture SET montant = ? WHERE facture_id = ?';
+  static const String markFactureAsPaid =
+      'UPDATE Facture SET etat = ? WHERE facture_id = ?';
+  static const String updateFactureReference =
+      'UPDATE Facture SET reference_facture = ? WHERE facture_id = ?';
 
   static const String massUpdateFutureFacturePrices = '''
     UPDATE Facture f
@@ -341,7 +354,8 @@ class SqlQueries {
     VALUES (?, ?, ?, ?, 'Non payé', 'Centre (C)')
   ''';
 
-  static const String checkFactureExistence = 'SELECT facture_id FROM Facture WHERE planning_detail_id = ?';
+  static const String checkFactureExistence =
+      'SELECT facture_id FROM Facture WHERE planning_detail_id = ?';
 
   static const String createFactureComplete = '''
     INSERT INTO Facture (planning_detail_id, reference_facture, montant, mode, date_traitement, etat, axe)
@@ -360,7 +374,8 @@ class SqlQueries {
     WHERE facture_id = ?
   ''';
 
-  static const String deleteFacture = 'DELETE FROM Facture WHERE facture_id = ?';
+  static const String deleteFacture =
+      'DELETE FROM Facture WHERE facture_id = ?';
 
   static const String getClientAxeByTreatment = '''
     SELECT DISTINCT cl.axe
@@ -370,10 +385,13 @@ class SqlQueries {
     WHERE t.traitement_id = ?
   ''';
 
-  static const String getPlanningByTreatment = 'SELECT p.planning_id, p.date_debut_planification, p.duree_traitement, p.redondance FROM Planning p WHERE p.traitement_id = ? LIMIT 1';
+  static const String getPlanningByTreatment =
+      'SELECT p.planning_id, p.date_debut_planification, p.duree_traitement, p.redondance FROM Planning p WHERE p.traitement_id = ? LIMIT 1';
 
-  static const String countPlanningDetails = 'SELECT COUNT(*) as count FROM PlanningDetails WHERE planning_id = ?';
-  static const String countPlanningDetailsByTreatment = 'SELECT COUNT(*) as count FROM Planning WHERE traitement_id = ?';
+  static const String countPlanningDetails =
+      'SELECT COUNT(*) as count FROM PlanningDetails WHERE planning_id = ?';
+  static const String countPlanningDetailsByTreatment =
+      'SELECT COUNT(*) as count FROM Planning WHERE traitement_id = ?';
   static const String countFacturesByTreatment = '''
     SELECT COUNT(*) as count FROM Facture f
     INNER JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
@@ -401,27 +419,38 @@ class SqlQueries {
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     WHERE p.traitement_id = ?
   ''';
-  static const String getRedondanceByTreatment = 'SELECT redondance FROM Planning WHERE traitement_id = ? LIMIT 1';
+  static const String getRedondanceByTreatment =
+      'SELECT redondance FROM Planning WHERE traitement_id = ? LIMIT 1';
 
   static const String getTreatmentIdByType = '''
     SELECT t.traitement_id, t.contrat_id
     FROM Traitement t
-    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     WHERE t.contrat_id = ? AND tt.typeTraitement = ?
     LIMIT 1
   ''';
 
-  static const String insertPlanningDetail = 'INSERT INTO PlanningDetails (planning_id, date_planification) VALUES (?, ?)';
-  static const String getPlanningDetailsByPlanningIdOrdered = 'SELECT DISTINCT pd.planning_detail_id, pd.date_planification FROM PlanningDetails pd WHERE pd.planning_id = ? ORDER BY pd.date_planification ASC';
+  static const String insertPlanningDetail =
+      'INSERT INTO PlanningDetails (planning_id, date_planification) VALUES (?, ?)';
+  static const String getPlanningDetailsByPlanningIdOrdered =
+      'SELECT DISTINCT pd.planning_detail_id, pd.date_planification FROM PlanningDetails pd WHERE pd.planning_id = ? ORDER BY pd.date_planification ASC';
 
   // --- PLANNING DETAILS ---
-  static const String checkExistingPlanningDetail = 'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?';
-  static const String insertPlanningDetailWithStatut = 'INSERT INTO PlanningDetails (planning_id, date_planification, statut, facture_id) VALUES (?, ?, ?, ?)';
-  static const String updatePlanningDetailFacture = 'UPDATE PlanningDetails SET facture_id = ? WHERE planning_detail_id = ?';
-  static const String getPlanningDetailsByPlanningId = 'SELECT * FROM PlanningDetails WHERE planning_id = ? ORDER BY date_planification';
-  static const String updatePlanningDetailStatut = 'UPDATE PlanningDetails SET statut = ? WHERE planning_detail_id = ?';
-  static const String deletePlanningDetail = 'DELETE FROM PlanningDetails WHERE planning_detail_id = ?';
-  static const String getAllPlanningDetails = 'SELECT * FROM PlanningDetails ORDER BY date_planification DESC';
+  static const String checkExistingPlanningDetail =
+      'SELECT planning_detail_id FROM PlanningDetails WHERE planning_id = ? AND date_planification = ?';
+  static const String insertPlanningDetailWithStatut =
+      'INSERT INTO PlanningDetails (planning_id, date_planification, statut, facture_id) VALUES (?, ?, ?, ?)';
+  static const String updatePlanningDetailFacture =
+      'UPDATE PlanningDetails SET facture_id = ? WHERE planning_detail_id = ?';
+  static const String getPlanningDetailsByPlanningId =
+      'SELECT * FROM PlanningDetails WHERE planning_id = ? ORDER BY date_planification';
+  static const String updatePlanningDetailStatut =
+      'UPDATE PlanningDetails SET statut = ? WHERE planning_detail_id = ?';
+  static const String deletePlanningDetail =
+      'DELETE FROM PlanningDetails WHERE planning_detail_id = ?';
+  static const String getAllPlanningDetails =
+      'SELECT * FROM PlanningDetails ORDER BY date_planification DESC';
 
   static const String getPlanningDetailCompleteById = '''
     SELECT 
@@ -441,7 +470,8 @@ class SqlQueries {
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
     LEFT JOIN Facture f ON pd.facture_id = f.facture_id
@@ -467,7 +497,8 @@ class SqlQueries {
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
     LEFT JOIN Facture f ON pd.facture_id = f.facture_id
@@ -497,7 +528,8 @@ class SqlQueries {
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
     LEFT JOIN Facture f ON pd.facture_id = f.facture_id
@@ -524,7 +556,8 @@ class SqlQueries {
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
     ORDER BY pd.date_planification DESC
@@ -547,21 +580,24 @@ class SqlQueries {
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat ct ON t.contrat_id = ct.contrat_id
     INNER JOIN Client c ON ct.client_id = c.client_id
     ORDER BY pd.date_planification DESC
     LIMIT ? OFFSET ?
   ''';
 
-  static const String countAllTreatments = 'SELECT COUNT(*) as count FROM PlanningDetails';
+  static const String countAllTreatments =
+      'SELECT COUNT(*) as count FROM PlanningDetails';
 
   static const String countTreatmentsByCategory = '''
     SELECT tt.categorieTraitement, COUNT(*) as count
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     GROUP BY tt.categorieTraitement
   ''';
 
@@ -577,7 +613,8 @@ class SqlQueries {
     FROM PlanningDetails pd
     INNER JOIN Planning p ON pd.planning_id = p.planning_id
     INNER JOIN Traitement t ON p.traitement_id = t.traitement_id
-    LEFT JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
     INNER JOIN Client c ON co.client_id = c.client_id
   ''';
@@ -585,14 +622,16 @@ class SqlQueries {
   static const String getDistinctTreatmentTypes = '''
     SELECT DISTINCT tt.typeTraitement
     FROM Traitement t
-    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     ORDER BY tt.typeTraitement ASC
   ''';
 
   static const String getDistinctTreatmentTypesByClient = '''
     SELECT DISTINCT tt.typeTraitement
     FROM Traitement t
-    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     INNER JOIN Contrat co ON t.contrat_id = co.contrat_id
     WHERE co.client_id = ?
     ORDER BY tt.typeTraitement ASC
@@ -604,7 +643,8 @@ class SqlQueries {
     (traitement_id, date_debut_planification, mois_debut, mois_fin, duree_traitement, redondance, date_fin_planification)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   ''';
-  static const String checkPlanningExistence = 'SELECT planning_id FROM Planning WHERE traitement_id = ?';
+  static const String checkPlanningExistence =
+      'SELECT planning_id FROM Planning WHERE traitement_id = ?';
 
   // --- HISTORIQUE ---
   static const String getAllHistoriqueDetailed = '''
@@ -679,7 +719,8 @@ class SqlQueries {
     ORDER BY h.date_historique DESC
   ''';
 
-  static const String deleteOldHistorique = 'DELETE FROM Historique WHERE date_historique < ?';
+  static const String deleteOldHistorique =
+      'DELETE FROM Historique WHERE date_historique < ?';
 
   // --- NOTIFICATIONS ---
   static const String getNextDayTreatmentsDetailed = '''
@@ -699,7 +740,8 @@ class SqlQueries {
     JOIN Traitement t ON p.traitement_id = t.traitement_id
     JOIN Contrat co ON t.contrat_id = co.contrat_id
     JOIN Client c ON co.client_id = c.client_id
-    JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     WHERE DATE(pd.date_planification) = ?
     AND pd.statut NOT IN ('Effectué')
     ORDER BY pd.date_planification ASC
@@ -723,7 +765,8 @@ class SqlQueries {
     JOIN Traitement t ON p.traitement_id = t.traitement_id
     JOIN Contrat co ON t.contrat_id = co.contrat_id
     JOIN Client c ON co.client_id = c.client_id
-    JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     WHERE DATE(pd.date_planification) = ?
     AND pd.statut NOT IN ('Effectué')
     ORDER BY pd.date_planification ASC
@@ -737,20 +780,46 @@ class SqlQueries {
 
   // --- SETTINGS / ACCOUNTS ---
   static const String getUserById = 'SELECT * FROM Account WHERE id_compte = ?';
-  static const String updateUserProfile = 'UPDATE Account SET nom = ?, prenom = ?, email = ?, username = ? WHERE id_compte = ?';
+  static const String updateUserProfile =
+      'UPDATE Account SET nom = ?, prenom = ?, email = ?, username = ? WHERE id_compte = ?';
   static const String getAllAccounts = 'SELECT * FROM Account ORDER BY nom ASC';
   static const String deleteAccount = 'DELETE FROM Account WHERE id_compte = ?';
 
   // --- TYPE TRAITEMENT ---
-  static const String getAllTypeTraitements = 'SELECT * FROM TypeTraitement ORDER BY id_type_traitement';
+  static const String getAllTypeTraitements = '''SELECT tt.*
+      FROM TypeTraitement tt
+      INNER JOIN TypeTraitementCategorie tc
+        ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
+      WHERE tt.actif = TRUE
+      ORDER BY tt.id_type_traitement''';
+  static const String getAllTypeTraitementsForAdmin =
+      'SELECT * FROM TypeTraitement ORDER BY id_type_traitement';
+  static const String getAllTraitementCategories =
+      'SELECT * FROM TypeTraitementCategorie WHERE actif = TRUE ORDER BY nom';
+  static const String getAllTraitementCategoriesForAdmin =
+      'SELECT * FROM TypeTraitementCategorie ORDER BY nom';
+  static const String createTraitementCategory =
+      'INSERT INTO TypeTraitementCategorie (nom) VALUES (?)';
+  static const String createTypeTraitement =
+      'INSERT INTO TypeTraitement (categorieTraitement, typeTraitement) VALUES (?, ?)';
+  static const String setTypeTraitementVisibility =
+      'UPDATE TypeTraitement SET actif = ? WHERE id_type_traitement = ?';
+  static const String setCategoryVisibility =
+      'UPDATE TypeTraitementCategorie SET actif = ? WHERE id_categorie = ?';
+  static const String setTreatmentsVisibilityByCategory =
+      'UPDATE TypeTraitement SET actif = ? WHERE categorieTraitement = ?';
 
   // --- SIGNALEMENTS ---
-  static const String getAllSignalements = 'SELECT * FROM Signalement ORDER BY signalement_id DESC';
-  static const String createSignalement = 'INSERT INTO Signalement (planning_detail_id, motif, type) VALUES (?, ?, ?)';
-  static const String updatePlanningDate = 'UPDATE PlanningDetails SET date_planification = ? WHERE planning_detail_id = ?';
+  static const String getAllSignalements =
+      'SELECT * FROM Signalement ORDER BY signalement_id DESC';
+  static const String createSignalement =
+      'INSERT INTO Signalement (planning_detail_id, motif, type) VALUES (?, ?, ?)';
+  static const String updatePlanningDate =
+      'UPDATE PlanningDetails SET date_planification = ? WHERE planning_detail_id = ?';
 
   // --- REMARQUES ---
-  static const String createRemarque = 'INSERT INTO Remarque (client_id, planning_detail_id, facture_id, contenu, issue, action) VALUES (?, ?, ?, ?, ?, ?)';
+  static const String createRemarque =
+      'INSERT INTO Remarque (client_id, planning_detail_id, facture_id, contenu, issue, action) VALUES (?, ?, ?, ?, ?, ?)';
   static const String getClientIdFromPlanningDetail = '''
     SELECT c.client_id FROM Client c 
     JOIN Contrat ct ON c.client_id = ct.client_id 
@@ -783,7 +852,8 @@ class SqlQueries {
     WHERE remarque_id = ?
   ''';
 
-  static const String deleteRemarque = 'DELETE FROM Remarque WHERE remarque_id = ?';
+  static const String deleteRemarque =
+      'DELETE FROM Remarque WHERE remarque_id = ?';
 
   // --- EXPORTS ---
   static const String getExportData = '''
@@ -800,7 +870,8 @@ class SqlQueries {
     JOIN PlanningDetails pd ON f.facture_id = pd.facture_id
     JOIN Planning p ON pd.planning_id = p.planning_id
     JOIN Traitement t ON p.traitement_id = t.traitement_id
-    JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+    INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement AND tt.actif = TRUE
+    INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
     JOIN Contrat co ON t.contrat_id = co.contrat_id
     JOIN Client c ON co.client_id = c.client_id
     ORDER BY f.date_traitement DESC

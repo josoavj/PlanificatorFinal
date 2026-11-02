@@ -7,6 +7,7 @@ export 'user.dart';
 export 'historique_event.dart';
 export 'traitement.dart';
 export 'type_traitement.dart';
+export 'type_traitement_category.dart';
 export 'planning_details.dart';
 export 'remarque.dart';
 export 'signalement.dart';

@@ -77,6 +77,58 @@ class DatabaseMigrationService {
         'INSERT INTO SchemaMigration (version) VALUES (2)',
       );
     }
+    if (!versions.contains(3)) {
+      await _database.execute('''
+        CREATE TABLE IF NOT EXISTS TypeTraitementCategorie (
+          id_categorie INT PRIMARY KEY AUTO_INCREMENT,
+          nom VARCHAR(100) NOT NULL UNIQUE,
+          actif BOOLEAN NOT NULL DEFAULT TRUE,
+          date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      ''');
+      await _changeColumnIfNeeded(
+        'TypeTraitement',
+        'categorieTraitement',
+        'VARCHAR(100) NOT NULL',
+      );
+      await _changeColumnIfNeeded(
+        'TypeTraitement',
+        'typeTraitement',
+        'VARCHAR(150) NOT NULL',
+      );
+      await _addColumnIfMissing(
+        'TypeTraitement',
+        'actif',
+        'BOOLEAN NOT NULL DEFAULT TRUE',
+      );
+      await _addColumnIfMissing(
+        'TypeTraitement',
+        'date_creation',
+        'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
+      );
+      await _database.execute('''
+        INSERT IGNORE INTO TypeTraitementCategorie (nom)
+        SELECT DISTINCT categorieTraitement
+        FROM TypeTraitement
+        WHERE categorieTraitement IS NOT NULL AND categorieTraitement <> ''
+      ''');
+      final uniqueIndex = await _database.query(
+        'SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.STATISTICS '
+        'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? '
+        'AND INDEX_NAME = ?',
+        ['TypeTraitement', 'uq_type_traitement_name'],
+        false,
+      );
+      if ((uniqueIndex.first['count'] as num?) == 0) {
+        await _database.execute(
+          'CREATE UNIQUE INDEX uq_type_traitement_name '
+          'ON TypeTraitement(typeTraitement)',
+        );
+      }
+      await _database.execute(
+        'INSERT INTO SchemaMigration (version) VALUES (3)',
+      );
+    }
     final index = await _database.query(
       'SELECT COUNT(*) AS count FROM INFORMATION_SCHEMA.STATISTICS '
       'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?',
@@ -105,6 +157,24 @@ class DatabaseMigrationService {
     if (count is num && count == 0) {
       await _database.execute(
         'ALTER TABLE `$table` ADD COLUMN `$column` $definition',
+      );
+    }
+  }
+
+  Future<void> _changeColumnIfNeeded(
+    String table,
+    String column,
+    String definition,
+  ) async {
+    final rows = await _database.query(
+      'SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS '
+      'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+      [table, column],
+      false,
+    );
+    if (rows.isNotEmpty && rows.first['DATA_TYPE'] == 'enum') {
+      await _database.execute(
+        'ALTER TABLE `$table` MODIFY COLUMN `$column` $definition',
       );
     }
   }

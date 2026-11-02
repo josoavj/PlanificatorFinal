@@ -3,9 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' show log;
 
 /// Provider pour gérer le thème de la plateforme (light/dark)
-///
-/// Persiste le choix utilisateur dans SharedPreferences et
-/// notifie les écouteurs lors du changement de thème
+
 class ThemeProvider extends ChangeNotifier {
   static const String _prefKey = 'app_theme_mode';
 

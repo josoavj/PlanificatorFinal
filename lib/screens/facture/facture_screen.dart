@@ -23,7 +23,9 @@ class _FactureScreenState extends State<FactureScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -82,7 +84,11 @@ class _FactureScreenState extends State<FactureScreen> {
     );
   }
 
-  Widget _buildList(FactureRepository repo, List<String> sortedKeys, Map<String, List<Facture>> groupedData) {
+  Widget _buildList(
+    FactureRepository repo,
+    List<String> sortedKeys,
+    Map<String, List<Facture>> groupedData,
+  ) {
     if (sortedKeys.isEmpty && !repo.isLoading) {
       return const Center(child: Text('Aucune facture trouvée'));
     }
@@ -102,11 +108,12 @@ class _FactureScreenState extends State<FactureScreen> {
           onTap: () => Navigator.push(
             context,
             PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => 
+              pageBuilder: (context, animation, secondaryAnimation) =>
                   FactureDetailScreen(factures: group, groupTitle: key),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
             ),
           ),
         );
@@ -117,11 +124,14 @@ class _FactureScreenState extends State<FactureScreen> {
   List<Facture> _filterFactures(List<Facture> factures) {
     if (_searchQuery.isEmpty) return factures;
     final q = _searchQuery.toLowerCase();
-    return factures.where((f) => 
-      (f.clientNom?.toLowerCase().contains(q) ?? false) || 
-      (f.clientPrenom?.toLowerCase().contains(q) ?? false) || 
-      (f.typeTreatment?.toLowerCase().contains(q) ?? false)
-    ).toList();
+    return factures
+        .where(
+          (f) =>
+              (f.clientNom?.toLowerCase().contains(q) ?? false) ||
+              (f.clientPrenom?.toLowerCase().contains(q) ?? false) ||
+              (f.typeTreatment?.toLowerCase().contains(q) ?? false),
+        )
+        .toList();
   }
 
   Map<String, List<Facture>> _groupFactures(List<Facture> factures) {

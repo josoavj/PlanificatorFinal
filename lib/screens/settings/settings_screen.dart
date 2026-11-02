@@ -11,7 +11,9 @@ import '../../widgets/features_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'widgets/database_config_dialog.dart';
 import 'users_management_screen.dart';
+import 'treatment_catalog_management_screen.dart';
 import 'widgets/notification_time_dialog.dart';
+import '../legal/legal_documents_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -97,10 +99,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Plateforme',
                   children: [
                     AppActionCard(
+                      icon: Icons.category_outlined,
+                      title: 'Catalogue des traitements',
+                      subtitle:
+                          'Gérer les catégories et traitements disponibles',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const TreatmentCatalogManagementScreen(),
+                        ),
+                      ),
+                    ),
+                    AppActionCard(
                       icon: Icons.info_outline,
                       title: 'À propos',
                       subtitle: 'Informations sur la plateforme',
                       onTap: () => FeaturesDialog.show(context),
+                    ),
+                    AppActionCard(
+                      icon: Icons.gavel_outlined,
+                      title: 'Documents légaux',
+                      subtitle:
+                          'Conditions, confidentialité et informations légales',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const LegalDocumentsScreen(),
+                        ),
+                      ),
                     ),
                     AppActionCard(
                       icon: Icons.help_outline,

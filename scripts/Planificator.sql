@@ -195,11 +195,26 @@ CREATE TABLE Contrat (
     SELECT *, DATEDIFF(date_fin, date_debut) AS duree FROM Contrat;
 */
 
--- Type de traitement utilisant enum
+-- Catalogue extensible des catégories et types de traitement.
+CREATE TABLE TypeTraitementCategorie (
+                                id_categorie INT PRIMARY KEY AUTO_INCREMENT,
+                                nom VARCHAR(100) NOT NULL UNIQUE,
+                                actif BOOLEAN NOT NULL DEFAULT TRUE,
+                                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO TypeTraitementCategorie (nom) VALUES
+('PC'),
+('NI: Nettoyage Industriel'),
+('AT: Anti termites'),
+('RO: Ramassage Ordures');
+
 CREATE TABLE TypeTraitement (
                                 id_type_traitement INT PRIMARY KEY AUTO_INCREMENT,
-                                categorieTraitement ENUM ('AT: Anti termites', 'PC', 'NI: Nettoyage Industriel', 'RO: Ramassage Ordures'),
-                                typeTraitement ENUM('Dératisation (PC)', 'Désinfection (PC)', 'Désinsectisation (PC)', 'Fumigation (PC)', 'Nettoyage industriel (NI)', 'Anti termites (AT)', 'Ramassage ordures (RO)') NOT NULL
+                                categorieTraitement VARCHAR(100) NOT NULL,
+                                typeTraitement VARCHAR(150) NOT NULL UNIQUE,
+                                actif BOOLEAN NOT NULL DEFAULT TRUE,
+                                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insertion des types de traitement prédéfinis
@@ -248,7 +263,6 @@ CREATE TABLE PlanningDetails (
 );
 
 /*
-    ✅ RELATION CORRECTE:
     - PlanningDetails.planning_id → Planning.planning_id (FK dans PlanningDetails)
     - NE PAS ajouter de FK inverse dans Planning car cela crée une dépendance circulaire
     - L'ordre d'insertion doit être: Planning PUIS PlanningDetails
