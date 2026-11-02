@@ -31,10 +31,10 @@ class LegalInfo {
   static const company = 'APEXNova Labs';
   static const editor = 'Josoa Vonjiniaina';
   static const version = '2.1.1';
-  static const email = 'contact@apexnova-labs.com';
-  static const location = 'Madagascar';
+  static const email = 'josoavonjiniaina13@gmail.com';
+  static const location = 'Antananarivo, Madagascar';
   static const responseDelay = '10 jours ouvrables';
-  static const lastUpdate = '31 octobre 2026';
+  static const lastUpdate = '2 Novembre 2026';
   static const copyright = '© 2026 APEXNova Labs · Licence MIT';
   static const repoUrl = 'https://github.com/josoavj/PlanificatorFinal';
   static const issuesUrl = '$repoUrl/issues';
@@ -280,7 +280,7 @@ class LegalFooter extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Dernière mise à jour : ${LegalInfo.lastUpdate}',
+            'Dernière mise à jour le ${LegalInfo.lastUpdate}',
             style: TextStyle(fontSize: 11, color: muted.withValues(alpha: 0.8)),
           ),
         ],
@@ -366,7 +366,6 @@ class LegalPill extends StatelessWidget {
   }
 }
 
-/// Côte à côte sur grand écran, empilés sur petit écran.
 class LegalAdaptiveRow extends StatelessWidget {
   const LegalAdaptiveRow({
     super.key,
@@ -406,7 +405,6 @@ class LegalAdaptiveRow extends StatelessWidget {
   }
 }
 
-/// Carte numérotée pour une section d'un document légal.
 class LegalSectionCard extends StatelessWidget {
   const LegalSectionCard({
     super.key,
@@ -641,7 +639,7 @@ class LegalContactCard extends StatelessWidget {
   const LegalContactCard({super.key});
 
   Uri get _mailto => Uri.parse(
-    'mailto:${LegalInfo.email}?subject=${Uri.encodeComponent('Planificator – Contact')}',
+    'mailto:${LegalInfo.email}?subject=${Uri.encodeComponent('Planificator - Contact')}',
   );
 
   Future<void> _copy(BuildContext context) async {
@@ -711,7 +709,7 @@ class LegalContactCard extends StatelessWidget {
                 onPressed: () => _copy(context),
               ),
               IconButton(
-                tooltip: 'Écrire un e-mail',
+                tooltip: 'Envoyer un e-mail',
                 icon: Icon(Icons.send_rounded, color: primary),
                 onPressed: () => openLegalLink(
                   context,
