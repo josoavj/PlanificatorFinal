@@ -56,7 +56,7 @@ class LegalDocumentsScreen extends StatelessWidget {
           ),
         ),
 
-        // Éditeur et entreprise
+        // Éditeur et entreprise (Ici, c'est une organisation)
         const SizedBox(height: 32),
         const LegalSectionTitle('Éditeur et mainteneur'),
         LegalAdaptiveRow(
@@ -75,7 +75,7 @@ class LegalDocumentsScreen extends StatelessWidget {
               title: LegalInfo.company,
               subtitle: 'Organisation · ${LegalInfo.location}',
               description:
-                  'Solutions technologiques pour la gestion d’entreprise.',
+                  'Organisation responsable de la publication et de la maintenance de Planificator.',
             ),
           ],
         ),
