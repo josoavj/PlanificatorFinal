@@ -13,32 +13,7 @@ class HistoriqueScreen extends StatefulWidget {
 }
 
 class _HistoriqueScreenState extends State<HistoriqueScreen> {
-  final List<Map<String, dynamic>> _sections = [
-    {
-      'title': 'Anti termites (AT)',
-      'code': 'AT',
-      'icon': Icons.bug_report_rounded,
-      'color': Colors.purple,
-    },
-    {
-      'title': 'Lutte antiparasitaire (PC)',
-      'code': 'PC',
-      'icon': Icons.pest_control_rounded,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Nettoyage Industriel (NI)',
-      'code': 'NI',
-      'icon': Icons.cleaning_services_rounded,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Ramassage Ordures (RO)',
-      'code': 'RO',
-      'icon': Icons.delete_sweep_rounded,
-      'color': Colors.brown,
-    },
-  ];
+  final List<Map<String, dynamic>> _sections = [];
 
   @override
   void initState() {
