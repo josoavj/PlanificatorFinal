@@ -57,9 +57,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return AuthPageShell(
-      form: _buildLoginForm(context),
-    );
+    return AuthPageShell(form: _buildLoginForm(context));
   }
 
   Widget _buildLoginForm(BuildContext context) {
@@ -99,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen>
           TextFormField(
             controller: _usernameController,
             decoration: const InputDecoration(
-              hintText: 'Entrez votre identifiant',
+              hintText: 'Nom d\'utilisateur',
               prefixIcon: Icon(Icons.person_outline),
             ),
             validator: (value) =>
@@ -247,5 +245,4 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-
 }
