@@ -8,7 +8,7 @@ import './logging_service.dart';
 class DatabaseQuery {
   final String sql;
   final List<dynamic>? params;
-  final String type; // 'query', 'execute', 'insert'
+  final String type;
   final String host;
   final int port;
   final String user;
