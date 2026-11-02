@@ -1,5 +1,5 @@
 /// Centralisation de toutes les requêtes SQL du projet
-/// Permet une maintenance facile et évite la duplication.
+/// Dernière mise à jour de ce fichier : 02 Novembre 2026
 class SqlQueries {
   // --- AUTH ---
   static const String login = '''
@@ -183,8 +183,6 @@ class SqlQueries {
   ''';
 
   // --- FACTURES ---
-  // Note: Toutes les requêtes de factures utilisent désormais le lien réciproque (PlanningDetails.facture_id)
-  // pour supporter les factures groupées (N passages -> 1 Facture)
 
   static const String getFacturesByContrat = '''
     SELECT DISTINCT f.*
@@ -788,8 +786,12 @@ class SqlQueries {
   static const String deleteAccount = 'DELETE FROM Account WHERE id_compte = ?';
 
   // --- TYPE TRAITEMENT ---
-  static const String getAllTypeTraitements =
-      'SELECT * FROM TypeTraitement WHERE actif = TRUE ORDER BY id_type_traitement';
+  static const String getAllTypeTraitements = '''SELECT tt.*
+      FROM TypeTraitement tt
+      INNER JOIN TypeTraitementCategorie tc
+        ON tc.nom = tt.categorieTraitement AND tc.actif = TRUE
+      WHERE tt.actif = TRUE
+      ORDER BY tt.id_type_traitement''';
   static const String getAllTypeTraitementsForAdmin =
       'SELECT * FROM TypeTraitement ORDER BY id_type_traitement';
   static const String getAllTraitementCategories =
