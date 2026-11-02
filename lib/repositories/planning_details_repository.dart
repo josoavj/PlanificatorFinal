@@ -12,7 +12,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
   );
 
   PlanningDetailsRepository({DatabaseService? databaseService})
-      : _db = databaseService ?? DatabaseService();
+    : _db = databaseService ?? DatabaseService();
 
   List<PlanningDetails> _details = [];
   List<PlanningDetails> _currentMonthTreatments = [];
@@ -43,29 +43,17 @@ class PlanningDetailsRepository extends ChangeNotifier {
   Future<void> loadHistoryCategoryCounts() async {
     try {
       final results = await _db.query(SqlQueries.countTreatmentsByCategory);
-      final Map<String, int> counts = {'AT': 0, 'PC': 0, 'NI': 0, 'RO': 0};
-      
+      final Map<String, int> counts = {};
       for (final row in results) {
         final cat = row['categorieTraitement']?.toString() ?? '';
         final count = int.tryParse(row['count']?.toString() ?? '0') ?? 0;
-        final code = _normalizeCategoryCode(cat);
-        if (counts.containsKey(code)) {
-          counts[code] = counts[code]! + count;
-        }
+        counts[cat] = count;
       }
       _historyCategoryCounts = counts;
       notifyListeners();
     } catch (e) {
       logger.e('Erreur compteurs historique: $e');
     }
-  }
-
-  String _normalizeCategoryCode(String raw) {
-    final upper = raw.toUpperCase().trim();
-    if (upper.startsWith('AT') || upper.contains('ANTI TERMITES')) return 'AT';
-    if (upper.startsWith('NI') || upper.contains('NETTOYAGE')) return 'NI';
-    if (upper.startsWith('RO') || upper.contains('RAMASSAGE')) return 'RO';
-    return 'PC';
   }
 
   /// Créer un détail de planning
@@ -79,10 +67,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
       // Vérifier si la date existe déjà pour ce planning
       final dateStr = datePlanification.toIso8601String().split('T')[0];
       final existingCheck = await _db
-          .query(
-            SqlQueries.checkExistingPlanningDetail,
-            [planningId, dateStr],
-          )
+          .query(SqlQueries.checkExistingPlanningDetail, [planningId, dateStr])
           .timeout(
             const Duration(seconds: 25),
             onTimeout: () {
@@ -135,10 +120,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
   Future<List<PlanningDetails>> getPlanningDetails(int planningId) async {
     try {
       final results = await _db
-          .query(
-            SqlQueries.getPlanningDetailsByPlanningId,
-            [planningId],
-          )
+          .query(SqlQueries.getPlanningDetailsByPlanningId, [planningId])
           .timeout(
             const Duration(seconds: 25),
             onTimeout: () {
@@ -162,10 +144,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
     String newStatut,
   ) async {
     try {
-      await _db.execute(
-        SqlQueries.updatePlanningDetailStatut,
-        [newStatut, planningDetailId],
-      );
+      await _db.execute(SqlQueries.updatePlanningDetailStatut, [
+        newStatut,
+        planningDetailId,
+      ]);
 
       logger.i(' Planning detail $planningDetailId statut => $newStatut');
 
@@ -182,10 +164,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// Supprimer un détail
   Future<bool> deletePlanningDetails(int planningDetailsId) async {
     try {
-      final result = await _db.query(
-        SqlQueries.deletePlanningDetail,
-        [planningDetailsId],
-      );
+      final result = await _db.query(SqlQueries.deletePlanningDetail, [
+        planningDetailsId,
+      ]);
 
       return result.isNotEmpty;
     } catch (e) {
@@ -198,7 +179,11 @@ class PlanningDetailsRepository extends ChangeNotifier {
   Future<Map<String, dynamic>?> getPlanningDetailComplete(int id) async {
     try {
       // SÉCURITÉ : Ne pas utiliser le cache pour les détails individuels lors d'un rafraîchissement
-      final result = await _db.queryOne(SqlQueries.getPlanningDetailCompleteById, params: [id], useCache: false);
+      final result = await _db.queryOne(
+        SqlQueries.getPlanningDetailCompleteById,
+        params: [id],
+        useCache: false,
+      );
       return result;
     } catch (e) {
       logger.e(' Erreur getPlanningDetailComplete: $e');
@@ -214,9 +199,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
     try {
       final results = await _db
-          .query(
-            SqlQueries.getAllPlanningDetails,
-          )
+          .query(SqlQueries.getAllPlanningDetails)
           .timeout(
             const Duration(seconds: 45),
             onTimeout: () {
@@ -238,7 +221,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   /// Charger les traitements du mois courant (table_en_cours) - Version complète avec JOINs
   /// Retourne: List<Map> avec clés: date, traitement, etat, axe
-  Future<List<Map<String, dynamic>>> loadCurrentMonthTreatmentsComplete({bool useCache = true}) async {
+  Future<List<Map<String, dynamic>>> loadCurrentMonthTreatmentsComplete({
+    bool useCache = true,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -254,11 +239,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db
-          .query(
-            SqlQueries.getCurrentMonthTreatmentsComplete,
-            [currentYear, currentMonth],
-            useCache,
-          )
+          .query(SqlQueries.getCurrentMonthTreatmentsComplete, [
+            currentYear,
+            currentMonth,
+          ], useCache)
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -281,7 +265,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
           .toList();
 
       // Stocker aussi les données enrichies pour affichage
-      _currentMonthTreatmentsComplete = _sortTreatmentsIntelligently(completeData);
+      _currentMonthTreatmentsComplete = _sortTreatmentsIntelligently(
+        completeData,
+      );
 
       logger.i(
         ' ${_currentMonthTreatments.length} traitements du mois courant chargés',
@@ -299,7 +285,10 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   /// Charger les traitements à venir (table_prevision) - Version complète avec JOINs
   /// [startDate] : Date à partir de laquelle charger les traitements (par défaut aujourd'hui)
-  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({DateTime? startDate, bool useCache = true}) async {
+  Future<List<Map<String, dynamic>>> loadUpcomingTreatmentsComplete({
+    DateTime? startDate,
+    bool useCache = true,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -314,11 +303,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       // Requête optimisée: utilise COALESCE, exclut "Classé sans suite" et ajoute LIMIT
       final results = await _db
-          .query(
-            SqlQueries.getUpcomingTreatmentsComplete,
-            [dateStr],
-            useCache,
-          )
+          .query(SqlQueries.getUpcomingTreatmentsComplete, [dateStr], useCache)
           .timeout(
             const Duration(seconds: 60),
             onTimeout: () {
@@ -369,10 +354,15 @@ class PlanningDetailsRepository extends ChangeNotifier {
     try {
       final offset = page * pageSize;
       final results = await _db
-          .query(SqlQueries.getAllTreatmentsPaginated, [pageSize, offset], useCache)
+          .query(SqlQueries.getAllTreatmentsPaginated, [
+            pageSize,
+            offset,
+          ], useCache)
           .timeout(const Duration(seconds: 45));
 
-      final sorted = _sortTreatmentsIntelligently(results.cast<Map<String, dynamic>>());
+      final sorted = _sortTreatmentsIntelligently(
+        results.cast<Map<String, dynamic>>(),
+      );
 
       if (page == 0) {
         _allTreatmentsComplete = sorted;
@@ -382,7 +372,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
       _hasMoreHistory = results.length == pageSize;
 
-      logger.i('Page $page: ${results.length} interventions chargées (Total: ${_allTreatmentsComplete.length}, Plus: $_hasMoreHistory)');
+      logger.i(
+        'Page $page: ${results.length} interventions chargées (Total: ${_allTreatmentsComplete.length}, Plus: $_hasMoreHistory)',
+      );
       return sorted;
     } catch (e) {
       _errorMessage = e.toString();
@@ -396,7 +388,9 @@ class PlanningDetailsRepository extends ChangeNotifier {
 
   ///  NOUVEAU: Charger TOUS les traitements (effectués + à venir) pour Historique
   /// Obsolète pour les gros flux, privilégier loadHistoryPage
-  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({bool useCache = true}) async {
+  Future<List<Map<String, dynamic>>> loadAllTreatmentsComplete({
+    bool useCache = true,
+  }) async {
     return await loadHistoryPage(pageSize: 5000, useCache: useCache);
   }
 
@@ -492,13 +486,15 @@ class PlanningDetailsRepository extends ChangeNotifier {
   /// Applique un tri intelligent :
   /// 1. Interventions FAITES (Effectué) en premier, triées par date DESC (plus récent d'abord).
   /// 2. Interventions À VENIR en second, triées par date ASC (plus proche d'abord).
-  List<Map<String, dynamic>> _sortTreatmentsIntelligently(List<Map<String, dynamic>> data) {
+  List<Map<String, dynamic>> _sortTreatmentsIntelligently(
+    List<Map<String, dynamic>> data,
+  ) {
     final list = List<Map<String, dynamic>>.from(data);
-    
+
     list.sort((a, b) {
       final statusA = (a['etat'] as String? ?? '').toLowerCase();
       final statusB = (b['etat'] as String? ?? '').toLowerCase();
-      
+
       final isDoneA = statusA.contains('effectué');
       final isDoneB = statusB.contains('effectué');
 
@@ -508,7 +504,7 @@ class PlanningDetailsRepository extends ChangeNotifier {
       // Extraire les dates pour le tri chronologique
       DateTime? dateA = _parseDate(a['date_planification'] ?? a['date']);
       DateTime? dateB = _parseDate(b['date_planification'] ?? b['date']);
-      
+
       if (dateA == null || dateB == null) return 0;
 
       // 2. Si les deux sont faits : le plus récent en premier (DESC)
