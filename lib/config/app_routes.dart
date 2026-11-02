@@ -10,6 +10,7 @@ import '../screens/planning/planning_screen.dart';
 import '../screens/historique/historique_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/about/about_screen.dart';
+import '../screens/legal/legal_documents_screen.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -23,6 +24,7 @@ class AppRoutes {
   static const String historique = '/historique';
   static const String about = '/about';
   static const String settings = '/settings';
+  static const String legalDocuments = '/legal-documents';
 
   static Map<String, WidgetBuilder> get routes => {
     login: (context) => const LoginScreen(),
@@ -36,5 +38,6 @@ class AppRoutes {
     historique: (context) => const HistoriqueScreen(),
     about: (context) => const AboutScreen(),
     settings: (context) => const SettingsScreen(),
+    legalDocuments: (context) => const LegalDocumentsScreen(),
   };
 }
