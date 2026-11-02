@@ -24,7 +24,7 @@
 - [À Propos](#à-propos)
 - [Panoramic Intelligence (v2.1.1)](#panoramic-intelligence-v211)
 - [Modernisation et Flexibilité (v2.2.0)](#modernisation-et-flexibilité-v220)
-- [Architecture Industrielle](#architecture-industrielle)
+- [Architecture](#architecture)
 - [Fonctionnalités](#fonctionnalités)
 - [Architecture Logicielle](#architecture-logicielle)
 - [Base de Données](#base-de-données)
@@ -49,21 +49,16 @@
 
 ## Panoramic Intelligence (v2.1.1)
 
-La version **2.1.1** marque un tournant dans la maturité de la plateforme avec un focus sur la traçabilité et la performance :
+La version **2.1.1** marque un tournant dans la maturité de la plateforme avec un focus sur la traçabilité et la performance, ainsi qu'une expérience utilisateur améliorée et plus modernisée :
 
-- **Expérience Panoramique (Zéro Scroll)** : Refonte des dialogues Clients et Contrats en mode 2 colonnes (950px), offrant une visibilité immédiate sur 100% des données sans défilement.
+- **Expérience Panoramique (Zéro Scroll)** : Refonte des dialogues Clients et Contrats en mode 2 colonnes, offrant une visibilité immédiate sur 100% des données sans défilement.
 - **Journal de Bord 360°** : Nouveau module de consultation d'historique retraçant toute la vie d'une intervention (Planning initial, Signalements, Facturation et Historique des tarifs).
-- **Moteur de Tri Intelligent** : Algorithme centralisé harmonisant l'affichage dans toute l'app (Passé : plus récent en haut | Futur : plus proche en haut).
+- **Moteur de Tri Intelligent** : Algorithme centralisé harmonisant l'affichage dans toute l'app.
 - **Optimisation Massive des Prix** : Mise à jour des tarifs en cascade ultra-rapide via SQL direct, éliminant les latences réseau.
+- **Renforcement des privilèges administrateurs** : Mise à jour des accès sur les données sensibles et aussi sur les privilèges comme la suppression des données et aussi de comptes utilisateurs.
 - **Bouclier de Tests Infaillible** : Suite de tests de régression couvrant l'intégralité de la logique métier et des transactions financières.
-
----
-
-## Modernisation et Flexibilité (v2.2.0)
-
-La version actuelle apporte des améliorations majeures pour l'expérience utilisateur et la gestion métier :
-
-- **Facturation Groupée** : Possibilité de fusionner plusieurs services (ex: Dératisation + Désinfection) dans une facture unique lorsqu'ils tombent le même jour.
+- **Interface Utilisateur** : Optimisation et aussi refonte sur les affichages afin d'avoir un visuel plus claire, structuré et aussi mettant en avant les informations utiles.
+- **Facturation Groupée** : Possibilité de fusionner plusieurs services dans une facture unique lorsqu'ils tombent le même jour ou même à cause des contraintes du contrat.
 - **Planning Avancé** : Support des fréquences hebdomadaires (1x, 2x ou 3x par semaine) et bimestrielles, gérant automatiquement les mois à 5 semaines.
 - **Respect du Calendrier Malgache** : Prise en compte automatique des jours fériés (incluant le 29 Mars et le 1er Mai) avec décalage au prochain jour ouvrable.
 - **Sécurisation Critique** : Accès aux réglages de la base de données protégé par une vérification du mot de passe administrateur.
@@ -71,7 +66,7 @@ La version actuelle apporte des améliorations majeures pour l'expérience utili
 
 ---
 
-## Architecture Industrielle
+## Architecture
 
 - **Smart Cache System** : Cache SQL global éliminant les latences réseau.
 - **SQL Centralization** : Scripts SQL centralisés dans `lib/core/sql_queries.dart`.
@@ -168,7 +163,7 @@ disponibles dans [presentation/](./presentation/) et [docs/](./docs/).
 ## État du Projet
 
 | Composant | État | Completude |
-|-----------|------|-----------|
+| ----------- | ------ | ----------- |
 | Architecture | Industrialisée | 100% |
 | Intégrité DB | Transactionnelle | 100% |
 | Sécurité | Renforcée / Verrouillée | 100% |
@@ -196,6 +191,7 @@ Si vous souhaitez contribuer au projet, veuillez lire le guide détaillé [CONTR
 ## Auteur
 
 **Josoa** - Développeur principal
+
 - GitHub: [@josoavj](https://github.com/josoavj)
 
 ## Licence
@@ -203,3 +199,7 @@ Si vous souhaitez contribuer au projet, veuillez lire le guide détaillé [CONTR
 Ce projet est sous licence **MIT**.
 
 **Dernière mise à jour** : 22 Juillet 2026
+
+<p align="center">
+  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/Pictures/banner-readme.svg" alt="Social Banner"/>
+</p>
