@@ -6,6 +6,7 @@ import '../contrat/contrat_screen.dart';
 import '../planning/planning_screen.dart';
 import '../historique/historique_screen.dart';
 import '../settings/settings_screen.dart';
+import '../settings/users_management_screen.dart';
 import '../about/about_screen.dart';
 import '../profile/profile_screen.dart';
 import '../export/export_screen.dart';
@@ -20,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  int _navigationDirection = 1;
 
   // Liste des titres centralisée
   static const List<String> _pageTitles = [
@@ -31,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Historique',
     'Export',
     'Mon Profil',
+    'Gestion des comptes',
     'À propos',
     'Paramètres',
   ];
@@ -51,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
         drawer: SidebarNavigation(
           selectedIndex: safeIndex,
           onItemSelected: (index) {
+            if (index == _selectedIndex) return;
             setState(() {
+              _navigationDirection = index > _selectedIndex ? 1 : -1;
               _selectedIndex = index;
             });
           },
@@ -64,44 +69,55 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPage(int index) {
     return RepaintBoundary(
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 420),
+        reverseDuration: const Duration(milliseconds: 300),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
-          final offsetAnimation = Tween<Offset>(
-            begin: const Offset(0, 0.025),
-            end: Offset.zero,
-          ).animate(animation);
+          final offsetAnimation =
+              Tween<Offset>(
+                begin: Offset(0.06 * _navigationDirection, 0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              );
 
           return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: offsetAnimation,
-              child: child,
-            ),
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            child: SlideTransition(position: offsetAnimation, child: child),
           );
         },
-        child: KeyedSubtree(
-          key: ValueKey<int>(index),
-          child: _getPage(index),
-        ),
+        child: KeyedSubtree(key: ValueKey<int>(index), child: _getPage(index)),
       ),
     );
   }
 
   Widget _getPage(int index) {
     switch (index) {
-      case 0: return const DashboardTab();
-      case 1: return const ContratScreen();
-      case 2: return const ClientListScreen();
-      case 3: return const PlanningScreen();
-      case 4: return const FactureScreen();
-      case 5: return const HistoriqueScreen();
-      case 6: return const ExportScreen();
-      case 7: return const ProfileScreen();
-      case 8: return const AboutScreen();
-      case 9: return const SettingsScreen();
-      default: return const DashboardTab();
+      case 0:
+        return const DashboardTab();
+      case 1:
+        return const ContratScreen();
+      case 2:
+        return const ClientListScreen();
+      case 3:
+        return const PlanningScreen();
+      case 4:
+        return const FactureScreen();
+      case 5:
+        return const HistoriqueScreen();
+      case 6:
+        return const ExportScreen();
+      case 7:
+        return const ProfileScreen();
+      case 8:
+        return const UsersManagementScreen(embedded: true);
+      case 9:
+        return const AboutScreen();
+      case 10:
+        return const SettingsScreen();
+      default:
+        return const DashboardTab();
     }
   }
 }
