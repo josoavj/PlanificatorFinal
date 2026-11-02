@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/logo/Logo-Planificator.ico" alt="Planificator Logo" width="150"/>
+  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/icons/icon.png" alt="Planificator Logo" width="150"/>
 </p>
 
 <p align="center">
@@ -201,5 +201,5 @@ Ce projet est sous licence **MIT**.
 **Dernière mise à jour** : 22 Juillet 2026
 
 <p align="center">
-  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/Pictures/banner-readme.svg" alt="Social Banner"/>
+  <img src="https://github.com/josoavj/PlanificatorFinal/blob/main/assets/pictures/banner-readme.svg" alt="Social Banner"/>
 </p>
