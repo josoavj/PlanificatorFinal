@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/index.dart';
-import '../../../services/database_service.dart';
-import '../../../core/sql_queries.dart';
-import '../../../widgets/index.dart';
-import '../../../utils/number_formatter.dart';
+import '../../../core/database/database_service.dart';
+import '../../../core/database/sql/sql_queries.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../core/utils/number_formatter.dart';
 import 'contrat_details_dialog.dart';
 
 class ContratInvoiceView extends StatelessWidget {
