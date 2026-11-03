@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:planificator/repositories/facture_repository.dart';
-import 'package:planificator/repositories/auth_repository.dart';
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/models/facture.dart';
 import '../config/mocks.dart';
 
