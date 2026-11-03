@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:provider/provider.dart';
 import '../../../app/theme/theme.dart';
 import '../../../shared/widgets/app_dialogs.dart';
 import '../../../shared/widgets/index.dart';
 import '../../../core/utils/number_formatter.dart';
-import '../../../repositories/index.dart';
-
-import '../../../screens/client/widgets/client_details_dialog.dart';
-
-import '../../../core/utils/date_utils.dart' as date_utils;
+import '../../clients/screens/widgets/client_details_dialog.dart';
+import '../../planning/domain/date_utils.dart' as date_utils;
 
 class TreatmentDetailDialog extends StatelessWidget {
   final Map<String, dynamic> data;
