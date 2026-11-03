@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 
 class PlanningCard extends StatelessWidget {
   final Map<String, dynamic> treatment;
