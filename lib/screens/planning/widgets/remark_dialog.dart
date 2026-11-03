@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 import '../../../models/index.dart';
 import '../../../repositories/remarque_repository.dart';
 import '../../../repositories/facture_repository.dart';
-import '../../../utils/date_helper.dart';
-import '../../../utils/app_snackbars.dart';
-import '../../../utils/number_formatter.dart';
-import '../../../core/theme.dart';
-import '../../../widgets/index.dart';
-import '../../../widgets/common/index.dart';
+import '../../../core/utils/date_helper.dart';
+import '../../../core/utils/app_snackbars.dart';
+import '../../../core/utils/number_formatter.dart';
+import '../../../app/theme/theme.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../shared/widgets/index.dart';
 
 class RemarqueDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
