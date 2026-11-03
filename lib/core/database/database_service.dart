@@ -261,7 +261,11 @@ class DatabaseService {
   }
 
   /// Exécute une requête SQL SELECT avec support du Cache
-  Future<List<Map<String, dynamic>>> query(String sql, [List? params, bool useCache = true]) async {
+  Future<List<Map<String, dynamic>>> query(
+    String sql, [
+    List? params,
+    bool useCache = true,
+  ]) async {
     if (!_isConnected) {
       throw Exception('Pas de connexion à la base de données');
     }
@@ -274,34 +278,47 @@ class DatabaseService {
     }
 
     try {
-      logger.d('Query: $sql');
-      
+      log.debug('Query:\n${sql.trim()}', source: 'database_service');
+
       List<Map<String, dynamic>> rows = [];
 
       // PERFORMANCE: Mesurer le temps sur Desktop
-      final profilerName = 'SQL Query: ${sql.substring(0, math.min(20, sql.length))}';
-      final metric = Platform.isWindows ? WindowsProfiler.start(profilerName) : null;
+      final profilerName =
+          'SQL Query: ${sql.substring(0, math.min(20, sql.length))}';
+      final metric = Platform.isWindows
+          ? WindowsProfiler.start(profilerName)
+          : null;
 
       try {
         // 2. Décider si on utilise un Isolate ou la connexion directe
         // PERFORMANCE: L'Isolate est coûteux (ouverture d'une nouvelle connexion MySQL).
         // On ne l'utilise que pour les requêtes TRÈS lourdes (> 500 caractères ou agrégations massives).
         // Les requêtes standards sont plus rapides en direct via le pool de connexions.
-        bool isLikelyHeavy = sql.length > 500 || 
-                           sql.toLowerCase().contains('group_concat') || 
-                           sql.toLowerCase().contains('detailed');
-        
-        bool shouldShowIsolate = _useIsolates && 
-                                !sql.toLowerCase().contains('limit 1') && 
-                                isLikelyHeavy;
+        bool isLikelyHeavy =
+            sql.length > 500 ||
+            sql.toLowerCase().contains('group_concat') ||
+            sql.toLowerCase().contains('detailed');
+
+        bool shouldShowIsolate =
+            _useIsolates &&
+            !sql.toLowerCase().contains('limit 1') &&
+            isLikelyHeavy;
 
         if (shouldShowIsolate) {
           try {
             rows = await DatabaseIsolateService.executeQuery(
-              sql, params, _host, _port, _user, _password, _database,
+              sql,
+              params,
+              _host,
+              _port,
+              _user,
+              _password,
+              _database,
             );
           } catch (isolateError) {
-            logger.w('⚠️ Isolate Query échouée ($isolateError). Tentative de secours en direct...');
+            logger.w(
+              'Isolate Query échouée ($isolateError). Tentative de secours en direct...',
+            );
             // FALLBACK: Si l'isolate crash, on tente la requête en direct
             rows = await _executeDirectQuery(sql, params);
           }
@@ -325,11 +342,16 @@ class DatabaseService {
   }
 
   /// Exécute une requête directement via le pool de connexions (Thread principal)
-  Future<List<Map<String, dynamic>>> _executeDirectQuery(String sql, List? params) async {
+  Future<List<Map<String, dynamic>>> _executeDirectQuery(
+    String sql,
+    List? params,
+  ) async {
     MySqlConnection? conn;
     try {
       conn = await _getQueryConnection();
-      Result results = await conn.query(sql, params).timeout(const Duration(seconds: 30));
+      Result results = await conn
+          .query(sql, params)
+          .timeout(const Duration(seconds: 30));
 
       List<Map<String, dynamic>> rows = [];
       for (var row in results) {
@@ -354,7 +376,15 @@ class DatabaseService {
       QueryCacheService().invalidateAll();
 
       if (_useIsolates) {
-        await DatabaseIsolateService.executeUpdate(sql, params, _host, _port, _user, _password, _database);
+        await DatabaseIsolateService.executeUpdate(
+          sql,
+          params,
+          _host,
+          _port,
+          _user,
+          _password,
+          _database,
+        );
       } else {
         MySqlConnection? conn;
         try {
@@ -427,7 +457,9 @@ class DatabaseService {
   /// Exécute un ensemble d'opérations dans une transaction SQL unique.
   /// SÉCURITÉ: En cas d'erreur, un ROLLBACK automatique est effectué.
   /// IMPORTANT: Les transactions n'utilisent PAS les isolates pour garantir la cohérence.
-  Future<T> transaction<T>(Future<T> Function(MySqlConnection conn) action) async {
+  Future<T> transaction<T>(
+    Future<T> Function(MySqlConnection conn) action,
+  ) async {
     if (!_isConnected) await connect();
 
     MySqlConnection? conn;
