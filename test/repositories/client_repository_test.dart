@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:planificator/repositories/client_repository.dart';
+import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/core/database/sql/sql_queries.dart';
 import '../config/mocks.dart';
