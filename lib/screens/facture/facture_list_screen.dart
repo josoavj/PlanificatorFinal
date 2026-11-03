@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:planificator/shared/widgets/empty_state_widget.dart';
+import 'package:planificator/shared/widgets/error_widget.dart';
+import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../repositories/index.dart';
 import '../../models/index.dart';
-import '../../widgets/index.dart';
-import '../../utils/app_snackbars.dart';
-import '../../utils/number_formatter.dart';
+import '../../shared/widgets/index.dart';
+import '../../core/utils/app_snackbars.dart';
+import '../../core/utils/number_formatter.dart';
 
 class FactureListScreen extends StatefulWidget {
   final int? clientId; // Si null, affiche toutes les factures
