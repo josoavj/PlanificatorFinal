@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/client.dart';
 import '../../../repositories/index.dart';
 import 'client_details_dialog.dart';
