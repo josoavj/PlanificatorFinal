@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../shared/widgets/sidebar_navigation.dart';
-import '../../../screens/client/client_list_screen.dart';
-import '../../../screens/facture/facture_screen.dart';
-import '../../../screens/contrat/contrat_screen.dart';
-import '../../../screens/planning/planning_screen.dart';
-import '../../../screens/historique/historique_screen.dart';
+import '../../clients/screens/client_list_screen.dart';
+import '../../factures/screens/facture_screen.dart';
+import '../../contrats/screens/contrat_screen.dart';
+import '../../planning/screens/planning_screen.dart';
+import '../../historique/screens/historique_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../users/screens/users_management_screen.dart';
 import '../../about/screens/about_screen.dart';
