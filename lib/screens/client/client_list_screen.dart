@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/client.dart';
 import '../../repositories/index.dart';
-import '../../widgets/index.dart';
-import '../../services/logging_service.dart';
-import '../../utils/app_snackbars.dart';
+import '../../shared/widgets/index.dart';
+import '../../core/logging/logging_service.dart';
+import '../../core/utils/app_snackbars.dart';
 import 'widgets/client_card.dart';
 import 'widgets/client_list_header.dart';
 
