@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/services/query_cache_service.dart';
+import 'package:planificator/core/cache/query_cache_service.dart';
 
 void main() {
   late QueryCacheService cache;
