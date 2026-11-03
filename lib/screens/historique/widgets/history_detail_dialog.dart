@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/index.dart';
 import '../../../repositories/index.dart';
-import '../../../widgets/index.dart';
-import '../../../utils/app_snackbars.dart';
-import '../../../utils/number_formatter.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../core/utils/app_snackbars.dart';
+import '../../../core/utils/number_formatter.dart';
 import '../../planning/widgets/remark_dialog.dart';
 
 class HistoryDetailDialog extends StatefulWidget {
