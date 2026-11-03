@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/index.dart';
 import '../../../repositories/index.dart';
-import '../../../widgets/index.dart';
+import '../../../shared/widgets/index.dart';
 import 'contrat_details_dialog.dart';
 
 class ContratAbrogationDialog extends StatelessWidget {
