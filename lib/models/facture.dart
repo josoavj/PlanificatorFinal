@@ -1,5 +1,5 @@
 import 'dart:convert';
-import '../utils/number_formatter.dart';
+import '../core/utils/number_formatter.dart';
 
 /// Modèle Facture
 /// Représente une facture pour un traitement
