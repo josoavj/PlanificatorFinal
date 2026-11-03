@@ -6,16 +6,16 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
-import '../../core/theme.dart';
+import '../../app/theme/theme.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
-import '../../utils/number_formatter.dart';
-import '../../widgets/index.dart';
-import '../../utils/app_snackbars.dart';
-import '../../utils/date_utils.dart' as date_utils;
-import '../../utils/phone_formatter.dart';
-import '../../utils/nif_stat_formatter.dart';
-import '../../widgets/common/multi_phone_input.dart';
+import '../../core/utils/number_formatter.dart';
+import '../../shared/widgets/index.dart';
+import '../../core/utils/app_snackbars.dart';
+import '../../core/utils/date_utils.dart' as date_utils;
+import '../../core/utils/phone_formatter.dart';
+import '../../core/utils/nif_stat_formatter.dart';
+import '../../shared/widgets/multi_phone_input.dart';
 
 class ContratCreationDialog extends StatefulWidget {
   final int? clientId;
