@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:planificator/shared/widgets/log_viewer.dart';
 import 'package:provider/provider.dart';
-import '../../../repositories/index.dart';
 import '../../../core/logging/logging_service.dart';
 import '../../../app/theme/theme.dart';
 import '../../../app/theme/theme_provider.dart';
