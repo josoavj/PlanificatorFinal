@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/models/user.dart';
+import 'package:planificator/features/auth/models/user.dart';
 import 'package:planificator/models/client.dart';
 import 'package:planificator/models/contrat.dart';
 import 'package:planificator/models/facture.dart';
