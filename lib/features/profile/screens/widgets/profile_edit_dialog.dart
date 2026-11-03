@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import '../../../../app/theme/theme.dart';
-import '../../../../repositories/index.dart';
 import '../../../../core/utils/app_snackbars.dart';
 import '../../../../core/security/email_validator.dart';
 import '../../../../shared/widgets/app_dialogs.dart';
