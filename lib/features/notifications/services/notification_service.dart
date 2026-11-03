@@ -53,9 +53,7 @@ class NotificationService {
 
       // Initialiser WorkManager pour les tâches planifiées (Android et iOS uniquement)
       if (Platform.isAndroid || Platform.isIOS) {
-        await Workmanager().initialize(
-          callbackDispatcher,
-        );
+        await Workmanager().initialize(callbackDispatcher);
         log.info('WorkManager initialisé', source: 'NotificationService');
       } else {
         log.info(
@@ -108,10 +106,7 @@ class NotificationService {
         payload: payload,
       );
 
-      log.debug(
-        '📢 Notification envoyée: $title',
-        source: 'NotificationService',
-      );
+      log.debug('Notification envoyée: $title', source: 'NotificationService');
     } catch (e) {
       log.error('Erreur envoi notification: $e', source: 'NotificationService');
     }
