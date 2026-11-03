@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:provider/provider.dart';
-import '../../../repositories/index.dart';
 import '../../../app/theme/theme.dart';
 import 'register_screen.dart';
 import 'recover_account_screen.dart';
