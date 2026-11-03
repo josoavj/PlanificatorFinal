@@ -1,11 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:provider/provider.dart';
-import '../../../repositories/index.dart';
 import '../../../app/theme/theme.dart';
 import '../../../core/utils/password_validator.dart';
 import '../../../core/security/email_validator.dart';
@@ -56,6 +55,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _acceptedPrivacyPolicy = false;
   int _currentStep = 0;
   static const _stepCount = 4;
+
+  Route<void> _loginRoute() {
+    return PageRouteBuilder<void>(
+      pageBuilder: (_, _, _) => const LoginScreen(),
+      transitionsBuilder: (_, animation, _, child) =>
+          FadeTransition(opacity: animation, child: child),
+    );
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -172,7 +179,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             ? 'Compte administrateur créé avec succès.'
             : 'Compte créé avec succès.',
       );
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+      Navigator.of(context).pushAndRemoveUntil(_loginRoute(), (_) => false);
     } else {
       _showErrorSnackBar(
         authRepository.errorMessage ?? 'Erreur d\'inscription',
@@ -286,9 +293,8 @@ class _RegisterScreenState extends State<RegisterScreen>
           const SizedBox(height: 24),
           Center(
             child: TextButton(
-              onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              ),
+              onPressed: () =>
+                  Navigator.of(context).pushReplacement(_loginRoute()),
               child: const Text(
                 'Déjà inscrit ? Se connecter',
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -876,21 +882,8 @@ class _RegisterScreenState extends State<RegisterScreen>
 
           Center(
             child: TextButton(
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const LoginScreen(),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          );
-                        },
-                  ),
-                );
-              },
+              onPressed: () =>
+                  Navigator.of(context).pushReplacement(_loginRoute()),
               child: const Text(
                 'Déjà inscrit ? Se connecter',
                 style: TextStyle(fontWeight: FontWeight.bold),
