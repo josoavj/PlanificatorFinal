@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 
 class HistoryCategoryCard extends StatelessWidget {
   final String title;
