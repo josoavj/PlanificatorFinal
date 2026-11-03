@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/utils/date_utils.dart' as date_utils;
+import 'package:planificator/core/utils/date_utils.dart' as date_utils;
 
 void main() {
   group('DateUtils - Madagascar Holidays & Adjustments', () {
