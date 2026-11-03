@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../utils/date_helper.dart';
-import '../core/sql_queries.dart';
+import '../core/utils/date_helper.dart';
+import '../core/database/sql/sql_queries.dart';
 
 /// Repository pour la gestion des remarques
 /// Conforme à Kivy create_remarque() - crée remarque + met à jour état planning + facture
