@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/config/database_config.dart';
+import 'package:planificator/core/database/database_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:planificator/repositories/auth_repository.dart';
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:bcrypt/bcrypt.dart';
 import '../config/mocks.dart';
 

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/models/user.dart';
-import 'package:planificator/models/client.dart';
-import 'package:planificator/models/contrat.dart';
-import 'package:planificator/models/facture.dart';
-import 'package:planificator/models/planning_details.dart';
+import 'package:planificator/features/auth/models/user.dart';
+import 'package:planificator/features/clients/models/client.dart';
+import 'package:planificator/features/contrats/models/contrat.dart';
+import 'package:planificator/features/factures/models/facture.dart';
+import 'package:planificator/features/planning/models/planning_details.dart';
 
 void main() {
   group('User Model', () {

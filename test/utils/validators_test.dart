@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/utils/password_validator.dart';
-import 'package:planificator/utils/email_validator.dart';
+import 'package:planificator/core/utils/password_validator.dart';
+import 'package:planificator/core/security/email_validator.dart';
 
 void main() {
   group('PasswordValidator', () {

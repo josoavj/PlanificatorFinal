@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/utils/excel_utils.dart';
+import 'package:planificator/core/utils/excel_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

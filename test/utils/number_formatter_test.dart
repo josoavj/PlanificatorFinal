@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/utils/number_formatter.dart';
+import 'package:planificator/core/utils/number_formatter.dart';
 
 void main() {
   group('NumberFormatter - Parsing', () {

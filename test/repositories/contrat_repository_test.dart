@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/repositories/contrat_repository.dart';
-import 'package:planificator/models/contrat.dart';
+import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
+import 'package:planificator/features/contrats/models/contrat.dart';
 import '../config/mocks.dart';
 
 void main() {
