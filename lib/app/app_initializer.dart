@@ -4,8 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:logger/logger.dart' as logger_pkg;
-import '../services/index.dart';
-import '../repositories/index.dart';
+import 'package:planificator/app/theme/theme_provider.dart';
+import 'package:planificator/core/database/database_migration_service.dart';
+import 'package:planificator/core/database/database_service.dart';
+import 'package:planificator/core/logging/logging_service.dart';
+import 'package:planificator/core/utils/excel_utils.dart';
+import 'package:planificator/features/notifications/repositories/notification_repository.dart';
+import 'package:planificator/features/notifications/services/notification_service.dart';
 import '../core/database/database_config.dart';
 
 /// Classe responsable de l'initialisation de l'application.
@@ -19,9 +24,19 @@ class AppInitializer {
     // 1. Initialiser le service de logging (PRIORITÉ)
     await log.initialize();
     log.configureGlobalLogger(logger);
-    log.info('Démarrage de l\'initialisation applicative', source: 'AppInitializer');
+    log.info(
+      'Démarrage de l\'initialisation applicative',
+      source: 'AppInitializer',
+    );
 
     try {
+      // 2. Préparer les dossiers d'export dès le lancement
+      final exportDirectories = await FolderManager.initDesktopStructure();
+      log.info(
+        'Dossiers d\'export initialisés: ${exportDirectories.first.parent.path}',
+        source: 'AppInitializer',
+      );
+
       // 2. Optimisation des performances des polices
       // Désactiver le chargement à l'exécution pour éviter les micro-latences lors des changements de thème
       GoogleFonts.config.allowRuntimeFetching = false;
@@ -44,17 +59,27 @@ class AppInitializer {
       // 5. Configuration de la base de données
       final config = DatabaseConfig();
       await config.initialize();
-      log.info('Configuration base de données chargée', source: 'AppInitializer');
+      log.info(
+        'Configuration base de données chargée',
+        source: 'AppInitializer',
+      );
 
       if (config.isConfigured) {
         await _setupDatabase(config);
       } else {
-        log.warning('Base de données non configurée au démarrage', source: 'AppInitializer');
+        log.warning(
+          'Base de données non configurée au démarrage',
+          source: 'AppInitializer',
+        );
       }
 
       log.info('Initialisation terminée avec succès', source: 'AppInitializer');
     } catch (e, stack) {
-      log.critical('Erreur fatale lors de l\'initialisation: $e', source: 'AppInitializer', stackTrace: stack);
+      log.critical(
+        'Erreur fatale lors de l\'initialisation: $e',
+        source: 'AppInitializer',
+        stackTrace: stack,
+      );
       // On laisse l'erreur remonter si elle est critique, ou on gère un mode dégradé
     }
   }
@@ -72,24 +97,42 @@ class AppInitializer {
     // Optimisation spécifique à la plateforme
     if (Platform.isWindows) {
       db.setUseIsolates(false);
-      log.info('Windows détecté : Isolates désactivés pour la stabilité DB', source: 'AppInitializer');
+      log.info(
+        'Windows détecté : Isolates désactivés pour la stabilité DB',
+        source: 'AppInitializer',
+      );
     } else {
       db.setUseIsolates(true);
-      log.info('Isolates activés pour les requêtes DB', source: 'AppInitializer');
+      log.info(
+        'Isolates activés pour les requêtes DB',
+        source: 'AppInitializer',
+      );
     }
 
     try {
       await db.connect();
-      log.info('Connexion à la base de données établie', source: 'AppInitializer');
+      log.info(
+        'Connexion à la base de données établie',
+        source: 'AppInitializer',
+      );
       await DatabaseMigrationService(database: db).migrate();
-      log.info('Migrations de base de données appliquées', source: 'AppInitializer');
-      
+      log.info(
+        'Migrations de base de données appliquées',
+        source: 'AppInitializer',
+      );
+
       // Charger les traitements du lendemain
       final notifRepo = NotificationRepository();
       await notifRepo.loadAndNotifyNextDayTreatments();
-      log.info('Notifications planifiées pour les traitements de demain', source: 'AppInitializer');
+      log.info(
+        'Notifications planifiées pour les traitements de demain',
+        source: 'AppInitializer',
+      );
     } catch (e) {
-      log.error('Échec de la connexion à la base de données: $e', source: 'AppInitializer');
+      log.error(
+        'Échec de la connexion à la base de données: $e',
+        source: 'AppInitializer',
+      );
     }
   }
 }
