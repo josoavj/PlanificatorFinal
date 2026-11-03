@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/index.dart';
+import '../../shared/widgets/index.dart';
 import 'widgets/history_intervention_tile.dart';
 import 'widgets/history_detail_dialog.dart';
 
