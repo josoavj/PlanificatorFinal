@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../core/sql_queries.dart';
+import '../core/database/sql/sql_queries.dart';
 
 class HistoriqueRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
