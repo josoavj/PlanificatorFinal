@@ -1,0 +1,886 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../repositories/index.dart';
+import '../../../models/index.dart';
+import '../../../core/utils/excel_utils.dart';
+import '../../../core/database/database_service.dart';
+import '../../../core/logging/logging_service.dart';
+import '../../../core/utils/app_snackbars.dart';
+import '../../../shared/widgets/app_dialogs.dart';
+
+
+final logger = createLoggerWithFileOutput(name: 'export_screen');
+
+class ExportScreen extends StatefulWidget {
+  const ExportScreen({super.key});
+
+  @override
+  State<ExportScreen> createState() => _ExportScreenState();
+}
+
+class _ExportScreenState extends State<ExportScreen> {
+  bool _isExporting = false;
+  bool _isLoadingClients = true;
+  String? _lastExportPath;
+  final ExcelService _excelService = ExcelService();
+
+  // Dropdowns
+  String _selectedCategory = 'Facture';
+  String _selectedTraitement = 'Tous';
+  String _selectedMois = 'Tous';
+  String _selectedClient = 'Tous';
+
+  // Options pour les dropdowns
+  final List<String> _categories = ['Facture', 'Traitement'];
+  List<String> _traitements = ['Tous'];
+  final List<String> _mois = [
+    'Tous',
+    'Janvier',
+    'Février',
+    'Mars',
+    'Avril',
+    'Mai',
+    'Juin',
+    'Juillet',
+    'Août',
+    'Septembre',
+    'Octobre',
+    'Novembre',
+    'Décembre',
+  ];
+  List<String> _clients = ['Tous'];
+  Map<String, int> _clientMap = {'Tous': -1};
+  Map<String, String> _clientDisplayNames = {
+    'Tous': 'Tous',
+  }; // Map clé interne -> label affichage
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadClients();
+      // Charger les traitements au démarrage (pour "Tous" = tous les clients)
+      _loadTreatmentsForClient(-1); // -1 = Tous
+    });
+  }
+
+  Future<void> _loadClients() async {
+    try {
+      final db = DatabaseService();
+
+      // Charger DIRECTEMENT tous les clients avec au moins un contrat depuis la base de données
+      const sql = '''
+        SELECT DISTINCT c.client_id, c.nom, c.prenom, c.categorie
+        FROM Client c
+        LEFT JOIN Contrat co ON c.client_id = co.client_id
+        GROUP BY c.client_id
+        HAVING COUNT(DISTINCT co.contrat_id) > 0
+        ORDER BY c.nom ASC
+      ''';
+
+      logger.i('Chargement des clients depuis la DB...');
+      final rows = await db
+          .query(sql)
+          .timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              logger.e('Timeout loading clients from database');
+              throw TimeoutException('Database query timeout');
+            },
+          );
+      logger.i('📦 ${rows.length} clients trouvés en DB');
+
+      final clientMap = <String, int>{'Tous': -1};
+      final clientList = ['Tous'];
+      final displayNames = <String, String>{'Tous': 'Tous'};
+      final nameCount = <String, int>{}; // Compte les occurrences de chaque nom
+
+      for (final row in rows) {
+        final clientId = row['client_id'] as int;
+        final nom = row['nom'] as String;
+        final prenom = row['prenom'] as String;
+        final categorie = row['categorie'] as String;
+
+        // Construire le fullName selon la catégorie
+        final displayName =
+            (categorie == 'Société' || categorie == 'Organisation')
+            ? nom
+            : '$nom $prenom'.trim();
+
+        // Vérifier les doublons et créer une clé unique interne
+        nameCount[displayName] = (nameCount[displayName] ?? 0) + 1;
+
+        // Clé interne avec ID pour éviter les doublons
+        final internalKey = nameCount[displayName]! > 1
+            ? '$displayName\$_\$$clientId' // Utiliser \$ pour éviter les conflits
+            : displayName;
+
+        clientMap[internalKey] = clientId;
+        clientList.add(internalKey);
+        displayNames[internalKey] = displayName; // Affichage sans ID
+        logger.i(
+          ' Client ajouté: $displayName (ID: $clientId, Cat: $categorie)',
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _clients = clientList;
+          _clientMap = clientMap;
+          _clientDisplayNames = displayNames;
+          _isLoadingClients = false;
+
+          // Vérifier que le client sélectionné existe encore dans la liste
+          if (!clientList.contains(_selectedClient)) {
+            _selectedClient = 'Tous';
+            logger.i(' Client sélectionné introuvable, reset à "Tous"');
+          }
+
+          logger.i(
+            ' ${clientList.length - 1} clients affichables (total: ${clientList.length} avec Tous)',
+          );
+        });
+      }
+    } catch (e) {
+      logger.e(' Erreur lors du chargement des clients: $e');
+      if (mounted) {
+        setState(() => _isLoadingClients = false);
+      }
+    }
+  }
+
+  Future<void> _loadTreatmentsForClient(int clientId) async {
+    try {
+      final planningRepo = context.read<PlanningDetailsRepository>();
+
+      // Charger les traitements pour le client sélectionné
+      final treatmentList = await planningRepo.getTreatmentTypesForClient(
+        clientId,
+      );
+
+      final traitementMap = <String, String>{'Tous': 'Tous'};
+      final treatments = ['Tous'];
+
+      for (final treatment in treatmentList) {
+        // Éviter les doublons (ne pas ajouter "Tous" si déjà présent)
+        if (treatment != 'Tous' && !treatments.contains(treatment)) {
+          traitementMap[treatment] = treatment;
+          treatments.add(treatment);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _traitements = treatments;
+          _selectedTraitement = 'Tous';
+          final clientName = clientId == -1
+              ? 'tous les clients'
+              : _selectedClient;
+          logger.i(' ${treatments.length - 1} traitements pour $clientName');
+        });
+      }
+    } catch (e) {
+      logger.e(' Erreur lors du chargement des traitements: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Titre principal
+                Text(
+                  'Rendu en format EXCEL',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Catégorie
+                _buildDropdownRow(
+                  label: 'Catégorie',
+                  value: _selectedCategory,
+                  items: _categories,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value;
+                      // Si Facture: forcer Tous les mois
+                      if (value == 'Facture') {
+                        _selectedMois = 'Tous';
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Traitement (visible seulement si catégorie = Traitement)
+                if (_selectedCategory == 'Traitement') ...[
+                  _buildDropdownRow(
+                    label: 'Traitement',
+                    value: _selectedTraitement,
+                    items: _traitements,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedTraitement = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Mois (désactivé pour Facture, obligatoirement "Tous")
+                if (_selectedCategory == 'Traitement')
+                  _buildDropdownRow(
+                    label: 'Mois',
+                    value: _selectedMois,
+                    items: _mois,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedMois = value;
+                      });
+                    },
+                  )
+                else
+                  _buildDisabledDropdownRow(
+                    label: 'Mois',
+                    value: 'Tous',
+                    reason: 'Tous les mois (export Facture)',
+                  ),
+                const SizedBox(height: 24),
+
+                // Client
+                _isLoadingClients
+                    ? Row(
+                        children: [
+                          Text(
+                            'Client',
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              height: 56,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[400]!),
+                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey[100],
+                              ),
+                              child: const Align(
+                                alignment: Alignment.centerLeft,
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : _buildDropdownRow(
+                        label: 'Client',
+                        value: _selectedClient,
+                        items: _clients,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedClient = value;
+                            // Les traitements sont chargés une fois au démarrage
+                            // Pas besoin de les recharger quand on change de client
+                          });
+                        },
+                      ),
+                const SizedBox(height: 40),
+
+                // Question et boutons
+                Text(
+                  'Voulez-vous générer un rendu?',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Boutons Générer, Actualiser et Annuler
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[400],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                      ),
+                      onPressed: _isExporting
+                          ? null
+                          : () => _generererExcel(context),
+                      child: _isExporting
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.green[700]!,
+                                ),
+                              ),
+                            )
+                          : const Text(
+                              'Générer',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[400],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                      ),
+                      onPressed: _isExporting
+                          ? null
+                          : () => _actualiserDonnees(),
+                      child: const Text(
+                        'Actualiser',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[400],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                      ),
+                      onPressed: () => _reinitialiserSelections(),
+                      child: const Text(
+                        'Annuler',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Affichage du statut d'export
+                if (_lastExportPath != null) ...[
+                  const SizedBox(height: 40),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      border: Border.all(color: Colors.green[300]!, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green[700],
+                              size: 28,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Export réussi !',
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Fichier sauvegardé:',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          _lastExportPath!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownRow({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 150,
+          child: Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[400]!),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: DropdownButton<String>(
+              value: value,
+              underline: const SizedBox(),
+              isExpanded: true,
+              itemHeight: 56,
+              menuMaxHeight: 400,
+              items: items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Text(
+                      _clientDisplayNames[item] ?? item,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  onChanged(newValue);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDisabledDropdownRow({
+    required String label,
+    required String value,
+    required String reason,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 150,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey[100],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                Tooltip(
+                  message: reason,
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _actualiserDonnees() async {
+    setState(() {
+      _isLoadingClients = true;
+      _selectedClient = 'Tous';
+      _selectedTraitement = 'Tous';
+      _selectedMois = 'Tous';
+      _selectedCategory = 'Facture';
+    });
+
+    // Recharger les clients
+    await _loadClients();
+
+    // Recharger les traitements (pour "Tous")
+    await _loadTreatmentsForClient(-1);
+
+    if (mounted) {
+      AppSnackBars.showSuccess(context, 'Données actualisées');
+    }
+
+    logger.i(' Actualisation complète des données');
+  }
+
+  Future<void> _generererExcel(BuildContext context) async {
+    setState(() => _isExporting = true);
+
+    try {
+      if (_selectedCategory == 'Facture') {
+        final clientId = _clientMap[_selectedClient] ?? -1;
+        await _exportFactures(context, clientId);
+      } else if (_selectedCategory == 'Traitement') {
+        final clientId = _clientMap[_selectedClient] ?? -1;
+        await _exportTraitements(context, clientId);
+      }
+
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    } catch (e) {
+      logger.e('Erreur lors de la génération de l\'export: $e');
+      if (mounted) {
+        setState(() => _isExporting = false);
+        _showErrorDialog(context, 'Erreur d\'export', e.toString());
+      }
+    }
+  }
+
+  Future<void> _exportFactures(BuildContext context, int clientId) async {
+    try {
+      final factureRepo = context.read<FactureRepository>();
+      final contratRepo = context.read<ContratRepository>();
+      final clientRepo = context.read<ClientRepository>();
+
+      List<Facture> factures;
+
+      // Charger les factures filtrées par client si clientId != -1
+      if (clientId != -1) {
+        await factureRepo.loadFacturesForClient(clientId);
+        factures = factureRepo.factures;
+      } else {
+        // Charger toutes les factures
+        await factureRepo.loadAllFactures();
+        factures = factureRepo.factures;
+      }
+
+      // Filtrer par mois si ce n'est pas "Tous"
+      if (_selectedMois != 'Tous') {
+        final monthIndex = _mois.indexOf(_selectedMois);
+        factures = factures.where((f) {
+          final dateTraitement = f.dateTraitement;
+          return dateTraitement.month == monthIndex;
+        }).toList();
+      }
+
+      if (factures.isEmpty) {
+        _showErrorDialog(
+          context,
+          'Aucune donnée',
+          'Aucune facture à exporter pour ce client',
+        );
+        return;
+      }
+
+      // Charger tous les contrats et clients une seule fois
+      await contratRepo.loadContrats();
+      final allContrats = contratRepo.contrats;
+      await clientRepo.loadClients();
+      final allClients = clientRepo.clients;
+
+      // Préparer les données pour Excel
+      List<Map<String, dynamic>> data = [];
+      for (var facture in factures) {
+        // Charger les infos client et contrat si disponibles
+        String clientNom = facture.clientNom ?? 'N/A';
+        String clientPrenom = facture.clientPrenom ?? 'N/A';
+        String clientCategorie = facture.clientCategorie ?? 'N/A';
+        String referenceContrat = 'N/A';
+        String clientAdresse = 'N/A';
+        String clientTelephone = 'N/A';
+
+        // Chercher les infos complètes du client
+        if (facture.clientId != null) {
+          try {
+            // Chercher le client
+            try {
+              final client = allClients.firstWhere(
+                (c) => c.clientId == facture.clientId,
+              );
+              clientAdresse = client.adresse.isNotEmpty
+                  ? client.adresse
+                  : 'N/A';
+              clientTelephone = client.telephone.isNotEmpty
+                  ? client.telephone
+                  : 'N/A';
+            } catch (e) {
+              logger.d('Client ${facture.clientId} non trouvé');
+            }
+
+            // Chercher le contrat pour ce client
+            final contratsClient = allContrats
+                .where((c) => c.clientId == facture.clientId)
+                .toList();
+            if (contratsClient.isNotEmpty) {
+              // Prendre le premier contrat actif ou le dernier
+              final contratActif = contratsClient.firstWhere(
+                (c) => c.statutContrat == 'Actif',
+                orElse: () => contratsClient.last,
+              );
+              referenceContrat = contratActif.referenceContrat;
+            }
+          } catch (e) {
+            logger.d(
+              'Erreur chargement infos pour client ${facture.clientId}: $e',
+            );
+          }
+        }
+
+        // Construire les détails de paiement selon la logique BD
+        String detailsPaiement = 'N/A';
+        if (facture.etat == 'Payé') {
+          detailsPaiement = 'Payé';
+          if (facture.mode != null && facture.mode!.isNotEmpty) {
+            detailsPaiement += ' par ${facture.mode}';
+          }
+          if (facture.dateCheque != null) {
+            detailsPaiement += ' le ${facture.dateCheque!.toLocal()}';
+          }
+          if (facture.numeroCheque != null &&
+              facture.numeroCheque!.isNotEmpty) {
+            detailsPaiement += ' (N°${facture.numeroCheque})';
+          }
+          if (facture.etablissementPayeur != null &&
+              facture.etablissementPayeur!.isNotEmpty) {
+            detailsPaiement += ' - ${facture.etablissementPayeur}';
+          }
+        } else if (facture.etat == 'À venir') {
+          detailsPaiement = 'À venir';
+        } else {
+          detailsPaiement = 'Non payé';
+        }
+
+        data.add({
+          // Infos client (pour l'en-tête)
+          'client_nom': clientNom,
+          'client_prenom': clientPrenom,
+          'client_categorie': clientCategorie,
+          'client_axe': facture.axe,
+          'client_adresse': clientAdresse,
+          'client_telephone': clientTelephone,
+          'Référence Contrat': referenceContrat,
+          // Infos facture
+          'Numéro Facture': facture.referenceFacture ?? 'N/A',
+          'Date de Planification': facture.datePlanification ?? DateTime.now(),
+          'Date de Facturation': facture.dateTraitement,
+          'Type de Traitement': facture.typeTreatment ?? 'Standard',
+          'Etat du Planning': facture.etatPlanning ?? 'Complété',
+          'Mode de Paiement': facture.mode ?? 'N/A',
+          'Détails Paiement': detailsPaiement,
+          'Etat de Paiement': facture.etat,
+          'Montant Facturé': facture.montant,
+        });
+      }
+
+      final filePath = await _excelService.genererFactureExcel(
+        data,
+        '${_selectedClient}_$_selectedMois',
+        DateTime.now().year,
+        _selectedMois == 'Tous' ? 0 : _mois.indexOf(_selectedMois),
+      );
+
+      if (mounted) {
+        setState(() => _lastExportPath = filePath);
+        _showSuccessDialog(
+          context,
+          'Fichier sauvegardé',
+          'Emplacement: $filePath',
+        );
+      }
+    } catch (e) {
+      logger.e('Erreur lors de l\'export des factures: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _exportTraitements(BuildContext context, int clientId) async {
+    try {
+      final planningDetailsRepo = context.read<PlanningDetailsRepository>();
+      final monthIndex = _mois.indexOf(_selectedMois); // Janvier = index 1
+      final year = DateTime.now().year;
+
+      // Déterminer le traitement à passer (null si 'Tous')
+      final treatmentType = _selectedTraitement != 'Tous'
+          ? _selectedTraitement
+          : null;
+
+      // Récupérer les traitements du mois/client/traitement spécifique
+      final treatments = await planningDetailsRepo
+          .getTreatmentsByMonthAndClient(
+            year: year,
+            month: monthIndex, // monthIndex déjà correct (1-12)
+            clientId: clientId == -1 ? null : clientId,
+            treatmentType: treatmentType,
+          );
+
+      if (treatments.isEmpty) {
+        _showErrorDialog(
+          context,
+          'Aucune donnée',
+          'Aucun traitement à exporter pour ce client ce mois-ci',
+        );
+        return;
+      }
+
+      // Préparer les données pour Excel en mappant les colonnes
+      List<Map<String, dynamic>> data = [];
+      for (var treatment in treatments) {
+        data.add({
+          'Date du traitement': treatment['Date du traitement'],
+          'Traitement concerné': treatment['Traitement concerné'] ?? 'N/A',
+          'Catégorie du traitement':
+              treatment['Catégorie du traitement'] ?? 'N/A',
+          'Client concerné': treatment['Client concerné'] ?? 'N/A',
+          'Catégorie du client': treatment['Catégorie du client'] ?? 'N/A',
+          'Axe du client': treatment['Axe du client'] ?? 'N/A',
+          'Etat traitement': treatment['Etat traitement'] ?? 'À venir',
+        });
+      }
+
+      final filePath = await _excelService.generateTraitementsExcel(
+        data,
+        year,
+        monthIndex,
+      );
+
+      if (mounted) {
+        setState(() => _lastExportPath = filePath);
+        _showSuccessDialog(
+          context,
+          'Fichier sauvegardé',
+          'Emplacement: $filePath',
+        );
+      }
+    } catch (e) {
+      logger.e('Erreur lors de l\'export des traitements: $e');
+      rethrow;
+    }
+  }
+
+  void _reinitialiserSelections() {
+    setState(() {
+      _selectedCategory = 'Facture';
+      _selectedTraitement = 'Tous';
+      _selectedMois = 'Janvier';
+      _selectedClient = 'Tous';
+      _lastExportPath = null;
+    });
+  }
+
+  void _showSuccessDialog(BuildContext context, String title, String message) {
+    AppDialogs.showBlurDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.check_circle, color: Colors.green[600], size: 48),
+        title: Text(' $title'),
+        content: SelectableText(message),
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx),
+            icon: const Icon(Icons.close),
+            label: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    AppDialogs.showBlurDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.error, color: Colors.red[600], size: 48),
+        title: Text(' $title'),
+        content: SelectableText(message),
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx),
+            icon: const Icon(Icons.close),
+            label: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
+}
