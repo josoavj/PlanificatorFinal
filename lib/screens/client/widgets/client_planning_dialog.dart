@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/client.dart';
-import '../../../services/database_service.dart';
-import '../../../widgets/index.dart';
-import '../../../../utils/date_utils.dart' as date_utils;
+import '../../../core/database/database_service.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../core/utils/date_utils.dart' as date_utils;
 import 'client_details_dialog.dart';
 
 class ClientPlanningDialog extends StatelessWidget {
