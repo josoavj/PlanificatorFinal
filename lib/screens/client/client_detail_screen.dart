@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:planificator/shared/widgets/app_dialogs.dart';
+import 'package:planificator/shared/widgets/empty_state_widget.dart';
+import 'package:planificator/shared/widgets/error_widget.dart';
+import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
-import '../../utils/app_snackbars.dart';
-import '../../widgets/index.dart';
-import '../../core/theme.dart';
-import '../../utils/nif_stat_formatter.dart';
-import '../../utils/phone_formatter.dart';
-import '../../utils/email_validator.dart';
-import '../../widgets/common/multi_phone_input.dart';
+import '../../core/utils/app_snackbars.dart';
+import '../../shared/widgets/index.dart';
+import '../../app/theme/theme.dart';
+import '../../core/utils/nif_stat_formatter.dart';
+import '../../core/utils/phone_formatter.dart';
+import '../../core/security/email_validator.dart';
+import '../../shared/widgets/multi_phone_input.dart';
 
 class ClientDetailScreen extends StatefulWidget {
   final int clientId;
