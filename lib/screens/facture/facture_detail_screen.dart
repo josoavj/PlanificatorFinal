@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
-import '../../core/theme.dart';
-import '../../widgets/index.dart';
-import '../../utils/number_formatter.dart';
+import '../../app/theme/theme.dart';
+import '../../shared/widgets/index.dart';
+import '../../core/utils/number_formatter.dart';
 import 'widgets/facture_price_dialog.dart';
 
 class FactureDetailScreen extends StatefulWidget {
