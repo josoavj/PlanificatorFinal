@@ -5,7 +5,7 @@ import '../../models/index.dart';
 import 'widgets/facture_group_card.dart';
 import 'widgets/facture_list_header.dart';
 import 'facture_detail_screen.dart';
-import '../../widgets/paginated_list_view.dart';
+import '../../shared/widgets/paginated_list_view.dart';
 
 class FactureScreen extends StatefulWidget {
   const FactureScreen({super.key});
