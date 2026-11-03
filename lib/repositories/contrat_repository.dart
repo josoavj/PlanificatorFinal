@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../core/sql_queries.dart';
-import '../utils/date_utils.dart' as date_utils;
-import 'auth_repository.dart';
+import '../core/database/sql/sql_queries.dart';
+import '../core/utils/date_utils.dart' as date_utils;
+import '../features/auth/repositories/auth_repository.dart';
 
 class ContratRepository extends ChangeNotifier {
   final DatabaseService _db;
