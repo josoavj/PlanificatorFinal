@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:planificator/shared/widgets/app_dialogs.dart';
+import 'package:planificator/shared/widgets/empty_state_widget.dart';
+import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:provider/provider.dart';
 import '../../models/index.dart';
 import '../../repositories/index.dart';
-import '../../widgets/index.dart';
-import '../../core/sql_queries.dart';
-import '../../services/database_service.dart';
-import '../../services/logging_service.dart';
+import '../../core/database/sql/sql_queries.dart';
+import '../../core/database/database_service.dart';
+import '../../core/logging/logging_service.dart';
 import 'contrat_creation_dialog.dart';
 import 'widgets/contrat_card.dart';
 import 'widgets/contrat_list_header.dart';
@@ -68,14 +70,21 @@ class _ContratScreenState extends State<ContratScreen> {
       }
 
       if (widget.clientId != null) {
-        contrats = contrats.where((c) => c.clientId == widget.clientId).toList();
+        contrats = contrats
+            .where((c) => c.clientId == widget.clientId)
+            .toList();
       }
 
       final result = <Map<String, dynamic>>[];
       for (final contrat in contrats) {
         final client = clientMap[contrat.clientId];
-        final treatmentRows = await db.query(SqlQueries.countTreatmentsByContrat, [contrat.contratId]);
-        final numTraitements = treatmentRows.isNotEmpty ? (treatmentRows[0]['count'] as int? ?? 0) : 0;
+        final treatmentRows = await db.query(
+          SqlQueries.countTreatmentsByContrat,
+          [contrat.contratId],
+        );
+        final numTraitements = treatmentRows.isNotEmpty
+            ? (treatmentRows[0]['count'] as int? ?? 0)
+            : 0;
 
         result.add({
           'contrat': contrat,
@@ -96,13 +105,14 @@ class _ContratScreenState extends State<ContratScreen> {
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _contratsFuture,
         builder: (context, snapshot) {
-          if (_contratsFuture == null || snapshot.connectionState == ConnectionState.waiting) {
+          if (_contratsFuture == null ||
+              snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
             return ErrorDisplayWidget(
-              message: 'Erreur: ${snapshot.error}', 
-              onRetry: _reloadData
+              message: 'Erreur: ${snapshot.error}',
+              onRetry: _reloadData,
             );
           }
 
@@ -114,16 +124,17 @@ class _ContratScreenState extends State<ContratScreen> {
               ContratListHeader(
                 searchController: _searchController,
                 searchQuery: _searchQuery,
-                onSearchChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                onSearchChanged: (v) =>
+                    setState(() => _searchQuery = v.toLowerCase()),
                 onRefresh: _reloadData,
                 contratCount: filteredData.length,
               ),
               Expanded(
                 child: filteredData.isEmpty
                     ? const EmptyStateWidget(
-                        title: 'Aucun contrat', 
-                        message: 'Créez un contrat pour commencer.', 
-                        icon: Icons.description_outlined
+                        title: 'Aucun contrat',
+                        message: 'Créez un contrat pour commencer.',
+                        icon: Icons.description_outlined,
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -158,7 +169,7 @@ class _ContratScreenState extends State<ContratScreen> {
       final client = item['client'] as Client?;
       final contrat = item['contrat'] as Contrat;
       return '${client?.fullName}'.toLowerCase().contains(_searchQuery) ||
-             contrat.referenceContrat.toLowerCase().contains(_searchQuery);
+          contrat.referenceContrat.toLowerCase().contains(_searchQuery);
     }).toList();
   }
 
