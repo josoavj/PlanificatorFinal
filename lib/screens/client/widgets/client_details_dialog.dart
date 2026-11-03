@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/client.dart';
-import '../../../services/database_service.dart';
-import '../../../widgets/index.dart';
-import '../../../utils/nif_stat_formatter.dart';
-import '../../../utils/phone_formatter.dart';
-import '../../../utils/number_formatter.dart';
+import '../../../core/database/database_service.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../core/utils/nif_stat_formatter.dart';
+import '../../../core/utils/phone_formatter.dart';
+import '../../../core/utils/number_formatter.dart';
 import 'client_edit_dialog.dart';
 import 'client_planning_dialog.dart';
 
