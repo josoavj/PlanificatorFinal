@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../core/sql_queries.dart';
-import 'auth_repository.dart';
+import '../core/database/sql/sql_queries.dart';
+import '../features/auth/repositories/auth_repository.dart';
 
 class ClientRepository extends ChangeNotifier {
   final DatabaseService _db;
