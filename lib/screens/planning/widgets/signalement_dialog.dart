@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/index.dart';
 import '../../../repositories/signalement_repository.dart';
-import '../../../utils/date_helper.dart';
-import '../../../services/logging_service.dart';
-import '../../../utils/app_snackbars.dart';
-import '../../../core/theme.dart';
-import '../../../widgets/index.dart';
-import '../../../widgets/common/index.dart';
+import '../../../core/utils/date_helper.dart';
+import '../../../core/logging/logging_service.dart';
+import '../../../core/utils/app_snackbars.dart';
+import '../../../app/theme/theme.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../shared/widgets/index.dart';
 
 class SignalementDialog extends StatefulWidget {
   final PlanningDetails planningDetail;
