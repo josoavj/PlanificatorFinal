@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/index.dart';
 import '../services/index.dart';
-import '../utils/excel_utils.dart';
-import '../utils/date_helper.dart';
-import '../utils/date_utils.dart' as date_utils;
-import '../core/sql_queries.dart';
-import 'auth_repository.dart';
+import '../core/utils/excel_utils.dart';
+import '../core/utils/date_helper.dart';
+import '../core/utils/date_utils.dart' as date_utils;
+import '../core/database/sql/sql_queries.dart';
+import '../features/auth/repositories/auth_repository.dart';
 
 class FactureRepository extends ChangeNotifier {
   final DatabaseService _db;
