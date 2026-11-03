@@ -1,5 +1,5 @@
 import 'package:mockito/mockito.dart';
-import 'package:planificator/services/database_service.dart';
+import 'package:planificator/core/database/database_service.dart';
 import 'package:mysql1/mysql1.dart';
 
 // Mock partagé pour DatabaseService
