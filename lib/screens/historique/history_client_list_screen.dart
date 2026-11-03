@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart';
-import '../../widgets/index.dart';
+import 'package:planificator/shared/widgets/empty_state_widget.dart';
+import 'package:planificator/shared/widgets/paginated_list_view.dart';
+import '../../app/theme/theme.dart';
+import '../../shared/widgets/index.dart';
 import '../../repositories/planning_details_repository.dart';
 import 'widgets/history_client_card.dart';
 import 'history_client_detail_screen.dart';
