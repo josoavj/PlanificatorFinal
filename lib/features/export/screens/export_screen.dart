@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:planificator/features/clients/repositories/client_repository.dart';
+import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
+import 'package:planificator/features/factures/models/facture.dart';
+import 'package:planificator/features/factures/repositories/facture_repository.dart';
+import 'package:planificator/features/planning/repositories/planning_details_repository.dart';
 import 'package:provider/provider.dart';
-import '../../../repositories/index.dart';
-import '../../../models/index.dart';
 import '../../../core/utils/excel_utils.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/logging/logging_service.dart';
 import '../../../core/utils/app_snackbars.dart';
 import '../../../shared/widgets/app_dialogs.dart';
-
 
 final logger = createLoggerWithFileOutput(name: 'export_screen');
 
@@ -89,7 +91,7 @@ class _ExportScreenState extends State<ExportScreen> {
               throw TimeoutException('Database query timeout');
             },
           );
-      logger.i('📦 ${rows.length} clients trouvés en DB');
+      logger.i('${rows.length} clients trouvés en DB');
 
       final clientMap = <String, int>{'Tous': -1};
       final clientList = ['Tous'];
