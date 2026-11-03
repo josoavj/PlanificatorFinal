@@ -3,7 +3,7 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:planificator/models/planning_details.dart';
 import 'package:planificator/services/index.dart';
-import 'package:planificator/core/sql_queries.dart';
+import 'package:planificator/core/database/sql/sql_queries.dart';
 
 class PlanningDetailsRepository extends ChangeNotifier {
   final DatabaseService _db;
