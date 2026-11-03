@@ -8,6 +8,13 @@ import 'package:path/path.dart' as path;
 // Vérifier si on est sur Windows
 bool isWindows = Platform.isWindows;
 
+final _ansiEscapePattern = RegExp(r'\x1B\[[0-?]*[ -/]*[@-~]');
+final _emojiPattern = RegExp(
+  r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0E}\u{FE0F}]',
+  unicode: true,
+);
+final _nonAsciiPattern = RegExp(r'[^\x20-\x7E]');
+
 enum LogLevel { debug, info, warning, error, critical }
 
 class LogEntry {
@@ -129,6 +136,7 @@ class LoggingService {
 
   File? _currentLogFile;
   bool _isInitialized = false;
+  Future<void> _fileWriteQueue = Future<void>.value();
 
   Stream<LogEntry> get logStream => _logController.stream;
   List<LogEntry> get allLogs => List.unmodifiable(_logs);
@@ -205,8 +213,8 @@ class LoggingService {
   /// Générer un en-tête formaté pour le fichier log
   String _getLogFileHeader() {
     final now = DateTime.now();
-    final separator = '═' * 100;
-    return '''$separator
+    final separator = '=' * 100;
+    return _sanitizeLogText('''$separator
 PLANIFICATOR LOG FILE
 Démarré: ${now.toString()}
 Plateforme: ${Platform.operatingSystem.toUpperCase()}
@@ -214,7 +222,7 @@ $separator
 
 FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
 
-''';
+''');
   }
 
   /// Vérifier et archiver les fichiers logs si nécessaire
@@ -281,7 +289,13 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
   }
 
   /// Persister un log dans un fichier
-  Future<void> _persistLog(LogEntry entry) async {
+  void _persistLog(LogEntry entry) {
+    _fileWriteQueue = _fileWriteQueue
+        .then((_) => _writeLogEntry(entry))
+        .catchError((_) {});
+  }
+
+  Future<void> _writeLogEntry(LogEntry entry) async {
     if (!_config.enableFileLogging || _currentLogFile == null) return;
     if (entry.level.index < _config.minPersistLevel.index) return;
 
@@ -299,17 +313,50 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
 
   /// Formater un log pour le fichier en fonction de la plateforme
   String _formatLogForFile(LogEntry entry) {
-    final baseLog =
+    final prefix =
         '${entry.formattedTime} | ${entry.levelName.padRight(8)} | '
-        '${entry.source?.padRight(20) ?? 'general'.padRight(20)} | ${entry.message}';
+        '${entry.source?.padRight(20) ?? 'general'.padRight(20)} | ';
+    final messageLines = _formatMessageLines(entry.message);
+    final baseLog = messageLines.indexed
+        .map(
+          (line) => line.$1 == 0
+              ? '$prefix${line.$2.trim()}'
+              : '${' ' * prefix.length}${line.$2.trim()}',
+        )
+        .join('\n');
 
     // Sur Windows: ajouter des séparateurs visuels pour les erreurs
     if (isWindows &&
         (entry.level == LogLevel.error || entry.level == LogLevel.critical)) {
-      return '\n${'▔' * 100}\n$baseLog\n${'▔' * 100}';
+      return '\n${'-' * 100}\n$baseLog\n${'-' * 100}';
     }
 
     return baseLog;
+  }
+
+  List<String> _formatMessageLines(String message) {
+    final queryMatch = RegExp(
+      r'^(?:\[[A-Z]\]\s*)?Query:\s*(.*)$',
+      dotAll: true,
+    ).firstMatch(message.trim());
+    if (queryMatch == null) {
+      return message.split('\n');
+    }
+
+    final sql = queryMatch.group(1)!.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final formattedSql = sql
+        .replaceAllMapped(
+          RegExp(
+            r'\s+(FROM|INNER JOIN|LEFT JOIN|RIGHT JOIN|JOIN|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT)\s+',
+            caseSensitive: false,
+          ),
+          (match) => '\n${match.group(1)!.toUpperCase()} ',
+        )
+        .replaceAllMapped(
+          RegExp(r'\s+(AND|OR)\s+', caseSensitive: false),
+          (match) => '\n  ${match.group(1)!.toUpperCase()} ',
+        );
+    return ['Query:', ...formattedSql.split('\n').map((line) => '  $line')];
   }
 
   /// Ajouter un log au système de journalisation
@@ -376,6 +423,11 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
   /// Capturer une ligne de log du package logger
   void _captureLogLine(String line) {
     try {
+      line = _sanitizeLogText(line);
+      if (line.trim().isEmpty || RegExp(r'^[\s\-=]+$').hasMatch(line)) {
+        return;
+      }
+
       // Déterminer le niveau du log à partir du contenu
       LogLevel level = LogLevel.info;
       if (line.contains('VERBOSE') || line.contains('verbose')) {
@@ -388,7 +440,7 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
         level = LogLevel.warning;
       } else if (line.contains('ERROR') || line.contains('error')) {
         level = LogLevel.error;
-      } else if (line.contains('WTF') || line.contains('')) {
+      } else if (line.contains('WTF')) {
         level = LogLevel.critical;
       }
 
@@ -406,21 +458,75 @@ FORMAT: [HH:MM:SS.mmm] [LEVEL] [SOURCE] [MESSAGE]
   }
 
   void _addLog(LogEntry entry) {
-    _logs.add(entry);
-    _logController.add(entry);
+    final sanitizedEntry = LogEntry(
+      timestamp: entry.timestamp,
+      message: _sanitizeLogText(entry.message),
+      level: entry.level,
+      source: entry.source,
+      stackTrace: entry.stackTrace,
+    );
+    _logs.add(sanitizedEntry);
+    _logController.add(sanitizedEntry);
 
     // Persister le log en fichier (async)
-    _persistLog(entry).ignore();
+    _persistLog(sanitizedEntry);
 
     // Afficher dans la console en debug
     if (kDebugMode) {
-      print(entry.formatted);
+      print(sanitizedEntry.formatted);
     }
 
     // Limiter la taille du buffer
     if (_logs.length > _config.maxLogsInMemory) {
       _logs.removeRange(0, _logs.length - _config.maxLogsInMemory);
     }
+  }
+
+  String _sanitizeLogText(String text) {
+    const replacements = {
+      'À': 'A',
+      'Â': 'A',
+      'Ä': 'A',
+      'Ç': 'C',
+      'È': 'E',
+      'É': 'E',
+      'Ê': 'E',
+      'Ë': 'E',
+      'Î': 'I',
+      'Ï': 'I',
+      'Ô': 'O',
+      'Ö': 'O',
+      'Ù': 'U',
+      'Û': 'U',
+      'Ü': 'U',
+      'à': 'a',
+      'â': 'a',
+      'ä': 'a',
+      'ç': 'c',
+      'è': 'e',
+      'é': 'e',
+      'ê': 'e',
+      'ë': 'e',
+      'î': 'i',
+      'ï': 'i',
+      'ô': 'o',
+      'ö': 'o',
+      'ù': 'u',
+      'û': 'u',
+      'ü': 'u',
+      'œ': 'oe',
+      'Œ': 'OE',
+      '’': "'",
+      '→': '->',
+    };
+    var sanitized = text;
+    for (final replacement in replacements.entries) {
+      sanitized = sanitized.replaceAll(replacement.key, replacement.value);
+    }
+    return sanitized
+        .replaceAll(_ansiEscapePattern, '')
+        .replaceAll(_emojiPattern, '')
+        .replaceAll(_nonAsciiPattern, '');
   }
 
   /// Exporter les logs en format texte
@@ -541,6 +647,7 @@ final log = LoggingService();
 logger_pkg.Logger createLoggerWithFileOutput({String? name}) {
   return logger_pkg.Logger(
     output: _CaptureLogOutput(log),
+    printer: logger_pkg.SimplePrinter(),
     level: logger_pkg.Level.debug,
     filter: logger_pkg.ProductionFilter(),
   );
