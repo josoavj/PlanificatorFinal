@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
-import '../../../utils/date_utils.dart' as date_utils;
+import '../../../app/theme/theme.dart';
+import '../../../core/utils/date_utils.dart' as date_utils;
 
 class HistoryInterventionTile extends StatelessWidget {
   final DateTime date;
