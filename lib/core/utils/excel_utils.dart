@@ -14,7 +14,7 @@ class FolderManager {
   static Future<List<Directory>> initDesktopStructure() async {
     try {
       final baseDir = await getExportBasePath();
-      _logger.i('📁 Dossier base export: ${baseDir.path}');
+      _logger.i('Dossier base export: ${baseDir.path}');
 
       final dossiers = ['Factures', 'Traitements', 'Exports'];
       List<Directory> paths = [];
@@ -31,7 +31,9 @@ class FolderManager {
           _logger.e(' Erreur création dossier $nom: $e');
           // Fallback ultime dans Documents si même le personnalisé échoue
           final home = _getHomeDir();
-          final fallbackDir = Directory(p.join(home, 'Documents', 'Planificator', nom));
+          final fallbackDir = Directory(
+            p.join(home, 'Documents', 'Planificator', nom),
+          );
           fallbackDir.createSync(recursive: true);
           paths.add(fallbackDir);
         }
@@ -86,7 +88,7 @@ class FolderManager {
     var desktop = Directory(p.join(home, 'Desktop'));
     if (!desktop.existsSync()) desktop = Directory(p.join(home, 'Bureau'));
     if (!desktop.existsSync()) desktop = Directory(p.join(home, 'Documents'));
-    
+
     return desktop;
   }
 }
@@ -102,7 +104,8 @@ class ExcelService {
   }
 
   /// Génère dynamiquement les chemins pour chaque export
-  Future<List<Directory>> _getPaths() async => await FolderManager.initDesktopStructure();
+  Future<List<Directory>> _getPaths() async =>
+      await FolderManager.initDesktopStructure();
 
   final Map<String, Style> _styleCache = {};
 
@@ -125,14 +128,26 @@ class ExcelService {
     currentRow = _insertClientHeader(sheet, data, clientFullName, currentRow);
 
     sheet.getRangeByIndex(currentRow, 1, currentRow, 9).merge();
-    sheet.getRangeByIndex(currentRow, 1).setText('Rapport de Facturation pour la période : $reportPeriod');
+    sheet
+        .getRangeByIndex(currentRow, 1)
+        .setText('Rapport de Facturation pour la période : $reportPeriod');
     sheet.getRangeByIndex(currentRow, 1).cellStyle = _getHeaderStyle(workbook);
     currentRow += 2;
 
-    currentRow = _insertMainTable(sheet, workbook, data, currentRow, isMonthly: false);
+    currentRow = _insertMainTable(
+      sheet,
+      workbook,
+      data,
+      currentRow,
+      isMonthly: false,
+    );
     _insertTotals(sheet, workbook, data, currentRow, isMonthly: false);
 
-    return _saveFile(workbook, paths[0], 'Rapport_Factures_${safeName}_$reportPeriod.xlsx');
+    return _saveFile(
+      workbook,
+      paths[0],
+      'Rapport_Factures_${safeName}_$reportPeriod.xlsx',
+    );
   }
 
   // --- 2. FONCTION : generer_facture_excel (Mensuel ou Annuel) ---
@@ -159,7 +174,9 @@ class ExcelService {
       titleText = "Rapport de Facturation pour l'année : $year";
       filename = '$safeName-Annuel-$year.xlsx';
     } else {
-      final String monthNameFr = DateFormat.MMMM('fr_FR').format(DateTime(year, month)).toUpperCase();
+      final String monthNameFr = DateFormat.MMMM(
+        'fr_FR',
+      ).format(DateTime(year, month)).toUpperCase();
       titleText = 'Facture du mois de : $monthNameFr $year';
       filename = '$safeName-$monthNameFr-$year.xlsx';
     }
@@ -169,7 +186,13 @@ class ExcelService {
     sheet.getRangeByIndex(currentRow, 1).cellStyle = _getHeaderStyle(workbook);
     currentRow += 2;
 
-    currentRow = _insertMainTable(sheet, workbook, data, currentRow, isMonthly: month != 0);
+    currentRow = _insertMainTable(
+      sheet,
+      workbook,
+      data,
+      currentRow,
+      isMonthly: month != 0,
+    );
     _insertTotals(sheet, workbook, data, currentRow, isMonthly: month != 0);
 
     return _saveFile(workbook, paths[0], filename);
@@ -184,15 +207,21 @@ class ExcelService {
     _styleCache.clear();
     final paths = await _getPaths();
 
-    final String monthNameFr = DateFormat.MMMM('fr_FR').format(DateTime(year, month)).toUpperCase();
+    final String monthNameFr = DateFormat.MMMM(
+      'fr_FR',
+    ).format(DateTime(year, month)).toUpperCase();
     final Workbook workbook = Workbook();
     final Worksheet sheet = workbook.worksheets[0];
 
     sheet.getRangeByIndex(1, 1, 1, 7).merge();
-    sheet.getRangeByIndex(1, 1).setText('Rapport des Traitements du mois de $monthNameFr $year');
+    sheet
+        .getRangeByIndex(1, 1)
+        .setText('Rapport des Traitements du mois de $monthNameFr $year');
     sheet.getRangeByIndex(1, 1).cellStyle = _getHeaderStyle(workbook);
 
-    sheet.getRangeByIndex(3, 1).setText('Nombre total de traitements ce mois-ci : ${data.length}');
+    sheet
+        .getRangeByIndex(3, 1)
+        .setText('Nombre total de traitements ce mois-ci : ${data.length}');
     sheet.getRangeByIndex(3, 1).cellStyle.bold = true;
 
     if (data.isEmpty) {
@@ -225,7 +254,8 @@ class ExcelService {
           var value = data[i][headers[j]];
           cell.setValue(value);
           cell.cellStyle.borders.all.lineStyle = LineStyle.thin;
-          if (backgroundColor.isNotEmpty) cell.cellStyle.backColor = backgroundColor;
+          if (backgroundColor.isNotEmpty)
+            cell.cellStyle.backColor = backgroundColor;
         }
       }
     }
@@ -238,12 +268,18 @@ class ExcelService {
 
   // --- HELPERS INTERNES ---
 
-  int _insertClientHeader(Worksheet sheet, List<Map<String, dynamic>> data, String clientFullName, int row) {
+  int _insertClientHeader(
+    Worksheet sheet,
+    List<Map<String, dynamic>> data,
+    String clientFullName,
+    int row,
+  ) {
     if (data.isEmpty) return row;
     final info = data[0];
     String displayName = '${info['client_nom']} ${info['client_prenom']}';
     if (info['client_categorie'] != 'Particulier') {
-      displayName = '${info['client_nom']} (Responsable: ${info['client_prenom'] ?? 'N/A'})';
+      displayName =
+          '${info['client_nom']} (Responsable: ${info['client_prenom'] ?? 'N/A'})';
     }
 
     final List<List<String>> rows = [
@@ -264,8 +300,24 @@ class ExcelService {
     return row + 1;
   }
 
-  int _insertMainTable(Worksheet sheet, Workbook wb, List<Map<String, dynamic>> data, int startRow, {required bool isMonthly}) {
-    final headers = ['Numéro Facture', 'Date de Planification', 'Date de Facturation', 'Type de Traitement', 'Etat du Planning', 'Mode de Paiement', 'Détails Paiement', 'Etat de Paiement', 'Montant Facturé'];
+  int _insertMainTable(
+    Worksheet sheet,
+    Workbook wb,
+    List<Map<String, dynamic>> data,
+    int startRow, {
+    required bool isMonthly,
+  }) {
+    final headers = [
+      'Numéro Facture',
+      'Date de Planification',
+      'Date de Facturation',
+      'Type de Traitement',
+      'Etat du Planning',
+      'Mode de Paiement',
+      'Détails Paiement',
+      'Etat de Paiement',
+      'Montant Facturé',
+    ];
     for (int i = 0; i < headers.length; i++) {
       var cell = sheet.getRangeByIndex(startRow, i + 1);
       cell.setText(headers[i]);
@@ -283,26 +335,47 @@ class ExcelService {
         isMonthly ? item['Etat traitement'] : item['Etat du Planning'],
         item['Mode de Paiement'] ?? 'N/A',
         details,
-        isMonthly ? item['Etat paiement (Payée ou non)'] : item['Etat de Paiement'],
+        isMonthly
+            ? item['Etat paiement (Payée ou non)']
+            : item['Etat de Paiement'],
         isMonthly ? item['montant_facture'] : item['Montant Facturé'],
       ];
 
-      String status = (isMonthly ? item['Etat paiement (Payée ou non)'] : item['Etat de Paiement']).toString();
+      String status =
+          (isMonthly
+                  ? item['Etat paiement (Payée ou non)']
+                  : item['Etat de Paiement'])
+              .toString();
 
       for (int cIdx = 0; cIdx < rowData.length; cIdx++) {
         var cell = sheet.getRangeByIndex(rIdx, cIdx + 1);
         var value = rowData[cIdx];
         final cellStyle = wb.styles.add('row_style_$rIdx$cIdx');
         cellStyle.borders.all.lineStyle = LineStyle.thin;
-        cellStyle.backColor = (status == 'Payé' || status == 'Payée') ? '#C6EFCE' : '#FFC7CE';
+        cellStyle.backColor = (status == 'Payé' || status == 'Payée')
+            ? '#C6EFCE'
+            : '#FFC7CE';
 
         if (cIdx == 1 || cIdx == 2) {
-          if (value is DateTime) { cell.setDateTime(value); cellStyle.numberFormat = 'dd/mm/yy'; }
-          else if (value is String && value != 'N/A') { try { final date = DateTime.parse(value); cell.setDateTime(date); cellStyle.numberFormat = 'dd/mm/yy'; } catch (e) { cell.setText(value.toString()); } }
-          else { cell.setText(value?.toString() ?? 'N/A'); }
+          if (value is DateTime) {
+            cell.setDateTime(value);
+            cellStyle.numberFormat = 'dd/mm/yy';
+          } else if (value is String && value != 'N/A') {
+            try {
+              final date = DateTime.parse(value);
+              cell.setDateTime(date);
+              cellStyle.numberFormat = 'dd/mm/yy';
+            } catch (e) {
+              cell.setText(value.toString());
+            }
+          } else {
+            cell.setText(value?.toString() ?? 'N/A');
+          }
+        } else if (cIdx == 8) {
+          cell.setText(_formatMontant(value));
+        } else {
+          cell.setValue(value);
         }
-        else if (cIdx == 8) { cell.setText(_formatMontant(value)); }
-        else { cell.setValue(value); }
         cell.cellStyle = cellStyle;
       }
       rIdx++;
@@ -310,19 +383,41 @@ class ExcelService {
     return rIdx + 1;
   }
 
-  void _insertTotals(Worksheet sheet, Workbook wb, List<Map<String, dynamic>> data, int row, {required bool isMonthly}) {
+  void _insertTotals(
+    Worksheet sheet,
+    Workbook wb,
+    List<Map<String, dynamic>> data,
+    int row, {
+    required bool isMonthly,
+  }) {
     if (data.isEmpty) return;
     final String amountKey = isMonthly ? 'montant_facture' : 'Montant Facturé';
-    final String statusKey = isMonthly ? 'Etat paiement (Payée ou non)' : 'Etat de Paiement';
-    final String treatmentKey = isMonthly ? 'Traitement (Type)' : 'Type de Traitement';
+    final String statusKey = isMonthly
+        ? 'Etat paiement (Payée ou non)'
+        : 'Etat de Paiement';
+    final String treatmentKey = isMonthly
+        ? 'Traitement (Type)'
+        : 'Type de Traitement';
 
-    double total = data.fold(0.0, (prev, e) => prev + ((e[amountKey] is num) ? e[amountKey].toDouble() : 0.0));
-    double paid = data.where((e) => e[statusKey] == 'Payé' || e[statusKey] == 'Payée').fold(0.0, (prev, e) => prev + ((e[amountKey] is num) ? e[amountKey].toDouble() : 0.0));
+    double total = data.fold(
+      0.0,
+      (prev, e) =>
+          prev + ((e[amountKey] is num) ? e[amountKey].toDouble() : 0.0),
+    );
+    double paid = data
+        .where((e) => e[statusKey] == 'Payé' || e[statusKey] == 'Payée')
+        .fold(
+          0.0,
+          (prev, e) =>
+              prev + ((e[amountKey] is num) ? e[amountKey].toDouble() : 0.0),
+        );
 
     final Map<String, double> totalByTreatment = {};
     for (var item in data) {
       final treatment = item[treatmentKey]?.toString() ?? 'N/A';
-      totalByTreatment[treatment] = (totalByTreatment[treatment] ?? 0) + ((item[amountKey] is num) ? item[amountKey].toDouble() : 0.0);
+      totalByTreatment[treatment] =
+          (totalByTreatment[treatment] ?? 0) +
+          ((item[amountKey] is num) ? item[amountKey].toDouble() : 0.0);
     }
 
     row++;
@@ -353,12 +448,16 @@ class ExcelService {
     sheet.getRangeByIndex(row, 9).cellStyle.bold = true;
     sheet.getRangeByIndex(row, 9).cellStyle.backColor = '#C6EFCE';
 
-    for (int i = 1; i <= 9; i++) { sheet.autoFitColumn(i); }
+    for (int i = 1; i <= 9; i++) {
+      sheet.autoFitColumn(i);
+    }
   }
 
   String _formatMontant(dynamic amount) {
     if (amount == null) return 'N/A';
-    int intAmount = (amount is num) ? amount.toInt() : (int.tryParse(amount.toString()) ?? 0);
+    int intAmount = (amount is num)
+        ? amount.toInt()
+        : (int.tryParse(amount.toString()) ?? 0);
     final formatter = NumberFormat('#,##0', 'fr_FR');
     return '${formatter.format(intAmount)} Ar';
   }
@@ -366,21 +465,29 @@ class ExcelService {
   Style _getHeaderStyle(Workbook wb) {
     if (_styleCache.containsKey('header')) return _styleCache['header']!;
     Style s = wb.styles.add('h');
-    s.bold = true; s.fontSize = 14; s.hAlign = HAlignType.center;
+    s.bold = true;
+    s.fontSize = 14;
+    s.hAlign = HAlignType.center;
     _styleCache['header'] = s;
     return s;
   }
 
   Style _getBoldBorderStyle(Workbook wb) {
-    if (_styleCache.containsKey('boldBorder')) return _styleCache['boldBorder']!;
+    if (_styleCache.containsKey('boldBorder'))
+      return _styleCache['boldBorder']!;
     Style s = wb.styles.add('bold_border');
-    s.bold = true; s.borders.all.lineStyle = LineStyle.thin;
+    s.bold = true;
+    s.borders.all.lineStyle = LineStyle.thin;
     _styleCache['boldBorder'] = s;
     return s;
   }
 
   String _saveFile(Workbook wb, Directory dir, String fileName) {
-    try { _addSignatureToSheet(wb.worksheets[0], wb); } catch (e) { _logger.w(' Erreur signature: $e'); }
+    try {
+      _addSignatureToSheet(wb.worksheets[0], wb);
+    } catch (e) {
+      _logger.w(' Erreur signature: $e');
+    }
     final List<int> bytes = wb.saveAsStream();
     final String filePath = p.join(dir.path, fileName);
     File(filePath).writeAsBytesSync(bytes);
@@ -391,18 +498,31 @@ class ExcelService {
 
   void _addSignatureToSheet(Worksheet sheet, Workbook wb) {
     int signatureRow = sheet.getLastRow() + 2;
-    final Style signatureStyle = wb.styles.add('sig_${DateTime.now().millisecondsSinceEpoch}');
-    signatureStyle.fontSize = 9; signatureStyle.fontColor = '#808080'; signatureStyle.italic = true;
+    final Style signatureStyle = wb.styles.add(
+      'sig_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    signatureStyle.fontSize = 9;
+    signatureStyle.fontColor = '#808080';
+    signatureStyle.italic = true;
     final signatureCell = sheet.getRangeByIndex(signatureRow, 1);
     signatureCell.setText('Données générées via Planificator v2.1.1');
     signatureCell.cellStyle = signatureStyle;
   }
 
-  Future<String> genererExcelGenerique({required String title, required List<String> headers, required List<List<dynamic>> data, required String fileName}) async {
+  Future<String> genererExcelGenerique({
+    required String title,
+    required List<String> headers,
+    required List<List<dynamic>> data,
+    required String fileName,
+  }) async {
     final Workbook workbook = Workbook();
     final Worksheet sheet = workbook.worksheets[0];
     final Style headerStyle = workbook.styles.add('headerStyle');
-    headerStyle.bold = true; headerStyle.fontSize = 12; headerStyle.hAlign = HAlignType.center; headerStyle.backColor = '#4472C4'; headerStyle.fontColor = '#FFFFFF';
+    headerStyle.bold = true;
+    headerStyle.fontSize = 12;
+    headerStyle.hAlign = HAlignType.center;
+    headerStyle.backColor = '#4472C4';
+    headerStyle.fontColor = '#FFFFFF';
 
     int currentRow = 1;
     sheet.getRangeByIndex(currentRow, 1, currentRow, headers.length).merge();
