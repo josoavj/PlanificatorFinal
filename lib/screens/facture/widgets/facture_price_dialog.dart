@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/index.dart';
 import '../../../repositories/index.dart';
-import '../../../utils/app_snackbars.dart';
-import '../../../utils/number_formatter.dart';
-import '../../../widgets/app_dialogs.dart';
-import '../../../widgets/common/index.dart';
+import '../../../core/utils/app_snackbars.dart';
+import '../../../core/utils/number_formatter.dart';
+import '../../../shared/widgets/app_dialogs.dart';
+import '../../../shared/widgets/index.dart';
 
-import '../../../utils/date_utils.dart' as date_utils;
+import '../../../core/utils/date_utils.dart' as date_utils;
 
 class FacturePriceDialog extends StatelessWidget {
   final Facture facture;
