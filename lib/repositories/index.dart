@@ -1,4 +1,4 @@
-export 'auth_repository.dart';
+export '../features/auth/repositories/auth_repository.dart';
 export 'client_repository.dart';
 export 'facture_repository.dart';
 export 'contrat_repository.dart';
@@ -7,5 +7,5 @@ export 'historique_repository.dart';
 export 'planning_details_repository.dart';
 export 'remarque_repository.dart';
 export 'signalement_repository.dart';
-export 'type_traitement_repository.dart';
-export 'notification_repository.dart';
+export '../features/catalogue/repositories/type_traitement_repository.dart';
+export '../features/notifications/repositories/notification_repository.dart';
