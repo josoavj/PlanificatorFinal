@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../models/client.dart';
 import '../../../repositories/index.dart';
-import '../../../utils/app_snackbars.dart';
-import '../../../widgets/index.dart';
-import '../../../core/theme.dart';
-import '../../../utils/nif_stat_formatter.dart';
-import '../../../utils/phone_formatter.dart';
-import '../../../utils/email_validator.dart';
-import '../../../widgets/common/multi_phone_input.dart';
+import '../../../core/utils/app_snackbars.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../app/theme/theme.dart';
+import '../../../core/utils/nif_stat_formatter.dart';
+import '../../../core/utils/phone_formatter.dart';
+import '../../../core/security/email_validator.dart';
+import '../../../shared/widgets/multi_phone_input.dart';
 import 'client_details_dialog.dart';
 
 class ClientEditDialog extends StatefulWidget {
