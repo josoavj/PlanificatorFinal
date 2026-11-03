@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/facture.dart';
-import '../../../utils/number_formatter.dart';
+import '../../../core/utils/number_formatter.dart';
 
 class FactureGroupCard extends StatelessWidget {
   final String title;
