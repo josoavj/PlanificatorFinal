@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 import '../../../models/index.dart';
-import '../../../services/database_service.dart';
-import '../../../widgets/index.dart';
-import '../../../utils/app_snackbars.dart';
+import '../../../core/database/database_service.dart';
+import '../../../shared/widgets/index.dart';
+import '../../../core/utils/app_snackbars.dart';
 import 'contrat_details_dialog.dart';
 
 class ContratPlanningView extends StatelessWidget {
