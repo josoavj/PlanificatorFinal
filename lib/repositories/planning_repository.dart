@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../services/index.dart';
-import '../core/sql_queries.dart';
+import '../core/database/sql/sql_queries.dart';
 
 class PlanningRepository extends ChangeNotifier {
   final DatabaseService _db = DatabaseService();
