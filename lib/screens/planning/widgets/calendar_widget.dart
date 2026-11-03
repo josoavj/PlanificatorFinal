@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../../core/theme.dart';
+import '../../../app/theme/theme.dart';
 
 class CalendarWidget extends StatelessWidget {
   final DateTime focusedDay;
