@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../repositories/index.dart';
-import '../../core/theme.dart';
+import '../../app/theme/theme.dart';
 import 'widgets/history_category_card.dart';
 import 'history_client_list_screen.dart';
 
