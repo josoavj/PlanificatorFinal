@@ -4,11 +4,11 @@ import '../../models/facture.dart';
 import '../../models/planning_details.dart';
 import '../../models/remarque.dart';
 import '../../repositories/index.dart';
-import '../../core/theme.dart';
-import '../../widgets/index.dart';
+import '../../app/theme/theme.dart';
+import '../../shared/widgets/index.dart';
 import 'widgets/signalement_dialog.dart';
 import 'widgets/remark_dialog.dart';
-import '../../utils/app_snackbars.dart';
+import '../../core/utils/app_snackbars.dart';
 
 class PlanningDetailScreen extends StatefulWidget {
   final Map<String, dynamic> treatment;
