@@ -2,8 +2,9 @@ name: Déploiement de Planificator sur GitHub Pages
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
     paths: ['presentation/**']
+  workflow_dispatch:
 
 permissions:
   contents: read
