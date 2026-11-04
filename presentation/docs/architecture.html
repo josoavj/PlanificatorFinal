@@ -1,18 +1,433 @@
-<!doctype html><html lang="fr"><head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Architecture et données | Planificator</title>
-  <meta name="description" content="Architecture Flutter, repositories et schéma de données de Planificator."><meta name="theme-color" content="#0B1B3F"><link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/layout.css"><link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/sections.css"><link rel="stylesheet" href="../css/responsive.css"><link rel="stylesheet" href="../css/docs.css">
-</head><body id="top"><a class="skip-link" href="#contenu">Aller au contenu</a><header class="site-header"><div class="container site-header__bar"><a class="site-header__logo" href="../index.html"><img src="../assets/logo-full.svg" alt="Planificator"></a><nav class="site-nav" id="site-nav" aria-label="Navigation principale"><a href="index.html">Documentation</a><a href="installation.html">Installation</a><a href="guide.html">Guide utilisateur</a><a href="securite.html">Sécurité</a></nav><a class="btn site-header__cta" href="index.html">Tous les guides</a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu">☰</button></div></header>
-<main id="contenu"><section class="docs-hero"><div class="container"><div class="docs-crumb"><a href="../index.html">Accueil</a> / <a href="index.html">Documentation</a> / Architecture</div><h1>Architecture et modèle de données</h1><p>Une application Flutter desktop structurée autour de repositories et d’un schéma MySQL partagé.</p></div></section><section class="docs-content"><div class="container">
-<h2>Organisation du code</h2><pre>lib/
-├── core/          Initialisation, thème, requêtes SQL
-├── models/        Modèles métier et conversion des données
-├── repositories/  Règles métier et opérations SQL
-├── services/      Connexion MySQL, cache, logs, sauvegardes
-├── screens/       Parcours d’interface
-└── utils/         Dates, validateurs et formateurs</pre>
-<p>Les widgets présentent les données et délèguent les opérations aux repositories. Les requêtes partagées sont centralisées dans <code>lib/core/sql_queries.dart</code>. <code>DatabaseService</code> gère la connexion, le pool et les transactions.</p>
-<h2>Relations métier principales</h2><div class="table-wrap"><table><thead><tr><th scope="col">Éléments</th><th scope="col">Relation et usage</th></tr></thead><tbody><tr><th scope="row">Client → Contrat</th><td>Un client peut avoir plusieurs contrats.</td></tr><tr><th scope="row">Contrat → Traitement</th><td>Les traitements décrivent les services convenus dans le contrat.</td></tr><tr><th scope="row">Traitement → Planning</th><td>Un traitement génère un planning d’interventions.</td></tr><tr><th scope="row">Planning → PlanningDetails</th><td>Les détails portent les dates et états de chaque passage.</td></tr><tr><th scope="row">PlanningDetails ↔ Facture</th><td>La facture est reliée aux détails du planning ; des détails peuvent partager une facture groupée.</td></tr><tr><th scope="row">Historique, Remarque, Signalement</th><td>Conservent le suivi des événements et informations associés aux interventions.</td></tr></tbody></table></div>
-<h2>Facturation et lien avec le contrat</h2><p>La table <code>Facture</code> stocke notamment <code>planning_detail_id</code> et <code>date_traitement</code>. Elle ne stocke pas de colonne <code>contrat_id</code>, <code>date_emission</code> ou <code>date_echeance</code>. Une requête qui doit retrouver le contrat passe par <code>PlanningDetails → Planning → Traitement → Contrat</code>.</p><p>Les index du schéma sont définis dans <code>scripts/Planificator.sql</code>. La commande <code>ANALYZE TABLE</code> rafraîchit les statistiques utilisées par l’optimiseur SQL ; elle ne crée pas d’index.</p>
-<h2>Plateformes et technologies</h2><ul><li>Flutter desktop sur Windows, Linux et macOS.</li><li>Dart, Provider, MySQL via le package mysql1.</li><li>BCrypt pour le hachage des mots de passe.</li><li>Stockage sécurisé des identifiants de connexion.</li><li>Exports Excel et calendrier d’interventions.</li></ul><a class="docs-back" href="index.html">← Tous les guides</a></div></section></main>
-<footer class="site-footer"><div class="container site-footer__grid"><div><img src="../assets/logo-white.svg" alt="Planificator"><p>Architecture technique</p></div><div><b>Mise en œuvre</b><a href="contribution.html">Contribuer</a><a href="tests.html">Tests</a></div><div><b>Exploitation</b><a href="installation.html">Installation</a><a href="exploitation.html">Sauvegardes</a></div></div></footer><script src="../js/main.js" defer></script></body></html>
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Architecture et données | Planificator</title>
+    <meta
+      name="description"
+      content="Architecture Flutter par fonctionnalité, rôle de chaque dossier et schéma de données de Planificator."
+    />
+    <meta name="theme-color" content="#0B1B3F" />
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/sections.css" />
+    <link rel="stylesheet" href="../css/responsive.css" />
+    <link rel="stylesheet" href="../css/docs.css" />
+  </head>
+  <body id="top">
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="site-header">
+      <div class="container site-header__bar">
+        <a class="site-header__logo" href="../index.html">
+          <img src="../assets/logo-full.svg" alt="Planificator" />
+        </a>
+        <nav class="site-nav" id="site-nav" aria-label="Navigation principale">
+          <a href="index.html">Documentation</a>
+          <a href="installation.html">Installation</a>
+          <a href="guide.html">Guide utilisateur</a>
+          <a href="securite.html">Sécurité</a>
+        </nav>
+        <a class="btn site-header__cta" href="index.html">Tous les guides</a>
+        <button
+          class="menu-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          aria-label="Menu">
+          ☰
+        </button>
+      </div>
+    </header>
+    <main id="contenu">
+      <section class="docs-hero">
+        <div class="container">
+          <div class="docs-crumb">
+            <a href="../index.html">Accueil</a> /
+            <a href="index.html">Documentation</a> / Architecture
+          </div>
+          <h1>Architecture et modèle de données</h1>
+          <p>
+            Une application Flutter desktop organisée par fonctionnalité, autour
+            de repositories et d’un schéma MySQL partagé.
+          </p>
+        </div>
+      </section>
+      <section class="docs-content">
+        <div class="container">
+          <h2>Organisation du code</h2>
+          <pre>
+lib/
+├── main.dart     Point d’entrée (runApp uniquement)
+├── app/          Démarrage, providers, routes, thème, passerelle d’authentification
+├── core/         Infrastructure technique : base de données, requêtes SQL par domaine,
+│                 cache, logs, sécurité, plateforme, utilitaires, constantes
+├── shared/       Composants d’interface réutilisés par plusieurs fonctionnalités
+└── features/     Une fonctionnalité métier par dossier
+          </pre>
+          <p>
+            Le code est organisé <strong>par fonctionnalité</strong> : pour
+            travailler sur la facturation, un seul dossier suffit. Les écrans
+            présentent les données et délèguent les opérations aux repositories.
+            <code>DatabaseService</code> (dans <code>core/database/</code>) gère
+            la connexion, le pool et les transactions, et les requêtes SQL sont
+            découpées par domaine dans <code>core/database/sql/</code>.
+          </p>
+
+          <h2>Rôle de chaque dossier</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Dossier</th>
+                  <th scope="col">Rôle</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row"><code>app/</code></th>
+                  <td>
+                    Assemblage de l’application :
+                    <code>app.dart</code> (MaterialApp),
+                    <code>app_initializer.dart</code> (séquence de démarrage),
+                    <code>app_providers.dart</code> (providers),
+                    <code>app_routes.dart</code> (routes nommées),
+                    <code>auth_gate.dart</code> (connexion, inscription ou
+                    accueil) et <code>theme/</code> (thème clair et sombre).
+                    <code>app/</code> connaît tout le monde, mais personne ne
+                    dépend d’<code>app/</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>core/</code></th>
+                  <td>
+                    Infrastructure technique transverse, sans logique métier ni
+                    dépendance vers <code>features/</code>. Détail dans le
+                    tableau ci-dessous.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>shared/</code></th>
+                  <td>
+                    Composants visuels communs (sidebar, états vide, erreur et
+                    chargement, listes paginées, cartes de section, saisie
+                    multi-téléphones, dialogues standard). Un composant n’y est
+                    remonté qu’à partir du deuxième usage.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>features/</code></th>
+                  <td>
+                    Les fonctionnalités métier, chacune avec ses modèles, ses
+                    repositories et ses écrans (voir plus bas).
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>scripts/</code></th>
+                  <td>
+                    Hors de <code>lib/</code> : schéma SQL
+                    (<code>Planificator.sql</code>), migrations, maintenance et
+                    opérations.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>test/</code></th>
+                  <td>
+                    Tests unitaires et d’intégration, organisés comme
+                    <code>lib/</code>.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Contenu de <code>core/</code></h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Sous-dossier</th>
+                  <th scope="col">Contenu</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row"><code>database/</code></th>
+                  <td>
+                    Configuration et connexion MySQL, pool, exécution dans un
+                    isolate, migrations de schéma, abstraction transactionnelle.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>database/sql/</code></th>
+                  <td>
+                    Requêtes SQL découpées par domaine (authentification,
+                    clients, contrats, planning, factures, historique,
+                    catalogue, notifications).
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>cache/</code></th>
+                  <td>Cache des résultats de requêtes.</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>logging/</code></th>
+                  <td>Journalisation avec masquage des données sensibles.</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>security/</code></th>
+                  <td>
+                    Limitation des tentatives de connexion, validateurs de mot
+                    de passe et d’e-mail.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>platform/</code></th>
+                  <td>Configuration et profilage spécifiques à Windows.</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>utils/</code></th>
+                  <td>
+                    Formateurs (NIF/STAT, téléphone, montants), snackbars,
+                    recherche différée, exports Excel.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>constants/</code></th>
+                  <td>Constantes globales.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Contenu de <code>features/</code></h2>
+          <pre>
+              features/
+              ├── auth/            Connexion, inscription, récupération de compte, rôles
+              ├── home/            Accueil et tableau de bord
+              ├── clients/         Clients (particulier, organisation, société)
+              ├── contrats/        Contrats et traitements associés
+              ├── planning/        Planning des interventions, remarques, signalements
+              ├── factures/        Facturation
+              ├── historique/      Journal de bord par client
+              ├── catalogue/       Catalogue dynamique des types de traitement
+              ├── users/           Administration des comptes
+              ├── profile/         Profil de l’utilisateur connecté
+              ├── notifications/   Rappels d’interventions
+              ├── backup/          Sauvegarde et restauration
+              ├── export/          Exports de données
+              ├── settings/        Réglages, configuration de la base
+              ├── legal/           Confidentialité et conditions d’utilisation
+              └── about/           Informations sur l’application
+          </pre>
+          <p>
+            Chaque fonctionnalité contient uniquement les sous-dossiers dont
+            elle a besoin. Les deux plus riches en règles métier,
+            <code>planning/</code> et <code>factures/</code>, ont la structure
+            complète :
+          </p>
+          <pre>
+            features/factures/
+            ├── domain/        Règles métier pures (regroupement, cascade de prix)
+            ├── models/        Facture, HistoriquePrix
+            ├── repositories/  Accès aux données et transactions
+            ├── providers/     État (ChangeNotifier)
+            └── screens/       Pages et widgets
+
+            features/planning/
+            ├── domain/        Règles pures : génération des dates, jours fériés, répartition 1x/2x/3x
+            ├── models/        PlanningDetails, Remarque, Signalement
+            ├── repositories/  Persistance des passages, remarques et signalements
+            ├── providers/     État du calendrier
+            └── screens/       Pages et widgets
+          </pre>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Sous-dossier</th>
+                  <th scope="col">Rôle</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row"><code>domain/</code></th>
+                  <td>
+                    Règles métier pures en Dart, testables sans base de données
+                    ni Flutter.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>models/</code></th>
+                  <td>
+                    Objets métier : champs, conversion depuis et vers la base,
+                    copie modifiée. Un modèle ne connaît ni l’interface ni le
+                    SQL.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>repositories/</code></th>
+                  <td>
+                    Porte d’accès aux données d’une entité : requêtes,
+                    transactions, invalidation du cache. L’interface ignore d’où
+                    viennent les données.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>providers/</code></th>
+                  <td>
+                    État de la fonctionnalité entre l’écran et le repository :
+                    chargement, erreur, rafraîchissement.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>services/</code></th>
+                  <td>
+                    Capacités techniques propres à la fonctionnalité
+                    (notifications, sauvegarde).
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>screens/</code></th>
+                  <td>
+                    Pages, dialogues et widgets propres à la fonctionnalité. Un
+                    écran ne contient ni SQL ni calcul métier.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Règles de dépendance</h2>
+          <pre>
+            screens  →  providers  →  repositories  →  core/database
+              ↓            ↓              ↓
+            shared/      domain/         models
+            (widgets)  (règles pures)
+          </pre>
+          <ul>
+            <li>Une flèche signifie « utilise » : rien ne remonte.</li>
+            <li>
+              Une fonctionnalité n’importe pas une autre fonctionnalité : ce qui
+              est partagé monte dans <code>core/</code> ou <code>shared/</code>.
+            </li>
+            <li>
+              <code>core/</code> ne dépend jamais de <code>features/</code>.
+            </li>
+            <li>
+              <code>domain/</code> n’importe ni Flutter, ni MySQL, ni Provider.
+            </li>
+            <li>
+              Les opérations qui touchent plusieurs tables (cascade de prix,
+              facturation groupée) passent par l’abstraction transactionnelle de
+              <code>core/database/</code>.
+            </li>
+          </ul>
+
+          <h2>Relations métier principales</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Éléments</th>
+                  <th scope="col">Relation et usage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Client → Contrat</th>
+                  <td>Un client peut avoir plusieurs contrats.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Contrat → Traitement</th>
+                  <td>
+                    Les traitements décrivent les services convenus dans le
+                    contrat.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Traitement → Planning</th>
+                  <td>Un traitement génère un planning d’interventions.</td>
+                </tr>
+                <tr>
+                  <th scope="row">Planning → PlanningDetails</th>
+                  <td>
+                    Les détails portent les dates et états de chaque passage.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">PlanningDetails ↔ Facture</th>
+                  <td>
+                    La facture est reliée aux détails du planning ; des détails
+                    peuvent partager une facture groupée.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Historique, Remarque, Signalement</th>
+                  <td>
+                    Conservent le suivi des événements et informations associés
+                    aux interventions.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2>Facturation et lien avec le contrat</h2>
+          <p>
+            La table <code>Facture</code> stocke notamment
+            <code>planning_detail_id</code> et <code>date_traitement</code>.
+            Elle ne stocke pas de colonne <code>contrat_id</code>,
+            <code>date_emission</code> ou <code>date_echeance</code>. Une
+            requête qui doit retrouver le contrat passe par
+            <code>PlanningDetails → Planning → Traitement → Contrat</code>.
+          </p>
+          <p>
+            Les index du schéma sont définis dans
+            <code>scripts/Planificator.sql</code>. La commande
+            <code>ANALYZE TABLE</code> rafraîchit les statistiques utilisées par
+            l’optimiseur SQL ; elle ne crée pas d’index.
+          </p>
+
+          <h2>Plateformes et technologies</h2>
+          <ul>
+            <li>Flutter desktop sur Windows, Linux et macOS.</li>
+            <li>Dart, Provider, MySQL via le package mysql1.</li>
+            <li>BCrypt pour le hachage des mots de passe.</li>
+            <li>Stockage sécurisé des identifiants de connexion.</li>
+            <li>
+              Migrations de schéma, sauvegarde et restauration de la base.
+            </li>
+            <li>
+              Notifications d’interventions et limitation des tentatives de
+              connexion.
+            </li>
+            <li>Exports Excel et calendrier d’interventions.</li>
+          </ul>
+          <a class="docs-back" href="index.html">← Tous les guides</a>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="container site-footer__grid">
+        <div>
+          <img src="../assets/logo-white.svg" alt="Planificator" />
+          <p>Architecture technique</p>
+        </div>
+        <div>
+          <b>Mise en œuvre</b>
+          <a href="contribution.html">Contribuer</a>
+          <a href="tests.html">Tests</a>
+        </div>
+        <div>
+          <b>Exploitation</b>
+          <a href="installation.html">Installation</a>
+          <a href="exploitation.html">Sauvegardes</a>
+        </div>
+      </div>
+    </footer>
+    <script src="../js/main.js" defer></script>
+  </body>
+</html>
