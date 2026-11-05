@@ -229,8 +229,10 @@ Si vous souhaitez contribuer au projet, lisez le guide détaillé [CONTRIBUTING.
 ## Auteur
 
 **Josoa** - Développeur principal
-
 - GitHub : [@josoavj](https://github.com/josoavj)
+
+**Maminirina** - Testeur et architecture Back-end
+- GitHub : [@AinaMaminirina18](https://github.com/AinaMaminirina18)
 
 ## Licence
 
