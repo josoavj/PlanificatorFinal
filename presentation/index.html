@@ -268,8 +268,8 @@
           </article>
         </div>
         <p class="callout" style="margin-top:24px"><b>En production :</b> utilisez un compte SQL dédié, activez SSL/TLS
-          si le réseau n’est pas fiable, limitez le port 3306 aux postes autorisés et chiffrez les sauvegardes. <a
-            href="docs/securite.html">Lire le guide de sécurité</a></p>
+          si le réseau n’est pas fiable, limitez le port 3306 aux postes autorisés et chiffrez les sauvegardes. 
+          <a href="docs/securite.html">Lire le guide de sécurité</a></p>
       </div>
     </section>
 
@@ -405,18 +405,20 @@
       <div class="container">
         <div class="section__head">
           <h2>Une architecture pensée pour la fiabilité</h2>
-          <p>Du code organisé par rôle et des requêtes centralisées dans <code>lib/core/sql_queries.dart</code>.</p>
+          <p>Du code organisé par rôle et des requêtes centralisées sur la base de données dans <code>lib/core/database/sql/</code>.</p>
         </div>
         <div class="grid grid--2">
           <div>
             <pre class="arch__tree">
               lib/
-              ├── core/          SQL centralisé, thèmes, constantes
-              ├── models/        Modèles de données
-              ├── repositories/  Logique métier, transactions SQL
-              ├── services/      Base de données, pool, cache
-              ├── screens/       Interface utilisateur
-              └── utils/         Dates, NIF/STAT, téléphone
+              ├── app/                Démarrage, routes, providers et thème de l'application  
+              ├── core/               Services, validateurs et règles métier 
+              ├── shared/             Composants d'interface réutilisables par plusieurs fonctionnalités
+              └── features/           Fonctionnalités métiers par dossiers
+                  ├── models/         Modèles de données
+                  ├── repositories/   Transactions SQL
+                  ├── domain/         Règle métier pure
+                  └─ screens/         Page et widgets de la fonctionnalité
             </pre>
             <p class="arch__note">Relations : <code>Client</code> ↔ <code>Contrat</code> ↔ <code>Traitement</code> ↔
               <code>Planning</code> ↔ <code>PlanningDetails</code> ↔ <code>Facture</code> (N-1 pour le groupé), plus
@@ -456,14 +458,9 @@
         </div>
         <ul class="chips" style="margin-top:24px">
           <li>Flutter</li>
-          <li>mysql1</li>
+          <li>Mysql</li>
           <li>Provider</li>
-          <li>table_calendar</li>
-          <li>bcrypt</li>
-          <li>flutter_secure_storage</li>
-          <li>Syncfusion XlsIO</li>
-          <li>flutter_local_notifications</li>
-          <li>google_fonts</li>
+          <li>BCRYPT</li>
         </ul>
       </div>
     </section>
