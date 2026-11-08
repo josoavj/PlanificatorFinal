@@ -67,7 +67,11 @@ class TreatmentListView extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, color: AppTheme.errorRed, size: 32),
+              const Icon(
+                Icons.error_outline,
+                color: AppTheme.errorRed,
+                size: 32,
+              ),
               const SizedBox(height: 12),
               Text(
                 errorMessage!,
@@ -95,19 +99,23 @@ class TreatmentListView extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         itemCount: treatments.length,
         separatorBuilder: (context, index) => Divider(
-          height: 1, 
-          indent: 64, 
+          height: 1,
+          indent: 64,
           endIndent: 16,
-          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.grey.withValues(alpha: 0.1),
         ),
         itemBuilder: (context, index) {
-            final item = treatments[index];
+          final item = treatments[index];
           final etat = (item['etat'] ?? '').toString();
           final isEffectue = etat.trim() == 'Effectué';
-          
-          final factureEtat = (item['facture_etat'] ?? '').toString().toLowerCase();
+
+          final factureEtat = (item['facture_etat'] ?? '')
+              .toString()
+              .toLowerCase();
           final isPaye = factureEtat.contains('payé');
-  
+
           // NOUVELLE LOGIQUE DE COULEUR
           final Color statusColor;
           if (isPaye) {
@@ -115,9 +123,10 @@ class TreatmentListView extends StatelessWidget {
           } else if (isEffectue) {
             statusColor = AppTheme.errorRed; // Rouge si fait mais pas payé
           } else {
-            statusColor = AppTheme.warningOrange; // Orange si à venir / en attente
+            statusColor =
+                AppTheme.warningOrange; // Orange si à venir / en attente
           }
-  
+
           return ListTile(
             onTap: () => TreatmentDetailDialog.show(context, item),
             leading: Container(
@@ -128,7 +137,9 @@ class TreatmentListView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                isEffectue ? Icons.check_circle_outline : Icons.schedule_rounded,
+                isEffectue
+                    ? Icons.check_circle_outline
+                    : Icons.schedule_rounded,
                 color: statusColor,
                 size: 20,
               ),
@@ -141,11 +152,18 @@ class TreatmentListView extends StatelessWidget {
             ),
             subtitle: Row(
               children: [
-                Icon(Icons.location_on_outlined, size: 12, color: isDark ? Colors.white38 : Colors.grey),
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 12,
+                  color: isDark ? Colors.white38 : Colors.grey,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   item['axe'] ?? 'N/A',
-                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white38 : Colors.grey[600],
+                  ),
                 ),
               ],
             ),
@@ -155,11 +173,17 @@ class TreatmentListView extends StatelessWidget {
               children: [
                 Text(
                   _formatDisplayDate(item['date']),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
