@@ -61,7 +61,9 @@ class _MultiPhoneInputState extends State<MultiPhoneInput> {
           final controller = entry.value;
 
           return Padding(
-            padding: EdgeInsets.only(bottom: idx < widget.controllers.length - 1 ? 12 : 0),
+            padding: EdgeInsets.only(
+              bottom: idx < widget.controllers.length - 1 ? 12 : 0,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -69,24 +71,38 @@ class _MultiPhoneInputState extends State<MultiPhoneInput> {
                     controller: controller,
                     inputFormatters: [PhoneInputFormatter()],
                     keyboardType: TextInputType.phone,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                     decoration: InputDecoration(
                       hintText: '03X XX XXX XX',
-                      prefixIcon: const Icon(Icons.phone_android_rounded, size: 18),
+                      prefixIcon: const Icon(
+                        Icons.phone_android_rounded,
+                        size: 18,
+                      ),
                       filled: true,
-                      fillColor: isDark 
-                          ? Colors.white.withValues(alpha: 0.03) 
+                      fillColor: isDark
+                          ? Colors.white.withValues(alpha: 0.03)
                           : Colors.grey.withValues(alpha: 0.05),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: isDark ? Colors.white10 : Colors.grey.withValues(alpha: 0.2),
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.grey.withValues(alpha: 0.2),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+                        borderSide: const BorderSide(
+                          color: AppTheme.primaryBlue,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
