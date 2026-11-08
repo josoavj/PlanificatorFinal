@@ -40,16 +40,20 @@ class RateLimitService {
     final now = DateTime.now().millisecondsSinceEpoch;
     final cutoff = now - window.inMilliseconds;
     final prefs = await _preferences();
-    final attempts = (prefs?.getStringList(key) ??
-            _fallbackAttempts[key]?.map((e) => e.toString()).toList() ??
-            const <String>[])
-        .map(int.tryParse)
-        .whereType<int>()
-        .where((timestamp) => timestamp >= cutoff)
-        .toList()
-      ..add(now);
+    final attempts =
+        (prefs?.getStringList(key) ??
+                _fallbackAttempts[key]?.map((e) => e.toString()).toList() ??
+                const <String>[])
+            .map(int.tryParse)
+            .whereType<int>()
+            .where((timestamp) => timestamp >= cutoff)
+            .toList()
+          ..add(now);
     if (prefs != null) {
-      await prefs.setStringList(key, attempts.map((e) => e.toString()).toList());
+      await prefs.setStringList(
+        key,
+        attempts.map((e) => e.toString()).toList(),
+      );
     } else {
       _fallbackAttempts[key] = attempts;
     }
