@@ -18,25 +18,26 @@ class HistoryInterventionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isDone = status.toLowerCase().contains('effectué');
-    
+
     // Utilisation des couleurs thématiques standard
-    final statusColor = isDone 
-        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen) 
+    final statusColor = isDone
+        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen)
         : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       leading: Container(
-        width: 44, height: 44,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: statusColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
-          isDone ? Icons.check_circle_outline_rounded : Icons.schedule_rounded, 
-          color: statusColor, 
-          size: 20
+          isDone ? Icons.check_circle_outline_rounded : Icons.schedule_rounded,
+          color: statusColor,
+          size: 20,
         ),
       ),
       title: Text(
@@ -56,10 +57,10 @@ class HistoryInterventionTile extends StatelessWidget {
               child: Text(
                 status.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 8, 
-                  fontWeight: FontWeight.w900, 
-                  color: statusColor, 
-                  letterSpacing: 0.5
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  color: statusColor,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -67,9 +68,9 @@ class HistoryInterventionTile extends StatelessWidget {
         ),
       ),
       trailing: Icon(
-        Icons.arrow_forward_ios_rounded, 
-        size: 14, 
-        color: isDark ? Colors.white12 : Colors.grey[300]
+        Icons.arrow_forward_ios_rounded,
+        size: 14,
+        color: isDark ? Colors.white12 : Colors.grey[300],
       ),
     );
   }
