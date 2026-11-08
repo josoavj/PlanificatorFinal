@@ -21,7 +21,9 @@ class PlanningDetails {
       factureId: json['facture_id'] as int?,
       datePlanification: json['date_planification'] != null
           ? DateTime.parse(json['date_planification'].toString())
-          : (json['date'] != null ? DateTime.parse(json['date'].toString()) : DateTime.now()),
+          : (json['date'] != null
+                ? DateTime.parse(json['date'].toString())
+                : DateTime.now()),
       statut: (json['statut'] ?? json['etat']) as String? ?? 'À venir',
     );
   }
