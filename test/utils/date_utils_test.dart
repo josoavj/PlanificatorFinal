@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planificator/features/planning/domain/date_utils.dart' as date_utils;
+import 'package:planificator/features/planning/domain/date_utils.dart'
+    as date_utils;
 
 void main() {
   group('DateUtils - Madagascar Holidays & Adjustments', () {
@@ -25,7 +26,7 @@ void main() {
     test('adjustIfWeekendAndHoliday gère les collisions complexes', () {
       // Si une date tombe un dimanche et que le lundi est férié
       // Exemple théorique : dimanche 25 juin (le 26 juin est férié à Mada)
-      final sunday25 = DateTime(2023, 6, 25); 
+      final sunday25 = DateTime(2023, 6, 25);
       final adjusted = date_utils.DateUtils.adjustIfWeekendAndHoliday(sunday25);
 
       // Devrait être décalé au 27 juin (car 25=Dimanche, 26=Férié)
@@ -35,18 +36,21 @@ void main() {
   });
 
   group('DateUtils - Planning Generation', () {
-    test('generatePlanningDates génère le bon nombre de dates pour un contrat mensuel', () {
-      final start = DateTime(2024);
-      final dates = date_utils.DateUtils.generatePlanningDates(
-        dateDebut: start,
-        dureeTraitement: 12,
-        redondance: 1,
-      );
+    test(
+      'generatePlanningDates génère le bon nombre de dates pour un contrat mensuel',
+      () {
+        final start = DateTime(2024);
+        final dates = date_utils.DateUtils.generatePlanningDates(
+          dateDebut: start,
+          dureeTraitement: 12,
+          redondance: 1,
+        );
 
-      expect(dates.length, equals(12));
-      expect(dates.first.month, equals(1));
-      expect(dates.last.month, equals(12));
-    });
+        expect(dates.length, equals(12));
+        expect(dates.first.month, equals(1));
+        expect(dates.last.month, equals(12));
+      },
+    );
 
     test('generatePlanningDates respecte la redondance trimestrielle', () {
       final start = DateTime(2024);
