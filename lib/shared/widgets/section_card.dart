@@ -9,7 +9,8 @@ class AppSection extends StatelessWidget {
   final Widget? headerAction;
   final Color? backgroundColor;
   final double radius;
-  final bool showDividers; // Nouveau : Permet de désactiver les lignes de séparation
+  final bool
+  showDividers; // Nouveau : Permet de désactiver les lignes de séparation
 
   const AppSection({
     super.key,
@@ -26,7 +27,7 @@ class AppSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -49,9 +50,10 @@ class AppSection extends StatelessWidget {
         ),
         Container(
           margin: margin ?? const EdgeInsets.symmetric(horizontal: 16),
-          decoration: AppTheme.cardDecoration(context, radius: radius).copyWith(
-            color: backgroundColor,
-          ),
+          decoration: AppTheme.cardDecoration(
+            context,
+            radius: radius,
+          ).copyWith(color: backgroundColor),
           clipBehavior: Clip.antiAlias,
           child: Material(
             color: Colors.transparent,
@@ -67,8 +69,8 @@ class AppSection extends StatelessWidget {
                           height: 1,
                           indent: padding != null ? 0 : 60,
                           endIndent: padding != null ? 0 : 16,
-                          color: isDark 
-                              ? Colors.white.withValues(alpha: 0.05) 
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
                               : Colors.grey.withValues(alpha: 0.1),
                         ),
                     ],
