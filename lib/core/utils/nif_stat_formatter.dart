@@ -6,7 +6,7 @@ class NifStatFormatter {
   static String formatNif(String nif) {
     String clean = nif.replaceAll(RegExp(r'\D'), '');
     if (clean.length > 10) clean = clean.substring(0, 10);
-    
+
     final buffer = StringBuffer();
     for (int i = 0; i < clean.length; i++) {
       buffer.write(clean[i]);
