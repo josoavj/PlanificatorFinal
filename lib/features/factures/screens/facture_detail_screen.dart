@@ -26,7 +26,7 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final sorted = List<Facture>.from(widget.factures);
-    
+
     // TRI INTELLIGENT : Passé (DESC) puis Futur (ASC)
     sorted.sort((a, b) {
       final isDoneA = a.isPaid || a.etat.toLowerCase().contains('effectué');
@@ -41,7 +41,7 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
       // 3. Si les deux sont à venir : le plus proche en premier (ASC)
       return a.dateTraitement.compareTo(b.dateTraitement);
     });
-    
+
     int total = 0;
     int unpaid = 0;
     for (final f in sorted) {
@@ -54,7 +54,7 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.groupTitle), 
+        title: Text(widget.groupTitle),
         elevation: 2,
         centerTitle: false,
       ),
@@ -68,8 +68,8 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
               children: [
                 Expanded(
                   child: _SummaryCard(
-                    label: 'Montant Total', 
-                    amount: total, 
+                    label: 'Montant Total',
+                    amount: total,
                     color: AppTheme.primaryBlue,
                     icon: Icons.account_balance_wallet_rounded,
                   ),
@@ -77,8 +77,8 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _SummaryCard(
-                    label: 'Déjà Réglé', 
-                    amount: paid, 
+                    label: 'Déjà Réglé',
+                    amount: paid,
                     color: AppTheme.successGreen,
                     icon: Icons.check_circle_rounded,
                   ),
@@ -86,8 +86,8 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _SummaryCard(
-                    label: 'Reste à payer', 
-                    amount: unpaid, 
+                    label: 'Reste à payer',
+                    amount: unpaid,
                     color: AppTheme.warningOrange,
                     icon: Icons.error_rounded,
                   ),
@@ -95,19 +95,23 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            
+
             AppSection(
               title: 'Historique des Factures',
               margin: EdgeInsets.zero,
-              children: sorted.map((facture) => _FactureRow(
-                facture: facture,
-                onTapModifier: () => FacturePriceDialog.show(
-                  context,
-                  facture,
-                  widget.groupTitle,
-                  () => setState(() {}),
-                ),
-              )).toList(),
+              children: sorted
+                  .map(
+                    (facture) => _FactureRow(
+                      facture: facture,
+                      onTapModifier: () => FacturePriceDialog.show(
+                        context,
+                        facture,
+                        widget.groupTitle,
+                        () => setState(() {}),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -123,8 +127,8 @@ class _SummaryCard extends StatelessWidget {
   final IconData icon;
 
   const _SummaryCard({
-    required this.label, 
-    required this.amount, 
+    required this.label,
+    required this.amount,
     required this.color,
     required this.icon,
   });
@@ -153,16 +157,19 @@ class _SummaryCard extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 10, 
-                    fontWeight: FontWeight.w900, 
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
                     color: isDark ? Colors.white38 : Colors.grey[600],
-                    letterSpacing: 0.5
-                  )
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${NumberFormatter.formatMontant(amount)} Ar', 
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                  '${NumberFormatter.formatMontant(amount)} Ar',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -184,7 +191,9 @@ class _FactureRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isAdmin = context.read<AuthRepository>().isAdmin;
-    final isPaid = facture.etat.toLowerCase() == 'payé' || facture.etat.toLowerCase() == 'payée';
+    final isPaid =
+        facture.etat.toLowerCase() == 'payé' ||
+        facture.etat.toLowerCase() == 'payée';
     final statusColor = isPaid ? AppTheme.successGreen : AppTheme.errorRed;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -192,15 +201,16 @@ class _FactureRow extends StatelessWidget {
       onTap: (isPaid || !isAdmin) ? null : onTapModifier,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
-        width: 44, height: 44,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: statusColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
-          isPaid ? Icons.verified_rounded : Icons.pending_rounded, 
-          color: statusColor, 
-          size: 20
+          isPaid ? Icons.verified_rounded : Icons.pending_rounded,
+          color: statusColor,
+          size: 20,
         ),
       ),
       title: Row(
@@ -213,9 +223,11 @@ class _FactureRow extends StatelessWidget {
           Text(
             '${NumberFormatter.formatMontant(facture.montant)} Ar',
             style: TextStyle(
-              fontWeight: FontWeight.w900, 
+              fontWeight: FontWeight.w900,
               fontSize: 15,
-              color: isPaid ? statusColor : (isDark ? Colors.white : Colors.black87)
+              color: isPaid
+                  ? statusColor
+                  : (isDark ? Colors.white : Colors.black87),
             ),
           ),
         ],
@@ -225,8 +237,13 @@ class _FactureRow extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              facture.referenceFacture != null ? 'Réf: ${facture.referenceFacture}' : 'Aucune référence',
-              style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[600]),
+              facture.referenceFacture != null
+                  ? 'Réf: ${facture.referenceFacture}'
+                  : 'Aucune référence',
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? Colors.white38 : Colors.grey[600],
+              ),
             ),
             const Spacer(),
             Container(
@@ -237,12 +254,21 @@ class _FactureRow extends StatelessWidget {
               ),
               child: Text(
                 facture.etat.toUpperCase(),
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: statusColor, letterSpacing: 0.5),
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  color: statusColor,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
             if (isAdmin && !isPaid) ...[
               const SizedBox(width: 8),
-              const Icon(Icons.edit_note_rounded, size: 16, color: AppTheme.primaryBlue),
+              const Icon(
+                Icons.edit_note_rounded,
+                size: 16,
+                color: AppTheme.primaryBlue,
+              ),
             ],
           ],
         ),
