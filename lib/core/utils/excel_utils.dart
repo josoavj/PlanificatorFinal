@@ -254,8 +254,9 @@ class ExcelService {
           var value = data[i][headers[j]];
           cell.setValue(value);
           cell.cellStyle.borders.all.lineStyle = LineStyle.thin;
-          if (backgroundColor.isNotEmpty)
+          if (backgroundColor.isNotEmpty) {
             cell.cellStyle.backColor = backgroundColor;
+          }
         }
       }
     }
@@ -473,8 +474,9 @@ class ExcelService {
   }
 
   Style _getBoldBorderStyle(Workbook wb) {
-    if (_styleCache.containsKey('boldBorder'))
+    if (_styleCache.containsKey('boldBorder')) {
       return _styleCache['boldBorder']!;
+    }
     Style s = wb.styles.add('bold_border');
     s.bold = true;
     s.borders.all.lineStyle = LineStyle.thin;
