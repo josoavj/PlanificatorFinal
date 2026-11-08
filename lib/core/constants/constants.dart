@@ -28,8 +28,10 @@ class AppConstants {
   static const Duration longDuration = Duration(milliseconds: 800);
 
   // Welcome / Help messages
-  static const String welcomeMessage = 'Bienvenue sur la plateforme Planificator';
-  static const String helpMessage = 'Besoin d\'aide ? Contactez le support de la plateforme.';
+  static const String welcomeMessage =
+      'Bienvenue sur la plateforme Planificator';
+  static const String helpMessage =
+      'Besoin d\'aide ? Contactez le support de la plateforme.';
 
   // Routes
   static const String routeLogin = '/login';

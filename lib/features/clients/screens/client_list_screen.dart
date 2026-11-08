@@ -50,9 +50,13 @@ class _ClientListScreenState extends State<ClientListScreen> {
         await Future.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
         await context.read<ClientRepository>().loadClients();
-        if (mounted) AppSnackBars.showSuccess(context, ' Clients chargés après retry');
+        if (mounted) {
+          AppSnackBars.showSuccess(context, ' Clients chargés après retry');
+        }
       } catch (retryError) {
-        if (mounted) AppSnackBars.showError(context, ' Erreur: ${retryError.toString()}');
+        if (mounted) {
+          AppSnackBars.showError(context, ' Erreur: ${retryError.toString()}');
+        }
       }
     }
   }
@@ -96,8 +100,15 @@ class _ClientListScreenState extends State<ClientListScreen> {
         errorMessage: repo.errorMessage,
       ),
       builder: (context, state, _) {
-        if (state.isInitiallyLoading) return const LoadingWidget(message: 'Chargement des clients...');
-        if (state.errorMessage != null) return ErrorDisplayWidget(message: state.errorMessage!, onRetry: () => context.read<ClientRepository>().loadClients());
+        if (state.isInitiallyLoading) {
+          return const LoadingWidget(message: 'Chargement des clients...');
+        }
+        if (state.errorMessage != null) {
+          return ErrorDisplayWidget(
+            message: state.errorMessage!,
+            onRetry: () => context.read<ClientRepository>().loadClients(),
+          );
+        }
 
         final filteredClients = _filterClientsBySearch(state.clients);
         if (filteredClients.isNotEmpty) {
@@ -106,14 +117,17 @@ class _ClientListScreenState extends State<ClientListScreen> {
             isLoading: state.isLoading,
             hasMore: state.hasMoreClients,
             onLoadMore: () => context.read<ClientRepository>().loadNextPage(),
-            itemBuilder: (context, index) => ClientCard(client: filteredClients[index]),
+            itemBuilder: (context, index) =>
+                ClientCard(client: filteredClients[index]),
           );
         }
 
         return Center(
           child: EmptyStateWidget(
             title: _searchQuery.isEmpty ? 'Aucun client' : 'Aucun résultat',
-            message: _searchQuery.isEmpty ? 'Aucun client trouvé. Commencez par créer un client.' : 'Aucun client ne correspond à votre recherche',
+            message: _searchQuery.isEmpty
+                ? 'Aucun client trouvé. Commencez par créer un client.'
+                : 'Aucun client ne correspond à votre recherche',
             icon: Icons.people_outline,
             actionLabel: _searchQuery.isEmpty ? 'Ajouter un client' : null,
           ),
@@ -125,7 +139,15 @@ class _ClientListScreenState extends State<ClientListScreen> {
   List<Client> _filterClientsBySearch(List<Client> clients) {
     if (_searchQuery.isEmpty) return clients;
     final q = _searchQuery.toLowerCase();
-    return clients.where((c) => c.fullName.toLowerCase().contains(q) || c.email.toLowerCase().contains(q) || c.telephone.contains(q) || c.adresse.toLowerCase().contains(q)).toList();
+    return clients
+        .where(
+          (c) =>
+              c.fullName.toLowerCase().contains(q) ||
+              c.email.toLowerCase().contains(q) ||
+              c.telephone.contains(q) ||
+              c.adresse.toLowerCase().contains(q),
+        )
+        .toList();
   }
 }
 
@@ -135,9 +157,28 @@ class ClientRepoState {
   final bool isInitiallyLoading;
   final bool hasMoreClients;
   final String? errorMessage;
-  ClientRepoState({required this.clients, required this.isLoading, required this.isInitiallyLoading, required this.hasMoreClients, this.errorMessage});
+  ClientRepoState({
+    required this.clients,
+    required this.isLoading,
+    required this.isInitiallyLoading,
+    required this.hasMoreClients,
+    this.errorMessage,
+  });
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ClientRepoState && runtimeType == other.runtimeType && clients == other.clients && isLoading == other.isLoading && isInitiallyLoading == other.isInitiallyLoading && hasMoreClients == other.hasMoreClients && errorMessage == other.errorMessage;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientRepoState &&
+          runtimeType == other.runtimeType &&
+          clients == other.clients &&
+          isLoading == other.isLoading &&
+          isInitiallyLoading == other.isInitiallyLoading &&
+          hasMoreClients == other.hasMoreClients &&
+          errorMessage == other.errorMessage;
   @override
-  int get hashCode => clients.hashCode ^ isLoading.hashCode ^ isInitiallyLoading.hashCode ^ hasMoreClients.hashCode ^ errorMessage.hashCode;
+  int get hashCode =>
+      clients.hashCode ^
+      isLoading.hashCode ^
+      isInitiallyLoading.hashCode ^
+      hasMoreClients.hashCode ^
+      errorMessage.hashCode;
 }

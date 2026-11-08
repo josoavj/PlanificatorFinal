@@ -54,12 +54,12 @@ class Contrat {
     DateTime? parseDate(dynamic value) {
       if (value == null || value == 'Indéterminée' || value == '') return null;
       if (value is DateTime) return value;
-      
+
       String s = value.toString();
       // Tenter ISO 8601
       DateTime? dt = DateTime.tryParse(s);
       if (dt != null) return dt;
-      
+
       // Tenter format dd/MM/yyyy
       try {
         if (s.contains('/')) {
@@ -75,7 +75,7 @@ class Contrat {
       } catch (e) {
         // Ignorer les erreurs de parsing manuel
       }
-      
+
       return null;
     }
 

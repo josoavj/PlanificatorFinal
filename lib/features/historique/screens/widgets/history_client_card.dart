@@ -34,12 +34,17 @@ class HistoryClientCard extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 56, height: 56,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(Icons.person_rounded, color: AppTheme.primaryBlue, size: 28),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: AppTheme.primaryBlue,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -48,14 +53,29 @@ class HistoryClientCard extends StatelessWidget {
                     children: [
                       Text(
                         clientName,
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.5),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on_outlined, size: 12, color: isDark ? Colors.white38 : Colors.grey),
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 12,
+                            color: isDark ? Colors.white38 : Colors.grey,
+                          ),
                           const SizedBox(width: 4),
-                          Text(axe, style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey[600], fontWeight: FontWeight.w500)),
+                          Text(
+                            axe,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white38 : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -66,13 +86,27 @@ class HistoryClientCard extends StatelessWidget {
                   children: [
                     Text(
                       '$completedInterventions/$totalInterventions',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppTheme.primaryBlue),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        color: AppTheme.primaryBlue,
+                      ),
                     ),
-                    const Text('Passages', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Passages',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(width: 24),
-                Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white12 : Colors.grey[300]),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: isDark ? Colors.white12 : Colors.grey[300],
+                ),
               ],
             ),
           ),

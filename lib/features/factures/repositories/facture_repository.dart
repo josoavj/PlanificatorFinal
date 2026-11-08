@@ -185,9 +185,6 @@ class FactureRepository extends ChangeNotifier {
     }
   }
 
-  /// Met à jour le prix d'une facture et recharge les données
-  /// (La somme totale se mettra à jour automatiquement grâce à notifyListeners())
-  /// SÉCURITÉ: Vérifie que l'utilisateur est administrateur
   Future<bool> updateFacturePrice(int factureId, int newPrice) async {
     if (!(_authRepository?.isAdmin ?? false)) {
       _errorMessage = 'Droits administrateur requis pour modifier un montant';
@@ -298,6 +295,51 @@ class FactureRepository extends ChangeNotifier {
       _errorMessage = e.toString();
       logger.e(' Erreur lors de la mise à jour de la référence: $e');
       return false;
+    }
+  }
+
+  // Update sur la facture complète (montant, date_traitement, etat) - Admin only
+  Future<bool> updateFacture(Facture facture) async {
+    if (!(_authRepository?.isAdmin ?? false)) {
+      _errorMessage = 'Seul un administrateur peut modifier une facture.';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _db.execute(SqlQueries.updateFactureEditable, [
+        facture.montant,
+        facture.dateTraitement.toIso8601String().split('T').first,
+        facture.etat,
+        facture.factureId,
+      ]);
+
+      final index = _factures.indexWhere(
+        (item) => item.factureId == facture.factureId,
+      );
+
+      if (index != -1) {
+        _factures[index] = facture;
+      }
+
+      logger.i('Facture ${facture.factureId} modifiée par un administrateur.');
+
+      return true;
+    } catch (e, stackTrace) {
+      _errorMessage = 'Impossible de modifier la facture.';
+      logger.e(
+        'Erreur lors de la modification de la facture.',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

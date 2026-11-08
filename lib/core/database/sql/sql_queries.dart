@@ -129,6 +129,9 @@ class SqlQueries {
 
   static const String updateFactureFull = FactureQueries.updateFactureFull;
 
+  static const String updateFactureEditable =
+      FactureQueries.updateFactureEditable;
+
   static const String updateFacturePaymentOnly =
       FactureQueries.updateFacturePaymentOnly;
 

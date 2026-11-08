@@ -26,7 +26,7 @@ void main() {
 
       // Set avec un TTL de 0 seconde (expire immédiatement)
       cache.set(key, data, ttl: Duration.zero);
-      
+
       // Petit délai pour assurer l'expiration
       await Future.delayed(const Duration(milliseconds: 10));
 
@@ -37,9 +37,9 @@ void main() {
     test('invalidateAll vide complètement le cache', () {
       cache.set('k1', 'v1');
       cache.set('k2', 'v2');
-      
+
       cache.invalidateAll();
-      
+
       expect(cache.get('k1'), isNull);
       expect(cache.get('k2'), isNull);
     });

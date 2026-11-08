@@ -30,6 +30,8 @@ dependencies:
   google_fonts: ^8.2.1
   file_picker: ^13.1.0
   flutter_launcher_icons: ^0.14.4
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 dev_dependencies:
   flutter_test:

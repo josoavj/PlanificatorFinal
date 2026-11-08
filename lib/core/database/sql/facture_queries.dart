@@ -186,6 +186,12 @@ class FactureQueries {
     WHERE facture_id = ?
   ''';
 
+  static const String updateFactureEditable = '''
+    UPDATE Facture
+    SET montant = ?, date_traitement = ?, etat = ?
+    WHERE facture_id = ?
+  ''';
+
   static const String updateFacturePaymentOnly = '''
     UPDATE Facture
     SET etat = ?, mode = ?, numero_cheque = ?, date_cheque = ?

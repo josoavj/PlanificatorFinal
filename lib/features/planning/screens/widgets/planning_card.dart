@@ -5,11 +5,7 @@ class PlanningCard extends StatelessWidget {
   final Map<String, dynamic> treatment;
   final VoidCallback onTap;
 
-  const PlanningCard({
-    super.key,
-    required this.treatment,
-    required this.onTap,
-  });
+  const PlanningCard({super.key, required this.treatment, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +14,8 @@ class PlanningCard extends StatelessWidget {
     final axe = treatment['axe']?.toString() ?? '';
     final etat = treatment['etat']?.toString() ?? '';
     final isEffectue = etat.toLowerCase().contains('effectué');
-    final statusColor = isEffectue 
-        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen) 
+    final statusColor = isEffectue
+        ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen)
         : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
     return Container(
@@ -40,14 +36,17 @@ class PlanningCard extends StatelessWidget {
                     color: statusColor,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(24),
-                      bottomLeft: Radius.circular(24)
+                      bottomLeft: Radius.circular(24),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 8,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -64,12 +63,18 @@ class PlanningCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(Icons.location_on_outlined, size: 14, color: isDark ? Colors.white38 : Colors.grey),
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: isDark ? Colors.white38 : Colors.grey,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               'Axe: $axe',
                               style: TextStyle(
-                                color: isDark ? Colors.white60 : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.white60
+                                    : Colors.grey[600],
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -84,7 +89,10 @@ class PlanningCard extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -92,7 +100,9 @@ class PlanningCard extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(
-                            isEffectue ? Icons.check_circle_rounded : Icons.pending_actions_rounded,
+                            isEffectue
+                                ? Icons.check_circle_rounded
+                                : Icons.pending_actions_rounded,
                             color: statusColor,
                             size: 14,
                           ),

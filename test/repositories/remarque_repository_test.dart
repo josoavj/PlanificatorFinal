@@ -20,8 +20,13 @@ void main() {
       // Mock de la transaction (doit retourner true car le repo attend un bool)
       when(mockDatabase.transaction<bool>(any)).thenAnswer((_) async => true);
 
-      when(mockDatabase.queryOne(any, params: anyNamed('params'), useCache: anyNamed('useCache')))
-          .thenAnswer((_) async => {'client_id': 1});
+      when(
+        mockDatabase.queryOne(
+          any,
+          params: anyNamed('params'),
+          useCache: anyNamed('useCache'),
+        ),
+      ).thenAnswer((_) async => {'client_id': 1});
 
       await repository.createRemarque(
         planningDetailsId: pdId,

@@ -29,7 +29,7 @@ void main() {
       test('Password verification logic', () {
         const password = 'Password123!';
         final hash = BCrypt.hashpw(password, BCrypt.gensalt());
-        
+
         expect(BCrypt.checkpw(password, hash), isTrue);
         expect(BCrypt.checkpw('wrong', hash), isFalse);
       });
@@ -38,8 +38,13 @@ void main() {
     group('Login logic', () {
       test('login returns false if user not found', () async {
         mockDatabase.isConnected = true;
-        when(mockDatabase.queryOne(any, params: anyNamed('params'), useCache: anyNamed('useCache')))
-            .thenAnswer((_) async => null);
+        when(
+          mockDatabase.queryOne(
+            any,
+            params: anyNamed('params'),
+            useCache: anyNamed('useCache'),
+          ),
+        ).thenAnswer((_) async => null);
 
         final result = await authRepository.login('unknown', 'password');
 
@@ -48,7 +53,10 @@ void main() {
       });
 
       test('login returns false if password incorrect', () async {
-        final hashedPassword = BCrypt.hashpw('correct_password', BCrypt.gensalt());
+        final hashedPassword = BCrypt.hashpw(
+          'correct_password',
+          BCrypt.gensalt(),
+        );
         final row = {
           'userId': 1,
           'email': 'test@test.com',
@@ -59,8 +67,13 @@ void main() {
         };
 
         mockDatabase.isConnected = true;
-        when(mockDatabase.queryOne(any, params: anyNamed('params'), useCache: anyNamed('useCache')))
-            .thenAnswer((_) async => row);
+        when(
+          mockDatabase.queryOne(
+            any,
+            params: anyNamed('params'),
+            useCache: anyNamed('useCache'),
+          ),
+        ).thenAnswer((_) async => row);
 
         final result = await authRepository.login('testuser', 'wrong_password');
 

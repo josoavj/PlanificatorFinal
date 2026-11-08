@@ -24,8 +24,8 @@ class AppActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDestructive 
-        ? AppTheme.errorRed 
+    final primaryColor = isDestructive
+        ? AppTheme.errorRed
         : (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue);
 
     return ListTile(
@@ -42,8 +42,8 @@ class AppActionCard extends StatelessWidget {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: isDestructive 
-              ? AppTheme.errorRed 
+          color: isDestructive
+              ? AppTheme.errorRed
               : (isDark ? Colors.white : Colors.black87),
         ),
       ),
@@ -54,11 +54,15 @@ class AppActionCard extends StatelessWidget {
           color: isDark ? Colors.white60 : Colors.grey.shade600,
         ),
       ),
-      trailing: trailing ?? (showChevron ? Icon(
-        Icons.chevron_right_rounded,
-        size: 20,
-        color: isDark ? Colors.white24 : Colors.grey.shade400,
-      ) : null),
+      trailing:
+          trailing ??
+          (showChevron
+              ? Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: isDark ? Colors.white24 : Colors.grey.shade400,
+                )
+              : null),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );

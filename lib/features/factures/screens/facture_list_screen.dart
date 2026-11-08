@@ -1,4 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart' as pw;
+import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/features/factures/models/facture.dart';
 import 'package:planificator/features/factures/repositories/facture_repository.dart';
 import 'package:planificator/shared/widgets/empty_state_widget.dart';
@@ -6,6 +9,8 @@ import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../../../core/utils/app_snackbars.dart';
 import '../../../core/utils/number_formatter.dart';
 
@@ -32,7 +37,6 @@ class _FactureListScreenState extends State<FactureListScreen> {
       if (widget.clientId != null) {
         await _factureRepository.loadFacturesForClient(widget.clientId!);
       } else {
-        //  CORRECTION: Charger TOUTES les factures si pas de clientId
         await _factureRepository.loadAllFactures();
       }
     });
@@ -576,18 +580,54 @@ class _FactureDetailScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.print),
-            onPressed: () {
-              // TODO: Implémenter l'impression
-              AppSnackBars.showInfo(context, 'Impression en cours...');
+            tooltip: 'Imprimer la facture',
+            onPressed: () async {
+              try {
+                await Printing.layoutPdf(
+                  onLayout: (format) => _buildInvoicePdf(format, facture),
+                );
+              } catch (_) {
+                if (context.mounted) {
+                  AppSnackBars.showError(
+                    context,
+                    'Impossible d’imprimer cette facture.',
+                  );
+                }
+              }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Implémenter l'édition
-              AppSnackBars.showInfo(context, 'Édition en cours...');
-            },
-          ),
+          if (context.watch<AuthRepository>().isAdmin)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: 'Modifier la facture',
+              onPressed: () async {
+                final updatedFacture = await showDialog<Facture>(
+                  context: context,
+                  builder: (_) => _EditFactureDialog(facture: facture),
+                );
+
+                if (updatedFacture == null || !context.mounted) return;
+
+                final success = await context
+                    .read<FactureRepository>()
+                    .updateFacture(updatedFacture);
+
+                if (!context.mounted) return;
+
+                if (success) {
+                  AppSnackBars.showSuccess(
+                    context,
+                    'Facture modifiée avec succès.',
+                  );
+                } else {
+                  AppSnackBars.showError(
+                    context,
+                    context.read<FactureRepository>().errorMessage ??
+                        'Modification refusée.',
+                  );
+                }
+              },
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -652,6 +692,58 @@ class _FactureDetailScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<Uint8List> _buildInvoicePdf(
+    pw.PdfPageFormat format,
+    Facture facture,
+  ) async {
+    final document = pw.Document();
+    document.addPage(
+      pw.Page(
+        pageFormat: format,
+        build: (_) => pw.Padding(
+          padding: const pw.EdgeInsets.all(32),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'FACTURE #${facture.factureId}',
+                style: pw.TextStyle(
+                  fontSize: 22,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 24),
+              pw.Text(
+                'Date : ${DateFormat('dd/MM/yyyy').format(facture.dateTraitement)}',
+              ),
+              pw.Text('Client : ${facture.clientNom ?? 'Inconnu'}'),
+              pw.Text('État : ${facture.isPaid ? 'Payée' : 'Non payée'}'),
+              pw.Divider(),
+              pw.SizedBox(height: 12),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'Total',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  ),
+                  pw.Text(
+                    facture.montantFormatted,
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return document.save();
+  }
 }
 
 class _DetailRow extends StatelessWidget {
@@ -703,6 +795,111 @@ class _StatColumn extends StatelessWidget {
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditFactureDialog extends StatefulWidget {
+  final Facture facture;
+
+  const _EditFactureDialog({required this.facture});
+
+  @override
+  State<_EditFactureDialog> createState() => _EditFactureDialogState();
+}
+
+class _EditFactureDialogState extends State<_EditFactureDialog> {
+  late final TextEditingController _montantController;
+  late String _etat;
+  late DateTime _date;
+
+  @override
+  void initState() {
+    super.initState();
+    _montantController = TextEditingController(
+      text: widget.facture.montant.toStringAsFixed(0),
+    );
+    _etat = widget.facture.isPaid ? 'Payée' : 'Non payée';
+    _date = widget.facture.dateTraitement;
+  }
+
+  @override
+  void dispose() {
+    _montantController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Modifier la facture #${widget.facture.factureId}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _montantController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Montant',
+              suffixText: 'Ar',
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: _etat,
+            decoration: const InputDecoration(labelText: 'État'),
+            items: const [
+              DropdownMenuItem(value: 'Payée', child: Text('Payée')),
+              DropdownMenuItem(value: 'Non payée', child: Text('Non payée')),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _etat = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Date'),
+            subtitle: Text(DateFormat('dd/MM/yyyy').format(_date)),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: () async {
+              final selected = await showDatePicker(
+                context: context,
+                initialDate: _date,
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+
+              if (selected != null) {
+                setState(() => _date = selected);
+              }
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final montant = int.tryParse(_montantController.text.trim());
+
+            if (montant == null || montant < 0) return;
+
+            Navigator.pop(
+              context,
+              widget.facture.copyWith(
+                montant: montant,
+                dateTraitement: _date,
+                etat: _etat,
+              ),
+            );
+          },
+          child: const Text('Enregistrer'),
         ),
       ],
     );

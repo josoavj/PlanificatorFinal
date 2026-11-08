@@ -22,7 +22,13 @@ class ContratAbrogationDialog extends StatelessWidget {
     required this.onDataChanged,
   });
 
-  static void show(BuildContext context, Contrat contrat, Client? client, int numTraitements, VoidCallback onDataChanged) {
+  static void show(
+    BuildContext context,
+    Contrat contrat,
+    Client? client,
+    int numTraitements,
+    VoidCallback onDataChanged,
+  ) {
     AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => ContratAbrogationDialog(
@@ -41,32 +47,64 @@ class ContratAbrogationDialog extends StatelessWidget {
 
     return StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: const Text('Abroger le Contrat', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Abroger le Contrat',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(decoration: const InputDecoration(labelText: 'Motif'), onChanged: (v) => motif = v),
+            TextField(
+              decoration: const InputDecoration(labelText: 'Motif'),
+              onChanged: (v) => motif = v,
+            ),
             const SizedBox(height: 16),
-            ListTile(title: Text('Date: ${DateFormat('dd/MM/yyyy').format(selectedDate)}'), trailing: const Icon(Icons.calendar_today), onTap: () async {
-              final d = await showDatePicker(context: context, initialDate: selectedDate, firstDate: contrat.dateDebut, lastDate: DateTime.now().add(const Duration(days: 365)));
-              if (d != null) setState(() => selectedDate = d);
-            }),
+            ListTile(
+              title: Text(
+                'Date: ${DateFormat('dd/MM/yyyy').format(selectedDate)}',
+              ),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () async {
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: contrat.dateDebut,
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (d != null) setState(() => selectedDate = d);
+              },
+            ),
           ],
         ),
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.close_rounded, size: 18), 
+            icon: const Icon(Icons.close_rounded, size: 18),
             onPressed: () {
               Navigator.pop(context);
-              ContratDetailsDialog.show(context, contrat, client, numTraitements, onDataChanged);
-            }, 
+              ContratDetailsDialog.show(
+                context,
+                contrat,
+                client,
+                numTraitements,
+                onDataChanged,
+              );
+            },
             label: const Text('ANNULER'),
           ),
-          FilledButton.icon(icon: const Icon(Icons.check_circle_outline, size: 18), label: const Text('CONFIRMER'), style: FilledButton.styleFrom(backgroundColor: Colors.orange), onPressed: () async {
-            Navigator.pop(context);
-            await context.read<ContratRepository>().abrogateContract(contratId: contrat.contratId, abrogationDate: selectedDate, motif: motif);
-            onDataChanged();
-          }),
+          FilledButton.icon(
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('CONFIRMER'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () async {
+              Navigator.pop(context);
+              await context.read<ContratRepository>().abrogateContract(
+                contratId: contrat.contratId,
+                abrogationDate: selectedDate,
+                motif: motif,
+              );
+              onDataChanged();
+            },
+          ),
         ],
       ),
     );
@@ -87,7 +125,13 @@ class ContratDeleteDialog extends StatelessWidget {
     required this.onDataChanged,
   });
 
-  static void show(BuildContext context, Contrat contrat, Client? client, int numTraitements, VoidCallback onDataChanged) {
+  static void show(
+    BuildContext context,
+    Contrat contrat,
+    Client? client,
+    int numTraitements,
+    VoidCallback onDataChanged,
+  ) {
     AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => ContratDeleteDialog(
@@ -102,22 +146,40 @@ class ContratDeleteDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Confirmer la suppression', style: TextStyle(fontWeight: FontWeight.bold)),
-      content: Text('Supprimer définitivement le contrat ${contrat.referenceContrat} ?'),
+      title: const Text(
+        'Confirmer la suppression',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: Text(
+        'Supprimer définitivement le contrat ${contrat.referenceContrat} ?',
+      ),
       actions: [
         TextButton.icon(
-          icon: const Icon(Icons.close_rounded, size: 18), 
+          icon: const Icon(Icons.close_rounded, size: 18),
           onPressed: () {
             Navigator.pop(context);
-            ContratDetailsDialog.show(context, contrat, client, numTraitements, onDataChanged);
-          }, 
+            ContratDetailsDialog.show(
+              context,
+              contrat,
+              client,
+              numTraitements,
+              onDataChanged,
+            );
+          },
           label: const Text('ANNULER'),
         ),
-        FilledButton.icon(icon: const Icon(Icons.delete_forever_rounded, size: 18), label: const Text('SUPPRIMER'), style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed), onPressed: () async {
-          Navigator.pop(context);
-          await context.read<ContratRepository>().deleteContrat(contrat.contratId);
-          onDataChanged();
-        }),
+        FilledButton.icon(
+          icon: const Icon(Icons.delete_forever_rounded, size: 18),
+          label: const Text('SUPPRIMER'),
+          style: FilledButton.styleFrom(backgroundColor: AppTheme.errorRed),
+          onPressed: () async {
+            Navigator.pop(context);
+            await context.read<ContratRepository>().deleteContrat(
+              contrat.contratId,
+            );
+            onDataChanged();
+          },
+        ),
       ],
     );
   }

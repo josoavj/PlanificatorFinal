@@ -58,7 +58,9 @@ class QueryCacheService {
     _cache[key] = CacheEntry(data: data, expiresAt: DateTime.now().add(ttl));
 
     final dataSize = data is List ? data.length : 1;
-    logger.d('Cache SET (Entity): $key ($dataSize rows, TTL: ${ttl.inSeconds}s)');
+    logger.d(
+      'Cache SET (Entity): $key ($dataSize rows, TTL: ${ttl.inSeconds}s)',
+    );
   }
 
   // --- NIVEAU SQL (Bas niveau) ---
@@ -75,7 +77,12 @@ class QueryCacheService {
   }
 
   /// Stocke le résultat d'une requête SQL brute dans le cache
-  void setQuery(String sql, List<dynamic>? params, List<Map<String, dynamic>> data, {Duration ttl = const Duration(minutes: 5)}) {
+  void setQuery(
+    String sql,
+    List<dynamic>? params,
+    List<Map<String, dynamic>> data, {
+    Duration ttl = const Duration(minutes: 5),
+  }) {
     final key = _generateSqlKey(sql, params);
     set(key, data, ttl: ttl);
   }
@@ -106,7 +113,8 @@ class QueryCacheService {
         }
       } else {
         // Invalide à la fois les clés sémantiques et les requêtes SQL contenant le nom de l'entité/table
-        if (key.startsWith(entityType) || key.toLowerCase().contains(typeLower)) {
+        if (key.startsWith(entityType) ||
+            key.toLowerCase().contains(typeLower)) {
           keysToRemove.add(key);
         }
       }
@@ -116,7 +124,9 @@ class QueryCacheService {
       _cache.remove(key);
     }
 
-    logger.d('Cache invalidated for entity: $entityType${entityId != null ? '_$entityId' : '_all'}');
+    logger.d(
+      'Cache invalidated for entity: $entityType${entityId != null ? '_$entityId' : '_all'}',
+    );
   }
 
   // --- INTERNES ---
@@ -124,7 +134,9 @@ class QueryCacheService {
   void _enforceMaxSize() {
     if (_cache.length >= maxCacheSize) {
       final oldestKey = _cache.entries
-          .reduce((a, b) => a.value.timestamp.isBefore(b.value.timestamp) ? a : b)
+          .reduce(
+            (a, b) => a.value.timestamp.isBefore(b.value.timestamp) ? a : b,
+          )
           .key;
       _cache.remove(oldestKey);
       logger.i('Cache limit reached, removed oldest entry: $oldestKey');
@@ -170,7 +182,8 @@ class CacheEntry {
 }
 
 class CacheKeys {
-  static String clientsList([int? page]) => page != null ? 'clients_list_page_$page' : 'clients_list';
+  static String clientsList([int? page]) =>
+      page != null ? 'clients_list_page_$page' : 'clients_list';
   static String client(int clientId) => 'client_$clientId';
   static String clientsByAxe(String axe) => 'clients_axe_$axe';
   static String contratsList() => 'contrats_list';

@@ -68,7 +68,12 @@ class AppDialogs {
             child: Text(cancelText),
           ),
           ElevatedButton(
-            style: isDestructive ? ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed, foregroundColor: Colors.white) : null,
+            style: isDestructive
+                ? ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.errorRed,
+                    foregroundColor: Colors.white,
+                  )
+                : null,
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(confirmText),
           ),

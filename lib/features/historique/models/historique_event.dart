@@ -37,7 +37,8 @@ class HistoriqueEvent {
       date: map['date'] != null
           ? DateTime.tryParse(map['date'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      contenu: map['description'] ?? map['contenu'] ?? '', // Support des alias SQL
+      contenu:
+          map['description'] ?? map['contenu'] ?? '', // Support des alias SQL
       issue: map['issue'] as String?,
       action: map['action'] as String? ?? 'Aucune',
       datePlanification: map['date_planification'] != null
@@ -66,12 +67,12 @@ class HistoriqueEvent {
   String get details => '${issue ?? ''} | Action: $action'.trim();
 
   /// Icône basée sur le contenu ou l'état
-  IconData get statusIcon => issue != null && issue!.isNotEmpty 
-      ? Icons.warning_amber_rounded 
+  IconData get statusIcon => issue != null && issue!.isNotEmpty
+      ? Icons.warning_amber_rounded
       : Icons.check_circle_outline_rounded;
 
   /// Couleur basée sur la présence d'un problème
-  int get colorValue => (issue != null && issue!.isNotEmpty) 
+  int get colorValue => (issue != null && issue!.isNotEmpty)
       ? 0xFFF44336 // Rouge (Erreur/Issue)
       : 0xFF4CAF50; // Vert (Succès)
 
