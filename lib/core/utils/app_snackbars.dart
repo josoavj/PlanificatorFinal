@@ -19,7 +19,12 @@ class AppSnackBars {
   }
 
   static void showWarning(BuildContext context, String message) {
-    _show(context, message, AppTheme.warningOrange, Icons.warning_amber_outlined);
+    _show(
+      context,
+      message,
+      AppTheme.warningOrange,
+      Icons.warning_amber_outlined,
+    );
   }
 
   static void _show(
@@ -41,7 +46,7 @@ class AppSnackBars {
 
     // Récupérer l'overlay au sommet (celui qui passe devant les dialogues)
     final overlay = Overlay.of(context, rootOverlay: true);
-    
+
     _currentEntry = OverlayEntry(
       builder: (context) => Positioned(
         bottom: 60.0, // Apparaît en bas
@@ -50,11 +55,7 @@ class AppSnackBars {
         child: Material(
           color: Colors.transparent,
           child: Center(
-            child: _PremiumToast(
-              message: message,
-              color: color,
-              icon: icon,
-            ),
+            child: _PremiumToast(message: message, color: color, icon: icon),
           ),
         ),
       ),
@@ -87,7 +88,8 @@ class _PremiumToast extends StatefulWidget {
   State<_PremiumToast> createState() => _PremiumToastState();
 }
 
-class _PremiumToastState extends State<_PremiumToast> with SingleTickerProviderStateMixin {
+class _PremiumToastState extends State<_PremiumToast>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
   late Animation<double> _fadeAnimation;
@@ -103,15 +105,9 @@ class _PremiumToastState extends State<_PremiumToast> with SingleTickerProviderS
     _offsetAnimation = Tween<Offset>(
       begin: const Offset(0.0, 1.5),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
   }
@@ -144,7 +140,10 @@ class _PremiumToastState extends State<_PremiumToast> with SingleTickerProviderS
                 offset: const Offset(0, 10),
               ),
             ],
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 0.5),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 0.5,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
