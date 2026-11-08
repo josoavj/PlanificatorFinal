@@ -18,20 +18,20 @@ class AppInfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return ListTile(
       leading: Icon(
-        icon, 
-        color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, 
-        size: 22
+        icon,
+        color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+        size: 22,
       ),
       title: Text(
-        label, 
+        label,
         style: TextStyle(
-          fontSize: 11, 
-          color: isDark ? Colors.white54 : Colors.grey[600], 
-          fontWeight: FontWeight.bold
-        )
+          fontSize: 11,
+          color: isDark ? Colors.white54 : Colors.grey[600],
+          fontWeight: FontWeight.bold,
+        ),
       ),
       subtitle: Text(
         value.isNotEmpty ? value : '-',
