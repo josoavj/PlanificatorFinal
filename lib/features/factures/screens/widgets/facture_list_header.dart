@@ -43,11 +43,20 @@ class FactureListHeader extends StatelessWidget {
                   controller: searchController,
                   decoration: InputDecoration(
                     hintText: 'Rechercher par client ou traitement...',
-                    hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.white70),
-                    prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.white70),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.white70,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isDark ? Colors.white54 : Colors.white70,
+                    ),
                     suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                            icon: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             onPressed: () {
                               searchController.clear();
                               onSearchChanged('');
@@ -60,7 +69,10 @@ class FactureListHeader extends StatelessWidget {
                     ),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.15),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   onChanged: onSearchChanged,
@@ -73,7 +85,11 @@ class FactureListHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+                  icon: const Icon(
+                    Icons.refresh_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   onPressed: onRefresh,
                 ),
               ),
@@ -82,9 +98,15 @@ class FactureListHeader extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildBadge('$factureCount ${factureCount > 1 ? 'factures' : 'facture'}', Icons.receipt_long_rounded),
+              _buildBadge(
+                '$factureCount ${factureCount > 1 ? 'factures' : 'facture'}',
+                Icons.receipt_long_rounded,
+              ),
               const SizedBox(width: 12),
-              _buildBadge('$treatmentCount ${treatmentCount > 1 ? 'traitements' : 'traitement'}', Icons.assignment_rounded),
+              _buildBadge(
+                '$treatmentCount ${treatmentCount > 1 ? 'traitements' : 'traitement'}',
+                Icons.assignment_rounded,
+              ),
             ],
           ),
         ],
@@ -107,10 +129,10 @@ class FactureListHeader extends StatelessWidget {
           Text(
             text,
             style: const TextStyle(
-              color: Colors.white, 
-              fontWeight: FontWeight.w800, 
-              fontSize: 12, 
-              letterSpacing: 0.5
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              letterSpacing: 0.5,
             ),
           ),
         ],
