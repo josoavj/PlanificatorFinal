@@ -48,11 +48,7 @@ class HistoryClientDetailScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(clientName),
-        elevation: 0,
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: Text(clientName), elevation: 0, centerTitle: false),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -63,9 +59,11 @@ class HistoryClientDetailScreen extends StatelessWidget {
               showDividers: false,
               children: entry.value.map((i) {
                 final dateStr = i['date_planification'] ?? i['date'];
-                final date = dateStr != null ? DateTime.parse(dateStr.toString()) : DateTime.now();
+                final date = dateStr != null
+                    ? DateTime.parse(dateStr.toString())
+                    : DateTime.now();
                 final etat = i['etat']?.toString() ?? 'À venir';
-                
+
                 return HistoryInterventionTile(
                   date: date,
                   status: etat,
@@ -90,7 +88,10 @@ class HistoryClientDetailScreen extends StatelessWidget {
     return null;
   }
 
-  void _openInterventionDetail(BuildContext context, Map<String, dynamic> data) {
+  void _openInterventionDetail(
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) {
     HistoryDetailDialog.show(context, data);
   }
 }
