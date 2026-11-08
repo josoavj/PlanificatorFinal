@@ -34,10 +34,8 @@ class HistoryDetailDialog extends StatefulWidget {
 
     AppDialogs.showBlurDialog(
       context: context,
-      builder: (context) => HistoryDetailDialog(
-        rawData: rawData,
-        planningDetailId: id,
-      ),
+      builder: (context) =>
+          HistoryDetailDialog(rawData: rawData, planningDetailId: id),
     );
   }
 
@@ -72,7 +70,9 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
 
     List<Map<String, dynamic>> priceHistory = [];
     if (factures.isNotEmpty) {
-      priceHistory = await factureRepo.getPriceHistory(factures.first.factureId);
+      priceHistory = await factureRepo.getPriceHistory(
+        factures.first.factureId,
+      );
     }
 
     return {
@@ -92,7 +92,8 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final traitName = widget.rawData['traitement']?.toString() ?? 'Intervention';
+    final traitName =
+        widget.rawData['traitement']?.toString() ?? 'Intervention';
 
     return FutureBuilder<Map<String, dynamic>>(
       future: _historyDataFuture,
@@ -100,10 +101,10 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
         final data = snapshot.data;
         final remarque = (data?['remarques'] as List<Remarque>?)?.firstOrNull;
         final isDone = remarque != null;
-        
+
         // Couleur de statut dynamique standard
-        final statusColor = isDone 
-            ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen) 
+        final statusColor = isDone
+            ? (isDark ? AppTheme.darkSuccess : AppTheme.successGreen)
             : (isDark ? AppTheme.darkWarning : AppTheme.warningOrange);
 
         return Dialog(
@@ -122,15 +123,21 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
                   child: Builder(
                     builder: (context) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: LoadingWidget(message: 'Compilation du dossier...'));
+                        return const Center(
+                          child: LoadingWidget(
+                            message: 'Compilation du dossier...',
+                          ),
+                        );
                       }
                       if (snapshot.hasError) {
                         return Center(child: Text('Erreur: ${snapshot.error}'));
                       }
 
-                      final signalements = data!['signalements'] as List<Signalement>;
+                      final signalements =
+                          data!['signalements'] as List<Signalement>;
                       final facture = data['facture'] as Facture?;
-                      final prices = data['priceHistory'] as List<Map<String, dynamic>>;
+                      final prices =
+                          data['priceHistory'] as List<Map<String, dynamic>>;
 
                       return SingleChildScrollView(
                         padding: const EdgeInsets.all(32),
@@ -142,7 +149,10 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
                                 Expanded(
                                   child: Column(
                                     children: [
-                                      _buildRealizationSection(remarque, statusColor),
+                                      _buildRealizationSection(
+                                        remarque,
+                                        statusColor,
+                                      ),
                                       const SizedBox(height: 24),
                                       _buildMovementSection(signalements),
                                     ],
@@ -191,18 +201,34 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-              child: const Icon(Icons.history_edu_rounded, color: Colors.white, size: 32),
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.history_edu_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               'JOURNAL DE BORD'.toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -217,20 +243,24 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
       margin: EdgeInsets.zero,
       children: [
         AppInfoTile(
-          icon: isDone ? Icons.task_alt_rounded : Icons.pending_actions_rounded, 
-          label: 'État du passage', 
+          icon: isDone ? Icons.task_alt_rounded : Icons.pending_actions_rounded,
+          label: 'État du passage',
           value: isDone ? 'EFFECTUÉ' : 'NON RÉALISÉ',
-          trailing: Icon(isDone ? Icons.check_circle_rounded : Icons.schedule_rounded, color: color, size: 20),
+          trailing: Icon(
+            isDone ? Icons.check_circle_rounded : Icons.schedule_rounded,
+            color: color,
+            size: 20,
+          ),
         ),
         if (isDone) ...[
           AppInfoTile(
-            icon: Icons.notes_rounded, 
-            label: 'Notes de visite', 
+            icon: Icons.notes_rounded,
+            label: 'Notes de visite',
             value: remarque.contenu ?? 'Aucune note',
           ),
           AppInfoTile(
-            icon: Icons.report_problem_outlined, 
-            label: 'Anomalie détectée', 
+            icon: Icons.report_problem_outlined,
+            label: 'Anomalie détectée',
             value: remarque.probleme ?? 'Aucun',
           ),
         ],
@@ -246,19 +276,37 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
         if (signalements.isEmpty)
           const Padding(
             padding: EdgeInsets.all(20),
-            child: Text('Aucun report ou avancement.', style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)),
+            child: Text(
+              'Aucun report ou avancement.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           )
         else
-          ...signalements.map((s) => ListTile(
-            dense: true,
-            leading: Icon(
-              s.type.toLowerCase() == 'avancement' ? Icons.fast_rewind_rounded : Icons.fast_forward_rounded,
-              color: Colors.amber,
-              size: 18,
+          ...signalements.map(
+            (s) => ListTile(
+              dense: true,
+              leading: Icon(
+                s.type.toLowerCase() == 'avancement'
+                    ? Icons.fast_rewind_rounded
+                    : Icons.fast_forward_rounded,
+                color: Colors.amber,
+                size: 18,
+              ),
+              title: Text(
+                s.type.toUpperCase(),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: Colors.amber,
+                ),
+              ),
+              subtitle: Text(s.motif, style: const TextStyle(fontSize: 12)),
             ),
-            title: Text(s.type.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.amber)),
-            subtitle: Text(s.motif, style: const TextStyle(fontSize: 12)),
-          )),
+          ),
       ],
     );
   }
@@ -270,24 +318,24 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
       margin: EdgeInsets.zero,
       children: [
         AppInfoTile(
-          icon: Icons.tag_rounded, 
-          label: 'Référence Facture', 
+          icon: Icons.tag_rounded,
+          label: 'Référence Facture',
           value: facture.referenceFacture ?? 'N/A',
         ),
         AppInfoTile(
-          icon: Icons.payments_outlined, 
-          label: 'Montant facturé', 
+          icon: Icons.payments_outlined,
+          label: 'Montant facturé',
           value: '${NumberFormatter.formatMontant(facture.montant)} Ar',
         ),
         AppInfoTile(
-          icon: Icons.account_balance_wallet_outlined, 
-          label: 'État de règlement', 
+          icon: Icons.account_balance_wallet_outlined,
+          label: 'État de règlement',
           value: facture.etat.toUpperCase(),
         ),
         if (facture.isPaid)
           AppInfoTile(
-            icon: Icons.credit_card_rounded, 
-            label: 'Mode de paiement', 
+            icon: Icons.credit_card_rounded,
+            label: 'Mode de paiement',
             value: facture.mode ?? 'Non spécifié',
           ),
       ],
@@ -302,7 +350,14 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
         if (prices.isEmpty)
           const Padding(
             padding: EdgeInsets.all(20),
-            child: Text('Le tarif n\'a pas changé.', style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)),
+            child: Text(
+              'Le tarif n\'a pas changé.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           )
         else
           ...prices.map((p) {
@@ -311,10 +366,17 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
             final date = DateTime.parse(p['change_date'].toString());
             return ListTile(
               dense: true,
-              leading: const Icon(Icons.trending_up_rounded, color: AppTheme.primaryBlue, size: 16),
+              leading: const Icon(
+                Icons.trending_up_rounded,
+                color: AppTheme.primaryBlue,
+                size: 16,
+              ),
               title: Text(
                 '${NumberFormatter.formatMontant(oldP)} → ${NumberFormatter.formatMontant(newP)} Ar',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
               subtitle: Text(
                 'Le ${DateFormat('dd/MM/yyyy HH:mm').format(date)}',
@@ -328,7 +390,7 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
 
   Widget _buildFooter(BuildContext context) {
     final isAdmin = context.read<AuthRepository>().isAdmin;
-    
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
       child: Row(
@@ -338,7 +400,9 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               child: const Text('FERMER'),
             ),
@@ -351,7 +415,9 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
                 onPressed: () => _openCorrectionMode(context),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 label: const Text('MODIFIER LE RAPPORT'),
               ),
@@ -377,7 +443,7 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
     }
 
     final pd = PlanningDetails.fromJson(widget.rawData);
-    
+
     AppDialogs.showBlurDialog(
       context: context,
       builder: (ctx) => RemarqueDialog(
