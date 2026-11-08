@@ -29,15 +29,17 @@ class _DashboardTabState extends State<DashboardTab> {
     if (!mounted) return;
     try {
       logger.i(' Dashboard: Chargement des données...');
-      
+
       // Mois actuel
       await _planningDetailsRepo.loadCurrentMonthTreatmentsComplete();
-      
+
       // Mois prochains (à partir du 1er du mois suivant)
       final now = DateTime.now();
       final firstDayNextMonth = DateTime(now.year, now.month + 1);
-      await _planningDetailsRepo.loadUpcomingTreatmentsComplete(startDate: firstDayNextMonth);
-      
+      await _planningDetailsRepo.loadUpcomingTreatmentsComplete(
+        startDate: firstDayNextMonth,
+      );
+
       logger.i(' Dashboard: Données chargées avec succès');
     } catch (e) {
       logger.e(' Dashboard: Erreur chargement: $e');
@@ -61,7 +63,7 @@ class _DashboardTabState extends State<DashboardTab> {
         builder: (context, repo, _) {
           final currentMonth = repo.currentMonthTreatmentsComplete;
           final upcoming = repo.upcomingTreatmentsComplete;
-          
+
           final stats = _calculateStats(currentMonth);
 
           return Padding(
@@ -71,7 +73,7 @@ class _DashboardTabState extends State<DashboardTab> {
               children: [
                 _buildWelcomeHeader(),
                 const SizedBox(height: 32),
-                
+
                 // Statistics Row
                 Row(
                   children: [
@@ -106,9 +108,9 @@ class _DashboardTabState extends State<DashboardTab> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Main Lists Row
                 Expanded(
                   child: Row(
@@ -171,29 +173,43 @@ class _DashboardTabState extends State<DashboardTab> {
 
   _DashboardStats _calculateStats(List<Map<String, dynamic>> data) {
     if (data.isEmpty) return _DashboardStats(0, 0, 0, 0);
-    
+
     int total = data.length;
     int completed = data.where((item) => item['etat'] == 'Effectué').length;
     int remaining = total - completed;
     int percent = total > 0 ? ((completed / total) * 100).round() : 0;
-    
+
     return _DashboardStats(total, completed, remaining, percent);
   }
 
   List<Map<String, dynamic>> _formatData(List<Map<String, dynamic>> raw) {
-    return raw.map((item) => {
-      ...item,
-      'nom': item['traitement']?.toString() ?? 'Sans nom',
-      'etat': item['etat']?.toString() ?? 'N/A',
-      'axe': item['axe']?.toString() ?? 'Non défini',
-    }).toList();
+    return raw
+        .map(
+          (item) => {
+            ...item,
+            'nom': item['traitement']?.toString() ?? 'Sans nom',
+            'etat': item['etat']?.toString() ?? 'N/A',
+            'axe': item['axe']?.toString() ?? 'Non défini',
+          },
+        )
+        .toList();
   }
 
   String _getCurrentMonthName() {
     final now = DateTime.now();
     final months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      'Janvier',
+      'Février',
+      'Mars',
+      'Avril',
+      'Mai',
+      'Juin',
+      'Juillet',
+      'Août',
+      'Septembre',
+      'Octobre',
+      'Novembre',
+      'Décembre',
     ];
     return months[now.month - 1];
   }
