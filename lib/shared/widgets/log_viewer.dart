@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'app_dialogs.dart';
 
-
 class LogViewerDialog extends StatefulWidget {
   final bool isDialog;
 
@@ -279,9 +278,17 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                         child: DropdownButton<LogLevel>(
                           value: _filterLevel,
                           isExpanded: true,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                           dropdownColor: Colors.grey[900],
-                          icon: const Icon(Icons.filter_list, size: 16, color: Colors.blue),
+                          icon: const Icon(
+                            Icons.filter_list,
+                            size: 16,
+                            color: Colors.blue,
+                          ),
                           items: LogLevel.values
                               .map(
                                 (level) => DropdownMenuItem(
@@ -305,11 +312,21 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                       height: 40,
                       child: TextField(
                         controller: _filterCtrl,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Source...',
-                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                          prefixIcon: const Icon(Icons.terminal, size: 16, color: Colors.white38),
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.terminal,
+                            size: 16,
+                            color: Colors.white38,
+                          ),
                           filled: true,
                           fillColor: Colors.black.withValues(alpha: 0.3),
                           border: OutlineInputBorder(
@@ -322,9 +339,14 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 1.5,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
                           isDense: true,
                         ),
                         onChanged: (val) {
@@ -340,11 +362,21 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                       height: 40,
                       child: TextField(
                         controller: _searchCtrl,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Rechercher un message...',
-                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                          prefixIcon: const Icon(Icons.search, size: 16, color: Colors.white38),
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            size: 16,
+                            color: Colors.white38,
+                          ),
                           filled: true,
                           fillColor: Colors.black.withValues(alpha: 0.3),
                           border: OutlineInputBorder(
@@ -357,9 +389,14 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 1.5,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
                           isDense: true,
                         ),
                         onChanged: (val) {
@@ -476,7 +513,9 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.withValues(alpha: 0.15),
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.15,
+                                        ),
                                         borderRadius: BorderRadius.circular(3),
                                       ),
                                       child: Text(
