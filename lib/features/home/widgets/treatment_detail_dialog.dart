@@ -23,17 +23,22 @@ class TreatmentDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Logique des statuts
     final etat = (data['etat'] ?? 'Non défini').toString();
     final isEffectue = etat.trim() == 'Effectué';
-    final statusColor = isEffectue ? AppTheme.successGreen : AppTheme.warningOrange;
-    
+    final statusColor = isEffectue
+        ? AppTheme.successGreen
+        : AppTheme.warningOrange;
+
     // Logique facture
     final montant = data['montant'] ?? 0;
-    final factureEtat = (data['facture_etat'] ?? '').toString().toLowerCase().trim();
+    final factureEtat = (data['facture_etat'] ?? '')
+        .toString()
+        .toLowerCase()
+        .trim();
     final isPaye = factureEtat.contains('payé');
-    
+
     // Contacts
     final telephone = data['telephone'] ?? '';
     final email = data['email'] ?? 'Non renseigné';
@@ -45,13 +50,15 @@ class TreatmentDetailDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(32),
-          boxShadow: isDark ? [] : [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            )
-          ],
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -72,18 +79,20 @@ class TreatmentDetailDialog extends StatelessWidget {
                             margin: EdgeInsets.zero,
                             children: [
                               AppInfoTile(
-                                icon: Icons.assignment_rounded, 
-                                label: 'Traitement / Client', 
+                                icon: Icons.assignment_rounded,
+                                label: 'Traitement / Client',
                                 value: data['nom'] ?? 'N/A',
                               ),
                               AppInfoTile(
-                                icon: Icons.calendar_today_rounded, 
-                                label: isEffectue ? 'Date de passage' : 'Date prévue', 
+                                icon: Icons.calendar_today_rounded,
+                                label: isEffectue
+                                    ? 'Date de passage'
+                                    : 'Date prévue',
                                 value: _formatFullDate(data['date']),
                               ),
                               AppInfoTile(
-                                icon: Icons.info_outline_rounded, 
-                                label: 'État du passage', 
+                                icon: Icons.info_outline_rounded,
+                                label: 'État du passage',
                                 value: etat.toUpperCase(),
                               ),
                             ],
@@ -96,18 +105,21 @@ class TreatmentDetailDialog extends StatelessWidget {
                             margin: EdgeInsets.zero,
                             children: [
                               AppInfoTile(
-                                icon: Icons.payments_outlined, 
-                                label: isPaye ? 'Montant payé' : 'Montant à prévoir', 
-                                value: '${NumberFormatter.formatMontant(montant)} Ar',
+                                icon: Icons.payments_outlined,
+                                label: isPaye
+                                    ? 'Montant payé'
+                                    : 'Montant à prévoir',
+                                value:
+                                    '${NumberFormatter.formatMontant(montant)} Ar',
                               ),
                               AppInfoTile(
-                                icon: Icons.map_outlined, 
-                                label: 'Axe / Secteur', 
+                                icon: Icons.map_outlined,
+                                label: 'Axe / Secteur',
                                 value: data['axe'] ?? 'N/A',
                               ),
                               AppInfoTile(
-                                icon: Icons.receipt_long_outlined, 
-                                label: 'Statut Facturation', 
+                                icon: Icons.receipt_long_outlined,
+                                label: 'Statut Facturation',
                                 value: isPaye ? 'PAYÉE' : 'NON RÉGLÉE',
                               ),
                             ],
@@ -126,8 +138,8 @@ class TreatmentDetailDialog extends StatelessWidget {
                             margin: EdgeInsets.zero,
                             children: [
                               AppInfoTile(
-                                icon: Icons.phone_android_rounded, 
-                                label: 'Mobile', 
+                                icon: Icons.phone_android_rounded,
+                                label: 'Mobile',
                                 value: _formatPhone(telephone),
                               ),
                             ],
@@ -140,8 +152,8 @@ class TreatmentDetailDialog extends StatelessWidget {
                             margin: EdgeInsets.zero,
                             children: [
                               AppInfoTile(
-                                icon: Icons.alternate_email_rounded, 
-                                label: 'Email', 
+                                icon: Icons.alternate_email_rounded,
+                                label: 'Email',
                                 value: email,
                               ),
                             ],
@@ -176,8 +188,15 @@ class TreatmentDetailDialog extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-              child: const Icon(Icons.description_rounded, color: Colors.white, size: 32),
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.description_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -206,7 +225,9 @@ class TreatmentDetailDialog extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               label: const Text('FERMER'),
             ),
@@ -219,11 +240,11 @@ class TreatmentDetailDialog extends StatelessWidget {
                 final clientId = data['client_id'];
                 if (clientId != null && clientId is int) {
                   final clientRepo = context.read<ClientRepository>();
-                  
+
                   // Afficher un petit loader si le chargement prend du temps
                   await clientRepo.loadClient(clientId);
                   final client = clientRepo.currentClient;
-                  
+
                   if (client != null && context.mounted) {
                     Navigator.pop(context); // Fermer le résumé
                     ClientDetailsDialog.show(context, client, () {
@@ -234,7 +255,9 @@ class TreatmentDetailDialog extends StatelessWidget {
               },
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               label: const Text('VOIR FICHE CLIENT'),
             ),
