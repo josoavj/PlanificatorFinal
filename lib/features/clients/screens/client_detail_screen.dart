@@ -72,8 +72,12 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     _prenomController.text = client.prenom;
     _emailController.text = client.email;
     final List<String> tels = PhoneFormatter.split(client.telephone);
-    _phoneControllers = tels.map((t) => TextEditingController(text: t)).toList();
-    if (_phoneControllers.isEmpty) _phoneControllers.add(TextEditingController());
+    _phoneControllers = tels
+        .map((t) => TextEditingController(text: t))
+        .toList();
+    if (_phoneControllers.isEmpty) {
+      _phoneControllers.add(TextEditingController());
+    }
     _adresseController.text = client.adresse;
     _categorieController.text = client.categorie;
     _nifController.text = client.nif;
@@ -167,7 +171,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           width: double.infinity,
           decoration: BoxDecoration(
             color: isDark ? colorScheme.surfaceContainer : AppTheme.primaryBlue,
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(48)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(48),
+            ),
           ),
         ),
         // Bouton Retour en haut à gauche (Simplifié)
@@ -176,7 +182,11 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           left: 8,
           child: IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
         ),
         // Menu Actions en haut à droite
@@ -186,9 +196,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           child: Consumer<AuthRepository>(
             builder: (context, auth, _) {
               return Theme(
-                data: Theme.of(context).copyWith(
-                  iconTheme: const IconThemeData(color: Colors.white),
-                ),
+                data: Theme.of(
+                  context,
+                ).copyWith(iconTheme: const IconThemeData(color: Colors.white)),
                 child: PopupMenuButton(
                   icon: const Icon(Icons.more_vert_rounded),
                   itemBuilder: (context) => [
@@ -208,7 +218,11 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
                       PopupMenuItem(
                         child: const Row(
                           children: [
-                            Icon(Icons.delete_rounded, size: 18, color: AppTheme.errorRed),
+                            Icon(
+                              Icons.delete_rounded,
+                              size: 18,
+                              color: AppTheme.errorRed,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Supprimer le client',
@@ -239,14 +253,21 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.category_rounded, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.category_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       client.categorie.toUpperCase(),
@@ -270,15 +291,23 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
             decoration: BoxDecoration(
               color: isDark ? AppTheme.darkCardBg : Colors.white,
               shape: BoxShape.circle,
-              boxShadow: isDark ? [] : [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10)),
-              ],
+              boxShadow: isDark
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
             ),
             child: CircleAvatar(
               radius: 55,
               backgroundColor: AppTheme.primaryBlue,
               child: Text(
-                client.fullName.isNotEmpty ? client.fullName[0].toUpperCase() : '?',
+                client.fullName.isNotEmpty
+                    ? client.fullName[0].toUpperCase()
+                    : '?',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 48,
@@ -294,7 +323,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
 
   Widget _buildViewMode(BuildContext context, Client client) {
     final List<String> tels = PhoneFormatter.split(client.telephone);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -303,13 +332,23 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           title: 'Coordonnées de contact',
           margin: EdgeInsets.zero,
           children: [
-            AppInfoTile(icon: Icons.email_outlined, label: 'Adresse Email', value: client.email),
-            ...tels.asMap().entries.map((e) => AppInfoTile(
-              icon: Icons.phone_outlined, 
-              label: e.key == 0 ? 'Téléphone' : 'Téléphone ${e.key + 1}', 
-              value: PhoneFormatter.format(e.value),
-            )),
-            AppInfoTile(icon: Icons.location_on_outlined, label: 'Adresse physique', value: client.adresse),
+            AppInfoTile(
+              icon: Icons.email_outlined,
+              label: 'Adresse Email',
+              value: client.email,
+            ),
+            ...tels.asMap().entries.map(
+              (e) => AppInfoTile(
+                icon: Icons.phone_outlined,
+                label: e.key == 0 ? 'Téléphone' : 'Téléphone ${e.key + 1}',
+                value: PhoneFormatter.format(e.value),
+              ),
+            ),
+            AppInfoTile(
+              icon: Icons.location_on_outlined,
+              label: 'Adresse physique',
+              value: client.adresse,
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -319,10 +358,26 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           title: 'Détails Professionnels',
           margin: EdgeInsets.zero,
           children: [
-            AppInfoTile(icon: Icons.business_center_outlined, label: 'Catégorie', value: client.categorie),
-            AppInfoTile(icon: Icons.description_outlined, label: 'NIF', value: NifStatFormatter.formatNif(client.nif)),
-            AppInfoTile(icon: Icons.badge_outlined, label: 'STAT', value: NifStatFormatter.formatStat(client.stat)),
-            AppInfoTile(icon: Icons.map_outlined, label: 'Axe / Secteur', value: client.axe),
+            AppInfoTile(
+              icon: Icons.business_center_outlined,
+              label: 'Catégorie',
+              value: client.categorie,
+            ),
+            AppInfoTile(
+              icon: Icons.description_outlined,
+              label: 'NIF',
+              value: NifStatFormatter.formatNif(client.nif),
+            ),
+            AppInfoTile(
+              icon: Icons.badge_outlined,
+              label: 'STAT',
+              value: NifStatFormatter.formatStat(client.stat),
+            ),
+            AppInfoTile(
+              icon: Icons.map_outlined,
+              label: 'Axe / Secteur',
+              value: client.axe,
+            ),
           ],
         ),
         const SizedBox(height: 32),
@@ -334,10 +389,15 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _navigateToFactures(context, client.clientId),
                 icon: const Icon(Icons.receipt_long_rounded),
-                label: const Text('Voir factures', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Voir factures',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),
@@ -346,11 +406,16 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => _navigateToContrats(context, client.clientId),
                 icon: const Icon(Icons.assignment_rounded),
-                label: const Text('Voir contrats', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Voir contrats',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),
@@ -375,40 +440,71 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 'Éditer le client',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           TextFormField(
             controller: _nomController,
-            decoration: const InputDecoration(labelText: 'Nom', prefixIcon: Icon(Icons.person_outline)),
+            decoration: const InputDecoration(
+              labelText: 'Nom',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
             validator: (value) => value?.isEmpty ?? true ? 'Requis' : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _prenomController,
-            decoration: const InputDecoration(labelText: 'Prénom', prefixIcon: Icon(Icons.person_outline)),
+            decoration: const InputDecoration(
+              labelText: 'Prénom',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
             validator: (value) => value?.isEmpty ?? true ? 'Requis' : null,
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: _buildModernField(_emailController, 'Email de contact', Icons.alternate_email_rounded),
+                child: _buildModernField(
+                  _emailController,
+                  'Email de contact',
+                  Icons.alternate_email_rounded,
+                ),
               ),
               const SizedBox(width: 20),
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue: _axeController.text,
                   decoration: InputDecoration(
-                    labelText: 'Axe Géographique', 
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                    prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryBlue, size: 20),
+                    labelText: 'Axe Géographique',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.map_outlined,
+                      color: AppTheme.primaryBlue,
+                      size: 20,
+                    ),
                     filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
+                    fillColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.03)
+                        : Colors.grey.withValues(alpha: 0.05),
                   ),
-                  items: ['Nord (N)', 'Sud (S)', 'Est (E)', 'Ouest (O)', 'Centre (C)'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items:
+                      [
+                            'Nord (N)',
+                            'Sud (S)',
+                            'Est (E)',
+                            'Ouest (O)',
+                            'Centre (C)',
+                          ]
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
+                          .toList(),
                   onChanged: (v) => setState(() => _axeController.text = v!),
                 ),
               ),
@@ -416,38 +512,54 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
           ),
           const SizedBox(height: 24),
           MultiPhoneInput(
-            controllers: _phoneControllers, 
-            onAdd: () => setState(() => _phoneControllers.add(TextEditingController())), 
+            controllers: _phoneControllers,
+            onAdd: () =>
+                setState(() => _phoneControllers.add(TextEditingController())),
             onRemove: (idx) => setState(() => _phoneControllers.removeAt(idx)),
           ),
           const SizedBox(height: 24),
           TextFormField(
             controller: _adresseController,
-            decoration: const InputDecoration(labelText: 'Adresse', prefixIcon: Icon(Icons.location_on_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Adresse',
+              prefixIcon: Icon(Icons.location_on_outlined),
+            ),
             minLines: 2,
             maxLines: 3,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _categorieController,
-            decoration: const InputDecoration(labelText: 'Catégorie', prefixIcon: Icon(Icons.category_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Catégorie',
+              prefixIcon: Icon(Icons.category_outlined),
+            ),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _nifController,
             inputFormatters: [NifInputFormatter()],
-            decoration: const InputDecoration(labelText: 'NIF', prefixIcon: Icon(Icons.description_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'NIF',
+              prefixIcon: Icon(Icons.description_outlined),
+            ),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _statController,
             inputFormatters: [StatInputFormatter()],
-            decoration: const InputDecoration(labelText: 'STAT', prefixIcon: Icon(Icons.badge_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'STAT',
+              prefixIcon: Icon(Icons.badge_outlined),
+            ),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _axeController,
-            decoration: const InputDecoration(labelText: 'Axe', prefixIcon: Icon(Icons.map_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Axe',
+              prefixIcon: Icon(Icons.map_outlined),
+            ),
           ),
           const SizedBox(height: 32),
           Row(
@@ -457,7 +569,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
                   onPressed: () => setState(() => _isEditing = false),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text('Annuler'),
                 ),
@@ -468,7 +582,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
                   onPressed: _saveClient,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text('Enregistrer'),
                 ),
@@ -480,9 +596,22 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     );
   }
 
-  Widget _buildModernField(TextEditingController? controller, String label, IconData icon, {bool isNumeric = false, Function(String)? onChanged, String? initialValue, List<TextInputFormatter>? inputFormatters, Widget? suffixIcon}) {
+  Widget _buildModernField(
+    TextEditingController? controller,
+    String label,
+    IconData icon, {
+    bool isNumeric = false,
+    Function(String)? onChanged,
+    String? initialValue,
+    List<TextInputFormatter>? inputFormatters,
+    Widget? suffixIcon,
+  }) {
     return TextField(
-      controller: controller ?? (initialValue != null ? TextEditingController(text: initialValue) : null),
+      controller:
+          controller ??
+          (initialValue != null
+              ? TextEditingController(text: initialValue)
+              : null),
       onChanged: onChanged,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
       inputFormatters: inputFormatters,
@@ -491,8 +620,13 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         prefixIcon: Icon(icon, size: 20, color: AppTheme.primaryBlue),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        fillColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.grey.withValues(alpha: 0.05),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
         contentPadding: const EdgeInsets.all(18),
       ),
     );
@@ -510,7 +644,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
         nom: _nomController.text,
         prenom: _prenomController.text,
         email: _emailController.text,
-        telephone: PhoneFormatter.join(_phoneControllers.map((c) => c.text).toList()),
+        telephone: PhoneFormatter.join(
+          _phoneControllers.map((c) => c.text).toList(),
+        ),
         adresse: _adresseController.text,
         categorie: _categorieController.text,
         nif: _nifController.text,
