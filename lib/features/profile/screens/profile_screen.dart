@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             final currentUsername = await _fetchUsername(
                               user.userId,
                             );
-                            if (mounted) {
+                            if (context.mounted) {
                               ProfileEditDialog.show(
                                 context,
                                 authRepo,
