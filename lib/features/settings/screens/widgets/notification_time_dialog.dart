@@ -81,21 +81,19 @@ class _NotificationTimeDialogState extends State<NotificationTimeDialog> {
         ),
         FilledButton(
           onPressed: () async {
-            await context
-                .read<NotificationRepository>()
-                .scheduleCustomNotification(
-                  title: 'Prochains Traitements',
-                  body: 'Rappel des traitements de demain',
-                  hour: hour,
-                  minute: minute,
-                );
-            if (mounted) {
-              AppSnackBars.showSuccess(
-                context,
-                'Notification planifiée à ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
-              );
-              Navigator.pop(context);
-            }
+            final notifRepo = context.read<NotificationRepository>();
+            await notifRepo.scheduleCustomNotification(
+              title: 'Prochains Traitements',
+              body: 'Rappel des traitements de demain',
+              hour: hour,
+              minute: minute,
+            );
+            if (!context.mounted) return;
+            AppSnackBars.showSuccess(
+              context,
+              'Notification planifiée à ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+            );
+            Navigator.pop(context);
           },
           child: const Text('Confirmer'),
         ),
