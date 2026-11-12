@@ -62,7 +62,7 @@ jobs:
             package/usr/share/planificator/Database
           cp -R build/linux/x64/release/bundle/. package/opt/planificator/
           cp scripts/Planificator.sql package/usr/share/planificator/Database/
-          cp assets/icon/'icon.png' package/usr/share/icons/hicolor/256x256/apps/planificator.png
+          cp assets/icons/'icon.png' package/usr/share/icons/hicolor/256x256/apps/planificator.png
           ln -s /opt/planificator/planificator package/usr/bin/planificator
           cat > package/usr/share/applications/planificator.desktop <<'EOF'
           [Desktop Entry]
