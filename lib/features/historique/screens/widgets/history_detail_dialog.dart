@@ -412,7 +412,7 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
             Expanded(
               child: FilledButton.icon(
                 icon: const Icon(Icons.edit_note_rounded, size: 18),
-                onPressed: () => _openCorrectionMode(context),
+                onPressed: _openCorrectionMode,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
@@ -428,7 +428,7 @@ class _HistoryDetailDialogState extends State<HistoryDetailDialog> {
     );
   }
 
-  void _openCorrectionMode(BuildContext context) async {
+  void _openCorrectionMode() async {
     final id = widget.planningDetailId;
     final factureRepo = context.read<FactureRepository>();
     final remarqueRepo = context.read<RemarqueRepository>();
