@@ -2006,6 +2006,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
       if (success && mounted) {
         await _clearSavedProgress();
+        if (!mounted) return;
         Navigator.pop(context, true);
         AppSnackBars.showSuccess(
           context,
