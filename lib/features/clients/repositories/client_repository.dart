@@ -503,4 +503,76 @@ class ClientRepository extends ChangeNotifier {
       return false;
     }
   }
+
+  /// Récupère la liste des traitements d'un client avec statistiques d'avancement
+  Future<List<Map<String, dynamic>>> getClientTreatments(int clientId) async {
+    const sql = '''
+      SELECT t.traitement_id, tt.typeTraitement, tt.categorieTraitement,
+             c.contrat_id, c.referenceContrat,
+             (SELECT COUNT(*) FROM PlanningDetails pd 
+              INNER JOIN Planning p ON pd.planning_id = p.planning_id 
+              WHERE p.traitement_id = t.traitement_id) as total_interventions,
+             (SELECT COUNT(*) FROM Facture f 
+              INNER JOIN PlanningDetails pd ON f.planning_detail_id = pd.planning_detail_id 
+              INNER JOIN Planning p ON pd.planning_id = p.planning_id 
+              WHERE p.traitement_id = t.traitement_id 
+              AND (f.etat LIKE '%Effectué%' OR f.etat LIKE '%Payé%')) as interventions_faites,
+             COALESCE(t.montant, (
+               SELECT SUM(COALESCE(f2.montant, 0)) 
+               FROM Facture f2 
+               INNER JOIN PlanningDetails pd2 ON f2.planning_detail_id = pd2.planning_detail_id 
+               INNER JOIN Planning p2 ON pd2.planning_id = p2.planning_id 
+               WHERE p2.traitement_id = t.traitement_id
+             )) as montant_total
+      FROM Traitement t
+      INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+      INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement
+        AND tc.actif = TRUE
+      INNER JOIN Contrat c ON t.contrat_id = c.contrat_id
+      WHERE c.client_id = ?
+      AND tt.actif = TRUE
+      ORDER BY tt.typeTraitement ASC
+    ''';
+    return await _db.query(sql, [clientId]);
+  }
+
+  /// Récupère les plannings détaillés d'un client
+  Future<List<Map<String, dynamic>>> getClientPlannings(int clientId) async {
+    const sql = '''
+      SELECT DISTINCT t.traitement_id, t.contrat_id, tt.typeTraitement, tt.categorieTraitement as type, c.reference_contrat as contrat_reference, pd.planning_detail_id, pd.date_planification, pd.statut as etat, p.planning_id, cl.axe
+      FROM Traitement t
+      INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+      INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement
+        AND tc.actif = TRUE
+      INNER JOIN Contrat c ON t.contrat_id = c.contrat_id
+      INNER JOIN Client cl ON c.client_id = cl.client_id
+      LEFT JOIN Planning p ON p.traitement_id = t.traitement_id
+      LEFT JOIN PlanningDetails pd ON pd.planning_id = p.planning_id
+      WHERE c.client_id = ?
+      AND tt.actif = TRUE
+      ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
+    ''';
+    return await _db.query(sql, [clientId]);
+  }
+
+  /// Récupère les clients ayant au moins un contrat (pour export)
+  Future<List<Map<String, dynamic>>> getClientsWithContracts() async {
+    const sql = '''
+      SELECT DISTINCT c.client_id, c.nom, c.prenom, c.categorie
+      FROM Client c
+      LEFT JOIN Contrat co ON c.client_id = co.client_id
+      GROUP BY c.client_id
+      HAVING COUNT(DISTINCT co.contrat_id) > 0
+      ORDER BY c.nom ASC
+    ''';
+    return await _db
+        .query(sql)
+        .timeout(
+          const Duration(seconds: 45),
+          onTimeout: () {
+            logger.e('Timeout loading clients with contracts');
+            throw TimeoutException('Database query timeout');
+          },
+        );
+  }
 }
