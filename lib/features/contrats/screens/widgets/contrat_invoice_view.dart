@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
+import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import '../../../../app/theme/theme.dart';
-import '../../../../core/database/database_service.dart';
-import '../../../../core/database/sql/sql_queries.dart';
 import '../../../../core/utils/number_formatter.dart';
 import 'contrat_details_dialog.dart';
 
@@ -53,7 +53,7 @@ class ContratInvoiceView extends StatelessWidget {
       content: SizedBox(
         width: 550,
         child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
-          future: _loadFacturesGroupedByTraitement(contrat.contratId),
+          future: _loadFacturesGroupedByTraitement(context, contrat.contratId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -226,10 +226,9 @@ class ContratInvoiceView extends StatelessWidget {
   }
 
   Future<Map<String, List<Map<String, dynamic>>>>
-  _loadFacturesGroupedByTraitement(int id) async {
-    final rows = await DatabaseService().query(
-      SqlQueries.getFacturesGroupedByTraitement,
-      [id],
+  _loadFacturesGroupedByTraitement(BuildContext context, int id) async {
+    final rows = await context.read<ContratRepository>().getFacturesForContrat(
+      id,
     );
     final map = <String, List<Map<String, dynamic>>>{};
     for (final r in rows) {
