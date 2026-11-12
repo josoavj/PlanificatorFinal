@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/shared/widgets/empty_state_widget.dart';
 import 'package:planificator/shared/widgets/paginated_list_view.dart';
 import '../../../app/theme/theme.dart';
