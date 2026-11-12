@@ -61,8 +61,20 @@ class _ClientListScreenState extends State<ClientListScreen> {
     }
   }
 
+  Timer? _debounceTimer;
+
+  void _onSearchChanged(String query) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) {
+        setState(() => _searchQuery = query);
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -77,7 +89,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             searchController: _searchController,
             searchFocusNode: _searchFocusNode,
             searchQuery: _searchQuery,
-            onSearchChanged: (v) => setState(() => _searchQuery = v),
+            onSearchChanged: _onSearchChanged,
             onRefresh: () async {
               _searchQuery = '';
               _searchController.clear();
