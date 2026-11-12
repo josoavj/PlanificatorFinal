@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/features/auth/screens/login_screen.dart';
 import 'package:planificator/features/auth/screens/register_screen.dart';
