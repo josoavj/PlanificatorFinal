@@ -144,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.storage_outlined,
                       title: 'Données locales',
                       subtitle: 'Gérer les données en cache',
-                      onTap: () => _showCacheDialog(context),
+                      onTap: _showCacheDialog,
                       isDestructive: true,
                     ),
                   ],
@@ -185,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.delete_outline,
                       title: 'Effacer les logs',
                       subtitle: 'Supprimer tous les logs',
-                      onTap: () => _clearLogs(context),
+                      onTap: _clearLogs,
                       isDestructive: true,
                     ),
                   ],
@@ -257,14 +257,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.logout,
                       title: 'Déconnexion',
                       subtitle: 'Terminer la session en cours',
-                      onTap: () => _logout(context),
+                      onTap: _logout,
                       isDestructive: true,
                     ),
                     AppActionCard(
                       icon: Icons.delete_forever,
                       title: 'Supprimer le compte',
                       subtitle: 'Supprimer définitivement mon compte',
-                      onTap: () => _deleteAccount(context),
+                      onTap: _deleteAccount,
                       isDestructive: true,
                     ),
                   ],
@@ -285,37 +285,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showCacheDialog(BuildContext context) {
-    AppDialogs.confirm(
+  Future<void> _showCacheDialog() async {
+    final c = await AppDialogs.confirm(
       context,
       title: 'Vider le cache',
       message:
           'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.',
       confirmText: 'Vider la cache',
       isDestructive: true,
-    ).then((c) {
-      if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé');
-    });
+    );
+    if (!mounted) return;
+    if (c == true) AppSnackBars.showSuccess(context, 'Cache vidé');
   }
 
-  void _logout(BuildContext context) {
-    AppDialogs.confirm(
+  Future<void> _logout() async {
+    final c = await AppDialogs.confirm(
       context,
       title: 'Déconnexion',
       message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
       confirmText: 'Se déconnecter',
       isDestructive: true,
-    ).then((c) {
-      if (c == true) {
-        context.read<AuthRepository>().logout();
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
-      }
-    });
+    );
+    if (!mounted) return;
+    if (c == true) {
+      context.read<AuthRepository>().logout();
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
-  Future<void> _deleteAccount(BuildContext context) async {
+  Future<void> _deleteAccount() async {
     final passwordController = TextEditingController();
     final password = await showDialog<String>(
       context: context,
@@ -383,28 +381,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _exportLogs() async {
     try {
       final dir = await log.getLogsDirectory();
-      if (mounted) AppSnackBars.showSuccess(context, 'Logs sauvegardés: $dir');
+      if (!mounted) return;
+      AppSnackBars.showSuccess(context, 'Logs sauvegardés: $dir');
     } catch (e) {
-      if (mounted) AppSnackBars.showError(context, 'Erreur: $e');
+      if (!mounted) return;
+      AppSnackBars.showError(context, 'Erreur: $e');
     }
   }
 
-  void _clearLogs(BuildContext context) {
-    AppDialogs.confirm(
+  Future<void> _clearLogs() async {
+    final c = await AppDialogs.confirm(
       context,
       title: 'Effacer les logs',
       message: 'Supprimer tous les logs en mémoire et sur disque ?',
       confirmText: 'Effacer les logs',
       isDestructive: true,
-    ).then((c) async {
-      if (c == true) {
-        log.clear();
-        await log.clearLogFiles();
-        if (mounted) {
-          AppSnackBars.showSuccess(context, 'Logs effacés avec succès');
-        }
-      }
-    });
+    );
+    if (!mounted) return;
+    if (c == true) {
+      log.clear();
+      await log.clearLogFiles();
+      if (!mounted) return;
+      AppSnackBars.showSuccess(context, 'Logs effacés avec succès');
+    }
   }
 
   void _showLanguageDialog() {
