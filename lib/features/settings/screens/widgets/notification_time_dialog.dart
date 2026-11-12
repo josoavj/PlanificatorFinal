@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/notifications/repositories/notification_repository.dart';
 import 'package:provider/provider.dart';
 import '../../../../shared/widgets/app_dialogs.dart';
