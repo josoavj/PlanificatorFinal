@@ -54,7 +54,8 @@ class _DashboardTabState extends State<DashboardTab> {
         heroTag: 'home_refresh',
         onPressed: () async {
           await _loadData();
-          if (mounted) AppSnackBars.showSuccess(context, 'Données actualisées');
+          if (!context.mounted) return;
+          AppSnackBars.showSuccess(context, 'Données actualisées');
         },
         tooltip: 'Rafraîchir les données',
         child: const Icon(Icons.refresh),
