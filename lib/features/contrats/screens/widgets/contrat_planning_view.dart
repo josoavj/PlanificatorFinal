@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
+import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import '../../../../app/theme/theme.dart';
-import '../../../../core/database/database_service.dart';
 import '../../../../core/utils/app_snackbars.dart';
 import 'contrat_details_dialog.dart';
 
@@ -53,7 +54,7 @@ class ContratPlanningView extends StatelessWidget {
       content: SizedBox(
         width: 550,
         child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
-          future: _loadContratPlanningsByType(contrat.contratId),
+          future: _loadContratPlanningsByType(context, contrat.contratId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -291,24 +292,11 @@ class ContratPlanningView extends StatelessWidget {
   }
 
   Future<Map<String, List<Map<String, dynamic>>>> _loadContratPlanningsByType(
+    BuildContext context,
     int id,
   ) async {
-    final rows = await DatabaseService().query(
-      '''
-        SELECT DISTINCT t.traitement_id, tt.typeTraitement, pd.planning_detail_id, pd.date_planification, pd.statut, cl.axe
-        FROM Traitement t
-        JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-        JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement
-          AND tc.actif = TRUE
-        JOIN Contrat c ON t.contrat_id = c.contrat_id
-        JOIN Client cl ON c.client_id = cl.client_id
-        LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
-        LEFT JOIN PlanningDetails pd ON p.planning_id = pd.planning_id
-        WHERE t.contrat_id = ?
-        AND tt.actif = TRUE
-        ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
-    ''',
-      [id],
+    final rows = await context.read<ContratRepository>().getContratPlannings(
+      id,
     );
 
     final map = <String, List<Map<String, dynamic>>>{};
