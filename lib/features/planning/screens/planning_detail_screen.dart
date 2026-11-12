@@ -269,8 +269,10 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
         facture: facture,
         existingRemarque: remarque,
         onSaved: () async {
-          await context.read<PlanningDetailsRepository>().refreshAll();
-          await context.read<FactureRepository>().loadAllFactures();
+          final pRepo = context.read<PlanningDetailsRepository>();
+          final fRepo = context.read<FactureRepository>();
+          await pRepo.refreshAll();
+          await fRepo.loadAllFactures();
           if (mounted) {
             _refresh();
           }
@@ -296,23 +298,22 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final fId = await context
-                  .read<FactureRepository>()
-                  .createFactureComplete(
-                    planningDetailId: pd.planningDetailId,
-                    referenceFacture:
-                        'FAC-${DateTime.now().millisecondsSinceEpoch}',
-                    montant: 0,
-                    etat: 'À venir',
-                    axe: treatment['axe'] ?? '',
-                    dateTraitement: pd.datePlanification,
-                  );
+              final fRepo = context.read<FactureRepository>();
+              final fId = await fRepo.createFactureComplete(
+                planningDetailId: pd.planningDetailId,
+                referenceFacture:
+                    'FAC-${DateTime.now().millisecondsSinceEpoch}',
+                montant: 0,
+                etat: 'À venir',
+                axe: treatment['axe'] ?? '',
+                dateTraitement: pd.datePlanification,
+              );
               if (fId != -1) {
-                final factures = await context
-                    .read<FactureRepository>()
-                    .getFacturesByPlanningDetail(pd.planningDetailId);
+                final factures = await fRepo.getFacturesByPlanningDetail(
+                  pd.planningDetailId,
+                );
                 if (factures.isNotEmpty) {
-                  if (mounted) Navigator.pop(ctx);
+                  if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) {
                     AppDialogs.showBlurDialog(
                       context: context,
@@ -320,13 +321,12 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                         planningDetail: pd,
                         facture: factures.first,
                         onSaved: () async {
+                          final pRepo = context
+                              .read<PlanningDetailsRepository>();
+                          final fRepo2 = context.read<FactureRepository>();
                           // Utilisation du refresh global consolidé
-                          await context
-                              .read<PlanningDetailsRepository>()
-                              .refreshAll();
-                          await context
-                              .read<FactureRepository>()
-                              .loadAllFactures();
+                          await pRepo.refreshAll();
+                          await fRepo2.loadAllFactures();
                           if (mounted) {
                             AppSnackBars.showSuccess(
                               context,
@@ -355,9 +355,11 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
       builder: (ctx) => SignalementDialog(
         planningDetail: pd,
         onSaved: () async {
+          final pRepo = context.read<PlanningDetailsRepository>();
+          final fRepo = context.read<FactureRepository>();
           // Utilisation du refresh global consolidé
-          await context.read<PlanningDetailsRepository>().refreshAll();
-          await context.read<FactureRepository>().loadAllFactures();
+          await pRepo.refreshAll();
+          await fRepo.loadAllFactures();
           if (mounted) {
             AppSnackBars.showSuccess(context, 'Signalement enregistré');
             _refresh();
