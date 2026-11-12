@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../app/theme/theme.dart';
 import 'legal_common.dart';
 import 'privacy_policy_screen.dart';
