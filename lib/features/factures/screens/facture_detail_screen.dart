@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/features/factures/models/facture.dart';
+import 'package:planificator/features/factures/services/facture_pdf_service.dart';
 import 'package:provider/provider.dart';
 import '../../../app/theme/theme.dart';
+import '../../../core/utils/app_snackbars.dart';
 import '../../../shared/widgets/index.dart';
 import '../../../core/utils/number_formatter.dart';
 import 'widgets/facture_price_dialog.dart';
@@ -57,6 +59,28 @@ class _FactureDetailScreenState extends State<FactureDetailScreen> {
         title: Text(widget.groupTitle),
         elevation: 2,
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.print_rounded),
+            tooltip: 'Imprimer / Exporter en PDF',
+            onPressed: () async {
+              try {
+                await FacturePdfService.printGroupFactures(
+                  widget.groupTitle,
+                  sorted,
+                );
+              } catch (_) {
+                if (context.mounted) {
+                  AppSnackBars.showError(
+                    context,
+                    'Impossible de générer le document PDF.',
+                  );
+                }
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
