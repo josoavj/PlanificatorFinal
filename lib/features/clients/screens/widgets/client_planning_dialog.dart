@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import '../../../../app/theme/theme.dart';
 import '../../models/client.dart';
-import '../../../../core/database/database_service.dart';
 import '../../../planning/domain/date_utils.dart' as date_utils;
 import 'client_details_dialog.dart';
 
@@ -38,7 +39,7 @@ class ClientPlanningDialog extends StatelessWidget {
       content: SizedBox(
         width: 550,
         child: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
-          future: _loadClientTreatmentsByType(client.clientId),
+          future: _loadClientTreatmentsByType(context, client.clientId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -276,23 +277,12 @@ class ClientPlanningDialog extends StatelessWidget {
   }
 
   Future<Map<String, List<Map<String, dynamic>>>> _loadClientTreatmentsByType(
+    BuildContext context,
     int clientId,
   ) async {
-    const sql = '''
-      SELECT DISTINCT t.traitement_id, t.contrat_id, tt.typeTraitement, tt.categorieTraitement as type, c.reference_contrat as contrat_reference, pd.planning_detail_id, pd.date_planification, pd.statut as etat, p.planning_id, cl.axe
-      FROM Traitement t
-      INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-      INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement
-        AND tc.actif = TRUE
-      INNER JOIN Contrat c ON t.contrat_id = c.contrat_id
-      INNER JOIN Client cl ON c.client_id = cl.client_id
-      LEFT JOIN Planning p ON p.traitement_id = t.traitement_id
-      LEFT JOIN PlanningDetails pd ON pd.planning_id = p.planning_id
-      WHERE c.client_id = ?
-      AND tt.actif = TRUE
-      ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
-    ''';
-    final rows = await DatabaseService().query(sql, [clientId]);
+    final rows = await context.read<ClientRepository>().getClientPlannings(
+      clientId,
+    );
     final groupedMap = <String, List<Map<String, dynamic>>>{};
     for (final row in rows) {
       final typeTraitement = (row['typeTraitement'] as String?) ?? 'Sans type';
