@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:planificator/shared/widgets/log_viewer.dart';
