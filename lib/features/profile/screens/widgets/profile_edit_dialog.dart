@@ -204,7 +204,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                       username: usernameCtrl.text.trim(),
                     );
 
-                    if (mounted) {
+                    if (context.mounted) {
                       if (success) {
                         Navigator.pop(context);
                         AppSnackBars.showSuccess(
