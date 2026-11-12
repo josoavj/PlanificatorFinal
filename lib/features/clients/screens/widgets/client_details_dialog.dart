@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
+import 'package:provider/provider.dart';
 import '../../../../app/theme/theme.dart';
 import '../../models/client.dart';
-import '../../../../core/database/database_service.dart';
 import '../../../../core/utils/nif_stat_formatter.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/number_formatter.dart';
+import '../../repositories/client_repository.dart';
 import 'client_edit_dialog.dart';
 import 'client_planning_dialog.dart';
 
@@ -170,6 +171,7 @@ class ClientDetailsDialog extends StatelessWidget {
                     if (client.treatmentCount > 0)
                       FutureBuilder<List<Map<String, dynamic>>>(
                         future: _loadTraitementsDetailedByClient(
+                          context,
                           client.clientId,
                         ),
                         builder: (context, snapshot) {
@@ -336,31 +338,10 @@ class ClientDetailsDialog extends StatelessWidget {
   }
 
   Future<List<Map<String, dynamic>>> _loadTraitementsDetailedByClient(
+    BuildContext context,
     int clientId,
   ) async {
-    final sql = '''
-      SELECT 
-          t.traitement_id, 
-          tt.typeTraitement as nom, 
-          tt.categorieTraitement as type,
-          (SELECT SUM(f.montant) 
-           FROM Facture f 
-           WHERE f.facture_id IN (
-               SELECT DISTINCT pd2.facture_id 
-               FROM PlanningDetails pd2 
-               INNER JOIN Planning p2 ON pd2.planning_id = p2.planning_id 
-               WHERE p2.traitement_id = t.traitement_id
-           )) as montant_total
-      FROM Traitement t
-      INNER JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
-      INNER JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement
-        AND tc.actif = TRUE
-      INNER JOIN Contrat c ON t.contrat_id = c.contrat_id
-      WHERE c.client_id = ?
-      AND tt.actif = TRUE
-      ORDER BY tt.typeTraitement ASC
-    ''';
-    return await DatabaseService().query(sql, [clientId]);
+    return await context.read<ClientRepository>().getClientTreatments(clientId);
   }
 
   // --- HELPERS ---

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
@@ -79,22 +79,43 @@ class _RegisterScreenState extends State<RegisterScreen>
   void _updatePasswordCriteria() {
     final password = _passwordController.text;
     final confirm = _confirmPasswordController.text;
+
+    if (password.isEmpty && confirm.isEmpty && !_showCriteria) {
+      return;
+    }
+
     final nom = _nomController.text;
     final prenom = _prenomController.text;
 
-    setState(() {
-      _hasMinLength = password.length >= 8;
-      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
-      _hasLowercase = password.contains(RegExp(r'[a-z]'));
-      _hasDigits = password.contains(RegExp(r'[0-9]'));
-      _hasNoPersonalInfo = !PasswordValidator.isPasswordPersonalInfo(
-        password,
-        nom,
-        prenom,
-      );
-      _passwordsMatch = password.isNotEmpty && password == confirm;
-      _strengthScore = PasswordValidator.getPasswordStrength(password);
-    });
+    final newMinLength = password.length >= 8;
+    final newUppercase = password.contains(RegExp(r'[A-Z]'));
+    final newLowercase = password.contains(RegExp(r'[a-z]'));
+    final newDigits = password.contains(RegExp(r'[0-9]'));
+    final newNoPersonalInfo = !PasswordValidator.isPasswordPersonalInfo(
+      password,
+      nom,
+      prenom,
+    );
+    final newMatch = password.isNotEmpty && password == confirm;
+    final newStrength = PasswordValidator.getPasswordStrength(password);
+
+    if (_hasMinLength != newMinLength ||
+        _hasUppercase != newUppercase ||
+        _hasLowercase != newLowercase ||
+        _hasDigits != newDigits ||
+        _hasNoPersonalInfo != newNoPersonalInfo ||
+        _passwordsMatch != newMatch ||
+        _strengthScore != newStrength) {
+      setState(() {
+        _hasMinLength = newMinLength;
+        _hasUppercase = newUppercase;
+        _hasLowercase = newLowercase;
+        _hasDigits = newDigits;
+        _hasNoPersonalInfo = newNoPersonalInfo;
+        _passwordsMatch = newMatch;
+        _strengthScore = newStrength;
+      });
+    }
   }
 
   @override

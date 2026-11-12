@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Modèle HistoriqueEvent
 /// Représente une entrée dans l'historique technique des traitements.

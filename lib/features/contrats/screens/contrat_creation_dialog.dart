@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:planificator/features/catalogue/models/type_traitement.dart';
@@ -2006,6 +2006,7 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
 
       if (success && mounted) {
         await _clearSavedProgress();
+        if (!mounted) return;
         Navigator.pop(context, true);
         AppSnackBars.showSuccess(
           context,

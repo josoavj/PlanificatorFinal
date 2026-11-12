@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/database/database_migration_service.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
@@ -138,6 +138,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
           password: _passwordController.text,
           database: _databaseController.text.trim(),
         );
+
+        if (!mounted) return;
 
         AppSnackBars.showSuccess(
           context,

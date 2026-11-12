@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/factures/models/facture.dart';
 import 'package:planificator/features/factures/repositories/facture_repository.dart';
 import 'package:provider/provider.dart';
@@ -17,9 +18,19 @@ class FactureScreen extends StatefulWidget {
 
 class _FactureScreenState extends State<FactureScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
   String _searchQuery = '';
   int _currentPage = 0;
   bool _isMoreLoading = false;
+
+  void _onSearchChanged(String query) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) {
+        setState(() => _searchQuery = query);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -43,6 +54,7 @@ class _FactureScreenState extends State<FactureScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -63,7 +75,7 @@ class _FactureScreenState extends State<FactureScreen> {
               FactureListHeader(
                 searchController: _searchController,
                 searchQuery: _searchQuery,
-                onSearchChanged: (v) => setState(() => _searchQuery = v),
+                onSearchChanged: _onSearchChanged,
                 onRefresh: () {
                   _searchQuery = '';
                   _searchController.clear();

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import '../../../../app/theme/theme.dart';
 import '../../../../core/utils/app_snackbars.dart';
@@ -204,7 +204,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                       username: usernameCtrl.text.trim(),
                     );
 
-                    if (mounted) {
+                    if (context.mounted) {
                       if (success) {
                         Navigator.pop(context);
                         AppSnackBars.showSuccess(

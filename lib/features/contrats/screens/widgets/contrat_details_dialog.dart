@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/features/clients/models/client.dart';
@@ -6,8 +6,7 @@ import 'package:planificator/features/contrats/models/contrat.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
 import '../../../../app/theme/theme.dart';
-import '../../../../core/database/database_service.dart';
-import '../../../../core/database/sql/sql_queries.dart';
+import '../../repositories/contrat_repository.dart';
 import '../../../../core/utils/number_formatter.dart';
 import 'contrat_planning_view.dart';
 import 'contrat_invoice_view.dart';
@@ -58,7 +57,7 @@ class ContratDetailsDialog extends StatelessWidget {
       content: SizedBox(
         width: 950, // Largeur accrue pour 2 colonnes
         child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _loadTraitements(contrat.contratId),
+          future: _loadTraitements(context, contrat.contratId),
           builder: (context, snapshot) {
             final traitements = snapshot.data ?? [];
             final totalContrat = traitements.fold<int>(
@@ -624,9 +623,8 @@ class ContratDetailsDialog extends StatelessWidget {
     return 'Non définie';
   }
 
-  Future<List<Map<String, dynamic>>> _loadTraitements(int id) async =>
-      await DatabaseService().query(
-        SqlQueries.getTraitementsDetailedByContrat,
-        [id],
-      );
+  Future<List<Map<String, dynamic>>> _loadTraitements(
+    BuildContext context,
+    int id,
+  ) => context.read<ContratRepository>().getTraitementsForContrat(id);
 }

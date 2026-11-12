@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:provider/provider.dart';
@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             final currentUsername = await _fetchUsername(
                               user.userId,
                             );
-                            if (mounted) {
+                            if (context.mounted) {
                               ProfileEditDialog.show(
                                 context,
                                 authRepo,

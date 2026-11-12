@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
@@ -249,18 +249,14 @@ class _ClientEditDialogState extends State<ClientEditDialog> {
                 treatmentCount: widget.client.treatmentCount,
               );
 
-              await context.read<ClientRepository>().updateClient(
-                updatedClient,
-              );
-              await context.read<ClientRepository>().loadClients();
+              final clientRepo = context.read<ClientRepository>();
+              await clientRepo.updateClient(updatedClient);
+              if (!mounted) return;
+              await clientRepo.loadClients();
               widget.onDataChanged();
-              if (mounted) {
-                Navigator.of(context).pop();
-                AppSnackBars.showSuccess(
-                  context,
-                  ' Client modifié avec succès',
-                );
-              }
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              AppSnackBars.showSuccess(context, ' Client modifié avec succès');
             } else {
               AppSnackBars.showWarning(
                 context,

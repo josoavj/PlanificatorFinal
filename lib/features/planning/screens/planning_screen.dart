@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/planning/repositories/planning_details_repository.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
 import '../../../app/theme/theme.dart';
 import '../domain/date_utils.dart' as date_utils;
@@ -31,32 +30,27 @@ class _PlanningScreenState extends State<PlanningScreen> {
     await context.read<PlanningDetailsRepository>().loadAllTreatmentsComplete();
   }
 
-  String _convertToString(dynamic value) {
-    if (value == null) return '';
-    if (value is String) return value;
-    if (value is int || value is double) return value.toString();
-    return value.toString();
-  }
-
   List<Map<String, dynamic>> _getTreatmentsForDay(
     DateTime day,
     List<Map<String, dynamic>> treatments,
   ) {
+    final targetStr =
+        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
     return treatments.where((t) {
-      try {
-        final dateStr = _convertToString(t['date']);
-        if (dateStr.isEmpty) return false;
-        final parts = dateStr.split('-');
-        if (parts.length != 3) return false;
-        final tDate = DateTime(
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-          int.parse(parts[2]),
-        );
-        return isSameDay(tDate, DateTime(day.year, day.month, day.day));
-      } catch (e) {
-        return false;
+      final dateVal = t['date'];
+      if (dateVal == null) return false;
+      final dateStr = dateVal.toString();
+      if (dateStr == targetStr || dateStr.startsWith(targetStr)) return true;
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        final y = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final d = int.tryParse(parts[2]);
+        if (y != null && m != null && d != null) {
+          return y == day.year && m == day.month && d == day.day;
+        }
       }
+      return false;
     }).toList();
   }
 

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
 import 'package:planificator/features/factures/models/facture.dart';
@@ -7,7 +7,6 @@ import 'package:planificator/features/factures/repositories/facture_repository.d
 import 'package:planificator/features/planning/repositories/planning_details_repository.dart';
 import 'package:provider/provider.dart';
 import '../../../core/utils/excel_utils.dart';
-import '../../../core/database/database_service.dart';
 import '../../../core/logging/logging_service.dart';
 import '../../../core/utils/app_snackbars.dart';
 import '../../../shared/widgets/app_dialogs.dart';
@@ -69,29 +68,10 @@ class _ExportScreenState extends State<ExportScreen> {
 
   Future<void> _loadClients() async {
     try {
-      final db = DatabaseService();
-
-      // Charger DIRECTEMENT tous les clients avec au moins un contrat depuis la base de données
-      const sql = '''
-        SELECT DISTINCT c.client_id, c.nom, c.prenom, c.categorie
-        FROM Client c
-        LEFT JOIN Contrat co ON c.client_id = co.client_id
-        GROUP BY c.client_id
-        HAVING COUNT(DISTINCT co.contrat_id) > 0
-        ORDER BY c.nom ASC
-      ''';
-
-      logger.i('Chargement des clients depuis la DB...');
-      final rows = await db
-          .query(sql)
-          .timeout(
-            const Duration(seconds: 45),
-            onTimeout: () {
-              logger.e('Timeout loading clients from database');
-              throw TimeoutException('Database query timeout');
-            },
-          );
-      logger.i('${rows.length} clients trouvés en DB');
+      final clientRepo = context.read<ClientRepository>();
+      logger.i('Chargement des clients depuis ClientRepository...');
+      final rows = await clientRepo.getClientsWithContracts();
+      logger.i('${rows.length} clients trouvés');
 
       final clientMap = <String, int>{'Tous': -1};
       final clientList = ['Tous'];
@@ -329,9 +309,7 @@ class _ExportScreenState extends State<ExportScreen> {
                           vertical: 16,
                         ),
                       ),
-                      onPressed: _isExporting
-                          ? null
-                          : () => _generererExcel(context),
+                      onPressed: _isExporting ? null : _generererExcel,
                       child: _isExporting
                           ? SizedBox(
                               width: 20,
@@ -595,16 +573,16 @@ class _ExportScreenState extends State<ExportScreen> {
     logger.i(' Actualisation complète des données');
   }
 
-  Future<void> _generererExcel(BuildContext context) async {
+  Future<void> _generererExcel() async {
     setState(() => _isExporting = true);
 
     try {
       if (_selectedCategory == 'Facture') {
         final clientId = _clientMap[_selectedClient] ?? -1;
-        await _exportFactures(context, clientId);
+        await _exportFactures(clientId);
       } else if (_selectedCategory == 'Traitement') {
         final clientId = _clientMap[_selectedClient] ?? -1;
-        await _exportTraitements(context, clientId);
+        await _exportTraitements(clientId);
       }
 
       if (mounted) {
@@ -619,7 +597,7 @@ class _ExportScreenState extends State<ExportScreen> {
     }
   }
 
-  Future<void> _exportFactures(BuildContext context, int clientId) async {
+  Future<void> _exportFactures(int clientId) async {
     try {
       final factureRepo = context.read<FactureRepository>();
       final contratRepo = context.read<ContratRepository>();
@@ -647,6 +625,7 @@ class _ExportScreenState extends State<ExportScreen> {
       }
 
       if (factures.isEmpty) {
+        if (!mounted) return;
         _showErrorDialog(
           context,
           'Aucune donnée',
@@ -776,7 +755,7 @@ class _ExportScreenState extends State<ExportScreen> {
     }
   }
 
-  Future<void> _exportTraitements(BuildContext context, int clientId) async {
+  Future<void> _exportTraitements(int clientId) async {
     try {
       final planningDetailsRepo = context.read<PlanningDetailsRepository>();
       final monthIndex = _mois.indexOf(_selectedMois); // Janvier = index 1
@@ -797,6 +776,7 @@ class _ExportScreenState extends State<ExportScreen> {
           );
 
       if (treatments.isEmpty) {
+        if (!mounted) return;
         _showErrorDialog(
           context,
           'Aucune donnée',

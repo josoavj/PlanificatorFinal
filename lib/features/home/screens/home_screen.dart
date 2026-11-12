@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
 import '../../../shared/widgets/sidebar_navigation.dart';
 import '../../clients/screens/client_list_screen.dart';
 import '../../factures/screens/facture_screen.dart';
@@ -11,6 +12,11 @@ import '../../about/screens/about_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../export/screens/export_screen.dart';
 import '../widgets/dashboard_tab.dart';
+
+class _NavigateTabIntent extends Intent {
+  final int index;
+  const _NavigateTabIntent(this.index);
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -38,30 +44,89 @@ class _HomeScreenState extends State<HomeScreen> {
     'Paramètres',
   ];
 
+  void _onSelectTab(int index) {
+    if (index == _selectedIndex) return;
+    setState(() {
+      _navigationDirection = index > _selectedIndex ? 1 : -1;
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Sécurité : éviter le dépassement d'index lors des transitions de version
     final safeIndex = _selectedIndex >= _pageTitles.length ? 0 : _selectedIndex;
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_pageTitles[safeIndex]),
-          centerTitle: false,
-          elevation: 2,
+    return Shortcuts(
+      shortcuts: <ShortcutActivator, Intent>{
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true):
+            const _NavigateTabIntent(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true):
+            const _NavigateTabIntent(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true):
+            const _NavigateTabIntent(2),
+        const SingleActivator(LogicalKeyboardKey.digit4, control: true):
+            const _NavigateTabIntent(3),
+        const SingleActivator(LogicalKeyboardKey.digit5, control: true):
+            const _NavigateTabIntent(4),
+        const SingleActivator(LogicalKeyboardKey.digit6, control: true):
+            const _NavigateTabIntent(5),
+        const SingleActivator(LogicalKeyboardKey.digit7, control: true):
+            const _NavigateTabIntent(6),
+        const SingleActivator(LogicalKeyboardKey.digit8, control: true):
+            const _NavigateTabIntent(7),
+        const SingleActivator(LogicalKeyboardKey.digit9, control: true):
+            const _NavigateTabIntent(10),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _NavigateTabIntent: CallbackAction<_NavigateTabIntent>(
+            onInvoke: (intent) => _onSelectTab(intent.index),
+          ),
+        },
+        child: Focus(
+          autofocus: true,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 960;
+
+              return PopScope(
+                canPop: false,
+                child: Scaffold(
+                  appBar: AppBar(
+                    title: Text(_pageTitles[safeIndex]),
+                    centerTitle: false,
+                    elevation: 1,
+                    automaticallyImplyLeading: !isDesktop,
+                  ),
+                  drawer: isDesktop
+                      ? null
+                      : SidebarNavigation(
+                          selectedIndex: safeIndex,
+                          onItemSelected: _onSelectTab,
+                        ),
+                  body: isDesktop
+                      ? Row(
+                          children: [
+                            SidebarNavigation(
+                              selectedIndex: safeIndex,
+                              onItemSelected: _onSelectTab,
+                              isDrawer: false,
+                            ),
+                            const VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: Color(0x1F000000),
+                            ),
+                            Expanded(child: _buildPage(safeIndex)),
+                          ],
+                        )
+                      : _buildPage(safeIndex),
+                ),
+              );
+            },
+          ),
         ),
-        drawer: SidebarNavigation(
-          selectedIndex: safeIndex,
-          onItemSelected: (index) {
-            if (index == _selectedIndex) return;
-            setState(() {
-              _navigationDirection = index > _selectedIndex ? 1 : -1;
-              _selectedIndex = index;
-            });
-          },
-        ),
-        body: _buildPage(safeIndex),
       ),
     );
   }
