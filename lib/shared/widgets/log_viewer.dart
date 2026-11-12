@@ -139,13 +139,15 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
   Future<void> _exportToFile() async {
     try {
       final logsDir = await log.getLogsDirectory();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('📁 Logs: $logsDir'),
+          content: Text('Logs: $logsDir'),
           duration: const Duration(seconds: 3),
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
