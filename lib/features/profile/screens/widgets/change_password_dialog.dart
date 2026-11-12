@@ -181,7 +181,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       newPassword.text,
                     );
 
-                    if (mounted) {
+                    if (context.mounted) {
                       if (success) {
                         Navigator.pop(context);
                         AppSnackBars.showSuccess(
