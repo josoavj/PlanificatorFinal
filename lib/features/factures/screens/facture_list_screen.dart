@@ -1,16 +1,13 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart' as pw;
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/features/factures/models/facture.dart';
 import 'package:planificator/features/factures/repositories/facture_repository.dart';
+import 'package:planificator/features/factures/services/facture_pdf_service.dart';
 import 'package:planificator/shared/widgets/empty_state_widget.dart';
 import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import '../../../core/utils/app_snackbars.dart';
 import '../../../core/utils/number_formatter.dart';
 
@@ -583,9 +580,7 @@ class _FactureDetailScreen extends StatelessWidget {
             tooltip: 'Imprimer la facture',
             onPressed: () async {
               try {
-                await Printing.layoutPdf(
-                  onLayout: (format) => _buildInvoicePdf(format, facture),
-                );
+                await FacturePdfService.printFacture(facture);
               } catch (_) {
                 if (context.mounted) {
                   AppSnackBars.showError(
@@ -691,58 +686,6 @@ class _FactureDetailScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<Uint8List> _buildInvoicePdf(
-    pw.PdfPageFormat format,
-    Facture facture,
-  ) async {
-    final document = pw.Document();
-    document.addPage(
-      pw.Page(
-        pageFormat: format,
-        build: (_) => pw.Padding(
-          padding: const pw.EdgeInsets.all(32),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'FACTURE #${facture.factureId}',
-                style: pw.TextStyle(
-                  fontSize: 22,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.SizedBox(height: 24),
-              pw.Text(
-                'Date : ${DateFormat('dd/MM/yyyy').format(facture.dateTraitement)}',
-              ),
-              pw.Text('Client : ${facture.clientNom ?? 'Inconnu'}'),
-              pw.Text('État : ${facture.isPaid ? 'Payée' : 'Non payée'}'),
-              pw.Divider(),
-              pw.SizedBox(height: 12),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Total',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                  ),
-                  pw.Text(
-                    facture.montantFormatted,
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    return document.save();
   }
 }
 
