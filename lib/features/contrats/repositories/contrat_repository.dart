@@ -625,4 +625,41 @@ class ContratRepository extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Récupère les factures d'un contrat groupées par traitement
+  Future<List<Map<String, dynamic>>> getFacturesForContrat(
+    int contratId,
+  ) async {
+    return await _db.query(SqlQueries.getFacturesGroupedByTraitement, [
+      contratId,
+    ]);
+  }
+
+  /// Récupère les plannings détaillés d'un contrat par type
+  Future<List<Map<String, dynamic>>> getContratPlannings(int contratId) async {
+    const sql = '''
+      SELECT DISTINCT t.traitement_id, tt.typeTraitement, pd.planning_detail_id, pd.date_planification, pd.statut, cl.axe
+      FROM Traitement t
+      JOIN TypeTraitement tt ON t.id_type_traitement = tt.id_type_traitement
+      JOIN TypeTraitementCategorie tc ON tc.nom = tt.categorieTraitement
+        AND tc.actif = TRUE
+      JOIN Contrat c ON t.contrat_id = c.contrat_id
+      JOIN Client cl ON c.client_id = cl.client_id
+      LEFT JOIN Planning p ON t.traitement_id = p.traitement_id
+      LEFT JOIN PlanningDetails pd ON p.planning_id = pd.planning_id
+      WHERE t.contrat_id = ?
+      AND tt.actif = TRUE
+      ORDER BY tt.typeTraitement ASC, pd.date_planification ASC
+    ''';
+    return await _db.query(sql, [contratId]);
+  }
+
+  /// Récupère les traitements détaillés d'un contrat
+  Future<List<Map<String, dynamic>>> getTraitementsForContrat(
+    int contratId,
+  ) async {
+    return await _db.query(SqlQueries.getTraitementsDetailedByContrat, [
+      contratId,
+    ]);
+  }
 }
