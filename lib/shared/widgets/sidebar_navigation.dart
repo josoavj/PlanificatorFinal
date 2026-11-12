@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:provider/provider.dart';
 import '../../app/theme/theme.dart';
