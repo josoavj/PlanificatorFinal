@@ -139,6 +139,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
           database: _databaseController.text.trim(),
         );
 
+        if (!mounted) return;
+
         AppSnackBars.showSuccess(
           context,
           ' Connexion réussie! Configuration sauvegardée.',
