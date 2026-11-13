@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../models/client.dart';
 import '../../../planning/domain/date_utils.dart' as date_utils;
