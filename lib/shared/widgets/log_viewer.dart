@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/logging/logging_service.dart';
+
 import 'app_dialogs.dart';
 
 class LogViewerDialog extends StatefulWidget {
@@ -148,9 +149,8 @@ class _LogViewerDialogState extends State<LogViewerDialog> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Erreur: $e')));
     }
   }
 
