@@ -394,8 +394,10 @@ class _RecoverAccountScreenState extends State<RecoverAccountScreen> {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.titleSmall
-              ?.copyWith(fontWeight: FontWeight.bold, fontSize: 13),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 8),
         field,
