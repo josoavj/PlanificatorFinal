@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../app/theme/theme.dart';
 
 class AuthPageShell extends StatelessWidget {
@@ -208,9 +209,8 @@ class AuthFormHeader extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           title,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.headlineMedium
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
         Text(
