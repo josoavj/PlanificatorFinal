@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/catalogue/models/type_traitement_category.dart';
 import 'package:provider/provider.dart';
+
 import '../../../app/theme/theme.dart';
 import '../../auth/repositories/auth_repository.dart';
 import '../models/type_traitement.dart';
@@ -51,9 +52,8 @@ class _TreatmentCatalogManagementScreenState
               children: [
                 Text(
                   'Catégories',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -73,9 +73,8 @@ class _TreatmentCatalogManagementScreenState
                 const SizedBox(height: 28),
                 Text(
                   'Traitements',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 LayoutBuilder(
@@ -137,9 +136,8 @@ class _TreatmentCatalogManagementScreenState
             icon: Icon(icon, size: 20),
             label: Text(
               label,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ),
