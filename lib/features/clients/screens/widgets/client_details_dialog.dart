@@ -79,28 +79,28 @@ class ClientDetailsDialog extends StatelessWidget {
                             client.email,
                           ),
                           _buildSubtleDivider(isDark),
-                          ...PhoneFormatter.split(client.telephone)
-                              .asMap()
-                              .entries
-                              .map(
-                                (e) => Column(
-                                  children: [
-                                    _buildDetailRow(
-                                      context,
-                                      Icons.phone_outlined,
-                                      e.key == 0
-                                          ? 'Téléphone'
-                                          : 'Téléphone ${e.key + 1}',
-                                      PhoneFormatter.format(e.value),
-                                    ),
-                                    if (e.key <
-                                        PhoneFormatter.split(client.telephone)
-                                                .length -
-                                            1)
-                                      _buildSubtleDivider(isDark),
-                                  ],
+                          ...PhoneFormatter.split(
+                            client.telephone,
+                          ).asMap().entries.map(
+                            (e) => Column(
+                              children: [
+                                _buildDetailRow(
+                                  context,
+                                  Icons.phone_outlined,
+                                  e.key == 0
+                                      ? 'Téléphone'
+                                      : 'Téléphone ${e.key + 1}',
+                                  PhoneFormatter.format(e.value),
                                 ),
-                              ),
+                                if (e.key <
+                                    PhoneFormatter.split(
+                                          client.telephone,
+                                        ).length -
+                                        1)
+                                  _buildSubtleDivider(isDark),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
