@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/features/planning/models/signalement.dart';
+
 import '../domain/date_helper.dart';
 import '../../../core/database/sql/sql_queries.dart';
 
@@ -175,8 +176,7 @@ class SignalementRepository extends ChangeNotifier {
     required String type, // 'avancement' ou 'décalage'
     required DateTime dateCourante,
     required DateTime dateSignalement,
-    required bool
-    changerRedondance, // true=décaler TOUTES les futures, false=modifier JUSTE celle-ci
+    required bool changerRedondance, // true=décaler TOUTES les futures, false=modifier JUSTE celle-ci
   }) async {
     _isLoading = true;
     _errorMessage = null;
