@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as math;
+
 import 'package:mysql1/mysql1.dart';
+
 import '../logging/logging_service.dart';
 import 'database_isolate_service.dart';
 import '../cache/query_cache_service.dart';
