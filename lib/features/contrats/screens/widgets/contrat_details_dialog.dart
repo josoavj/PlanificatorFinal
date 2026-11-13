@@ -96,8 +96,9 @@ class ContratDetailsDialog extends StatelessWidget {
                                 context,
                                 Icons.event_note_rounded,
                                 'Date Signature',
-                                DateFormat('dd/MM/yyyy')
-                                    .format(contrat.dateContrat),
+                                DateFormat(
+                                  'dd/MM/yyyy',
+                                ).format(contrat.dateContrat),
                                 isDark,
                               ),
                               _buildSubtleDivider(isDark),
