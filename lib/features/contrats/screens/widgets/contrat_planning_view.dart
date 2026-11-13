@@ -131,8 +131,9 @@ class ContratPlanningView extends StatelessWidget {
                                     children: [
                                       Text(
                                         date != null
-                                            ? DateFormat('dd/MM/yyyy')
-                                                  .format(date)
+                                            ? DateFormat(
+                                                'dd/MM/yyyy',
+                                              ).format(date)
                                             : 'Date inconnue',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
