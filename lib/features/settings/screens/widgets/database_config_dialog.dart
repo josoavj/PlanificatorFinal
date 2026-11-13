@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../../../core/database/database_service.dart';
 import '../../../../core/database/database_migration_service.dart';
@@ -136,8 +137,7 @@ class _DatabaseConfigDialogState extends State<DatabaseConfigDialog> {
         if (mounted) {
           AppDialogs.error(
             context,
-            message:
-                'La connexion a échoué avec ces paramètres. Vérifiez vos informations.',
+            message: 'La connexion a échoué avec ces paramètres. Vérifiez vos informations.',
           );
         }
       }
