@@ -52,8 +52,9 @@ class _TreatmentCatalogManagementScreenState
               children: [
                 Text(
                   'Catégories',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -73,8 +74,9 @@ class _TreatmentCatalogManagementScreenState
                 const SizedBox(height: 28),
                 Text(
                   'Traitements',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 LayoutBuilder(
@@ -136,8 +138,9 @@ class _TreatmentCatalogManagementScreenState
             icon: Icon(icon, size: 20),
             label: Text(
               label,
-              style: Theme.of(context).textTheme.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ),
