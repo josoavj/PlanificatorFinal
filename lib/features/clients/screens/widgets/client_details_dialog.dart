@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../models/client.dart';
 import '../../../../core/utils/nif_stat_formatter.dart';
@@ -77,28 +79,28 @@ class ClientDetailsDialog extends StatelessWidget {
                             client.email,
                           ),
                           _buildSubtleDivider(isDark),
-                          ...PhoneFormatter.split(
-                            client.telephone,
-                          ).asMap().entries.map(
-                            (e) => Column(
-                              children: [
-                                _buildDetailRow(
-                                  context,
-                                  Icons.phone_outlined,
-                                  e.key == 0
-                                      ? 'Téléphone'
-                                      : 'Téléphone ${e.key + 1}',
-                                  PhoneFormatter.format(e.value),
+                          ...PhoneFormatter.split(client.telephone)
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) => Column(
+                                  children: [
+                                    _buildDetailRow(
+                                      context,
+                                      Icons.phone_outlined,
+                                      e.key == 0
+                                          ? 'Téléphone'
+                                          : 'Téléphone ${e.key + 1}',
+                                      PhoneFormatter.format(e.value),
+                                    ),
+                                    if (e.key <
+                                        PhoneFormatter.split(client.telephone)
+                                                .length -
+                                            1)
+                                      _buildSubtleDivider(isDark),
+                                  ],
                                 ),
-                                if (e.key <
-                                    PhoneFormatter.split(
-                                          client.telephone,
-                                        ).length -
-                                        1)
-                                  _buildSubtleDivider(isDark),
-                              ],
-                            ),
-                          ),
+                              ),
                         ],
                       ),
                     ),
