@@ -542,9 +542,10 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Charger les données complètes: Facture + Planning + TypeTraitement
-      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [
-        clientId,
-      ]); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
+      final rows = await _db.query(
+        SqlQueries.getAllFacturesDetailed,
+        [clientId],
+      ); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
 
       // Préparer les données pour Excel
       final List<Map<String, dynamic>> excelData = [];
