@@ -5,6 +5,7 @@ import 'package:planificator/features/contrats/models/contrat.dart';
 import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../app/theme/theme.dart';
 import 'contrat_details_dialog.dart';
 
