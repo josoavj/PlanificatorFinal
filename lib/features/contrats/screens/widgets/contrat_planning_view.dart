@@ -5,6 +5,7 @@ import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
 import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../../../core/utils/app_snackbars.dart';
 import 'contrat_details_dialog.dart';
@@ -130,9 +131,8 @@ class ContratPlanningView extends StatelessWidget {
                                     children: [
                                       Text(
                                         date != null
-                                            ? DateFormat(
-                                                'dd/MM/yyyy',
-                                              ).format(date)
+                                            ? DateFormat('dd/MM/yyyy')
+                                                  .format(date)
                                             : 'Date inconnue',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
