@@ -924,8 +924,9 @@ class _RegisterScreenState extends State<RegisterScreen>
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.titleSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         field,
