@@ -6,6 +6,7 @@
 library;
 
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 typedef SearchCallback<T> = Future<List<T>> Function(String query);
