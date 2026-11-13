@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/core/security/rate_limit_service.dart';
 import 'package:planificator/features/auth/models/user.dart';
+
 import '../../../core/database/sql/sql_queries.dart';
 import '../../../core/security/email_validator.dart';
 import '../../../core/utils/password_validator.dart';
