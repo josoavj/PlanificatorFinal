@@ -3,6 +3,7 @@ import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/features/catalogue/models/type_traitement.dart';
 import 'package:planificator/features/catalogue/models/type_traitement_category.dart';
+
 import '../../../../../core/database/sql/sql_queries.dart';
 
 class TypeTraitementRepository extends ChangeNotifier {
