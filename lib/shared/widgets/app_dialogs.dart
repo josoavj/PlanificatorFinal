@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
+
 import 'dart:ui';
+
 import '../../app/theme/theme.dart';
 
 class AppDialogs {
