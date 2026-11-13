@@ -176,7 +176,8 @@ class SignalementRepository extends ChangeNotifier {
     required String type, // 'avancement' ou 'décalage'
     required DateTime dateCourante,
     required DateTime dateSignalement,
-    required bool changerRedondance, // true=décaler TOUTES les futures, false=modifier JUSTE celle-ci
+    required bool
+    changerRedondance, // true=décaler TOUTES les futures, false=modifier JUSTE celle-ci
   }) async {
     _isLoading = true;
     _errorMessage = null;
