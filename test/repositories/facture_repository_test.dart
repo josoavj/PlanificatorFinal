@@ -108,8 +108,9 @@ void main() {
           },
         ];
 
-        when(mockDatabase.query(any, any, any))
-            .thenAnswer((_) async => mockData);
+        when(
+          mockDatabase.query(any, any, any),
+        ).thenAnswer((_) async => mockData);
 
         await repository.loadAllFactures();
 
