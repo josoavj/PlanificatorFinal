@@ -91,7 +91,8 @@ class TermsOfServiceScreen extends StatelessWidget {
               'Les composants logiciels, marques et visuels Planificator sont '
               'attribués à ${LegalInfo.company} conformément aux licences et '
               'droits applicables.',
-          note: 'Les données métier ne sont pas vendues ni exploitées par l’éditeur à des fins commerciales.',
+          note:
+              'Les données métier ne sont pas vendues ni exploitées par l’éditeur à des fins commerciales.',
         ),
         const LegalSectionCard(
           number: '05',
