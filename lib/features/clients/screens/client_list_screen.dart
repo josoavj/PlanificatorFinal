@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/shared/widgets/empty_state_widget.dart';
@@ -6,6 +7,7 @@ import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:planificator/shared/widgets/paginated_list_view.dart';
 import 'package:provider/provider.dart';
+
 import '../models/client.dart';
 import '../../../core/logging/logging_service.dart';
 import '../../../core/utils/app_snackbars.dart';
