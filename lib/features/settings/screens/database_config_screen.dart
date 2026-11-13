@@ -3,6 +3,7 @@ import 'package:planificator/core/database/database_migration_service.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
+
 import '../../../core/database/database_config.dart';
 import '../../../app/theme/theme.dart';
 import '../../../core/utils/app_snackbars.dart';
@@ -208,9 +209,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Configurez votre connexion MySQL/MariaDB',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
@@ -218,9 +218,8 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                     // Formulaire
                     Text(
                       'Informations de connexion',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
 
