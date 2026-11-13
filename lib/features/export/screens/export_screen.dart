@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/clients/repositories/client_repository.dart';
 import 'package:planificator/features/contrats/repositories/contrat_repository.dart';
@@ -6,6 +7,7 @@ import 'package:planificator/features/factures/models/facture.dart';
 import 'package:planificator/features/factures/repositories/facture_repository.dart';
 import 'package:planificator/features/planning/repositories/planning_details_repository.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/utils/excel_utils.dart';
 import '../../../core/logging/logging_service.dart';
 import '../../../core/utils/app_snackbars.dart';
@@ -181,9 +183,8 @@ class _ExportScreenState extends State<ExportScreen> {
                 // Titre principal
                 Text(
                   'Rendu en format EXCEL',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
 
@@ -291,9 +292,8 @@ class _ExportScreenState extends State<ExportScreen> {
                 // Question et boutons
                 Text(
                   'Voulez-vous générer un rendu?',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 24),
 
@@ -447,9 +447,8 @@ class _ExportScreenState extends State<ExportScreen> {
           width: 150,
           child: Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+            style: Theme.of(context).textTheme.bodyLarge
+                ?.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
         const SizedBox(width: 16),
