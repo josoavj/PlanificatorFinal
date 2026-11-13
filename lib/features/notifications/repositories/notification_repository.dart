@@ -3,6 +3,7 @@ import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/features/notifications/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../core/database/sql/sql_queries.dart';
 
 /// Repository pour gérer les notifications de traitements
