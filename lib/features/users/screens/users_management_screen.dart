@@ -219,8 +219,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       children: [
         Text(
           'Comptes de la plateforme',
-          style: Theme.of(context).textTheme.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
         Text(
@@ -307,8 +308,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
