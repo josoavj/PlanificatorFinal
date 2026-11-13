@@ -164,8 +164,10 @@ class _DashboardTabState extends State<DashboardTab> {
         const SizedBox(height: 8),
         Text(
           'Bienvenue dans Planificator',
-          style: Theme.of(context).textTheme.headlineMedium
-              ?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1),
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+          ),
         ),
       ],
     );
