@@ -36,21 +36,18 @@ void main() {
   });
 
   group('DateUtils - Planning Generation', () {
-    test(
-      'generatePlanningDates génère le bon nombre de dates pour un contrat mensuel',
-      () {
-        final start = DateTime(2024);
-        final dates = date_utils.DateUtils.generatePlanningDates(
-          dateDebut: start,
-          dureeTraitement: 12,
-          redondance: 1,
-        );
+    test('generatePlanningDates génère le bon nombre de dates pour un contrat mensuel', () {
+      final start = DateTime(2024);
+      final dates = date_utils.DateUtils.generatePlanningDates(
+        dateDebut: start,
+        dureeTraitement: 12,
+        redondance: 1,
+      );
 
-        expect(dates.length, equals(12));
-        expect(dates.first.month, equals(1));
-        expect(dates.last.month, equals(12));
-      },
-    );
+      expect(dates.length, equals(12));
+      expect(dates.first.month, equals(1));
+      expect(dates.last.month, equals(12));
+    });
 
     test('generatePlanningDates respecte la redondance trimestrielle', () {
       final start = DateTime(2024);
