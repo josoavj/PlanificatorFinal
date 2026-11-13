@@ -5,6 +5,7 @@ import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../repositories/contrat_repository.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -95,9 +96,8 @@ class ContratDetailsDialog extends StatelessWidget {
                                 context,
                                 Icons.event_note_rounded,
                                 'Date Signature',
-                                DateFormat(
-                                  'dd/MM/yyyy',
-                                ).format(contrat.dateContrat),
+                                DateFormat('dd/MM/yyyy')
+                                    .format(contrat.dateContrat),
                                 isDark,
                               ),
                               _buildSubtleDivider(isDark),
