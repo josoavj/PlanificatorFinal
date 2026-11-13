@@ -137,7 +137,8 @@ class _DatabaseConfigDialogState extends State<DatabaseConfigDialog> {
         if (mounted) {
           AppDialogs.error(
             context,
-            message: 'La connexion a échoué avec ces paramètres. Vérifiez vos informations.',
+            message:
+                'La connexion a échoué avec ces paramètres. Vérifiez vos informations.',
           );
         }
       }
