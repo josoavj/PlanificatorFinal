@@ -139,7 +139,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () => AppDialogs.info(
                         context,
                         title: 'Aide',
-                        message: 'Bienvenue dans l\'aide de Planificator. Pour toute question, veuillez nous contacter.',
+                        message:
+                            'Bienvenue dans l\'aide de Planificator. Pour toute question, veuillez nous contacter.',
                       ),
                     ),
                     AppActionCard(
@@ -291,7 +292,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final c = await AppDialogs.confirm(
       context,
       title: 'Vider le cache',
-      message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.',
+      message:
+          'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.',
       confirmText: 'Vider la cache',
       isDestructive: true,
     );
