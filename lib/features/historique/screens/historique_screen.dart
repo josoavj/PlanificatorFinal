@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/catalogue/repositories/type_traitement_repository.dart';
 import 'package:planificator/features/planning/repositories/planning_details_repository.dart';
 import 'package:provider/provider.dart';
+
 import '../../../app/theme/theme.dart';
 import 'widgets/history_category_card.dart';
 import 'history_client_list_screen.dart';
@@ -150,10 +151,8 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
         const SizedBox(height: 4),
         Text(
           'Sélectionnez une catégorie',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
-          ),
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
       ],
     );
