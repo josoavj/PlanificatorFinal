@@ -151,8 +151,10 @@ class _HistoriqueScreenState extends State<HistoriqueScreen> {
         const SizedBox(height: 4),
         Text(
           'Sélectionnez une catégorie',
-          style: Theme.of(context).textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+          ),
         ),
       ],
     );
