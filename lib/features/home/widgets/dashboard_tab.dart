@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/planning/repositories/planning_details_repository.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/logging/logging_service.dart';
 import '../../../core/utils/app_snackbars.dart';
 import 'treatment_list_view.dart';
@@ -163,10 +164,8 @@ class _DashboardTabState extends State<DashboardTab> {
         const SizedBox(height: 8),
         Text(
           'Bienvenue dans Planificator',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1,
-          ),
+          style: Theme.of(context).textTheme.headlineMedium
+              ?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -1),
         ),
       ],
     );
