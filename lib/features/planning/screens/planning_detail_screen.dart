@@ -7,6 +7,7 @@ import 'package:planificator/shared/widgets/empty_state_widget.dart';
 import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
+
 import '../../factures/models/facture.dart';
 import '../models/planning_details.dart';
 import '../models/remarque.dart';
@@ -218,8 +219,7 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                             AppActionCard(
                               icon: Icons.edit_note_rounded,
                               title: 'Modifier les informations',
-                              subtitle:
-                                  'Corriger la remarque ou les détails financiers',
+                              subtitle: 'Corriger la remarque ou les détails financiers',
                               onTap: () => _showEditRemarqueDialog(
                                 treatment,
                                 facture!,
@@ -237,8 +237,7 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                             AppActionCard(
                               icon: Icons.report_problem_outlined,
                               title: 'Signaler un problème',
-                              subtitle:
-                                  'Enregistrer une anomalie durant le traitement',
+                              subtitle: 'Enregistrer une anomalie durant le traitement',
                               onTap: () => _showSignalementDialog(treatment),
                               isDestructive: true,
                             ),
