@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/core/utils/excel_utils.dart';
 import 'package:planificator/features/notifications/repositories/notification_repository.dart';
 import 'package:planificator/features/notifications/services/notification_service.dart';
+
 import '../core/database/database_config.dart';
 
 /// Classe responsable de l'initialisation de l'application.
