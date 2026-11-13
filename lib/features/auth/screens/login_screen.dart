@@ -80,16 +80,19 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 8),
           Text(
             'Connectez-vous pour accéder à votre espace de gestion.',
-            style: Theme.of(context).textTheme.bodyLarge
-                ?.copyWith(color: isDark ? Colors.white70 : Colors.grey[600]),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: isDark ? Colors.white70 : Colors.grey[600],
+            ),
           ),
           const SizedBox(height: 40),
 
           // Username
           Text(
             'Nom d\'utilisateur',
-            style: Theme.of(context).textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
           ),
           const SizedBox(height: 8),
           TextFormField(
@@ -110,8 +113,10 @@ class _LoginScreenState extends State<LoginScreen>
             children: [
               Text(
                 'Mot de passe',
-                style: Theme.of(context).textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
               ),
               TextButton(
                 onPressed: () => AuthPageShell.pushRightPage(
