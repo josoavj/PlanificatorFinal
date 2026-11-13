@@ -209,8 +209,9 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Configurez votre connexion MySQL/MariaDB',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: Colors.grey[600]),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
@@ -218,8 +219,9 @@ class _DatabaseConfigScreenState extends State<DatabaseConfigScreen> {
                     // Formulaire
                     Text(
                       'Informations de connexion',
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
