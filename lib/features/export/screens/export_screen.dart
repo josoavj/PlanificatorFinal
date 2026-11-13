@@ -183,8 +183,9 @@ class _ExportScreenState extends State<ExportScreen> {
                 // Titre principal
                 Text(
                   'Rendu en format EXCEL',
-                  style: Theme.of(context).textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 40),
 
@@ -292,8 +293,9 @@ class _ExportScreenState extends State<ExportScreen> {
                 // Question et boutons
                 Text(
                   'Voulez-vous générer un rendu?',
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -447,8 +449,9 @@ class _ExportScreenState extends State<ExportScreen> {
           width: 150,
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyLarge
-                ?.copyWith(fontWeight: FontWeight.w500),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
         const SizedBox(width: 16),
