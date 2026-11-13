@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/database/transaction_runner.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/features/factures/models/facture.dart';
+
 import '../../../core/utils/excel_utils.dart';
 import '../../planning/domain/date_helper.dart';
 import '../../planning/domain/date_utils.dart' as date_utils;
@@ -540,10 +542,9 @@ class FactureRepository extends ChangeNotifier {
 
     try {
       // Charger les données complètes: Facture + Planning + TypeTraitement
-      final rows = await _db.query(
-        SqlQueries.getAllFacturesDetailed,
-        [clientId],
-      ); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
+      final rows = await _db.query(SqlQueries.getAllFacturesDetailed, [
+        clientId,
+      ]); // NOTE: This SQL in FactureRepository uses a different query than the one in SqlQueries for generateExcelExport. I should update SqlQueries to include the specific one or use a more generic one.
 
       // Préparer les données pour Excel
       final List<Map<String, dynamic>> excelData = [];
