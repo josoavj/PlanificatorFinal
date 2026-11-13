@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../../app/theme/theme.dart';
 
 const _legalSurface = Color(0xFFFFFFFF);
@@ -263,9 +264,8 @@ class LegalFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Theme.of(
-      context,
-    ).colorScheme.onSurface.withValues(alpha: 0.6);
+    final muted = Theme.of(context).colorScheme.onSurface
+        .withValues(alpha: 0.6);
     return Center(
       child: Column(
         children: [
@@ -299,11 +299,8 @@ class LegalSectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          fontSize: 20,
-          height: 1.3,
-          fontWeight: FontWeight.bold,
-        ),
+        style: Theme.of(context).textTheme.titleLarge
+            ?.copyWith(fontSize: 20, height: 1.3, fontWeight: FontWeight.bold),
       ),
     );
   }
