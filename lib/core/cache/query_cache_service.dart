@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import '../logging/logging_service.dart';
 
 /// Service de cache unifié pour les requêtes SQL et les entités.
