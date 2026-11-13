@@ -208,13 +208,15 @@ class AboutScreen extends StatelessWidget {
         _buildBenefitCard(
           icon: Icons.speed_outlined,
           title: 'Productivité Accrue',
-          desc: 'Automatisez vos tâches répétitives et concentrez-vous sur vos clients.',
+          desc:
+              'Automatisez vos tâches répétitives et concentrez-vous sur vos clients.',
           color: Colors.blue,
         ),
         _buildBenefitCard(
           icon: Icons.shield_outlined,
           title: 'Sécurité Maximale',
-          desc: 'Vos données restent sous votre contrôle, loin des nuages opaques.',
+          desc:
+              'Vos données restent sous votre contrôle, loin des nuages opaques.',
           color: Colors.green,
         ),
         _buildBenefitCard(
@@ -396,7 +398,8 @@ class AboutScreen extends StatelessWidget {
           context: context,
           name: 'Josoa VONJINIAINA',
           role: 'FullStack Developer',
-          desc: 'Expert en architecture Backend, passionné par l\'UI/UX et les performances système.',
+          desc:
+              'Expert en architecture Backend, passionné par l\'UI/UX et les performances système.',
           avatarUrl: 'https://github.com/josoavj.png',
           url: 'https://github.com/josoavj',
           colorScheme: colorScheme,
@@ -406,7 +409,8 @@ class AboutScreen extends StatelessWidget {
           context: context,
           name: 'Maminirina ANDRIAMASINORO',
           role: 'FullStack Developer',
-          desc: 'Spécialiste en intégration fluide des processus métiers avec le backend.',
+          desc:
+              'Spécialiste en intégration fluide des processus métiers avec le backend.',
           avatarUrl: 'https://github.com/AinaMaminirina18.png',
           url: 'https://github.com/AinaMaminirina18',
           colorScheme: colorScheme,
