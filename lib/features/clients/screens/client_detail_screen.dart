@@ -9,6 +9,7 @@ import 'package:planificator/shared/widgets/empty_state_widget.dart';
 import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:planificator/shared/widgets/loading_widget.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/utils/app_snackbars.dart';
 import '../../../shared/widgets/index.dart';
 import '../../../app/theme/theme.dart';

@@ -3,6 +3,7 @@ import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+
 import '../../../app/theme/theme.dart';
 import '../../../shared/widgets/index.dart';
 import 'widgets/profile_edit_dialog.dart';

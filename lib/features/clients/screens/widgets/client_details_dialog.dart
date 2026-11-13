@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../models/client.dart';
 import '../../../../core/utils/nif_stat_formatter.dart';

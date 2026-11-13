@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'dart:developer' show log;
 
 /// Provider pour gérer le thème de la plateforme (light/dark)

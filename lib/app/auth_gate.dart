@@ -4,6 +4,7 @@ import 'package:planificator/features/auth/screens/login_screen.dart';
 import 'package:planificator/features/auth/screens/register_screen.dart';
 import 'package:planificator/features/home/screens/home_screen.dart';
 import 'package:provider/provider.dart';
+
 import '../core/logging/logging_service.dart';
 
 class AuthGate extends StatefulWidget {

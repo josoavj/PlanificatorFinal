@@ -3,6 +3,7 @@ import 'package:planificator/core/database/database_migration_service.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
+
 import '../../../core/database/database_config.dart';
 import '../../../app/theme/theme.dart';
 import '../../../core/utils/app_snackbars.dart';

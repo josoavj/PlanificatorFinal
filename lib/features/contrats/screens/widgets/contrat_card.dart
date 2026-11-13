@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
+
 import '../../../../app/theme/theme.dart';
 import 'contrat_details_dialog.dart';
 

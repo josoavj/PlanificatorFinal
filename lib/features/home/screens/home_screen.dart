@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+
 import '../../../shared/widgets/sidebar_navigation.dart';
 import '../../clients/screens/client_list_screen.dart';
 import '../../factures/screens/facture_screen.dart';
@@ -28,6 +29,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   int _navigationDirection = 1;
+  bool _isNavigationVisible = false;
 
   // Liste des titres centralisée
   static const List<String> _pageTitles = [
@@ -49,6 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _navigationDirection = index > _selectedIndex ? 1 : -1;
       _selectedIndex = index;
+    });
+  }
+
+  void _onSelectDesktopTab(int index) {
+    setState(() {
+      if (index != _selectedIndex) {
+        _navigationDirection = index > _selectedIndex ? 1 : -1;
+        _selectedIndex = index;
+      }
+      _isNavigationVisible = false;
     });
   }
 
@@ -94,10 +106,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 canPop: false,
                 child: Scaffold(
                   appBar: AppBar(
-                    title: Text(_pageTitles[safeIndex]),
+                    title: isDesktop && _isNavigationVisible
+                        ? const SizedBox.shrink()
+                        : Text(_pageTitles[safeIndex]),
                     centerTitle: false,
                     elevation: 1,
                     automaticallyImplyLeading: !isDesktop,
+                    leading: isDesktop
+                        ? IconButton(
+                            tooltip: _isNavigationVisible
+                                ? 'Masquer la navigation'
+                                : 'Afficher la navigation',
+                            icon: Icon(
+                              _isNavigationVisible
+                                  ? Icons.menu_open_rounded
+                                  : Icons.menu_rounded,
+                            ),
+                            onPressed: () => setState(
+                              () =>
+                                  _isNavigationVisible = !_isNavigationVisible,
+                            ),
+                          )
+                        : null,
                   ),
                   drawer: isDesktop
                       ? null
@@ -106,19 +136,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           onItemSelected: _onSelectTab,
                         ),
                   body: isDesktop
-                      ? Row(
+                      ? Stack(
                           children: [
-                            SidebarNavigation(
-                              selectedIndex: safeIndex,
-                              onItemSelected: _onSelectTab,
-                              isDrawer: false,
+                            Positioned.fill(child: _buildPage(safeIndex)),
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 260),
+                              curve: Curves.easeInOutCubic,
+                              left: _isNavigationVisible ? 0 : -260,
+                              top: 0,
+                              bottom: 0,
+                              width: 260,
+                              child: Material(
+                                elevation: _isNavigationVisible ? 12 : 0,
+                                child: SidebarNavigation(
+                                  selectedIndex: safeIndex,
+                                  onItemSelected: _onSelectDesktopTab,
+                                  isDrawer: false,
+                                ),
+                              ),
                             ),
-                            const VerticalDivider(
-                              width: 1,
-                              thickness: 1,
-                              color: Color(0x1F000000),
-                            ),
-                            Expanded(child: _buildPage(safeIndex)),
                           ],
                         )
                       : _buildPage(safeIndex),
@@ -134,14 +170,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPage(int index) {
     return RepaintBoundary(
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 420),
-        reverseDuration: const Duration(milliseconds: 300),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
+        duration: const Duration(milliseconds: 300),
+        reverseDuration: const Duration(milliseconds: 240),
+        switchInCurve: Curves.easeInOutCubic,
+        switchOutCurve: Curves.easeInOutCubic,
         transitionBuilder: (child, animation) {
           final offsetAnimation =
               Tween<Offset>(
-                begin: Offset(0.06 * _navigationDirection, 0),
+                begin: Offset(0.02 * _navigationDirection, 0),
                 end: Offset.zero,
               ).animate(
                 CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),

@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+
 import 'database_service.dart';
 
 typedef TransactionAction<T> = Future<T> Function(MySqlConnection connection);

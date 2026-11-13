@@ -5,6 +5,7 @@ import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../app/theme/theme.dart';
 import '../../repositories/contrat_repository.dart';
 import '../../../../core/utils/number_formatter.dart';

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
+
 import '../../../core/database/sql/sql_queries.dart';
 
 class PlanningRepository extends ChangeNotifier {

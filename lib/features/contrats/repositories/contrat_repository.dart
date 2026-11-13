@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/contrats/models/contrat.dart';
+
 import '../../../core/database/sql/sql_queries.dart';
 import '../../planning/domain/date_utils.dart' as date_utils;
 import '../../auth/repositories/auth_repository.dart';

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/features/clients/models/client.dart';
 import 'package:planificator/features/clients/repositories/client_repository.dart';
@@ -8,6 +9,7 @@ import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:planificator/shared/widgets/empty_state_widget.dart';
 import 'package:planificator/shared/widgets/error_widget.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/database/sql/sql_queries.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/logging/logging_service.dart';

@@ -1,10 +1,12 @@
 import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:provider/provider.dart';
+
 import '../../../app/theme/theme.dart';
 import '../../../core/utils/password_validator.dart';
 import '../../../core/security/email_validator.dart';

@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/logging/logging_service.dart';
+
 import 'app_dialogs.dart';
 
 class LogViewerDialog extends StatefulWidget {

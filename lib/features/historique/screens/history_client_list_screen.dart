@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/shared/widgets/empty_state_widget.dart';
 import 'package:planificator/shared/widgets/paginated_list_view.dart';
+
 import '../../../app/theme/theme.dart';
 import '../../planning/repositories/planning_details_repository.dart';
 import 'widgets/history_client_card.dart';

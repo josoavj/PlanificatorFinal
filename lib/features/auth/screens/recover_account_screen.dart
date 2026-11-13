@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
+
 import '../repositories/auth_repository.dart';
 import '../../../app/theme/theme.dart';
 import '../../../core/security/email_validator.dart';

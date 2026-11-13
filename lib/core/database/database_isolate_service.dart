@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:mysql1/mysql1.dart';
+
 import '../logging/logging_service.dart';
 
 /// Classe pour représenter une requête à exécuter dans un isolate

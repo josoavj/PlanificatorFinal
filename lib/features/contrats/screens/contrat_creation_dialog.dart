@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import 'package:planificator/features/contrats/repositories/contrat_repository.d
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
+
 import '../../../app/theme/theme.dart';
 import '../../../core/utils/number_formatter.dart';
 import '../../../shared/widgets/index.dart';

@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:planificator/core/cache/query_cache_service.dart';
 import 'package:planificator/core/database/database_service.dart';
 import 'package:planificator/core/logging/logging_service.dart';
 import 'package:planificator/features/clients/models/client.dart';
+
 import '../../../core/database/sql/sql_queries.dart';
 import '../../auth/repositories/auth_repository.dart';
 

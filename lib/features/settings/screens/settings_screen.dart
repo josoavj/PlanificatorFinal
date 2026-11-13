@@ -3,6 +3,7 @@ import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:planificator/shared/widgets/log_viewer.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/logging/logging_service.dart';
 import '../../../app/theme/theme.dart';
 import '../../../app/theme/theme_provider.dart';
@@ -10,7 +11,9 @@ import '../../../shared/widgets/index.dart';
 import '../../../core/utils/app_snackbars.dart';
 import '../../../core/utils/excel_utils.dart';
 import '../../about/screens/features_dialog.dart';
+
 import 'package:file_picker/file_picker.dart';
+
 import 'widgets/database_config_dialog.dart';
 import '../../users/screens/users_management_screen.dart';
 import '../../catalogue/screens/treatment_catalog_management_screen.dart';
