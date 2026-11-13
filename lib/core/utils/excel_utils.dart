@@ -175,9 +175,9 @@ class ExcelService {
       titleText = "Rapport de Facturation pour l'année : $year";
       filename = '$safeName-Annuel-$year.xlsx';
     } else {
-      final String monthNameFr = DateFormat.MMMM('fr_FR')
-          .format(DateTime(year, month))
-          .toUpperCase();
+      final String monthNameFr = DateFormat.MMMM(
+        'fr_FR',
+      ).format(DateTime(year, month)).toUpperCase();
       titleText = 'Facture du mois de : $monthNameFr $year';
       filename = '$safeName-$monthNameFr-$year.xlsx';
     }
@@ -208,9 +208,9 @@ class ExcelService {
     _styleCache.clear();
     final paths = await _getPaths();
 
-    final String monthNameFr = DateFormat.MMMM('fr_FR')
-        .format(DateTime(year, month))
-        .toUpperCase();
+    final String monthNameFr = DateFormat.MMMM(
+      'fr_FR',
+    ).format(DateTime(year, month)).toUpperCase();
     final Workbook workbook = Workbook();
     final Worksheet sheet = workbook.worksheets[0];
 
