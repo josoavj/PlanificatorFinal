@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../../app/theme/theme.dart';
 import 'legal_common.dart';
 import 'privacy_policy_screen.dart';
@@ -65,8 +66,7 @@ class LegalDocumentsScreen extends StatelessWidget {
               icon: Icons.person_outline,
               title: LegalInfo.editor,
               subtitle: 'Éditeur et mainteneur actuel',
-              description:
-                  'Conception, mise en place de l\'architecture et développement de Planificator.',
+              description: 'Conception, mise en place de l\'architecture et développement de Planificator.',
               onTap: () =>
                   openLegalLink(context, Uri.parse(LegalInfo.editorUrl)),
             ),
@@ -74,8 +74,7 @@ class LegalDocumentsScreen extends StatelessWidget {
               icon: Icons.apartment_outlined,
               title: LegalInfo.company,
               subtitle: 'Organisation · ${LegalInfo.location}',
-              description:
-                  'Organisation responsable de la publication et de la maintenance de Planificator.',
+              description: 'Organisation responsable de la publication et de la maintenance de Planificator.',
             ),
           ],
         ),
