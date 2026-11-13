@@ -3,6 +3,7 @@ import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/shared/widgets/app_dialogs.dart';
 import 'package:planificator/shared/widgets/log_viewer.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/logging/logging_service.dart';
 import '../../../app/theme/theme.dart';
 import '../../../app/theme/theme_provider.dart';
@@ -10,7 +11,9 @@ import '../../../shared/widgets/index.dart';
 import '../../../core/utils/app_snackbars.dart';
 import '../../../core/utils/excel_utils.dart';
 import '../../about/screens/features_dialog.dart';
+
 import 'package:file_picker/file_picker.dart';
+
 import 'widgets/database_config_dialog.dart';
 import '../../users/screens/users_management_screen.dart';
 import '../../catalogue/screens/treatment_catalog_management_screen.dart';
@@ -136,8 +139,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () => AppDialogs.info(
                         context,
                         title: 'Aide',
-                        message:
-                            'Bienvenue dans l\'aide de Planificator. Pour toute question, veuillez nous contacter.',
+                        message: 'Bienvenue dans l\'aide de Planificator. Pour toute question, veuillez nous contacter.',
                       ),
                     ),
                     AppActionCard(
@@ -289,8 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final c = await AppDialogs.confirm(
       context,
       title: 'Vider le cache',
-      message:
-          'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.',
+      message: 'Voulez-vous vraiment vider toutes les données en cache ? Cela n\'affectera pas vos données en ligne.',
       confirmText: 'Vider la cache',
       isDestructive: true,
     );
