@@ -75,21 +75,24 @@ class PrivacyPolicyScreen extends StatelessWidget {
           number: '03',
           icon: Icons.query_stats_rounded,
           title: 'Utilisation des données',
-          content: 'Vos données servent uniquement au fonctionnement métier de votre entreprise :',
+          content:
+              'Vos données servent uniquement au fonctionnement métier de votre entreprise :',
           bullets: [
             'Planification, génération et suivi des calendriers d’interventions.',
             'Émission et suivi de l’état de paiement des factures.',
             'Génération d’exports et de rapports au format Excel.',
             'Gestion de l’authentification et du contrôle d’accès par rôle.',
           ],
-          note: 'Vos données restent votre propriété. Elles ne sont ni revendues, ni louées, ni cédées à des tiers.',
+          note:
+              'Vos données restent votre propriété. Elles ne sont ni revendues, ni louées, ni cédées à des tiers.',
         ),
 
         const LegalSectionCard(
           number: '04',
           icon: Icons.storage_rounded,
           title: 'Stockage et chiffrement',
-          content: 'Planificator repose sur une architecture de données contrôlée par l’utilisateur :',
+          content:
+              'Planificator repose sur une architecture de données contrôlée par l’utilisateur :',
           bullets: [
             'Base MySQL : vos données métier sont stockées sur votre base MySQL locale ou privée.',
             'Mots de passe : hachés de façon irréversible avec l’algorithme BCrypt.',
@@ -101,7 +104,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
           number: '05',
           icon: Icons.lock_outline_rounded,
           title: 'Sécurité et protection',
-          content: 'Nous appliquons des mesures de sécurité techniques et organisationnelles :',
+          content:
+              'Nous appliquons des mesures de sécurité techniques et organisationnelles :',
           bullets: [
             'Protection contre la force brute : limitation des tentatives de connexion (5 tentatives en 10 minutes).',
             'Masquage automatique des mots de passe et des hashs dans les journaux système.',
@@ -125,7 +129,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
           number: '07',
           icon: Icons.balance_outlined,
           title: 'Conformité réglementaire',
-          content: 'Notre politique s’inspire des principes des réglementations internationales sur la protection des données :',
+          content:
+              'Notre politique s’inspire des principes des réglementations internationales sur la protection des données :',
           bullets: [
             for (final r in LegalInfo.regulations)
               '${r.title} : ${r.description}',
