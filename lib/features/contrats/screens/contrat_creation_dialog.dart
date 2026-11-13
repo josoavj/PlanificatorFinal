@@ -1058,8 +1058,9 @@ class _ContratCreationDialogState extends State<ContratCreationDialog> {
                   borderRadius: BorderRadius.circular(20),
                   clipBehavior: Clip.antiAlias,
                   child: Theme(
-                    data: Theme.of(context)
-                        .copyWith(dividerColor: Colors.transparent),
+                    data: Theme.of(
+                      context,
+                    ).copyWith(dividerColor: Colors.transparent),
                     child: ExpansionTile(
                       leading: Container(
                         padding: const EdgeInsets.all(10),
