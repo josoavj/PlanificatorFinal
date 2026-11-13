@@ -219,7 +219,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                             AppActionCard(
                               icon: Icons.edit_note_rounded,
                               title: 'Modifier les informations',
-                              subtitle: 'Corriger la remarque ou les détails financiers',
+                              subtitle:
+                                  'Corriger la remarque ou les détails financiers',
                               onTap: () => _showEditRemarqueDialog(
                                 treatment,
                                 facture!,
@@ -237,7 +238,8 @@ class _PlanningDetailScreenState extends State<PlanningDetailScreen> {
                             AppActionCard(
                               icon: Icons.report_problem_outlined,
                               title: 'Signaler un problème',
-                              subtitle: 'Enregistrer une anomalie durant le traitement',
+                              subtitle:
+                                  'Enregistrer une anomalie durant le traitement',
                               onTap: () => _showSignalementDialog(treatment),
                               isDestructive: true,
                             ),
