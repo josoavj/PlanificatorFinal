@@ -1,8 +1,10 @@
 import 'dart:io' show Platform;
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:workmanager/workmanager.dart';
+
 import '../../../core/logging/logging_service.dart';
 
 /// Service centralisé de notifications
