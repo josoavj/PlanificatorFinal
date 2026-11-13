@@ -3,6 +3,7 @@ import 'package:mockito/mockito.dart';
 import 'package:planificator/features/factures/repositories/facture_repository.dart';
 import 'package:planificator/features/auth/repositories/auth_repository.dart';
 import 'package:planificator/features/factures/models/facture.dart';
+
 import '../config/mocks.dart';
 
 void main() {
@@ -107,9 +108,8 @@ void main() {
           },
         ];
 
-        when(
-          mockDatabase.query(any, any, any),
-        ).thenAnswer((_) async => mockData);
+        when(mockDatabase.query(any, any, any))
+            .thenAnswer((_) async => mockData);
 
         await repository.loadAllFactures();
 
